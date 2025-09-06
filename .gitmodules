@@ -1,0 +1,6 @@
+[submodule "services/fundraising-service"]
+	path = services/fundraising-service
+	url = https://github.com/jamesbrysmart/nonprofit-crm-fundraising-service.git
+[submodule "services/twenty-core"]
+	path = services/twenty-core
+	url = https://github.com/jamesbrysmart/nonprofit-crm-twenty-fork.git
