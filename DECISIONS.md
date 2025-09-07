@@ -136,6 +136,22 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 ---
 
+## D-0012: Framework for `fundraising-service`
+**Decision**
+- We will continue to build the `fundraising-service` using the **NestJS** framework.
+
+**Why**
+- **Structure**: NestJS enforces a consistent, modular architecture (modules, controllers, services), which is ideal for collaboration and for a learning project.
+- **Consistency**: It uses TypeScript, which aligns the entire stack (`twenty-core` and this service) to a single language.
+- **Best Practices**: It promotes robust, enterprise-grade software patterns that are scalable and highly testable.
+- **Ecosystem**: It has excellent documentation and built-in support for tools we are already using, like TypeORM.
+
+**Alternatives considered**
+- **Plain Express.js**: Rejected due to lack of enforced structure, which can lead to inconsistent code.
+- **FastAPI (Python)**: Rejected to maintain a single language (TypeScript) across the project, reducing cognitive overhead.
+
+---
+
 ## Practical defaults (TL;DR)
 - **SoT**: Contacts → Twenty; Gifts/Campaigns → fundraising-service.
 - **Surfacing**: Write-back to Twenty custom objects for native UX (plus gateway later).
