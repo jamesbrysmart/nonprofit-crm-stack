@@ -1,9 +1,29 @@
 # DECISIONS
 
 Status: Living document  
-Last updated: 2025-09-06
+Last updated: 2025-09-07
 
 This file captures the *how*, not the *what*: boundaries, trade-offs, and defaults that keep us fast without painting us into a corner.
+
+---
+
+## D-0013: Integration Strategy for Custom Entities (Gift, Campaign)
+**Status**: Decided
+**Priority**: High
+
+**Context**
+- We need to display and manage custom data (Gifts, Campaigns) that is not native to the Twenty CRM. We must decide on the best architectural approach for this integration to balance a native user experience with ease of maintenance.
+
+**Decision: The "Managed Extension" Approach**
+- We will adopt a hybrid **"Managed Extension"** approach. This treats the `twenty-core` codebase as a read-only vendor library while achieving a native-like experience by using official APIs.
+- **Schema & UI Scaffolding**: The schema for our custom entities (`Gift`, `Campaign`) will be created and managed programmatically by calling Twenty's official **Metadata API**. This allows Twenty to generate the database tables and the basic UI (forms, lists), ensuring our entities feel native.
+- **Advanced Business Logic**: The separate `fundraising-service` will contain all specialized business logic (e.g., payment gateway webhooks, reporting jobs). This service will interact with the data by calling Twenty's standard **Data API**, not by accessing the database directly.
+
+**Why**
+- This approach provides the best of both worlds: it leverages Twenty's core features for a native user experience (the "NPSP model") while keeping our custom code separate from the core codebase, which ensures future updates to `twenty-core` remain simple.
+
+**Alternatives Considered**
+- **Pure Separate Service**: Previously "Path A". This involved creating our own tables via TypeORM migrations and building all UI components from scratch. It was rejected due to concerns about a functional "rift" between the two systems and the high effort required to replicate native Twenty UI features.
 
 ---
 
