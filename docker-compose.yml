@@ -54,11 +54,13 @@ services:
       timeout: 5s
       retries: 20
     restart: always
+    networks:
+      - dev-net
 
   worker:
     build:
       context: ./services/twenty-core
-      dockerfile: ./packages/twenty-docker/Dockerfile.standalone
+      dockerfile: ./packages/twenty-docker/twenty/Dockerfile
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
     command: ["yarn", "worker:prod"]
@@ -129,7 +131,7 @@ services:
 
   fundraising-service:
     build:
-      context: ./fundraising-service
+      context: ./services/fundraising-service
       dockerfile: Dockerfile
     ports:
       - "4500:4500"
@@ -152,6 +154,8 @@ services:
       timeout: 5s
       retries: 5
     restart: always
+    networks:
+      - dev-net
 
 volumes:
   db-data:

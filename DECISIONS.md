@@ -1,9 +1,35 @@
 # DECISIONS
 
 Status: Living document  
-Last updated: 2025-09-07
+Last updated: 2025-09-10
 
 This file captures the *how*, not the *what*: boundaries, trade-offs, and defaults that keep us fast without painting us into a corner.
+
+---
+
+## D-0014: Project Structure and Dependency Management
+**Status**: Decided
+**Priority**: High
+
+**Context**
+- The project is composed of multiple, independent services that work together. We need a clear and robust strategy for managing the source code of these services within the main `dev-stack` repository.
+- There has been confusion in the past due to inconsistencies between the documented structure (Git submodules) and the implementation (Docker build context).
+
+**Decision: Git Submodules as the Source of Truth**
+- The `dev-stack` repository will act as a "superproject" that manages its constituent services (`fundraising-service`, `twenty-core`) as Git submodules.
+- The canonical source for the project structure is the `.gitmodules` file. All other configurations, including Docker Compose build contexts, must align with this file.
+- The `fundraising-service` and `twenty-core` repositories will be located within the `services/` directory of the `dev-stack` repository.
+
+**Why**
+- **Version Pinning**: Submodules allow us to pin a specific version (commit) of a service, ensuring that the `dev-stack` is always in a known, consistent state. This is crucial for stability and reproducible builds.
+- **Independent Development**: Each service can be developed and tested independently in its own repository, with its own commit history.
+- **Clear Separation of Concerns**: It enforces a clean separation between the orchestration layer (`dev-stack`) and the services themselves.
+- **Alignment with Documentation**: This decision aligns the project's implementation with its long-standing documentation, reducing confusion for current and future developers.
+
+**Development Workflow**
+- When cloning the `dev-stack` repository, always use the `--recurse-submodules` flag: `git clone --recurse-submodules ...`
+- To pull the latest updates for all services, use: `git submodule update --remote --merge`
+- Changes made within a submodule must be committed and pushed from within that submodule's directory. The `dev-stack` superproject must then be updated to point to the new commit.
 
 ---
 
