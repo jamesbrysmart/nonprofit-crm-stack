@@ -1,133 +1,217 @@
 name: twenty
 
 services:
+  db:
+    image: postgres:16
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Mount your init scripts here (e.g., init-db.sh / 00-init.sql)
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"   # optional; only needed for host psql/GUI
+    environment:
+      POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+      POSTGRES_DB: ${PG_DATABASE_NAME:-default}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-default}"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    restart: always
+    networks: [dev-net]
+
+  # one-shot gate that proves cross-container reachability
+  db-wait:
+    image: postgres:16-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -lc 'i=0; until pg_isready -h db -p 5432; do
+                i=$$((i+1)); [ $$i -ge 120 ] && echo "DB wait timeout" && exit 1;
+                echo "waiting for db..."; sleep 1;
+              done; echo "DB ready."'
+    restart: "no"
+    networks: [dev-net]
+
+  redis:
+    image: redis:7-alpine
+    command: ["--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    restart: always
+    networks: [dev-net]
+
   server:
     image: twentycrm/twenty:${TAG:-latest}
+    profiles: ["fast"]
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
     ports:
       - "3000:3000"
     environment:
       NODE_PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/default
-      SERVER_URL: ${SERVER_URL}
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DISABLE_DB_MIGRATIONS: ${DISABLE_DB_MIGRATIONS}
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${PG_DATABASE_NAME:-default}
+      PGUSER: ${PG_DATABASE_USER:-postgres}
+      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+      PGSSLMODE: disable
+      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
+      DISABLE_DB_MIGRATIONS: "false"
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SERVER_URL: ${SERVER_URL}
       DISABLE_CRON_JOBS_REGISTRATION: ${DISABLE_CRON_JOBS_REGISTRATION}
-
       STORAGE_TYPE: ${STORAGE_TYPE}
       STORAGE_S3_REGION: ${STORAGE_S3_REGION}
       STORAGE_S3_NAME: ${STORAGE_S3_NAME}
       STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-
       APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
-      # MESSAGING_PROVIDER_GMAIL_ENABLED: ${MESSAGING_PROVIDER_GMAIL_ENABLED}
-      # CALENDAR_PROVIDER_GOOGLE_ENABLED: ${CALENDAR_PROVIDER_GOOGLE_ENABLED}
-      # AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID}
-      # AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET}
-      # AUTH_GOOGLE_CALLBACK_URL: ${AUTH_GOOGLE_CALLBACK_URL}
-      # AUTH_GOOGLE_APIS_CALLBACK_URL: ${AUTH_GOOGLE_APIS_CALLBACK_URL}
-
-      # CALENDAR_PROVIDER_MICROSOFT_ENABLED: ${CALENDAR_PROVIDER_MICROSOFT_ENABLED}
-      # MESSAGING_PROVIDER_MICROSOFT_ENABLED: ${MESSAGING_PROVIDER_MICROSOFT_ENABLED}
-      # AUTH_MICROSOFT_ENABLED: ${AUTH_MICROSOFT_ENABLED}
-      # AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID}
-      # AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET}
-      # AUTH_MICROSOFT_CALLBACK_URL: ${AUTH_MICROSOFT_CALLBACK_URL}
-      # AUTH_MICROSOFT_APIS_CALLBACK_URL: ${AUTH_MICROSOFT_APIS_CALLBACK_URL}
-
-      # EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-contact@yourdomain.com}
-      # EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-"John from YourDomain"}
-      # EMAIL_SYSTEM_ADDRESS: ${EMAIL_SYSTEM_ADDRESS:-system@yourdomain.com}
-      # EMAIL_DRIVER: ${EMAIL_DRIVER:-smtp}
-      # EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-smtp.gmail.com}
-      # EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-465}
-      # EMAIL_SMTP_USER: ${EMAIL_SMTP_USER:-}
-      # EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD:-}
-
     depends_on:
       db:
         condition: service_healthy
+      db-wait:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: curl --fail http://localhost:3000/healthz
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/healthz"]
       interval: 5s
       timeout: 5s
       retries: 20
     restart: always
-    networks:
-      - dev-net
+    networks: [dev-net]
 
-  worker:
+  server-src:
     build:
       context: ./services/twenty-core
       dockerfile: ./packages/twenty-docker/twenty/Dockerfile
+    profiles: ["source"]
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
-    command: ["yarn", "worker:prod"]
+    ports:
+      - "3000:3000"
     environment:
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/default
-      SERVER_URL: ${SERVER_URL}
+      NODE_PORT: 3000
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DISABLE_DB_MIGRATIONS: "true" # it already runs on the server
-      DISABLE_CRON_JOBS_REGISTRATION: "true" # it already runs on the server
-
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${PG_DATABASE_NAME:-default}
+      PGUSER: ${PG_DATABASE_USER:-postgres}
+      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+      PGSSLMODE: disable
+      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
+      DISABLE_DB_MIGRATIONS: "false"
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SERVER_URL: ${SERVER_URL}
+      DISABLE_CRON_JOBS_REGISTRATION: ${DISABLE_CRON_JOBS_REGISTRATION}
       STORAGE_TYPE: ${STORAGE_TYPE}
       STORAGE_S3_REGION: ${STORAGE_S3_REGION}
       STORAGE_S3_NAME: ${STORAGE_S3_NAME}
       STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-
       APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
-      # MESSAGING_PROVIDER_GMAIL_ENABLED: ${MESSAGING_PROVIDER_GMAIL_ENABLED}
-      # CALENDAR_PROVIDER_GOOGLE_ENABLED: ${CALENDAR_PROVIDER_GOOGLE_ENABLED}
-      # AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID}
-      # AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET}
-      # AUTH_GOOGLE_CALLBACK_URL: ${AUTH_GOOGLE_CALLBACK_URL}
-      # AUTH_GOOGLE_APIS_CALLBACK_URL: ${AUTH_GOOGLE_APIS_CALLBACK_URL}
-
-      # CALENDAR_PROVIDER_MICROSOFT_ENABLED: ${CALENDAR_PROVIDER_MICROSOFT_ENABLED}
-      # MESSAGING_PROVIDER_MICROSOFT_ENABLED: ${MESSAGING_PROVIDER_MICROSOFT_ENABLED}
-      # AUTH_MICROSOFT_ENABLED: ${AUTH_MICROSOFT_ENABLED}
-      # AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID}
-      # AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET}
-      # AUTH_MICROSOFT_CALLBACK_URL: ${AUTH_MICROSOFT_CALLBACK_URL}
-      # AUTH_MICROSOFT_APIS_CALLBACK_URL: ${AUTH_MICROSOFT_APIS_CALLBACK_URL}
-
-      # EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-contact@yourdomain.com}
-      # EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-"John from YourDomain"}
-      # EMAIL_SYSTEM_ADDRESS: ${EMAIL_SYSTEM_ADDRESS:-system@yourdomain.com}
-      # EMAIL_DRIVER: ${EMAIL_DRIVER:-smtp}
-      # EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-smtp.gmail.com}
-      # EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-465}
-      # EMAIL_SMTP_USER: ${EMAIL_SMTP_USER:-}
-      # EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD:-}
-
     depends_on:
       db:
         condition: service_healthy
-      server:
+      db-wait:
+        condition: service_completed_successfully
+      redis:
         condition: service_healthy
-    restart: always
-
-  db:
-    image: postgres:16
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
-      POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
     healthcheck:
-      test: pg_isready -U ${PG_DATABASE_USER:-postgres} -h localhost -d postgres
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/healthz"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
     restart: always
+    networks: [dev-net]
 
-  redis:
-    image: redis
+  worker:
+    image: twentycrm/twenty:${TAG:-latest}
+    profiles: ["fast"]
+    command: ["yarn", "worker:prod"]
+    environment:
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      SERVER_URL: ${SERVER_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${PG_DATABASE_NAME:-default}
+      PGUSER: ${PG_DATABASE_USER:-postgres}
+      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+      PGSSLMODE: disable
+      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+      STORAGE_TYPE: ${STORAGE_TYPE}
+      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
+      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
+      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+      APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      db-wait:
+        condition: service_completed_successfully
+      server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
-    command: ["--maxmemory-policy", "noeviction"]
+    networks: [dev-net]
+
+  worker-src:
+    build:
+      context: ./services/twenty-core
+      dockerfile: ./packages/twenty-docker/twenty/Dockerfile
+    profiles: ["source"]
+    command: ["yarn", "worker:prod"]
+    environment:
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      SERVER_URL: ${SERVER_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${PG_DATABASE_NAME:-default}
+      PGUSER: ${PG_DATABASE_USER:-postgres}
+      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+      PGSSLMODE: disable
+      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+      STORAGE_TYPE: ${STORAGE_TYPE}
+      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
+      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
+      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+      APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      db-wait:
+        condition: service_completed_successfully
+      server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    networks: [dev-net]
 
   fundraising-service:
     build:
@@ -137,10 +221,28 @@ services:
       - "4500:4500"
     env_file:
       - .env
+    environment:
+      # make the app actually listen on 4500 and point at db
+      PORT: 4500
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: fundraising
+      DB_USER: ${PG_DATABASE_USER:-postgres}
+      DB_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:4500/health"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
     depends_on:
-      - db
-    networks:
-      - dev-net
+      db:
+        condition: service_healthy
+      db-wait:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: on-failure:5
+    networks: [dev-net]
 
   gateway:
     image: nginx:alpine
@@ -148,14 +250,18 @@ services:
       - "4000:80"
     volumes:
       - ./nginx/gateway.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      server:
+        condition: service_healthy
+      fundraising-service:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:80"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: always
-    networks:
-      - dev-net
+    networks: [dev-net]
 
 volumes:
   db-data:
