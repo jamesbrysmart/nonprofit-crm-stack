@@ -36,3 +36,4 @@
   - The `fundraising-service` healthcheck (`test: ["CMD", "curl", "-f", "http://localhost:4500/health"]`) currently fails, even though the application itself starts successfully.
   - This issue is currently worked around by setting `gateway`'s dependency to `condition: service_started`.
   - Further investigation is needed to debug the healthcheck or its endpoint.
+- **Docker Compose Profiles:** This project uses Docker Compose profiles to manage which services are started. The `fast` profile is used for development, which pulls pre-built images. Always use the `--profile fast` flag when running `docker compose` commands. Before making any changes to the `docker-compose.yml` file, always consult the `DOCKER_ENV_APPROACH.md` file.
