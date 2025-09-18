@@ -119,4 +119,4 @@ The fundraising-service now exposes matching endpoints so we can persist Gifts l
 
   Returns the stored records in the fundraising Postgres database, ordered newest first.
 
-These endpoints do not yet push to Twenty automatically—the follow-up step is to call `POST /rest/gifts` after the local insert succeeds.
+When the fundraising-service receives a `POST /gifts` request it now also forwards a minimal payload (`amount`, optional `contactId`/`campaignId`, `date`) to Twenty’s REST API. Failures are logged but the local save still succeeds so we can retry the mirror later if needed.

@@ -127,6 +127,12 @@ As a fundraiser, I want to create and list Gifts through the unified CRM gateway
 - Gift entity persists to the fundraising Postgres DB (`gift` table) with currency amount + timestamps; manual smoke test via `curl` confirmed inserts are readable through the gateway and the database reflects the rows.
 - Twenty REST `POST /rest/gifts` validated separately—next step is wiring that call after local persistence so the CRM stays in sync.
 
+### Progress (2025-09-18, session 2)
+
+- Gift service now mirrors each successful local create to Twenty’s REST API using `TWENTY_API_KEY` / `TWENTY_API_BASE_URL`, logging (but not failing) if the upstream request errors.
+- Environment and compose updates expose those variables so the mirror works in the stack; confirmed local DB + mirror flow with curl after recreating the `gift` table.
+- Auto-migration wiring still pending (table recreated by hand); track as follow-up.
+
 ## Notes / Follow-ups
 
 - Do not modify `twenty-core`; keep the logic inside `fundraising-service`.

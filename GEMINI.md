@@ -7,7 +7,8 @@
 - **Debugging Learnings:** When host-based scripts (e.g., TypeORM migrations) connect to Docker services, ensure: 1. The service's port (e.g., 5432 for Postgres) is mapped to the host in `docker-compose.yml`. 2. The script's connection credentials (from `.env`) match the service's credentials in `docker-compose.yml`. 3. File generation paths in scripts (like `migration:generate`) match the paths where the tools expect to find them.
 - **Debugging Learnings (2025-09-18):** Let Twenty's migrations create the `core` schema. The Postgres init script should only provision required extensions (e.g., `uuid-ossp`, `pgcrypto`) and can set the search_path once the schema exists; if the schema is pre-created, the app skips migrations and fails with missing `core.workspace`.
 - **Authentication:** Twenty's APIs are authenticated using a long-lived API key, which must be sent as a bearer token in the `Authorization` header (e.g., `Authorization: Bearer <API_KEY>`). The `x-api-key` header is incorrect.
-- **POC Status:** Metadata API still blocked, so focus on fundraising-service REST slice. Reference `docs/TWENTY_GIFTS_API.md` for the Twenty endpoints (`GET/POST /gifts`, etc.)—we now persist gifts locally via `/api/fundraising/gifts` (stored in the fundraising DB) and verified `POST /rest/gifts` with payload `{ "amount": { "currencyCode": "GBP", "value": 100 } }` creates the matching Twenty record.
+- **POC Status:** Metadata API still blocked, so focus on fundraising-service REST slice. Reference `docs/TWENTY_GIFTS_API.md` for the Twenty endpoints (`GET/POST /gifts`, etc.)—we now persist gifts locally via `/api/fundraising/gifts`; each create forwards a mirrored payload to Twenty (`POST /rest/gifts`) using `TWENTY_API_KEY` / `TWENTY_API_BASE_URL`, logging failures but keeping the local save.
+- **TODO:** Finish TypeORM migration wiring for fundraising-service (current attempt didn’t recreate the `gift` table automatically—we hand-created it before testing the mirror).
 - **TODO:** Finish wiring TypeORM migrations for fundraising-service (current attempt to auto-run migrations didn’t create the `gift` table—likely because TypeORM only sees compiled JS under `dist/`; revisit when we have bandwidth).
 - **Project Structure:** This project uses Git submodules to manage the `fundraising-service` and `twenty-core` repositories. These submodules are located in the `services/` directory. Always ensure that the `docker-compose.yml` file and other configurations align with this structure. Refer to `DECISIONS.md` (D-0014) for more details.
 - **Submodule Code Constraint:** Do not modify code within third-party Git submodules like `twenty-core`, as these changes can be overwritten or cause conflicts during updates. Propose non-invasive solutions or workarounds instead.
@@ -37,3 +38,17 @@
 - **Task Management:** If I see an outstanding task in my memory, I will ask if it's completed and for permission to update it to completed rather than running it blindly.
 - **Docker Compose Profiles:** This project uses Docker Compose profiles to manage which services are started. The `fast` profile is used for development, which pulls pre-built images. Always use the `--profile fast` flag when running `docker compose` commands. Before making any changes to the `docker-compose.yml` file, always consult the `DOCKER_ENV_APPROACH.md` file.
 - **Metadata API Blocker:** Programmatic creation of custom objects via the metadata API is currently blocked. The API returns an "Unknown argument 'input'" error when attempting to create an object with `curl`. This is a known issue, and the recommended approach is to wait for the "import and export twenty configurations" feature, which is expected by the end of Q3.
+- Today’s Progress (18/9/25):
+  - Fundraising-service now forwards each successful POST /gifts to Twenty’s REST API using TWENTY_API_KEY /
+  TWENTY_API_BASE_URL, logging failures without breaking the local save. Environment wiring (docker-
+  compose.yml, .env.example) exposes those variables so the mirror works locally.
+  - Manual smoke test: gateway → fundraising-service → fundraising DB → Twenty REST call (verified locally and via
+  logs). Table recreation was done by hand; auto-migration wiring is captured as a follow-up in GEMINI.md and the issue
+  doc.
+  - Repo hygiene: Added mirror notes to docs/TWENTY_GIFTS_API.md, updated GEMINI.md memory and the GitHub issue progress
+  section. No new commits today; current changes remain staged in working tree for next session.
+
+  Next Session Ideas
+
+  1. Finish TypeORM migration wiring so the gift table is created automatically.
+  2. Improve mirror reliability (retry/backoff, richer payload) once migrations are solid.

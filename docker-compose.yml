@@ -234,6 +234,8 @@ services:
       DB_NAME: fundraising
       DB_USER: ${PG_DATABASE_USER:-postgres}
       DB_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+      TWENTY_API_KEY: ${TWENTY_API_KEY:-}
+      TWENTY_API_BASE_URL: ${TWENTY_API_BASE_URL:-http://server:3000/rest}
     healthcheck:
       test: ["CMD-SHELL","node -e \"fetch('http://localhost:4500/health',{cache:'no-store'}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
