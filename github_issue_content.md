@@ -101,3 +101,34 @@ The `fundraising-service` reports successful startup in its logs, but its config
 As a workaround, the `gateway` service's dependency on `fundraising-service` has been changed to `condition: service_started` in `docker-compose.yml`.
 
 Further investigation is needed to determine why the healthcheck fails. This could involve debugging the `/health` endpoint in the `fundraising-service` or adjusting the healthcheck parameters. This is a separate issue from the primary `localhost|postgres` connection problem.
+---
+
+# POC: Expose fundraising Gifts API via gateway
+
+## Goal
+
+Demonstrate the managed-extension approach by shipping a thin vertical slice where the fundraising-service owns Gift data and is reachable through the existing gateway, while keeping Twenty as the UX/home for users once metadata automation is available.
+
+## User Story
+
+As a fundraiser, I want to create and list Gifts through the unified CRM gateway so that fundraising functionality feels like part of Twenty even though the logic runs in the fundraising-service.
+
+## Acceptance Criteria
+
+- `fundraising-service` exposes REST endpoints (e.g., `POST /gifts`, `GET /gifts`, `GET /gifts/:id`) mounted at `/api/fundraising/gifts` via the nginx gateway.
+- Gifts persist in the fundraising Postgres database using the existing TypeORM entity.
+- The service validates `contactId` (and, if available, `campaignId`) against Twenty using the Data API or a stubbed adapter so we respect D-0001 boundaries.
+- Automated or manual smoke test proves a request flowing from gateway → fundraising-service → fundraising DB.
+- Technical notes capture how this will map to Twenty custom objects once the metadata API blocker is removed.
+
+### Progress (2025-09-18)
+
+- Added `GiftModule` in fundraising-service with `POST /gifts` and `GET /gifts` endpoints; nginx gateway now proxies `/api/fundraising/gifts`.
+- Gift entity persists to the fundraising Postgres DB (`gift` table) with currency amount + timestamps; manual smoke test via `curl` confirmed inserts are readable through the gateway and the database reflects the rows.
+- Twenty REST `POST /rest/gifts` validated separately—next step is wiring that call after local persistence so the CRM stays in sync.
+
+## Notes / Follow-ups
+
+- Do not modify `twenty-core`; keep the logic inside `fundraising-service`.
+- Track progress on the metadata API blocker separately; once lifted we can mirror Gifts back into Twenty UI per D-0002.
+- Revisit authentication once gateway session propagation work (D-0004) begins; short-term API key is acceptable.
