@@ -25,17 +25,13 @@ The PostgreSQL database (`db` service) requires specific initialization for both
 *   **Centralized Database Name:**
     *   The `PG_DATABASE_NAME` environment variable in `.env` is set to `postgres`. This aligns the entire stack to use the `postgres` database, which some internal Twenty CRM code paths default to.
 *   **Database Initialization Scripts (mounted into `/docker-entrypoint-initdb.d`):**
-    *   `db/init/00-twenty-init.sh`: This script is executed first. It connects to the `$POSTGRES_DB` (which is now `postgres`), creates the `core` schema, adds necessary extensions (`uuid-ossp`, `pgcrypto`), and sets the `search_path` for the database to `core, public`.
+    *   `db/init/00-twenty-init.sh`: This script is executed first. It connects to the `$POSTGRES_DB` (which is now `postgres`), ensures required extensions (`uuid-ossp`, `pgcrypto`) exist, and sets the database `search_path` to prefer the `core` schema once migrations create it. Schema creation itself is left to the Twenty application migrations.
         ```bash
         #!/bin/bash
         set -e
         psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
-          CREATE SCHEMA IF NOT EXISTS core;
           CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
           CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-        EOSQL
-        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOSQL
-          ALTER DATABASE "$POSTGRES_DB" SET search_path = core, public;
         EOSQL
         ```
     *   `db/init/01-init-fundraising-db.sh`: This script runs after `00-twenty-init.sh`. It connects to the `$POSTGRES_DB` (now `postgres`) and creates the `fundraising` database.

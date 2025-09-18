@@ -5,16 +5,15 @@ services:
     image: postgres:16
     volumes:
       - db-data:/var/lib/postgresql/data
-      # Mount your init scripts here (e.g., init-db.sh / 00-init.sql)
       - ./db/init:/docker-entrypoint-initdb.d:ro
     ports:
-      - "5432:5432"   # optional; only needed for host psql/GUI
+      - "5432:5432"   # optional (for local psql/GUI)
     environment:
       POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
       POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
-      POSTGRES_DB: ${PG_DATABASE_NAME:-default}
+      POSTGRES_DB: ${PG_DATABASE_NAME:-postgres}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-default}"]
+      test: ["CMD-SHELL","pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -36,6 +35,29 @@ services:
     restart: "no"
     networks: [dev-net]
 
+  migrate:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./services/twenty-core:/app:ro
+    environment:
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/postgres
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${PG_DATABASE_USER:-postgres}
+      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
+      PGDATABASE: postgres
+    depends_on:
+      db: { condition: service_healthy }
+      db-wait: { condition: service_completed_successfully }
+    networks: [dev-net]
+    command: >
+      sh -lc ' 
+        corepack enable &&
+        (yarn --immutable || yarn) &&
+        (yarn nx database:reset --configuration=no-seed || yarn nx database:migrate)
+      '
+
   redis:
     image: redis:7-alpine
     command: ["--maxmemory-policy", "noeviction"]
@@ -56,12 +78,12 @@ services:
       - "3000:3000"
     environment:
       NODE_PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
       PGHOST: db
       PGPORT: "5432"
-      PGDATABASE: ${PG_DATABASE_NAME:-default}
+      PGDATABASE: ${PG_DATABASE_NAME:-postgres}
       PGUSER: ${PG_DATABASE_USER:-postgres}
       PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       PGSSLMODE: disable
@@ -102,12 +124,12 @@ services:
       - "3000:3000"
     environment:
       NODE_PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
       PGHOST: db
       PGPORT: "5432"
-      PGDATABASE: ${PG_DATABASE_NAME:-default}
+      PGDATABASE: ${PG_DATABASE_NAME:-postgres}
       PGUSER: ${PG_DATABASE_USER:-postgres}
       PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       PGSSLMODE: disable
@@ -138,39 +160,24 @@ services:
     networks: [dev-net]
 
   worker:
-    image: twentycrm/twenty:${TAG:-latest}
-    profiles: ["fast"]
-    command: ["yarn", "worker:prod"]
+    image: twentycrm/twenty:${TAG:-v1.4.0}
+    command: ["yarn","worker:prod"]
     environment:
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
-      SERVER_URL: ${SERVER_URL}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
+      PG_DATABASE_URL: ${DATABASE_URL}
       PGHOST: db
       PGPORT: "5432"
-      PGDATABASE: ${PG_DATABASE_NAME:-default}
+      PGDATABASE: ${PG_DATABASE_NAME:-postgres}
       PGUSER: ${PG_DATABASE_USER:-postgres}
       PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       PGSSLMODE: disable
       IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
       DISABLE_DB_MIGRATIONS: "true"
-      DISABLE_CRON_JOBS_REGISTRATION: "true"
-      STORAGE_TYPE: ${STORAGE_TYPE}
-      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
-      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
-      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-      APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     depends_on:
-      db:
-        condition: service_healthy
-      db-wait:
-        condition: service_completed_successfully
-      server:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      server: { condition: service_healthy }
     restart: always
     networks: [dev-net]
 
@@ -181,18 +188,17 @@ services:
     profiles: ["source"]
     command: ["yarn", "worker:prod"]
     environment:
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
       SERVER_URL: ${SERVER_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-default}
+      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
       PGHOST: db
       PGPORT: "5432"
-      PGDATABASE: ${PG_DATABASE_NAME:-default}
+      PGDATABASE: ${PG_DATABASE_NAME:-postgres}
       PGUSER: ${PG_DATABASE_USER:-postgres}
       PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       PGSSLMODE: disable
       IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
-      DISABLE_DB_MIGRATIONS: "true"
       DISABLE_CRON_JOBS_REGISTRATION: "true"
       STORAGE_TYPE: ${STORAGE_TYPE}
       STORAGE_S3_REGION: ${STORAGE_S3_REGION}
@@ -222,7 +228,6 @@ services:
     env_file:
       - .env
     environment:
-      # make the app actually listen on 4500 and point at db
       PORT: 4500
       DB_HOST: db
       DB_PORT: 5432
@@ -230,18 +235,14 @@ services:
       DB_USER: ${PG_DATABASE_USER:-postgres}
       DB_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4500/health',{cache:'no-store'}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      test: ["CMD-SHELL","node -e \"fetch('http://localhost:4500/health',{cache:'no-store'}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 20s
     depends_on:
-      db:
-        condition: service_healthy
-      db-wait:
-        condition: service_completed_successfully
-      redis:
-        condition: service_healthy
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
     restart: on-failure:5
     networks: [dev-net]
 
