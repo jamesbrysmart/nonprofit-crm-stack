@@ -107,7 +107,7 @@ Further investigation is needed to determine why the healthcheck fails. This cou
 
 ## Goal
 
-Demonstrate the managed-extension approach by shipping a thin vertical slice where the fundraising-service owns Gift data and is reachable through the existing gateway, while keeping Twenty as the UX/home for users once metadata automation is available.
+Demonstrate the managed-extension approach by shipping a thin vertical slice where the fundraising-service orchestrates gift data **stored in Twenty**, all reachable through the existing gateway, keeping Twenty as the UX/home for users once metadata automation is available.
 
 ## User Story
 
@@ -116,22 +116,16 @@ As a fundraiser, I want to create and list Gifts through the unified CRM gateway
 ## Acceptance Criteria
 
 - `fundraising-service` exposes REST endpoints (e.g., `POST /gifts`, `GET /gifts`, `GET /gifts/:id`) mounted at `/api/fundraising/gifts` via the nginx gateway.
-- Gifts persist in the fundraising Postgres database using the existing TypeORM entity.
+- Gifts are written and read via Twenty's APIs (no local fundraising database persistence).
 - The service validates `contactId` (and, if available, `campaignId`) against Twenty using the Data API or a stubbed adapter so we respect D-0001 boundaries.
-- Automated or manual smoke test proves a request flowing from gateway → fundraising-service → fundraising DB.
+- Automated or manual smoke test proves a request flowing from gateway → fundraising-service → Twenty REST API.
 - Technical notes capture how this will map to Twenty custom objects once the metadata API blocker is removed.
 
-### Progress (2025-09-18)
+### Progress (2025-09-26)
 
-- Added `GiftModule` in fundraising-service with `POST /gifts` and `GET /gifts` endpoints; nginx gateway now proxies `/api/fundraising/gifts`.
-- Gift entity persists to the fundraising Postgres DB (`gift` table) with currency amount + timestamps; manual smoke test via `curl` confirmed inserts are readable through the gateway and the database reflects the rows.
-- Twenty REST `POST /rest/gifts` validated separately—next step is wiring that call after local persistence so the CRM stays in sync.
-
-### Progress (2025-09-18, session 2)
-
-- Gift service now mirrors each successful local create to Twenty’s REST API using `TWENTY_API_KEY` / `TWENTY_API_BASE_URL`, logging (but not failing) if the upstream request errors.
-- Environment and compose updates expose those variables so the mirror works in the stack; confirmed local DB + mirror flow with curl after recreating the `gift` table.
-- Auto-migration wiring still pending (table recreated by hand); track as follow-up.
+- Gift endpoints remain exposed via `/api/fundraising/gifts`, but persistence is now fully proxied to Twenty’s REST API (no local tables).
+- Manual smoke test: request flows gateway → fundraising-service → Twenty REST API and returns Twenty’s representation.
+- Metadata automation still blocked; manual object/field setup documented, and Metadata API retest scheduled per release.
 
 ## Notes / Follow-ups
 

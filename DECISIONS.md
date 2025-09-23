@@ -55,33 +55,35 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 ## D-0001: Domain boundaries & sources of truth
 **Decision**
-- **Contacts** are owned by **Twenty** (CRM).
-- **Fundraising (Gifts, Campaigns)** are owned by the **fundraising-service** database.
+- **Contacts** and **fundraising objects** (Gifts, Campaigns, etc.) live in **Twenty**. Our services orchestrate through Twenty's APIs rather than persisting a separate copy.
 
 **Why**
-- Keeps CRM responsibilities clean; fundraising logic can evolve independently (Gift Aid, webhooks, AI).
+- Mirrors the managed-package model (Salesforce NPSP analogy) and avoids bi-directional sync/duplication debt.
+- Keeps Twenty's native UX, workflows, and reporting as the single pane of glass for nonprofit staff.
 
 **UX impact**
-- Users create/edit Contacts in Twenty; Gifts link to a `contactId` from Twenty.
-- If a webhook arrives for an unknown donor, we create/match the Contact in Twenty first, then persist the Gift.
+- Users create and edit fundraising records directly inside Twenty; the fundraising-service acts as automation/AI glue.
+- External inputs (e.g., webhooks) must write via Twenty APIs so the source of truth stays aligned.
 
 **Alternatives considered**
-- Fundraising owns Contacts → rejected (split editing, messier UX).
+- Service-owned fundraising DB → rejected due to sync overhead and drifting UX.
+- Shared Postgres schema inside Twenty → higher coupling/risk during upgrades.
 
 ---
 
 ## D-0002: How Gifts/Campaigns appear in Twenty
 **Decision**
-- **Write-back (mirror)** a subset of fields into **Twenty custom objects** using the metadata API (`/graphql/metadata`), so Gifts/Campaigns feel native in lists/search.
+- Provision custom objects/fields inside **Twenty** (manually for now, automated once the Metadata API stabilises) and interact with them directly through Twenty's REST/GraphQL APIs.
 
 **Why**
-- Immediate “native” UX, minimal custom frontend. Gateway-only can still be added later for richer views.
+- Gives us the native Twenty UX, reporting, and workflows without maintaining a duplicate data model.
+- Keeps the managed-extension footprint small and avoids bespoke frontends during the POC.
 
 **Consequence**
-- We own a small, deterministic sync (idempotent upsert) from fundraising-service → Twenty.
+- Fundraising-service becomes an orchestration/automation layer; any local persistence is optional (e.g., caching, jobs).
 
 **Alternative**
-- **Gateway-only** (no mirror). Pros: no duplication; Cons: more custom UI, less out-of-the-box CRM goodness.
+- **Gateway-only** frontends backed by our own DB. Pros: full control; Cons: rebuilds UI, loses Twenty workflows.
 
 ---
 

@@ -1,28 +1,21 @@
 # Data Model
 
-This document outlines the database schema for the custom services in this project.
+This document outlines the current data ownership strategy for the managed-extension proof of concept.
 
-## `fundraising-service`
+## Twenty as the Source of Truth
 
-### Campaign Entity
+Custom fundraising objects (e.g., **Gift**, **Campaign**) now live inside Twenty itself. Our `fundraising-service` interacts with these records exclusively through Twenty's public APIs rather than maintaining a separate Postgres schema. This keeps customisations aligned with the "managed package" approach and avoids double-writing data.
 
-Represents a fundraising campaign.
+### Provisioning
 
-| Column      | Data Type         | Description                               |
-|-------------|-------------------|-------------------------------------------|
-| `id`        | `uuid`            | The primary key for the campaign.         |
-| `name`      | `string`          | The name of the campaign.                 |
-| `startDate` | `date`            | The date the campaign starts.             |
-| `endDate`   | `date`            | The date the campaign ends.               |
+- Objects and fields are created manually in the Twenty UI for the POC (see metadata runbook).
+- Once the Metadata API is reliable, we will automate this via scripts or configuration exports.
 
-### Gift Entity
+### Access Pattern
 
-Represents a single gift or donation.
+- `fundraising-service` creates and reads gifts via Twenty's REST API (`/rest/gifts`).
+- Any automation that reacts to user edits in Twenty will consume webhooks or polling endpoints when available.
 
-| Column       | Data Type         | Description                               |
-|--------------|-------------------|-------------------------------------------|
-| `id`         | `uuid`            | The primary key for the gift.             |
-| `campaignId` | `string` (uuid)   | Foreign key linking to a `campaign`.      |
-| `contactId`  | `string` (uuid)   | Foreign key linking to a `contact` in Twenty. |
-| `amount`     | `decimal(10, 2)`  | The monetary value of the gift.           |
-| `date`       | `date`            | The date the gift was made.               |
+## Service-Owned Storage
+
+At present no additional Postgres tables are owned by `fundraising-service`. Future auxiliary storage (e.g., caching, AI feature state) will be documented per service.
