@@ -93,71 +93,27 @@ This suggests that either the OpenAPI schema is incomplete for this field type, 
 ---
 
 
-## Current Status: Partially Blocked
+## Open Questions
 
-Programmatic creation of custom objects via the API is currently unreliable. While the API is responsive to introspection, attempts to create objects via `curl` or other scripts fail with a specific error, even though the same mutation works in the official GraphQL Playground.
-
-**Recommendation:** Avoid programmatic creation of custom objects for now. The official recommendation from the Twenty community is to wait for the **"import and export twenty configurations"** feature, expected by the end of Q3.
+- Automating `RELATION` / `LOOKUP` fields via the API remains unsolved; continue to create those manually in the UI until Twenty documents the payload or fixes the schema.
 
 ---
 
-## Key Findings
+### `v1-initial-schema.mjs` Script Status
 
-### 1. Successful Playground Mutation
+The `services/fundraising-service/src/metadata-scripts/v1-initial-schema.mjs` script has been updated to use the REST Metadata API for creating custom objects (`campaign`, `gift`) and their simple fields (`StartDate`, `EndDate`, `Amount`, `Date`). This script is intended to be run on the spinup of a new workspace to provision these essential metadata elements.
 
-We successfully created a custom object named `test` in the GraphQL API Playground.
+**Current Status and Known Limitations:**
 
-**Mutation:**
-```graphql
-mutation MyMutation {
-  createOneObject(
-    input: {object: {namePlural: "tests", nameSingular: "test", labelPlural: "Grants", labelSingular: "Grant"}}
-  ) {
-    id
-  }
-}
-```
+-   **Object and Simple Field Creation:** The script successfully creates custom objects and simple fields (e.g., `TEXT`, `DATE`, `CURRENCY`).
+-   **Naming Conventions:** It has been observed that `nameSingular` and `namePlural` fields for objects must be in `camelCase` (e.g., `campaign`, `campaigns`) to avoid `400 Bad Request` errors from the Twenty API.
+-   **Idempotency (Partial):** The script attempts to handle existing objects gracefully. If an object already exists, it will log a "Skipped: Object already exists." message. However, the current REST Metadata API does not provide a direct way to `GET` an object by its `nameSingular` via query parameters (e.g., `/rest/metadata/objects?filter[nameSingular]=campaign`). This means if an object exists, the script cannot programmatically retrieve its `id` to create associated fields in the same run.
+-   **LOOKUP/RELATION Fields:** Programmatic creation of `LOOKUP` or `RELATION` fields via the API remains problematic. These fields (e.g., linking `gift` to `campaign`, or `gift` to `person`) still require manual creation in the Twenty UI after the script has run.
 
-**Implication:** This proves that the API *is capable* of creating custom objects and that API key authentication (`Authorization: Bearer <API_KEY>`) is working correctly. The issue seems to be with how the API endpoint handles requests from non-playground clients.
+**Recommendation:**
 
-### 2. Failed Programmatic Mutation (cURL)
-
-When the exact same mutation is sent via `curl`, it consistently fails.
-
-**Error Response:**
-```json
-{
-  "errors": [
-    {
-      "message": "Unknown argument \"input\" on field \"Mutation.createOneObject\"",
-      "locations": [
-        {
-          "line": 1,
-          "column": 40
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Implication:** This discrepancy between the Playground and direct API calls is the core of the blocker. The `input` argument, which is clearly part of the schema and works in the playground, is not recognized in this context.
-
-### 3. Successful Introspection
-
-The API responds successfully to standard GraphQL introspection queries. This allows us to retrieve the schema, which can be useful for reference and for generating types or documentation.
+Run `v1-initial-schema.mjs` on new workspace spinup. After execution, manually create any necessary `LOOKUP` or `RELATION` fields in the Twenty UI. Further attention is needed to enhance the script's idempotency for field creation and to address the `LOOKUP` field creation via API once Twenty's Metadata API supports it.
 
 ---
 
-## Workaround: Manual Object Creation and REST API Mirror
-
-As per architectural decision D-0001, the `fundraising-service` is the canonical owner of gift data and requires its own database. The data is then mirrored to Twenty for a unified user experience.
-
-The metadata API was intended to automate the creation of the custom `Gift` object in Twenty that serves as the target for this mirror. Due to the API blocker, the current workaround is as follows:
-
-1.  **Manual Object Creation:** The `Gift` custom object must be created manually in the Twenty UI.
-2.  **REST API Mirror:** The `fundraising-service` saves a gift to its own database and then makes a `POST` request to Twenty's standard REST API (`/rest/gifts`) to create a corresponding record in the manually created object.
-
-This approach is documented in `docs/TWENTY_GIFTS_API.md`.
-
-```
+_Last updated: 2025-09-26_

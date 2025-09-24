@@ -84,39 +84,36 @@ All routes are rooted at `https://api.twentycrm.com`, and in our local stack the
 - Authentication: requires a valid API key passed as `Authorization: Bearer <token>`.
 - This reference is a stopgap until metadata automation lets us provision the object programmatically.
 
-## Fundraising-Service Mirror (Local)
+## Fundraising-Service Proxy (Local)
 
-The fundraising-service now exposes matching endpoints so we can persist Gifts locally and proxy them through the gateway:
+The fundraising-service now acts as a thin proxy in front of Twenty:
 
-- `POST http://localhost:4000/api/fundraising/gifts`
+- `POST http://localhost:4000/api/fundraising/gifts` forwards the request body directly to `http://localhost:3000/rest/gifts` using the configured `TWENTY_API_KEY` and returns the raw Twenty JSON response. No local persistence is performed.
+- `GET http://localhost:4000/api/fundraising/gifts` issues the same request to Twenty’s `/rest/gifts` endpoint (including any query parameters) and returns the exact payload from Twenty.
+- `GET http://localhost:4000/api/fundraising/gifts/{id}` proxies to Twenty’s `/rest/gifts/{id}` and surfaces the response unchanged; query parameters such as `depth` are forwarded as-is.
+- `PATCH http://localhost:4000/api/fundraising/gifts/{id}` forwards updates to Twenty’s `/rest/gifts/{id}` and returns the raw update payload.
+- `DELETE http://localhost:4000/api/fundraising/gifts/{id}` forwards deletes to Twenty and surfaces the response (usually the deleted id).
 
-  ```bash
-  curl -s \
-    -H "Content-Type: application/json" \
-    -d '{"contactId":"gateway-contact","amountCurrencyCode":"GBP","amountValue":"50.00","date":"2025-09-17"}' \
-    http://localhost:4000/api/fundraising/gifts
-  ```
+Quick check:
 
-  Response:
+```bash
+cd services/fundraising-service
+npm run smoke:gifts
+```
 
-  ```json
-  {
-    "data": {
-      "gift": {
-        "id": "ff6105b7-4fe2-49b2-82b3-cfb0c7d38709",
-        "contactId": "gateway-contact",
-        "campaignId": null,
-        "amount": { "currencyCode": "GBP", "value": "50.00" },
-        "date": "2025-09-17",
-        "createdAt": "2025-09-18T14:54:55.342Z",
-        "updatedAt": "2025-09-18T14:54:55.342Z"
-      }
-    }
-  }
-  ```
+The script exercises create → list → get → update → delete through the proxy so any regression shows up before manual metadata work.
 
-- `GET http://localhost:4000/api/fundraising/gifts`
+> Always re-run the smoke script after significant gateway/service changes so we catch regressions before touching metadata or UI flows.
 
-  Returns the stored records in the fundraising Postgres database, ordered newest first.
+Example (manual curl matching the direct REST call):
 
-When the fundraising-service receives a `POST /gifts` request it now also forwards a minimal payload (`amount`, optional `contactId`/`campaignId`, `date`) to Twenty’s REST API. Failures are logged but the local save still succeeds so we can retry the mirror later if needed.
+```bash
+TWENTY_API_KEY=$(sed -n 's/^TWENTY_API_KEY=\(.*\)$/\1/p' .env | tr -d '"')
+curl -s \
+  -H "Authorization: Bearer ${TWENTY_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":{"currencyCode":"GBP","value":100}}' \
+  http://localhost:4000/api/fundraising/gifts
+```
+
+The response is identical to calling `http://localhost:3000/rest/gifts` directly, ensuring the smoke test reflects reality in Twenty’s UI.

@@ -10,6 +10,7 @@
 - **POC Status:** Metadata API still blocked. Fundraising-service now treats Twenty as the source of truth—`POST/GET /gifts` proxy directly to Twenty's REST API using `TWENTY_API_KEY` / `TWENTY_API_BASE_URL`; no local gift table.
 - **TODO:** Track Metadata API status and document manual object/field setup until automation is available.
 - **Project Structure:** This project uses Git submodules to manage the `fundraising-service` and `twenty-core` repositories. These submodules are located in the `services/` directory. Always ensure that the `docker-compose.yml` file and other configurations align with this structure. Refer to `DECISIONS.md` (D-0014) for more details.
+- **Git Hygiene:** When submodule staging fails with `Unable to create .../index.lock` or `insufficient permission for adding an object`, reown the submodule Git data from the superproject root: `sudo chown -R jamesbryant:jamesbryant .git/modules/services/fundraising-service` (or the relevant submodule path) before retrying `git add`.
 - **Submodule Code Constraint:** Do not modify code within third-party Git submodules like `twenty-core`, as these changes can be overwritten or cause conflicts during updates. Propose non-invasive solutions or workarounds instead.
 - At the start of a new session, read the contents of README.md and DECISIONS.md to establish context.
 - Use `docker compose` (with a space), not `docker-compose` (with a hyphen), as this project uses Docker Compose V2.
@@ -51,3 +52,18 @@
 
   1. Finish TypeORM migration wiring so the gift table is created automatically.
   2. Improve mirror reliability (retry/backoff, richer payload) once migrations are solid.
+- **Data Persistence:** Avoid deleting the Twenty workspace. Be mindful of Docker commands like `docker compose down -v` that destroy data. When tearing down the environment, prefer `docker compose down` and only use the `-v` flag if explicitly confirmed that a database reset is intended.
+- **Debugging Learnings (2025-09-24): Environment Variable Overrides**
+  - **Problem:** The `TWENTY_API_KEY` environment variable within a Docker Compose service (e.g., `fundraising-service`) was consistently incorrect, leading to `401 Workspace not found` errors, despite the `.env` file containing the correct key.
+  - **Symptom:** `docker compose config` showed the incorrect key, and `docker compose exec <service> printenv TWENTY_API_KEY` also showed the incorrect key.
+  - **Cause:** A shell environment variable (`export TWENTY_API_KEY=...`) in the user's terminal session was overriding the value in the `.env` file. Docker Compose prioritizes shell environment variables over those in `.env` files. The variable was a "ghost" key, different from both the current and previous `.env` values.
+  - **Diagnostic Steps:**
+    1.  Verify `.env` file content (correct).
+    2.  Search project for old key (not found).
+    3.  Run `docker compose config` to see resolved environment (showed incorrect key).
+    4.  Run `echo $TWENTY_API_KEY` in the shell (showed blank or incorrect key, depending on shell context).
+    5.  Crucially, starting a *new terminal session* and running `docker compose config` showed the *correct* key, proving the issue was session-specific.
+  - **Solution:**
+    1.  Identify and `unset TWENTY_API_KEY` in the problematic shell session.
+    2.  Check shell startup files (`.bashrc`, `.zshrc`, `.profile`) for persistent `export` statements and remove them if found.
+    3.  Restart Docker Compose services to pick up the corrected environment.
