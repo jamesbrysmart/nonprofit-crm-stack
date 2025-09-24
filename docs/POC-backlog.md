@@ -9,7 +9,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Twenty shows the new record; response payload matches expectations.
   - Manual metadata setup (API or UI) captured in docs.
   - Logs reviewed, with open issues noted.
-- **Notes:** Depends on the manual object/field setup; no local Postgres use.
+- **Notes:** Depends on the manual object/field setup; no local Postgres use. `npm run smoke:gifts` now automates create → list → get → update → delete and leaves a persistent record labelled "Persistent Smoke Test Gift" for UI verification.
 
 ## 2. Metadata Runbook & Release Watch
 - **Goal:** Document programmatic provisioning of custom objects/fields and track Metadata API behaviour (especially relation fields) across Twenty releases.
@@ -40,6 +40,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Short design note describing retry/backoff strategy and observability hooks.
   - Code updates around REST calls (e.g., retry wrapper, structured logging, TODO for DLQ/webhooks).
   - Manual failure simulation with expected logging/behavior captured.
+- **Status:** Basic retry with backoff and response validation is in place; follow-ups on structured logging, alerting, and failure drills remain open.
 
 ## 6. Operational Hygiene & Runbook
 - **Goal:** Ensure the stack is operable without heroics (health/readiness endpoints, logging, restart instructions).

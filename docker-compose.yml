@@ -78,9 +78,9 @@ services:
       - "3000:3000"
     environment:
       NODE_PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
+      PG_DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
+      DATABASE_URL: ${DATABASE_URL}
       PGHOST: db
       PGPORT: "5432"
       PGDATABASE: ${PG_DATABASE_NAME:-postgres}
@@ -163,8 +163,8 @@ services:
     image: twentycrm/twenty:${TAG:-v1.4.0}
     command: ["yarn","worker:prod"]
     environment:
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
-      PG_DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/postgres}
+      PG_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
       PGHOST: db
       PGPORT: "5432"
       PGDATABASE: ${PG_DATABASE_NAME:-postgres}
@@ -188,10 +188,10 @@ services:
     profiles: ["source"]
     command: ["yarn", "worker:prod"]
     environment:
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
+      PG_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
       SERVER_URL: ${SERVER_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/postgres}
       PGHOST: db
       PGPORT: "5432"
       PGDATABASE: ${PG_DATABASE_NAME:-postgres}

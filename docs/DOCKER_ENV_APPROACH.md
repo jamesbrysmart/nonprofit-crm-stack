@@ -57,6 +57,7 @@ Consistent and explicit environment variable configuration is crucial for inter-
     *   `PGUSER: ${PG_DATABASE_USER:-postgres}`
     *   `PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}`
     *   `PGSSLMODE: disable`
+    *   `.env` now defines a canonical `DATABASE_URL=postgres://postgres:postgres@db:5432/postgres`; the worker services additionally pin `PG_DATABASE_URL` directly to that string to prevent host shell overrides from introducing `localhost` DSNs. After editing `.env`, recreate `server` and `worker` (`docker compose --profile fast up -d --force-recreate server worker`) so the new value is applied.
 *   **Configuration Mode:**
     *   `IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"` is set for `server`, `server-src`, `worker`, and `worker-src`. This forces the application to read configuration from environment variables only, preventing premature database reads before migrations complete.
 *   **Migration Control:**

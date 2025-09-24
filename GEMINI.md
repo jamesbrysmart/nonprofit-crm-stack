@@ -3,6 +3,7 @@
 - It is the central orchestration point for the AI-first non-profit CRM solution, which also involves the 'twenty-core' and 'fundraising-service' projects.
 - When discussing how to build new features, always consult the DECISIONS.md file first to ensure the proposed approach aligns with established architectural principles.
 - For this project, I should constantly consider whether the current approach is the best one and challenge it or suggest alternatives if I believe it can be done better, especially for foundational architectural decisions.
+- When providing Docker commands, include a one-line explanation (e.g., what `-d`, `-f`, or `--force-recreate` do) so the team doesn’t have to look them up repeatedly.
 - Architectural decisions should be recorded in `DECISIONS.md` as an ADR. This includes new decisions and updating existing ones if they are reconsidered.
 - **Debugging Learnings:** When host-based scripts (e.g., TypeORM migrations) connect to Docker services, ensure: 1. The service's port (e.g., 5432 for Postgres) is mapped to the host in `docker-compose.yml`. 2. The script's connection credentials (from `.env`) match the service's credentials in `docker-compose.yml`. 3. File generation paths in scripts (like `migration:generate`) match the paths where the tools expect to find them.
 - **Debugging Learnings (2025-09-18):** Let Twenty's migrations create the `core` schema. The Postgres init script should only provision required extensions (e.g., `uuid-ossp`, `pgcrypto`) and can set the search_path once the schema exists; if the schema is pre-created, the app skips migrations and fails with missing `core.workspace`.
@@ -52,6 +53,11 @@
 
   1. Finish TypeORM migration wiring so the gift table is created automatically.
   2. Improve mirror reliability (retry/backoff, richer payload) once migrations are solid.
+- Today’s Progress (24/9/25):
+  - Added request/response validation and 3-attempt retry/backoff to the fundraising-service proxy; docs now call out the smoke script (`npm run smoke:gifts`) and validation guardrails.
+  - Smoke test script exercises full CRUD and leaves a “Persistent Smoke Test Gift” in Twenty for UI verification; failures now print the upstream payload for debugging.
+  - Standardised `DATABASE_URL` handling: `.env` documents the canonical DSN and worker containers pin `PG_DATABASE_URL` to `postgres://postgres:postgres@db:5432/postgres`; worker health outage resolved by recreating `server`/`worker` after the change.
+  - Next session ideas: add structured logging/alerting for retry flows; monitor the persistent smoke gift in Twenty to confirm API/UI parity over time.
 - **Data Persistence:** Avoid deleting the Twenty workspace. Be mindful of Docker commands like `docker compose down -v` that destroy data. When tearing down the environment, prefer `docker compose down` and only use the `-v` flag if explicitly confirmed that a database reset is intended.
 - **Debugging Learnings (2025-09-24): Environment Variable Overrides**
   - **Problem:** The `TWENTY_API_KEY` environment variable within a Docker Compose service (e.g., `fundraising-service`) was consistently incorrect, leading to `401 Workspace not found` errors, despite the `.env` file containing the correct key.
