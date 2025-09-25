@@ -7,6 +7,34 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 ---
 
+## D-0015: Managed Extension POC defaults (Households, Funds, Portal)
+**Status**: Interim (revisit triggers defined)
+**Priority**: High
+
+**Context**
+- For the Q4 FY25 managed-extension proof of concept we must keep the fundraising MVP lean while avoiding irreversible schema choices.
+- Open questions in `/docs/PROJECT_CONTEXT.md` §11 cover Household defaults, Allocation/Fund scope, and portal strategy.
+
+**Decision (Interim)**
+- **Households** remain disabled by default for new workspaces; we document an enablement runbook so pilots can opt in when needed.
+- **Allocations/Funds** stay out of the core MVP schema; requirements will be captured during Grants planning before adding an optional module.
+- **Portal strategy** for the POC relies on third-party connectors and guidance; we defer shipping an in-repo or separate portal template until the volunteer signup prototype is defined.
+
+**Why**
+- Keeps day-one setup simple for small UK nonprofits, aligning with the POC’s “lean core” goal.
+- Avoids shipping partially baked schema/UX that would be costly to undo once metadata automation stabilises.
+
+**Revisit triggers**
+- Re-evaluate Household defaults when ≥2 pilot orgs request it during onboarding or once the volunteer schema is finalised.
+- Reconsider Allocations/Funds before Grants module implementation or if a pilot requires restricted fund reporting sooner.
+- Revisit portal strategy after completing the volunteer signup experience prototype (POC backlog item 13).
+
+**Notes**
+- See `/docs/spikes/managed-extension-decisions.md` for option analysis and next actions.
+- Action items: update onboarding docs with the household toggle guidance and connector-focused portal notes.
+
+---
+
 ## D-0014: Project Structure and Dependency Management
 **Status**: Decided
 **Priority**: High

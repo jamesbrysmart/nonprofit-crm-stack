@@ -78,7 +78,17 @@ Consistent and explicit environment variable configuration is crucial for inter-
 
 *   The `twentycrm/twenty` image tag is explicitly pinned to `v1.4.0` in the `.env` file (`TAG=v1.4.0`) instead of `latest` for reproducible builds and to prevent unexpected behavior changes.
 
-## 7. Recommended Startup/Shutdown Procedure
+## 7. Upgrade Coordination Checklist
+
+Upgrading the Twenty core image or the `services/twenty-core` submodule must be treated as a coordinated effort. A casual tag bump will desynchronize the application code, database migrations, and dependency tree, as we experienced when jumping straight from `v1.4` to `v1.6`.
+
+*   **Work in a dedicated branch:** Never edit tags or submodules directly on a shared branch. Start from a clean branch so reverts remain straightforward if the upgrade stalls.
+*   **Sync code and migrations together:** Update the `twenty-core` submodule to the matching release branch or tag and commit the resulting `yarn.lock` changes inside the submodule before updating the image tag in this superproject.
+*   **Validate dependencies locally:** Run `yarn install` inside the submodule using the Node version required by `.nvmrc`. Hardened Yarn settings will fail fast on peer issues; resolve them before attempting a compose build.
+*   **Run full integration checks:** After aligning image tag and submodule, rebuild the stack, wipe or migrate the database as needed, and execute `yarn smoke:gifts`. Only promote the upgrade once the smoke test passes on the clean branch.
+*   **Plan for rollback:** Capture any docs or local experiments separately so reverting to the pinned stable tag is frictionless if migrations fail.
+
+## 8. Recommended Startup/Shutdown Procedure
 
 For a clean and reliable start of the stack:
 
@@ -91,8 +101,9 @@ For a clean and reliable start of the stack:
     ```bash
     docker compose --profile fast up -d --build
     ```
+    Wait for the command to finish (the shell prompt returns) before running follow-up commands such as `docker compose ps` or log checks; issuing new Docker commands while Compose is still starting/stopping services can produce misleading results.
 
-## 8. Known Issues & Caveats
+## 9. Known Issues & Caveats
 
 *   **Noisy `localhost|postgres` Connection Attempt:**
     *   **Description:** Despite all environment variable pinning, the `twenty-server` application still logs `Created new shared pg Pool for key "localhost|5432|postgres||no-ssl"` and subsequent `relation "core.workspace" does not exist` errors on startup.
