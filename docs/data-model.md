@@ -8,7 +8,7 @@ Custom fundraising objects (e.g., **Gift**, **Campaign**) now live inside Twenty
 
 ### Provisioning
 
-- Objects and fields are created manually in the Twenty UI for the POC (see metadata runbook).
+- Objects and fields are provisioned via `services/fundraising-service/src/metadata-scripts/v1-initial-schema.mjs` plus the manual lookup steps captured in `docs/METADATA_RUNBOOK.md`.
 - Once the Metadata API is reliable, we will automate this via scripts or configuration exports.
 
 ### Access Pattern

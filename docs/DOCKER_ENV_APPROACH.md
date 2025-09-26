@@ -111,7 +111,5 @@ For a clean and reliable start of the stack:
     *   **Resolution:** This appears to be an internal application behavior within the `twenty-core` codebase that cannot be overridden by Docker Compose environment variables. It should be reported upstream to the `twentyhq/twenty` project for a proper fix.
 
 *   **Fundraising Service Healthcheck:**
-    *   **Description:** The default healthcheck for the `fundraising-service` (`test: ["CMD", "curl", "-f", "http://localhost:4500/health"]`) currently fails, even though the application itself reports successful startup.
-    *   **Impact:** This prevents services that `depends_on` `fundraising-service` with `condition: service_healthy` from starting.
-    *   **Current Workaround:** The `gateway` service's dependency on `fundraising-service` has been changed to `condition: service_started` to allow the stack to start.
-    *   **Resolution:** Further investigation is needed to determine why the healthcheck fails. This could involve debugging the `/health` endpoint in the `fundraising-service` or adjusting the healthcheck parameters. This is a follow-up task.
+    *   **Status (2025-02):** The custom Node-based healthcheck in `docker-compose.yml` now passes; `docker compose ps fundraising-service` reports `healthy` and `curl http://localhost:4500/health` returns `{"status":"ok"}`.
+    *   **Action:** Update any remaining Compose dependencies to rely on `condition: service_healthy` where helpful; no follow-up debugging required unless future regressions appear.

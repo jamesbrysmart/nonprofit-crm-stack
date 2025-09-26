@@ -48,7 +48,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Structured JSON logging with request IDs and retry metadata enabled.
   - Alerting or TODO path defined for repeated failures (manual drill log suffices for now).
   - Failure simulation captured in docs with expected behaviour.
-- **Status:** Retries exist; add log structure, metrics TODO, and backlog for DLQ/webhooks.
+- **Status:** JSON logs now include `requestId`, `event` (e.g., `twenty_proxy_attempt`, `twenty_proxy_retry`, `twenty_proxy_network_error`), and timing metadata; metrics TODO and DLQ/webhook backlog still outstanding.
 
 ### 6. Operational Hygiene & Runbook
 - **Owner:** Engineering
@@ -57,7 +57,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - `/health` and `/ready` semantics defined and documented.
   - Logging expectations (format, correlation IDs) captured.
   - Runbook snippet covering build/run/diagnose steps committed to docs.
-- **Notes:** Update docs to match compose behaviour (e.g., gateway dependency conditions).
+- **Status:** `docs/OPERATIONS_RUNBOOK.md` now documents startup/shutdown, health endpoints, and structured log fields; keep expanding with future procedures.
 
 ### 7. Metadata Runbook & Release Watch
 - **Owner:** Product + Engineering
@@ -66,7 +66,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Runbook covering API scripts (`/rest/metadata/objects`, `/rest/metadata/fields`) plus remaining UI steps for relation fields.
   - Table/log of Twenty versions tested, outcomes, and next actions.
   - Reminder or issue to re-test when new images drop.
-- **Notes:** Include open question on relation/lookup field automation.
+- **Status:** `docs/METADATA_RUNBOOK.md` documents script usage, manual lookup steps, and a release watch table; update as lookup automation unblocks.
 
 ### 8. Pilot Quickstart (<60 Minutes)
 - **Owner:** Product
