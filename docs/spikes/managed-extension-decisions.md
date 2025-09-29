@@ -51,7 +51,7 @@ Scope: Q4 FY25 managed-extension proof of concept
 ## Revisit Triggers
 - Households default reviewed when ≥2 pilot orgs request it during onboarding or when volunteer schema lands.
 - Allocation scope re-evaluated before Grants module build or if a pilot requires restricted gift reporting.
-- Portal decision reconsidered once volunteer signup prototype (Backlog item 13) demonstrates the desired UX.
+- Portal decision reconsidered once volunteer signup prototype (Backlog item 14) demonstrates the desired UX.
 
 ## Next Actions
 1. Record these interim defaults in `DECISIONS.md` (D-0015).

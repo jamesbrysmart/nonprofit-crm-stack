@@ -117,3 +117,20 @@ Run `v1-initial-schema.mjs` on new workspace spinup. After execution, manually c
 ---
 
 _Last updated: 2025-09-26_
+
+## Managed extension notes (2025-09-29)
+
+- Gift → Person lookup field API name: `donorId` (provision via metadata runbook; admin UI relies on it).
+- Person create payload (Core `/people`) observed in schema:
+  ```json
+  {
+    "name": {
+      "firstName": "Ada",
+      "lastName": "Lovelace"
+    },
+    "emails": {
+      "primaryEmail": "ada@example.org"
+    }
+  }
+  ```
+- Fundraising admin form currently posts first/last name (and optional email), creating the Person before creating the linked Gift.

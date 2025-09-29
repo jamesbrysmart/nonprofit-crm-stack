@@ -12,6 +12,7 @@
 - **TODO:** Track Metadata API status and document manual object/field setup until automation is available.
 - **Project Structure:** This project uses Git submodules to manage the `fundraising-service` and `twenty-core` repositories. These submodules are located in the `services/` directory. Always ensure that the `docker-compose.yml` file and other configurations align with this structure. Refer to `DECISIONS.md` (D-0014) for more details.
 - **Git Hygiene:** When submodule staging fails with `Unable to create .../index.lock` or `insufficient permission for adding an object`, reown the submodule Git data from the superproject root: `sudo chown -R jamesbryant:jamesbryant .git/modules/services/fundraising-service` (or the relevant submodule path) before retrying `git add`.
+- **Command Failures:** If npm/docker commands fail in this environment, retry once for transient issues; otherwise pause and ask James to run the command manually instead of applying nonstandard workarounds.
 - **Submodule Code Constraint:** Do not modify code within third-party Git submodules like `twenty-core`, as these changes can be overwritten or cause conflicts during updates. Propose non-invasive solutions or workarounds instead.
 - At the start of a new session, read the contents of README.md and DECISIONS.md to establish context.
 - Use `docker compose` (with a space), not `docker-compose` (with a hyphen), as this project uses Docker Compose V2.
@@ -39,6 +40,7 @@
 - **Task Management:** If I see an outstanding task in my memory, I will ask if it's completed and for permission to update it to completed rather than running it blindly.
 - **Docker Compose Profiles:** This project uses Docker Compose profiles to manage which services are started. The `fast` profile is used for development, which pulls pre-built images. Always use the `--profile fast` flag when running `docker compose` commands. Before making any changes to the `docker-compose.yml` file, always consult the `DOCKER_ENV_APPROACH.md` file.
 - **Metadata API Blocker:** Programmatic creation of custom objects via the metadata API is currently blocked. The API returns an "Unknown argument 'input'" error when attempting to create an object with `curl`. This is a known issue, and the recommended approach is to wait for the "import and export twenty configurations" feature, which is expected by the end of Q3.
+- **API Usage:** Never rely on assumptions for Twenty’s Data/Metadata APIs—always consult the live OpenAPI schemas or documented call examples (see `docs/TWENTY_METADATA_API.md` and linked schemas) before wiring requests. Codex lacks HTTP access, so when schema details are needed, explicitly ask James/Gemini CLI to fetch the relevant OpenAPI snippet before implementing changes.
 - Today’s Progress (18/9/25):
   - Fundraising-service now forwards each successful POST /gifts to Twenty’s REST API using TWENTY_API_KEY /
   TWENTY_API_BASE_URL, logging failures without breaking the local save. Environment wiring (docker-

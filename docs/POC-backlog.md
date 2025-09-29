@@ -14,7 +14,17 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Logs reviewed, with open issues noted.
 - **Notes:** Depends on the manual object/field setup; no local Postgres use. `npm run smoke:gifts` now automates create → list → get → update → delete and leaves a persistent record labelled "Persistent Smoke Test Gift" for UI verification.
 
-### 2. Gift Rollups & Dashboard Foundations
+### 2. Fundraising Admin Gift Entry UI
+- **Owner:** Engineering
+- **Goal:** Deliver a lightweight fundraising-service UI that lets an internal admin create gifts (and required contact data) directly in Twenty while reusing the managed-extension proxy.
+- **Acceptance hints:**
+  - Page lives under the gateway (e.g., `/fundraising/admin/gifts/new`) and is protected by current stack auth assumptions.
+  - Form captures mandatory Twenty fields (gift amount/date and minimal contact info) and posts through `/api/fundraising/gifts`.
+  - Successful submissions surface confirmation with a link to the new Gift record in Twenty.
+  - Follow-up notes captured for contact matching/deduping and future auth unification.
+- **Notes:** UI + proxy now create a Person (via `/people`) then a Gift linked by `donorId`; success banner surfaces the gift ID. Currently hosted at `http://localhost:4500/fundraising/` pending gateway routing fix (`/fundraising` via nginx returns 502). Next steps: resolve gateway proxy, add contact matching/dedupe, and tighten UI styling.
+
+### 3. Gift Rollups & Dashboard Foundations
 - **Owner:** Engineering
 - **Goal:** Deliver deterministic rollups (lifetime, YTD/LY, first/last gift) and seed dashboards that satisfy Phase 1 reporting promises.
 - **Acceptance hints:**
@@ -23,7 +33,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Rollup rebuild procedure documented for post-import reconciliation.
 - **Notes:** Reuse learnings from API smoke work; coordinate with Feature Audit for field availability.
 
-### 3. Payment/Form Connector Scaffolding
+### 4. Payment/Form Connector Scaffolding
 - **Owner:** Engineering
 - **Goal:** Provide stubs or adapters so popular UK donation forms (e.g., JustGiving, PayPal) can post gifts through the proxy without bespoke code each time.
 - **Acceptance hints:**
@@ -32,7 +42,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Follow-up tickets opened for additional providers once pattern validates.
 - **Notes:** Depends on API reliability improvements and Gift model completeness.
 
-### 4. Gift Aid Export & Declaration UX
+### 5. Gift Aid Export & Declaration UX
 - **Owner:** Engineering + Product
 - **Goal:** Ensure Gift Aid declarations are captured and a claim-ready export is available with minimal setup.
 - **Acceptance hints:**
@@ -41,7 +51,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Consent/retention checklist cross-referenced in onboarding docs.
 - **Notes:** Coordinates with GDPR tasks under Cross-phase; feeds the Phase 1 exit criteria.
 
-### 5. Twenty API Resilience & Structured Logging
+### 6. Twenty API Resilience & Structured Logging
 - **Owner:** Engineering
 - **Goal:** Harden the proxy against transient failures and surface actionable telemetry.
 - **Acceptance hints:**
@@ -50,7 +60,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Failure simulation captured in docs with expected behaviour.
 - **Status:** JSON logs now include `requestId`, `event` (e.g., `twenty_proxy_attempt`, `twenty_proxy_retry`, `twenty_proxy_network_error`), and timing metadata; metrics TODO and DLQ/webhook backlog still outstanding.
 
-### 6. Operational Hygiene & Runbook
+### 7. Operational Hygiene & Runbook
 - **Owner:** Engineering
 - **Goal:** Ensure the stack is operable without heroics (health/readiness endpoints, logging, restart instructions).
 - **Acceptance hints:**
@@ -59,7 +69,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Runbook snippet covering build/run/diagnose steps committed to docs.
 - **Status:** `docs/OPERATIONS_RUNBOOK.md` now documents startup/shutdown, health endpoints, and structured log fields; keep expanding with future procedures.
 
-### 7. Metadata Runbook & Release Watch
+### 8. Metadata Runbook & Release Watch
 - **Owner:** Product + Engineering
 - **Goal:** Document programmatic provisioning of custom objects/fields and track Metadata API behaviour (especially relation fields) across Twenty releases.
 - **Acceptance hints:**
@@ -68,7 +78,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Reminder or issue to re-test when new images drop.
 - **Status:** `docs/METADATA_RUNBOOK.md` documents script usage, manual lookup steps, and a release watch table; update as lookup automation unblocks.
 
-### 8. Pilot Quickstart (<60 Minutes)
+### 9. Pilot Quickstart (<60 Minutes)
 - **Owner:** Product
 - **Goal:** Package the steps, scripts, and checklists required to go from empty workspace to recording the first donation within an hour.
 - **Acceptance hints:**
@@ -76,7 +86,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Dry run results captured with timestamps to prove the time-box.
   - Gaps or tooling requests escalated to Engineering.
 
-### 9. Historical Import Drill (50k Donations)
+### 10. Historical Import Drill (50k Donations)
 - **Owner:** Engineering
 - **Goal:** Validate bulk import tooling and rollup rebuild paths at the scale promised in success criteria.
 - **Acceptance hints:**
@@ -84,7 +94,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Import script/flow documented; rollups verified after load without manual trigger toggling.
   - Runtime/performance notes and mitigation strategies captured.
 
-### 10. Twenty Feature Audit (Fundraising Lens)
+### 11. Twenty Feature Audit (Fundraising Lens)
 - **Owner:** Product
 - **Goal:** Evaluate Twenty-native capabilities (workflows, reports, dedupe, list views, etc.) against nonprofit fundraising expectations.
 - **Acceptance hints:**
@@ -92,7 +102,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Identified gaps or workarounds documented with suggested ownership (Twenty vs. extension).
   - Comparison summary for future Supabase/custom fallback analysis.
 
-### 11. Managed Extension Decision Spike (Households, Funds, Portal)
+### 12. Managed Extension Decision Spike (Households, Funds, Portal)
 - **Owner:** Product + Engineering
 - **Goal:** Resolve short-term defaults for open architectural decisions (household default state, allocation/fund placement, portal starter approach) while documenting reversible rationale.
 - **Acceptance hints:**
@@ -103,7 +113,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ## Phase 2 – Volunteers
 
-### 12. Volunteer Metadata & Rollup Blueprint
+### 13. Volunteer Metadata & Rollup Blueprint
 - **Owner:** Engineering
 - **Goal:** Design the volunteer object model (Opportunity, Job, Shift, Attendance) and confirm rollup approach before implementation.
 - **Acceptance hints:**
@@ -111,7 +121,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Rollup requirements documented (hours, active volunteers) with technical approach chosen.
   - Dependencies on households/contact model resolved.
 
-### 13. Volunteer Signup Experience Prototype
+### 14. Volunteer Signup Experience Prototype
 - **Owner:** Product
 - **Goal:** Define the minimal public signup flow or portal page for volunteers and validate usability.
 - **Acceptance hints:**
@@ -119,7 +129,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Accessibility/privacy considerations captured.
   - Implementation tickets split (gateway vs. separate starter kit).
 
-### 14. Volunteer Reporting & Compliance
+### 15. Volunteer Reporting & Compliance
 - **Owner:** Engineering + Product
 - **Goal:** Outline reporting needs (hours served, churn) and consent handling for volunteer data.
 - **Acceptance hints:**
@@ -129,7 +139,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ## Phase 3 – Grants (Incoming)
 
-### 15. Grants Metadata & Workflow Design
+### 16. Grants Metadata & Workflow Design
 - **Owner:** Engineering
 - **Goal:** Capture the grant pipeline (application → award → payment schedule) and required metadata.
 - **Acceptance hints:**
@@ -137,7 +147,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Alignment with allocations/fund decision recorded.
   - Integration touchpoints with fundraising rollups mapped.
 
-### 16. Grants Reporting & Renewal Hooks
+### 17. Grants Reporting & Renewal Hooks
 - **Owner:** Product
 - **Goal:** Define dashboards and renewal nudges for grants to ensure early ROI.
 - **Acceptance hints:**
@@ -147,7 +157,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ## Phase 4 – Programs/Services
 
-### 17. Program Schema & Bulk Entry Planning
+### 18. Program Schema & Bulk Entry Planning
 - **Owner:** Engineering
 - **Goal:** Plan program/enrollment/service delivery objects with bulk entry ergonomics.
 - **Acceptance hints:**
@@ -155,7 +165,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Bulk entry UX constraints captured in coordination with Product.
   - Data retention requirements listed.
 
-### 18. Impact Reporting Foundations
+### 19. Impact Reporting Foundations
 - **Owner:** Product + Data
 - **Goal:** Define baseline dashboards/metrics for people served and services delivered.
 - **Acceptance hints:**
@@ -165,7 +175,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ## Cross-Phase & Platform
 
-### 19. AI Feasibility Spike
+### 20. AI Feasibility Spike
 - **Owner:** Engineering + AI
 - **Goal:** Prototype one AI-first interaction (e.g., generated donor summary or chat-driven CRUD) using data pulled from Twenty.
 - **Acceptance hints:**
@@ -174,7 +184,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Wishlist of additional AI-first behaviours (dup detection, conversational workflow) captured in docs.
 - **Notes:** Keep scope narrow—show feasibility, not production polish.
 
-### 20. Twenty Upgrade Probe
+### 21. Twenty Upgrade Probe
 - **Owner:** Engineering
 - **Goal:** Trial newer Twenty image tags, re-run smoke tests, and capture outcomes (especially Metadata API behaviour).
 - **Acceptance hints:**
@@ -182,7 +192,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - `DECISIONS.md` updated with findings/plan.
   - Follow-up items opened if regressions occur.
 
-### 21. Vision & Plan-B Documentation Refresh
+### 22. Vision & Plan-B Documentation Refresh
 - **Owner:** Product
 - **Goal:** Keep strategic docs current—codify AI-first roadmap, manage extension rationale, and fallback triggers.
 - **Acceptance hints:**
@@ -190,7 +200,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Explicit list of signal events that trigger a reevaluation (e.g., Metadata API still blocked after X releases).
   - Summary ready for stakeholder review.
 
-### 22. Gateway & Runbook Parity Check
+### 23. Gateway & Runbook Parity Check
 - **Owner:** Engineering
 - **Goal:** Ensure operational docs (Docker/env approach, runbooks) reflect current compose configuration and health checks.
 - **Acceptance hints:**

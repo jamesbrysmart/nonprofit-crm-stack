@@ -105,9 +105,10 @@ The script exercises create → list → get → update → delete through the p
 
 > Always re-run the smoke script after significant gateway/service changes so we catch regressions before touching metadata or UI flows.
 
-Validation guardrails
+### Validation guardrails & contact auto-create
 
 - Incoming payloads must include `amount.currencyCode` (non-empty string) and `amount.value` (numeric). Known string fields such as `contactId`, `campaignId`, `date`, `name`, `description`, `notes`, and `externalId` are trimmed; unsupported fields on updates pass through unchanged for forward compatibility.
+- `POST` requests may include a `contact` object with `firstName` / `lastName` (and optional `email`). The service will create a Person via Twenty’s `/people` endpoint and inject the resulting `donorId` into the Gift payload before forwarding to `/gifts`.
 - Responses from Twenty are sanity-checked so the expected `createGift` / `updateGift` / `deleteGift` / `gift` / `gifts` payloads exist. Missing data surfaces as a 400 error, making upstream issues obvious during development.
 - Transient errors from Twenty (429/5xx or network hiccups) are retried up to three times with a short backoff; persistent failures bubble back so callers see the real status code and payload.
 
