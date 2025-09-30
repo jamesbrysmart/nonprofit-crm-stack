@@ -16,6 +16,7 @@
 - **Submodule Code Constraint:** Do not modify code within third-party Git submodules like `twenty-core`, as these changes can be overwritten or cause conflicts during updates. Propose non-invasive solutions or workarounds instead.
 - At the start of a new session, read the contents of README.md and DECISIONS.md to establish context.
 - Use `docker compose` (with a space), not `docker-compose` (with a hyphen), as this project uses Docker Compose V2.
+- Default to the `--profile fast` flag when running docker compose commands so we reuse prebuilt Twenty images unless we deliberately opt into the source profile.
 - **Debugging Session (2025-09-12): Docker Compose Startup Issues for Twenty CRM Stack**
   - **Problem:** Multi-service Docker Compose stack (Twenty CRM, fundraising-service) failed to start reliably due to:
     1.  Race conditions (services starting before DB/Redis ready).
