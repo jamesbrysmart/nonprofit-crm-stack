@@ -156,7 +156,7 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - Pin container images (e.g. `twentycrm/twenty:vX.Y.Z`) rather than `latest`.
 
 **Process**
-- Keep an **UPGRADES.md** checklist (diff release notes, run DB backups, test metadata scripts, smoke tests).
+- The upgrade process is documented in `docs/DOCKER_ENV_APPROACH.md`.
 
 ---
 

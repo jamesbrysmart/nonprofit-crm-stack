@@ -28,7 +28,7 @@ Twenty core (`server`) | `http://localhost:3000/health` | Requires DB migrations
 Use `docker compose ps <service>` to see the health result and `docker compose logs <service>` for detail.
 
 ### Fundraising admin UI (POC)
-- Temporary entry point: `http://localhost:4500/fundraising/` (gateway `/fundraising` still returning 502; track fix separately).
+- Entry point: `http://localhost:4000/fundraising/`. The UI is served via the main gateway.
 - Requires Gift metadata field `donorId` (lookup to Person) and Metadata runbook steps for `Gift date`.
 - Each submission creates a Person via Twenty `/people`, then a Gift via `/gifts`, linking the new person through `donorId`.
 - Success banner surfaces the gift id and links to the Twenty gifts list (`/objects/gifts`).

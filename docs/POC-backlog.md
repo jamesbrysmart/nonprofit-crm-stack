@@ -22,7 +22,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Form captures mandatory Twenty fields (gift amount/date and minimal contact info) and posts through `/api/fundraising/gifts`.
   - Successful submissions surface confirmation with a link to the new Gift record in Twenty.
   - Follow-up notes captured for contact matching/deduping and future auth unification.
-- **Notes:** UI + proxy now create a Person (via `/people`) then a Gift linked by `donorId`; success banner surfaces the gift ID. Currently hosted at `http://localhost:4500/fundraising/` pending gateway routing fix (`/fundraising` via nginx returns 502). Next steps: resolve gateway proxy, add contact matching/dedupe, and tighten UI styling.
+- **Notes:** UI + proxy now create a Person (via `/people`) then a Gift linked by `donorId`; success banner surfaces the gift ID. The UI is served via the gateway at `/fundraising/`. Next steps: add contact matching/dedupe, and tighten UI styling.
 
 ### 3. Gift Rollups & Dashboard Foundations
 - **Owner:** Engineering
@@ -191,6 +191,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Upgrade experiment notes (tag tested, results, revert if necessary).
   - `DECISIONS.md` updated with findings/plan.
   - Follow-up items opened if regressions occur.
+- **Status (2025-09-30):** Successfully upgraded from `v1.4.0` to `v1.5.3`. The process is now documented in `docs/DOCKER_ENV_APPROACH.md`. A smoke test failure was identified and fixed during the upgrade.
 
 ### 22. Vision & Plan-B Documentation Refresh
 - **Owner:** Product
