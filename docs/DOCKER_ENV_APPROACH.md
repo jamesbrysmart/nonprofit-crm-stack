@@ -78,15 +78,112 @@ Consistent and explicit environment variable configuration is crucial for inter-
 
 *   The `twentycrm/twenty` image tag is explicitly pinned to `v1.4.0` in the `.env` file (`TAG=v1.4.0`) instead of `latest` for reproducible builds and to prevent unexpected behavior changes.
 
-## 7. Upgrade Coordination Checklist
+## 7. Upgrading Twenty CRM
 
-Upgrading the Twenty core image or the `services/twenty-core` submodule must be treated as a coordinated effort. A casual tag bump will desynchronize the application code, database migrations, and dependency tree, as we experienced when jumping straight from `v1.4` to `v1.6`.
+This guide provides a safe and repeatable process for upgrading the Twenty CRM version for this project.
 
-*   **Work in a dedicated branch:** Never edit tags or submodules directly on a shared branch. Start from a clean branch so reverts remain straightforward if the upgrade stalls.
-*   **Sync code and migrations together:** Update the `twenty-core` submodule to the matching release branch or tag and commit the resulting `yarn.lock` changes inside the submodule before updating the image tag in this superproject.
-*   **Validate dependencies locally:** Run `yarn install` inside the submodule using the Node version required by `.nvmrc`. Hardened Yarn settings will fail fast on peer issues; resolve them before attempting a compose build.
-*   **Run full integration checks:** After aligning image tag and submodule, rebuild the stack, wipe or migrate the database as needed, and execute `yarn smoke:gifts`. Only promote the upgrade once the smoke test passes on the clean branch.
-*   **Plan for rollback:** Capture any docs or local experiments separately so reverting to the pinned stable tag is frictionless if migrations fail.
+### Core Principles (Non-Negotiable)
+
+1.  **Backup First**: Always create a full database backup before starting any upgrade.
+2.  **Upgrade Sequentially**: You **must not** skip versions. Upgrade one minor version at a time (e.g., to go from `1.4.0` to `1.6.0`, you must upgrade `1.4.0` -> `1.5.x` -> `1.6.0`).
+3.  **Preserve Data**: Never use the `-v` flag with `docker compose down` during an upgrade, as it will delete your database volume.
+
+---
+
+### Step-by-Step Upgrade Process
+
+#### Step 1: Pre-Upgrade Checks & Backup
+
+1.  **Commit Changes:** Ensure your current work is committed to Git so you have a clean state.
+2.  **Check Running Services**: Make sure the `db` container is running before trying to back it up.
+    ```bash
+    docker compose --profile fast ps
+    ```
+3.  **Backup the Database:** Run the following command from the project root to create a timestamped backup of your PostgreSQL database. This command executes `pg_dumpall` inside the running `db` container.
+
+    ```bash
+    # This command dumps the entire database to a local .sql file
+    docker compose exec -T db pg_dumpall -U ${PG_DATABASE_USER:-postgres} > "db-backup-$(date +%Y%m%d-%H%M%S).sql"
+    ```
+
+#### Step 2: Perform the Upgrade (Repeat for Each Version)
+
+You will repeat these steps for each sequential version you need to apply (e.g., for `v1.5.0`, then for `v1.6.0`).
+
+1.  **Update Version Tag:**
+    *   Open the `.env` file in the project root.
+    *   Update the `TAG` variable to the *next sequential version*. For example: `TAG=v1.5.0`.
+
+2.  **Pull the New Image:**
+    *   Download the new container image specified by the `TAG`.
+
+    ```bash
+    # This pulls the images for the services in the 'fast' profile
+    docker compose --profile fast pull
+    ```
+
+3.  **Stop Services & Apply New Version:**
+    *   Take the stack down. The new image will be used on the next startup.
+
+    ```bash
+    # This stops and removes containers without deleting the 'db-data' volume
+    docker compose --profile fast down
+    ```
+
+4.  **Start and Monitor Migrations:**
+    *   Start the core services. The `server` container will automatically run any necessary database migrations.
+    *   Watch the logs to ensure the migrations complete successfully.
+
+    ```bash
+    # Start the core services in detached mode
+    docker compose --profile fast up -d server worker db redis
+
+    # Follow the server logs to monitor the upgrade
+    docker compose logs -f server
+    ```
+    *   Look for messages indicating database migration or upgrade success. Once the logs are stable and the `server` is healthy, press `Ctrl+C` to stop watching.
+
+#### Step 3: Finalize and Verify
+
+1.  **Start All Services:**
+    *   Once the final version is upgraded and stable, bring the entire stack online.
+
+    ```bash
+    # This starts all services defined in the compose file with the 'fast' profile
+    docker compose --profile fast up -d
+    ```
+
+2.  **Verify Health:**
+    *   Check that all services are running and healthy.
+
+    ```bash
+    docker compose ps
+    ```
+
+3.  **Run Smoke Test:**
+    *   Execute the project's smoke test to ensure the `fundraising-service` can still communicate with Twenty.
+
+    ```bash
+    cd services/fundraising-service
+    npm run smoke:gifts
+    cd ../..
+    ```
+
+4.  **Manual Check:**
+    *   Log in to the Twenty UI. Check the settings or about page to confirm the new version number and verify that your data is intact.
+
+### Troubleshooting
+
+*   **Permissions Errors After Upgrade:** If you see authorization or permission errors in the UI, you may need to flush the application cache.
+    ```bash
+    # This executes the cache flush command inside the server container
+    docker compose exec server yarn command:prod cache:flush
+    ```
+*   **Restoring from Backup:** If the upgrade fails catastrophically, you can restore your database. First, reset your environment (`docker compose down -v`), bring the `db` service up (`docker compose up -d db`), and then run:
+    ```bash
+    # This command restores the database from your backup file
+    cat <your-backup-file.sql> | docker compose exec -T db psql -U ${PG_DATABASE_USER:-postgres}
+    ```
 
 ## 8. Recommended Startup/Shutdown Procedure
 
