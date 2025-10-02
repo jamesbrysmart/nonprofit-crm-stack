@@ -47,6 +47,7 @@ This file tracks external systems we plan to connect to the Twenty + fundraising
 ## 6. Dependencies & Cross-References
 
 - Automation hook requirements live in `AUTOMATIONS.md` (webhook processing, job scheduling).
+- Donation connector design plan lives in `docs/DONATION_CONNECTOR_SCAFFOLDING.md`; keep status notes in sync.
 - API endpoints, duplicate handling, and merge behaviour documented in `docs/TWENTY_METADATA_API.md`.
 - Any new integration should have a corresponding ticket in `/docs/POC-backlog.md` before implementation.
 
