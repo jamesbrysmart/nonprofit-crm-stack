@@ -35,6 +35,41 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 ---
 
+## D-0016: Evidence Reporting Data Source (Warehouse vs API)
+**Status**: Pending
+**Priority**: Medium
+
+**Context**
+- Evidence dashboards need a consistent reporting layer for fundraising metrics (initial slice: gifts by month).
+- Two viable data paths emerged during the POC: query Twenty’s APIs live or materialise an analytics snapshot in Postgres and let Evidence read from that warehouse.
+- Today’s devenv experiment confirms the warehouse path is technically feasible but we still need to understand operational overhead (snapshot jobs, storage, costs) before locking it in.
+
+**Current Leaning (not final)**
+- Treat the warehouse snapshot as the default source for the Evidence module because it keeps dashboards fast, isolates queries from API rate limits, and fits the managed-extension model (data stays inside our Postgres boundary).
+- Keep the API-on-demand option as a fallback for lightweight embeds or orgs that cannot host a warehouse, but do not optimse the main build for it yet.
+
+**Why we haven’t decided**
+- Lack of cost modelling: we need estimates for long-running Postgres storage/compute, especially if snapshots grow with larger tenants.
+- Operational overhead is undefined: no schedule or ownership yet for refreshing `analytics.gifts_snapshot`, monitoring job failures, or handling schema drift.
+- Multi-tenant story is open: a shared warehouse may require row-level security or per-tenant databases; API approach could defer that complexity.
+
+**Next Steps Before Decision**
+1. Produce a lightweight cost model comparing (a) hosted Postgres snapshot vs (b) API-driven dashboards (consider query volume, storage, maintenance effort).
+2. Define the proposed snapshot orchestration (tooling, cadence, failure handling) and identify the owning team.
+3. Validate how Evidence behaves with larger datasets (performance, build time) to ensure the warehouse approach scales.
+4. Document tenant isolation requirements and whether they favour one approach over the other.
+
+**Revisit Triggers**
+- Complete the cost/ops analysis (target: next reporting workstream planning session).
+- Pilot feedback indicating Evidence must run without warehouse access.
+- Any move toward multi-tenant hosting that changes cost or security assumptions.
+
+**Notes**
+- Spike findings live in `docs/spikes/evidence-dashboard-poc.md` (Key Learnings & Future Implementation Blueprint).
+- Update `docs/REPORTING_EVIDENCE.md` and backlog items once the decision is made.
+
+---
+
 ## D-0014: Project Structure and Dependency Management
 **Status**: Decided
 **Priority**: High
@@ -229,7 +264,7 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 ---
 
 ## Practical defaults (TL;DR)
-- **SoT**: Contacts → Twenty; Gifts/Campaigns → fundraising-service.
+- **SoT**: Contacts, Gifts, Campaigns → Twenty (managed extension); fundraising-service orchestrates via API.
 - **Surfacing**: Write-back to Twenty custom objects for native UX (plus gateway later).
 - **Tenancy**: Single-tenant.
 - **Auth**: One user login; short-term API key behind gateway; unify later.
@@ -244,3 +279,21 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - Do we add `tenant_id` columns now as future-proofing?
 - Which fields are mirrored to Twenty vs kept only in fundraising-service?
 - Timeline to replace Nginx with Apollo Router and enable unified auth?
+
+---
+
+## D-0016: Reporting Module Approach
+**Status**: Draft
+**Priority**: Medium
+
+We evaluated several open-source and custom approaches for modular reporting in the fundraising CRM:
+
+| Option | Strengths | Weaknesses |
+| --- | --- | --- |
+| **Evidence.dev** | Developer-first, dashboards as code (Markdown + SQL), polished static output, full integration control, version-controllable. | Requires developer updates (no self-service), need to manage refresh scheduling & data segregation. |
+| **Metabase** | Extremely easy setup, friendly UI, good for quick dashboards and prototyping. | Embedding & row-level security are enterprise-only; OSS integration clunky for multi-tenancy. |
+| **Superset** | Very powerful, enterprise features (RBAC, extensibility, many chart types). | Heavy to run, steep learning curve, likely overkill for our simple needs. |
+| **Redash** | Lightweight, SQL-friendly, minimal overhead. | Stagnant development, limited visuals/features, weaker multi-tenancy support. |
+| **Custom build** | Fully integrated, ultimate flexibility, no licensing risk. | Higher dev effort and maintenance, risk of reinventing BI features over time. |
+
+**Decision (interim):** Start with **Evidence.dev** for the POC. It fits our developer-driven model (dashboards are code-reviewed assets), gives us strong integration control, and avoids enterprise licensing hurdles. Data sourcing (direct API vs. staging warehouse) remains open until the evaluation spike is complete.
