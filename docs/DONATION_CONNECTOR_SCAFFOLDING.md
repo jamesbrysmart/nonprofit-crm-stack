@@ -100,6 +100,11 @@ Follow-up: leverage Twenty webhooks or internal jobs to trigger receipts, rollup
 6. **Plan Follow-up Tickets:** Break work into backlog issues (connector patterns, dedupe, receipts) once the design stabilises. _Owner: product/engineering._
 7. **Capture Zapier Guardrails:** Define when tenant-specific Zaps are acceptable and how we migrate them into n8n/service, keeping docs in sync. _Owner: product/engineering._
 
+## 8. Current Status (2025-10-03)
+- **Webhook delivery proven:** `stripe listen --forward-to http://localhost:4500/api/fundraising/webhooks/stripe` now hits the Nest controller and the adapter logs `stripe_checkout_session_forward` attempts.
+- **Blocked on Twenty validation:** gift creation currently fails with (a) duplicate email when Stripe sends a donor address that already exists in Twenty and (b) missing `externalId` field metadata on the Gift object. Until we decide whether to skip contact creation or resolve dedupe/metadata, gifts won’t post successfully.
+- **Next session focus:** address the two failures above (e.g. drop `externalId` or provision the field, look up existing contacts before creating new ones) and add a smoke-test checklist once the happy path succeeds.
+
 ## 7. Related Documents
 - `docs/POC-backlog.md` — Item 4 for scope and acceptance hints.
 - `INTEGRATIONS.md` — Provider matrix; will reference this design once expanded.
