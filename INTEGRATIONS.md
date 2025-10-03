@@ -8,14 +8,20 @@ This file tracks external systems we plan to connect to the Twenty + fundraising
 
 - Keep integrations thin: validate a happy-path POC before committing to deep feature work.
 - Prefer webhook-driven flows when providers support them; fall back to polling only when necessary.
-- Always run inbound data through the fundraising-service so we preserve dedupe, logging, and rollups.
+- Always run inbound data through the fundraising-service so we preserve dedupe, logging, and rollups, regardless of which orchestration tool kicked off the flow.
 - Document auth/secrets handling early so we don’t scatter credentials across the stack.
+
+### Execution Pattern Snapshot
+- Subscribe to provider webhooks first, normalise the payload into the canonical gift/integration event shape (see `docs/DONATION_CONNECTOR_SCAFFOLDING.md`), and forward it to the fundraising-service REST API.
+- Use n8n as the default orchestration surface for pilot connectors; export flows into source control and tag them with the relevant backlog item.
+- Allow Zapier for tenant-specific or short-lived glue, but document the Zap and define when it graduates into n8n or service-owned code.
+- Push compliance or latency-sensitive logic down into fundraising-service jobs to keep retries, idempotency, and logging consistent with DECISIONS D-0000/D-0001.
 
 ## 2. Payment & Donation Connectors
 
 | Provider | Use Case | Desired Flow | Status | Notes |
 | --- | --- | --- | --- | --- |
-| Stripe | Card donations / one-off payments | Webhook → fundraising-service → `/gifts` | Planned | Need to design webhook endpoint + signature verification. |
+| Stripe | Card donations / one-off payments | Stripe webhook → n8n normaliser → fundraising-service `/gifts` | Pilot planned | Establish canonical event schema, signature verification, and request-ID passthrough; export n8n flow alongside runbook. |
 | GoCardless | Direct debit recurring gifts | Webhook → schedule updates | Planned | Coordinate with rollup logic for pledge schedules. |
 | JustGiving / Enthuse | Third-party donation forms | Daily export or webhook ingest | Backlog | Assess API availability/cost. |
 | Custom Twenty Form | Native hosted donation page | Direct POST → fundraising-service | Existing | Already covered by admin UI; extend for public forms. |
@@ -50,6 +56,7 @@ This file tracks external systems we plan to connect to the Twenty + fundraising
 - Donation connector design plan lives in `docs/DONATION_CONNECTOR_SCAFFOLDING.md`; keep status notes in sync.
 - API endpoints, duplicate handling, and merge behaviour documented in `docs/TWENTY_METADATA_API.md`.
 - Any new integration should have a corresponding ticket in `/docs/POC-backlog.md` before implementation.
+- Automation ownership and tooling guardrails live in `AUTOMATIONS.md`; ensure every integration has a matching automation entry before launch.
 
 ## 7. Open Questions
 

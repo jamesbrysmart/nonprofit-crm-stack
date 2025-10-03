@@ -7,6 +7,102 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 ---
 
+## D-0000: Operational Data Plane Strategy
+**Status**: Draft (tracking for continuous review)
+**Priority**: Critical
+
+**Context**
+- Every managed extension (fundraising, volunteers, grants, programs) needs a user-facing experience that feels realtime while still respecting Twenty as the canonical CRM.
+- The choice of read/write wiring affects dashboards, staging flows, AI assistants, reporting, and our ability to keep pilots confident in data freshness.
+- Previous decisions (e.g. D-0002 on object provisioning and D-0016 on reporting) assumed API-first integration, but we agreed to re-open the architecture before locking anything in.
+
+**Options under evaluation**
+1. **API-only proxy** – homepage widgets call Twenty REST/GraphQL through our gateway for every read.
+   - *Pros*: zero duplication, minimal infra, always shows canonical state.
+   - *Cons*: compounded latency per widget, limited aggregate shaping, tight coupling to rate limits.
+2. **API + cache** – layer Redis/in-memory caches with short TTL or explicit busting after writes.
+   - *Pros*: quick win for repeated queries, still no separate persistence.
+   - *Cons*: invalidation complexity, still constrained for rich analytics, risks stale “just created” items.
+3. **Operational mirror (hybrid)** – maintain a focused read/write store inside our services (e.g. Postgres tables for gifts, tasks, staging) populated via webhooks or polling, while writes propagate to Twenty via API.
+   - *Pros*: fast homepage, custom aggregates, pre-validation staging, strong foundation for AI features; can feed analytics warehouse.
+   - *Cons*: own sync logic and monitoring; eventual consistency unless we add optimistic updates; extra infra surface area.
+4. **Direct Twenty DB access** – read from Twenty’s Postgres schema/replica.
+   - *Pros*: immediate consistency, minimal processing, powerful SQL.
+   - *Cons*: schema is undocumented/volatile, upgrades become brittle, elevated security/operational risk, hard to share safely between tenants.
+5. **Analytics warehouse first** – treat a refreshed warehouse (Evidence spike) as the read source for UI and reporting.
+   - *Pros*: single investment powers dashboards and reports; simplified analytics pipeline.
+   - *Cons*: refresh cadence limits “realtime” feel; still need an operational layer for interactive widgets.
+
+**Current working approach (subject to change)**
+- **MVP (now)**: ship with the API-first proxy pattern (option 1), layering small server-side batching/caching where needed. This keeps implementation velocity high for the fundraising homepage and staging proof-of-concept.
+- **Design for evolution**: structure read layers so we can swap in an operational mirror later without rewriting every feature (`ARCHITECTURE.md` captures guidance).
+- **Planned revisit**: prototype the operational mirror (option 3) once MVP feature set is stable or when documented triggers (below) fire. Keep the direct-DB tap (option 4) only for controlled spikes with rollback plans.
+
+**Revisit triggers**
+- Homepage or staging UX suffers due to API latency/limitations (e.g. new tasks not appearing immediately, lack of audit history).
+- Duplicate handling/validation becomes unmanageable without local persistence.
+- Reporting/Ai workloads require shaped data we can’t efficiently produce via API-only.
+- Twenty exposes a supported event stream or replica that mitigates option 4 risks.
+- Performance or cost constraints make warehouse + mirror untenable across modules.
+
+**References**
+- `ARCHITECTURE.md` – living note capturing the data-plane architecture and open questions.
+- `docs/PROJECT_CONTEXT.md` §4/5 (module scope) and §7 (phase planning).
+- `docs/POC-backlog.md` Phase 1/2 items (rollups, reporting, AI spikes) that rely on fast reads.
+- `docs/OPERATIONS_RUNBOOK.md` §3 (structured logging) for tracing cross-system flows.
+
+**Downstream decisions impacted**
+- D-0002 (object provisioning) – may evolve if we materialise staging objects in Twenty vs service DB.
+- D-0016 (reporting module) – data-source choice must align with the operational mirror outcome.
+- Future module ADRs should cite D-0000 explicitly when selecting data access patterns.
+
+**Next actions**
+1. Draft detailed architecture notes (see `ARCHITECTURE.md`).
+2. Schedule a spike to validate webhook-driven mirroring and quantify latency.
+3. Update dependent decisions once the prototype proves (or disproves) the hybrid path.
+
+---
+
+## D-0004: Gift Staging & Intake Workflow
+**Status**: Draft (problem framing)
+**Priority**: High
+
+**Context**
+- Donation intake spans managed UI gift entry, CSV imports, portal/webhook feeds, and future connectors. Each source carries high risk of user error (duplicate or misspelled donors, incorrect amounts, wrong campaign/fund attribution).
+- Downstream automation—receipts, acknowledgements, Gift Aid claims—can trigger before humans notice mistakes, creating costly clean-up.
+- Industry patterns (e.g. Salesforce Gift Entry) rely on staging or “batch” records to validate, dedupe, and map donations prior to promoting a canonical gift.
+
+**Goals**
+- Provide a controlled “staging” area where inbound gifts can be reviewed, enriched, matched to donors/campaigns/funds, and flagged for issues before committing to Twenty.
+- Support multiple intake channels with consistent validation rules and audit trails (who approved, when, original payload).
+- Enable automated checks (duplicate detection, amount thresholds, task assignment) while allowing human intervention when needed.
+- Ensure the staging lifecycle integrates with the operational data-plane decision (D-0000) so homepage widgets, AI summaries, and reporting can surface both pending and posted gifts.
+
+**Approach candidates (to evaluate next)**
+1. **Service-owned staging tables** – store raw + normalized payloads in fundraising-service DB, run validations, and promote to Twenty via API once approved.
+2. **Staging objects inside Twenty** – create custom “Gift Intake” objects in Twenty metadata, using Twenty UI/list views for review before conversion.
+3. **Hybrid** – capture staging in service DB for fast UX, but mirror approved batches into Twenty for audit/history.
+4. **Direct streaming to warehouse** – land raw donations in analytics store, then backfill operational gifts (likely insufficient for realtime corrections but worth noting).
+
+**Key considerations**
+- Deduplication strategy (people, gifts), including use of `/people/duplicates` and future AI matching.
+- Validation hooks (Gift Aid eligibility, required fields, campaign mapping) and extensibility for new channels.
+- Auditability: ability to trace from final Gift back to original staging payload and decision log.
+- Automation triggers: when do receipts/claims fire relative to staging approval?
+- UX expectations: batch review, bulk approve/reject, quick edits.
+
+**References**
+- `ARCHITECTURE.md` (Operational Mirror) – staging must slot into the chosen read model.
+- `docs/POC-backlog.md` Phase 1 items (Gift Aid export, connector scaffolding) impacted by staging.
+- Future AI CRM spike – potential for AI-assisted validation.
+
+**Next actions**
+1. Document detailed staging lifecycle and data model assumptions (`ARCHITECTURE.md`).
+2. Spike on prototype staging tables + promotion flow (manual UI path first).
+3. Update this decision with evaluated options, chosen approach, and revisit triggers after the spike.
+
+---
+
 ## D-0015: Managed Extension POC defaults (Households, Funds, Portal)
 **Status**: Interim (revisit triggers defined)
 **Priority**: High
