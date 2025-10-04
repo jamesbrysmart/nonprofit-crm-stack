@@ -16,6 +16,32 @@ Prepared to capture the shared understanding before we begin implementation work
 - **Incremental delivery plan:** Start with the fastest viable path; iterate on observability, dedupe, and automation as confidence grows.
 - **Single surface:** Regardless of orchestrator, all inbound events post into fundraising-service so dedupe, logging, and rollups stay consistent.
 
+## 2.1 Configuration & Onboarding (Stripe MVP)
+
+Follow these steps for each nonprofit workspace that needs to connect Stripe:
+
+1. **Gather secrets in Stripe**
+   - Create (or copy) an API secret key with access to Checkout Sessions and Customers. For production tenants, prefer a [restricted key](https://stripe.com/docs/keys#restricting-access). This value will become `STRIPE_API_KEY`.
+   - Create a webhook endpoint that points to the fundraising-service gateway (local dev: `http://localhost:4500/api/fundraising/webhooks/stripe`; hosted stacks should use their public HTTPS domain). Subscribe at least to `checkout.session.completed`, then copy the signing secret (`STRIPE_WEBHOOK_SECRET`).
+
+2. **Configure the fundraising-service environment**
+   - Copy `services/fundraising-service/.env.example` to `.env` if it does not exist.
+   - Populate the Stripe variables:
+     ```ini
+     STRIPE_API_KEY=sk_test_or_restricted_live_value
+     STRIPE_WEBHOOK_SECRET=whsec_...
+     ```
+   - Restart the fundraising-service so the new values are loaded (Docker example: `docker compose --profile fast up -d --build fundraising-service`). If either value is missing, the service logs `stripe_webhook_missing_secret` / `TWENTY_API_KEY not configured` and returns HTTP 503 for incoming events.
+
+3. **Run the manual smoke test**
+   - Use a unique email via the process in §7 to confirm the webhook → Person → Gift path succeeds.
+
+4. **Document for the tenant**
+   - Store the Stripe credentials in the organisation’s secret manager; note rotation procedures.
+   - Record the webhook endpoint in Stripe so future deploys use the same URL.
+
+Future work will wrap these steps in UI/onboarding tooling; for now, this runbook keeps the setup consistent across tenants.
+
 ## 3. Current Assumptions
 1. **Provider Coverage:** Stripe and GoCardless will be the reference connectors; most other platforms will follow their patterns.
 2. **Event Timing:** Real-time webhooks are the default ingestion mechanism. Batch/CSV imports remain out of scope for the first slice but must be noted as a future extension.
@@ -146,6 +172,7 @@ This process validates the end-to-end flow from a Stripe payment to a Gift recor
 - **Contact dedupe minimised:** fundraising-service now checks Twenty’s `/people/duplicates` endpoint using the Stripe email before creating a Person. If a match exists we reuse the existing `personId`; otherwise we create a new record.
 - **Stripe session traceability:** currently lives in logs only; once metadata fields land we can persist identifiers directly on the Gift records.
 - **Happy path verified:** 2025-10-03 manual smoke test (unique email flow) confirmed `checkout.session.completed` → Person create → Gift create succeeds without errors.
+- **Duplicate reuse verified:** 2025-10-03 webhook replay with an existing donor email reused the Person returned by `/people/duplicates` and created the Gift without errors.
 - **Next session focus:** add an automated smoke checklist for the webhook path and expand coverage beyond `checkout.session.completed` once the MVP slice is stable.
 
 ## 9. Related Documents
