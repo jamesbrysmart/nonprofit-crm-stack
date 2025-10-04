@@ -100,12 +100,55 @@ Follow-up: leverage Twenty webhooks or internal jobs to trigger receipts, rollup
 6. **Plan Follow-up Tickets:** Break work into backlog issues (connector patterns, dedupe, receipts) once the design stabilises. _Owner: product/engineering._
 7. **Capture Zapier Guardrails:** Define when tenant-specific Zaps are acceptable and how we migrate them into n8n/service, keeping docs in sync. _Owner: product/engineering._
 
+## 7. Testing
+
+### Manual Smoke Test (Stripe)
+
+This process validates the end-to-end flow from a Stripe payment to a Gift record in Twenty.
+
+**Prerequisites:**
+- The `dev-stack` is running.
+- You have a Stripe account with a test Payment Link for a donation product.
+- The Stripe CLI is installed and you are logged in (`stripe login`).
+- The `stripe listen` command is running and forwarding events to the `fundraising-service`:
+  ```bash
+  stripe listen --forward-to http://localhost:4500/api/fundraising/webhooks/stripe
+  ```
+
+**Steps:**
+
+1.  **Create a unique customer and checkout session:**
+    - To avoid duplicate email errors, always use a new email for each test run.
+    - **Option A (Manual):** Open the Stripe Payment Link URL in your browser and complete the payment using a test card (e.g., `4242 4242 4242 4242`). Use a unique email like `stripe+<timestamp>@example.com`.
+    - **Option B (Scripted):**
+      1.  Create a customer: `stripe customers create --email="stripe+<timestamp>@example.com"`
+      2.  From the output, copy the customer ID (`cus_...`).
+      3.  Create a checkout session for that customer (this requires knowing the correct syntax for the `stripe checkout sessions create` command, which has proven difficult).
+
+2.  **Verify Webhook Reception:**
+    - Check the `stripe listen` terminal for `checkout.session.completed` event logs.
+    - Check the `fundraising-service` logs for a message like `"Forwarding Stripe checkout session to fundraising proxy"`.
+
+3.  **Verify Record Creation in Twenty:**
+    - Check the `fundraising-service` logs for successful `POST /people` and `POST /gifts` requests to the Twenty API.
+    - Log in to the Twenty UI and confirm:
+      - A new "Person" record exists with the email you used.
+      - A new "Gift" record exists, linked to the new Person.
+      - The Gift's "Notes" field contains the Stripe Checkout Session ID for traceability.
+
+### Future Automation
+
+- The manual smoke test should be automated using a browser-based E2E testing framework like Playwright or Cypress.
+- A separate, faster integration test can be created to directly trigger a `checkout.session.completed` event via the Stripe CLI and assert that the webhook handler creates the correct records.
+
 ## 8. Current Status (2025-10-03)
 - **Webhook delivery proven:** `stripe listen --forward-to http://localhost:4500/api/fundraising/webhooks/stripe` now hits the Nest controller and the adapter logs `stripe_checkout_session_forward` attempts.
-- **Blocked on Twenty validation:** gift creation currently fails with (a) duplicate email when Stripe sends a donor address that already exists in Twenty and (b) missing `externalId` field metadata on the Gift object. Until we decide whether to skip contact creation or resolve dedupe/metadata, gifts won’t post successfully.
-- **Next session focus:** address the two failures above (e.g. drop `externalId` or provision the field, look up existing contacts before creating new ones) and add a smoke-test checklist once the happy path succeeds.
+- **Contact dedupe minimised:** fundraising-service now checks Twenty’s `/people/duplicates` endpoint using the Stripe email before creating a Person. If a match exists we reuse the existing `personId`; otherwise we create a new record.
+- **Stripe session traceability:** currently lives in logs only; once metadata fields land we can persist identifiers directly on the Gift records.
+- **Happy path verified:** 2025-10-03 manual smoke test (unique email flow) confirmed `checkout.session.completed` → Person create → Gift create succeeds without errors.
+- **Next session focus:** add an automated smoke checklist for the webhook path and expand coverage beyond `checkout.session.completed` once the MVP slice is stable.
 
-## 7. Related Documents
+## 9. Related Documents
 - `docs/POC-backlog.md` — Item 4 for scope and acceptance hints.
 - `INTEGRATIONS.md` — Provider matrix; will reference this design once expanded.
 - `AUTOMATIONS.md` — Captures receipt workflows, rollup jobs, and connector automation needs.
