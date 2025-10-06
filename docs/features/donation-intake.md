@@ -35,7 +35,7 @@
 - `appeal_id` (required when attributable), `appeal_segment_id` (optional), `tracking_code_id` (optional, auto for digital)
 - `fund_id` (designation)
 - `gift_aid_eligible` (bool), `gift_aid_declaration_id` (optional)
-- `external_reference` (processor transaction ID / import row key)
+- `external_id` (canonical transaction/import reference for idempotency + reconciliation)
 - Optional: `notes`, `soft_credit_contact_id`, `split_lines[]` (future multi-fund allocations)
 
 **Gift Aid Declaration (UK)**
@@ -59,7 +59,7 @@ Use cases: cash/cheque entry, phone pledges fulfilled immediately, event-day bat
 - Inline contact search with quick-create (minimum viable fields) and household suggestion when address matches an existing household (`docs/features/households.md`).
 - Smart mapping: prefill appeal/fund from batch defaults, show last-used designation for the contact, allow one-click override.
 - Dedup prevention before commit:
-  - Hard block if same `external_reference` exists.
+  - Hard block if same `external_id` exists.
   - Warn if same contact + same amount + same date (±1 day); require confirm.
   - Fuzzy warning for similar contact + amount within window.
 - Gift Aid assist: surface existing declaration, one-click capture of new declaration (store text version), highlight eligibility rules.
@@ -108,7 +108,7 @@ Use cases: historic migrations, third-party platform exports, offline batches.
 - Validation: required columns present, amount > 0, date parseable, dedupe checks, consent/Gift Aid logic.
 - Preview: success vs error counts, sample errors, dedupe warnings; dry-run mode default on.
 - Staging: import rows into shared staging table with `intake_source = csv`, attach `import_batch_id`.
-- Matching & idempotency: primary match on `external_reference`/transaction ID; secondary on contact + amount + date; fingerprint hash prevents re-importing identical rows.
+- Matching & idempotency: primary match on `external_id` (transaction/import ID); secondary on contact + amount + date; fingerprint hash prevents re-importing identical rows.
 - Partial commit supported; export errors with row references for correction.
 - Batch defaults: set appeal/fund/date/method for rows missing values.
 
@@ -122,7 +122,7 @@ Use cases: historic migrations, third-party platform exports, offline batches.
 
 Shared dedupe pipeline (manual/portal/csv) leverages rules documented in `donation-staging.md`:
 - Contact-level: exact email/phone matches prompt selection; fuzzy name + postcode matches suggest linking/householding.
-- Donation-level: block on duplicate `external_reference`; warn on same contact + amount + date (±1d); fuzzy warnings for similar contacts/amounts.
+- Donation-level: block on duplicate `external_id`; warn on same contact + amount + date (±1d); fuzzy warnings for similar contacts/amounts.
 - Merge tooling: side-by-side comparison retaining all gifts, recomputing rollups; audit every merge decision.
 
 ---
@@ -198,7 +198,7 @@ AI suggestions remain human-approved; log rationale and confidence for audit.
 - **Release 1 — Intake Foundations**
   - Manual batch entry with defaults, inline dedupe warnings, Gift Aid prompt.
   - Hosted portal with Stripe cards/wallets (one-off + monthly), basic GoCardless one-off, UTM attribution, thank-you email.
-  - CSV import stepper with dry-run, mapping templates, and idempotent upsert via `external_reference`.
+- CSV import stepper with dry-run, mapping templates, and idempotent upsert via `external_id`.
   - Shared staging pipeline + rollup hooks wired.
 
 - **Release 2 — Donor Self-Service & Enhancements**

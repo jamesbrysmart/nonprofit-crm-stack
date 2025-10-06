@@ -61,6 +61,13 @@ Inspect Compose health details | `docker inspect --format '{{json .State.Health}
 - Twenty core still logs `Created new shared pg Pool for key "localhost|5432|postgres||no-ssl"` during boot. It is noisy but harmless.
 - Metadata automation for lookup fields remains manual; run `npm run smoke:gifts` after any metadata change to confirm proxy health.
 
+## 6. Gift staging toggle (scaffold)
+
+- `FUNDRAISING_ENABLE_GIFT_STAGING=true` enables the new staging scaffold inside the fundraising-service.
+- When enabled, inbound gifts write to a temporary staging record (logged with event `gift_staging_stage`) before the service forwards the payload to Twenty.
+- Promotion is still automatic while the metadata objects are being finalised; logs (`gift_staging_committed`) show the link between staging id and Twenty gift id.
+- Leave the flag unset/false to retain the classic direct-to-gift behaviour while staging metadata is provisioned.
+
 ---
 
 _Keep this document in sync with compose changes, health endpoints, and logging behaviour as we flesh out the runbook backlog item._

@@ -4,25 +4,15 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ## Phase 1 – Fundraising & Core CRM (MVP)
 
-### 1. Fundraising API Smoke Test
+### 1. Fundraising API Smoke Test _(completed)_
 - **Owner:** Engineering
 - **Goal:** Prove the end-to-end flow `gateway → fundraising-service → Twenty REST` works reliably with documented metadata prerequisites.
-- **Acceptance hints:**
-  - Scripted curl/Postman run creating and listing a gift through `/api/fundraising/gifts`.
-  - Twenty shows the new record; response payload matches expectations.
-  - Manual metadata setup (API or UI) captured in docs.
-  - Logs reviewed, with open issues noted.
-- **Notes:** Depends on the manual object/field setup; no local Postgres use. `npm run smoke:gifts` now automates create → list → get → update → delete and leaves a persistent record labelled "Persistent Smoke Test Gift" for UI verification.
+- **Outcome:** `npm run smoke:gifts` exercises create → list → get → update → delete, logs cover retry telemetry, and the persistent smoke gift is visible in Twenty. Any future enhancements (e.g., staging-aware payloads) should ship as new tickets.
 
-### 2. Fundraising Admin Gift Entry UI
+### 2. Fundraising Admin Gift Entry UI _(completed)_
 - **Owner:** Engineering
 - **Goal:** Deliver a lightweight fundraising-service UI that lets an internal admin create gifts (and required contact data) directly in Twenty while reusing the managed-extension proxy.
-- **Acceptance hints:**
-  - Page lives under the gateway (e.g., `/fundraising/admin/gifts/new`) and is protected by current stack auth assumptions.
-  - Form captures mandatory Twenty fields (gift amount/date and minimal contact info) and posts through `/api/fundraising/gifts`.
-  - Successful submissions surface confirmation with a link to the new Gift record in Twenty.
-  - Follow-up notes captured for contact matching/deduping and future auth unification.
-- **Notes:** UI + proxy now create a Person (via `/people`) then a Gift linked by `donorId`; success banner surfaces the gift ID. The UI is served via the gateway at `/fundraising/`. Next steps: add contact matching/dedupe, and tighten UI styling.
+- **Outcome:** The Vite client (`/fundraising/`) creates donors via `/people`, posts gifts through the proxy, handles duplicate prompts, and confirms with a Twenty link. Any further polish (auth hardening, styling tweaks) belongs in fresh chores.
 
 ### 3. Gift Rollups & Dashboard Foundations
 - **Owner:** Engineering
@@ -69,14 +59,10 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Runbook snippet covering build/run/diagnose steps committed to docs.
 - **Status:** `docs/OPERATIONS_RUNBOOK.md` now documents startup/shutdown, health endpoints, and structured log fields; keep expanding with future procedures.
 
-### 8. Metadata Runbook & Release Watch
+### 8. Metadata Runbook & Release Watch _(completed)_
 - **Owner:** Product + Engineering
 - **Goal:** Document programmatic provisioning of custom objects/fields and track Metadata API behaviour (especially relation fields) across Twenty releases.
-- **Acceptance hints:**
-  - Runbook covering API scripts (`/rest/metadata/objects`, `/rest/metadata/fields`) plus remaining UI steps for relation fields.
-  - Table/log of Twenty versions tested, outcomes, and next actions.
-  - Reminder or issue to re-test when new images drop.
-- **Status:** `docs/METADATA_RUNBOOK.md` documents script usage, manual lookup steps, and a release watch table; update as lookup automation unblocks.
+- **Outcome:** `docs/METADATA_RUNBOOK.md` now covers scripts, manual lookup steps, and the release watch table. Re-open only if Twenty metadata behaviour shifts or automation resumes.
 
 ### 9. Evidence Dashboard POC
 - **Owner:** Engineering + Product
@@ -120,9 +106,36 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Follow-on implementation tickets opened if configuration work is required for Phase 1 delivery.
 - **Notes:** Time-boxed spike; aim for decisions that keep the POC lean without closing future doors.
 
+### 14. Gift Schema & Staging Alignment
+- **Owner:** Engineering + Product
+- **Goal:** Harmonise the managed-extension `Gift` payload with staging/attribution expectations so intake, reconciliation, and pipeline specs stay in sync.
+- **Acceptance hints:**
+  - Field map documented across fundraising-service proxy, staging tables, and Twenty metadata (covering amount fields, attribution IDs, external references).
+  - Prototype payload exercised through `/api/fundraising/gifts` and staging validation to confirm compatibility.
+  - Follow-up implementation tickets raised for required schema migrations or proxy adjustments.
+- **Notes:** Reference `docs/features/donation-intake.md`, `docs/features/opportunities-gifts.md`, and `docs/features/donation-reconciliation.md` before locking names/enums.
+
+### 15. Opportunity MVP Scaffolding
+- **Owner:** Engineering
+- **Goal:** Stand up the minimal `Opportunity` object, rollups, and defaults needed to support the pipeline flows described in the Opportunities & Gifts spec.
+- **Acceptance hints:**
+  - Metadata outline committed (stage enum, commitment fields, defaults, read-only rollups).
+  - Draft API/UI story showing how a Gift links back to an Opportunity without bypassing staging rules.
+  - Explicit dependency recorded on Ticket 14 (schema alignment) before implementation starts.
+- **Notes:** Keep scope to core pipeline (grants/HNW/legacy); schedules and deliverables stay behind feature flags per roadmap.
+
+### 16. Recurring Agreement Handshake Spike
+- **Owner:** Engineering
+- **Goal:** Validate the event flow from Stripe/GoCardless agreements into Gifts so recurring donations can reuse the same ingestion path.
+- **Acceptance hints:**
+  - Sequence diagram or prototype covering agreement creation, webhook events, and resulting Gift records.
+  - Gaps identified in provider metadata storage or Gift payload fields captured with remediation tickets.
+  - Receipting/Gift Aid touchpoints reconciled with `docs/features/recurring-donations.md`.
+- **Notes:** Dependent on Ticket 14; focus on one provider first (Stripe or GoCardless) to prove the path.
+
 ## Phase 2 – Volunteers
 
-### 14. Volunteer Metadata & Rollup Blueprint
+### 17. Volunteer Metadata & Rollup Blueprint
 - **Owner:** Engineering
 - **Goal:** Design the volunteer object model (Opportunity, Job, Shift, Attendance) and confirm rollup approach before implementation.
 - **Acceptance hints:**
@@ -130,7 +143,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Rollup requirements documented (hours, active volunteers) with technical approach chosen.
   - Dependencies on households/contact model resolved.
 
-### 15. Volunteer Signup Experience Prototype
+### 18. Volunteer Signup Experience Prototype
 - **Owner:** Product
 - **Goal:** Define the minimal public signup flow or portal page for volunteers and validate usability.
 - **Acceptance hints:**
@@ -138,7 +151,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Accessibility/privacy considerations captured.
   - Implementation tickets split (gateway vs. separate starter kit).
 
-### 16. Volunteer Reporting & Compliance
+### 19. Volunteer Reporting & Compliance
 - **Owner:** Engineering + Product
 - **Goal:** Outline reporting needs (hours served, churn) and consent handling for volunteer data.
 - **Acceptance hints:**
@@ -148,7 +161,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ## Phase 3 – Grants (Incoming)
 
-### 17. Grants Metadata & Workflow Design
+### 20. Grants Metadata & Workflow Design
 - **Owner:** Engineering
 - **Goal:** Capture the grant pipeline (application → award → payment schedule) and required metadata.
 - **Acceptance hints:**
@@ -156,7 +169,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Alignment with allocations/fund decision recorded.
   - Integration touchpoints with fundraising rollups mapped.
 
-### 18. Grants Reporting & Renewal Hooks
+### 21. Grants Reporting & Renewal Hooks
 - **Owner:** Product
 - **Goal:** Define dashboards and renewal nudges for grants to ensure early ROI.
 - **Acceptance hints:**
@@ -166,7 +179,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ## Phase 4 – Programs/Services
 
-### 19. Program Schema & Bulk Entry Planning
+### 22. Program Schema & Bulk Entry Planning
 - **Owner:** Engineering
 - **Goal:** Plan program/enrollment/service delivery objects with bulk entry ergonomics.
 - **Acceptance hints:**
@@ -174,7 +187,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Bulk entry UX constraints captured in coordination with Product.
   - Data retention requirements listed.
 
-### 20. Impact Reporting Foundations
+### 23. Impact Reporting Foundations
 - **Owner:** Product + Data
 - **Goal:** Define baseline dashboards/metrics for people served and services delivered.
 - **Acceptance hints:**
@@ -184,7 +197,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ## Cross-Phase & Platform
 
-### 21. AI Feasibility Spike
+### 24. AI Feasibility Spike
 - **Owner:** Engineering + AI
 - **Goal:** Prototype one AI-first interaction (e.g., generated donor summary or chat-driven CRUD) using data pulled from Twenty.
 - **Acceptance hints:**
@@ -193,7 +206,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Wishlist of additional AI-first behaviours (dup detection, conversational workflow) captured in docs.
 - **Notes:** Keep scope narrow—show feasibility, not production polish.
 
-### 22. Twenty Upgrade Probe
+### 25. Twenty Upgrade Probe
 - **Owner:** Engineering
 - **Goal:** Trial newer Twenty image tags, re-run smoke tests, and capture outcomes (especially Metadata API behaviour).
 - **Acceptance hints:**
@@ -202,7 +215,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Follow-up items opened if regressions occur.
 - **Status (2025-09-30):** Successfully upgraded from `v1.4.0` to `v1.5.3`. The process is now documented in `docs/DOCKER_ENV_APPROACH.md`. A smoke test failure was identified and fixed during the upgrade.
 
-### 23. Vision & Plan-B Documentation Refresh
+### 26. Vision & Plan-B Documentation Refresh
 - **Owner:** Product
 - **Goal:** Keep strategic docs current—codify AI-first roadmap, manage extension rationale, and fallback triggers.
 - **Acceptance hints:**
@@ -210,13 +223,22 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Explicit list of signal events that trigger a reevaluation (e.g., Metadata API still blocked after X releases).
   - Summary ready for stakeholder review.
 
-### 24. Gateway & Runbook Parity Check
+### 27. Gateway & Runbook Parity Check
 - **Owner:** Engineering
 - **Goal:** Ensure operational docs (Docker/env approach, runbooks) reflect current compose configuration and health checks.
 - **Acceptance hints:**
   - Review gateway/gateway-src healthchecks vs docs, fix discrepancies.
   - Runbook updated with realistic start/stop/diagnose steps.
   - Outstanding doc tickets opened if parity gaps remain.
+
+### 28. Data Model Documentation Maintenance
+- **Owner:** Product + Engineering
+- **Goal:** Keep `docs/data-model/` in lockstep with feature specs and backlog decisions so modules stay decoupled.
+- **Acceptance hints:**
+  - Review cadence agreed (e.g., during backlog grooming) and noted in the runbook.
+  - Recent feature updates reflected in the relevant data-model files, with diff links or references captured.
+  - Checklist added to backlog templates to remind contributors to update data-model docs when specs change.
+- **Notes:** Covers Twenty core vs. nonprofit-specific modules (e.g., Households) until ownership is formalised.
 
 ---
 

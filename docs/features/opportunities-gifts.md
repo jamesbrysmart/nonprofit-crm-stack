@@ -60,7 +60,7 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
   - For reversals: `reversal_of_gift_id` *(optional negative gift pattern)*
 - **Attribution**: `fund_id` *(designation)*, `appeal_id`, `appeal_segment_id`, `tracking_code_id`
 - **Gift Aid (UK)**: `gift_aid_eligible`, `gift_aid_declaration_id`
-- **External refs**: `processor_txn_id`, `import_row_id`, `source_system`
+- **External refs**: `external_id` (canonical); optional `processor_txn_id`, `import_row_id`, `source_system` for provenance
 - **Extras (optional)**: `soft_credit_contact_id`, `split_allocations[]` *(list of `{fund_id, amount}`)*, `notes`
 - **In-kind**: `is_in_kind` (bool), `in_kind_description`, `estimated_value`
 
@@ -260,4 +260,3 @@ This model:
 - Avoids forcing complexity on small orgs while scaling to grants, HNW, sponsorships, legacies.
 - Aligns with reconciliation, receipting, and campaign analytics out of the box.
 - Leaves room for optional modules (Membership, Events) without polluting core flows.
-

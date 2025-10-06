@@ -62,7 +62,7 @@ Matching results write to `donation_reconciliation_log` with status codes:
 - ⚠️ `potential_match`
 - ❌ `unmatched_external`
 - 🌀 `duplicate`
-- ❓ `unmatched_crm` (detected by scanning gifts lacking `external_reference` within date ranges)
+- ❓ `unmatched_crm` (detected by scanning gifts lacking `external_id` within date ranges)
 
 ### 3. Discrepancy Workspace
 
@@ -88,7 +88,7 @@ Stripe/GoCardless integrations can auto-populate payout batches; CSV uploaders c
 
 Each reconciliation item supports inline resolution:
 - ➕ `Create donation` pre-populates gift entry from staging row.
-- 🔗 `Link donation` associates staging external ID to existing gift (updates `external_reference`).
+- 🔗 `Link donation` associates staging external ID to existing gift (updates `external_id`).
 - 🧹 `Mark duplicate` merges duplicates or flags them for follow-up.
 - 🧾 `Confirm variance` records explanation (refund, currency adjustment) and marks group reconciled.
 - 📤 `Export summary` produces finance packets by date/payout.
@@ -107,7 +107,7 @@ Every action appends to `donation_reconciliation_log` with actor, timestamp, rea
 | `donation_payout_group` | Optional grouping of donations by payout/deposit ref |
 
 Donation records gain:
-- `external_reference` (string, provider transaction ID or payout ref)
+- `external_id` (string, provider transaction ID or import/payout reference)
 - `reconciled_at` (timestamp) and `reconciliation_status` (enum: `pending`, `matched`, `variance_recorded`)
 
 ---
