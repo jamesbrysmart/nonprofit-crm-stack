@@ -40,16 +40,16 @@ This plan remains provisional. For the fundraising MVP we are proceeding with th
 - **Intake**: Inbound gifts (manual UI, CSV, connectors, portal webhooks) land in staging tables within the operational mirror. Capture raw payload, channel metadata, and ingestion timestamps.
 - **Validation**: Synchronous rules flag missing fields, amount anomalies, consent requirements, and run duplicate checks (e.g. `/people/duplicates`). AI-assisted reviews can layer on top.
 - **Review & Mapping**: Users (or automated flows) resolve donor/campaign/fund mapping, edit fields, or merge with existing donors. Audit log records each action.
-- **Promotion**: Approved staging records trigger write-through to Twenty via the fundraising-service proxy; on success, status flips to “posted” and stores the created Gift ID.
+- **Processing**: Approved staging records trigger write-through to Twenty via the fundraising-service proxy; on success, status flips to “posted” and stores the created Gift ID.
 - **Post actions**: Downstream automations (receipts, Gift Aid queues) key off the posted state to avoid firing on unreviewed staging records.
-- **Error handling**: Failed promotions stay in staging with surfaced errors, allowing retries or rollbacks without orphaned data in Twenty.
+- **Error handling**: Failed processing attempts stay in staging with surfaced errors, allowing retries or rollbacks without orphaned data in Twenty.
 
-_Open design questions: batching vs single record promotion, SLA expectations for different channels, how to expose staging state in the homepage UI, and whether certain connectors bypass staging with heightened validation._
+_Open design questions: batching vs single record processing, SLA expectations for different channels, how to expose staging state in the homepage UI, and whether certain connectors bypass staging with heightened validation._
 
 ## 4. Open Questions & Work Items
 
 - **Sync mechanics**: Do we receive webhooks from Twenty or poll REST endpoints? How do we batch updates and handle retries?
-- **Staging lifecycle**: Where do we record in-flight gift entries/imports, and how do we promote them to canonical Gifts?
+- **Staging lifecycle**: Where do we record in-flight gift entries/imports, and how do we process them into canonical Gifts?
 - **Conflict resolution**: How are simultaneous edits (Twenty UI vs managed UI) surfaced and resolved?
 - **Tenancy**: For the single-tenant pilot model, do we provision separate databases or schemas per org? What changes if we move to multi-tenant?
 - **AI readiness**: What additional enrichment or embeddings do we store to power AI assistants without leaking PII?

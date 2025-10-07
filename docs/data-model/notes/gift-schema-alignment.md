@@ -30,7 +30,7 @@
 2. **Update proxy intake**: write to staging (including `external_id`, `source_fingerprint`), return staging ID.
    _Status_: staging write now honours `auto_promote` by deferring the gift commit when the flag (or org default) resolves to `false`. Criteria for automatically enabling that flag remain open—expect to lift the decision to the `gift_batch` level so cautious defaults win until review tooling exists.
 3. **Validation worker**: process staging rows, run dedupe, mark status, emit audit logs.
-4. **Promotion step**: when staging row approved, map to Gift payload using aligned field names and create the Twenty Gift.
+4. **Processing step**: when staging row approved, map to Gift payload using aligned field names and create the Twenty Gift.
 5. **Link records**: store Gift ID back on staging row for reconciliation/rollback.
 6. **Surface errors**: expose status via API/console so admins can resolve failed rows.
 
@@ -67,7 +67,7 @@ Once these steps are ticketed/implemented, retire this note and rely on the main
 _Implementation TODOs to ticket:_
 1. Define metadata object + enums in Twenty and document provisioning steps.
 2. Update proxy/webhook to write `gift_staging` rows instead of direct gifts (respecting `auto_promote_gifts`).
-3. Build validation + promotion worker (likely in fundraising-service) that reads `gift_staging`, applies rules, and commits gifts.
+3. Build validation + processing worker (likely in fundraising-service) that reads `gift_staging`, applies rules, and commits gifts.
 4. Expose status endpoints/UI so admins can monitor and manually action staging rows.
 5. Update docs/runbooks once the flow is wired.
 
@@ -90,8 +90,8 @@ _Implementation TODOs to ticket:_
 **Behaviour**
 - When creating a `gift_staging` row, set `gift_batch_id` (create batch on the fly for stream sources like Stripe, or reuse existing batch for manual entry/import flows).
 - `auto_promote` default can be derived from `source`/`risk_level`; allow override per batch (e.g., manual import sets `auto_promote = false`).
-- Promotion worker checks batch: if `auto_promote = true` and staging row passes validation/dedupe, move to `committing`; otherwise hold at `ready_for_commit` until a user approves via batch UI.
-- Batch UI should support bulk actions (approve selected rows, retry failures, archive). Promotion of a batch triggers promotion for eligible rows.
+- Processing worker checks batch: if `auto_promote = true` and staging row passes validation/dedupe, move to `committing`; otherwise hold at `ready_for_commit` until a user approves via batch UI.
+- Batch UI should support bulk actions (approve selected rows, retry failures, archive). Processing a batch triggers processing for eligible rows.
 - Batches provide a natural review queue: filter by `status` + `risk_level` to prioritise manual work.
 
-_To do_: include batch metadata in the implementation tickets (definition, UI, promotion logic) once the core staging flow is in place.
+_To do_: include batch metadata in the implementation tickets (definition, UI, processing logic) once the core staging flow is in place.

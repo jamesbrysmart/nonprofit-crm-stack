@@ -98,7 +98,7 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 **Next actions**
 1. Document detailed staging lifecycle and data model assumptions (`ARCHITECTURE.md`).
-2. Spike on prototype staging tables + promotion flow (manual UI path first).
+2. Spike on prototype staging tables + processing flow (manual UI path first).
 3. Update this decision with evaluated options, chosen approach, and revisit triggers after the spike.
 
 ---
