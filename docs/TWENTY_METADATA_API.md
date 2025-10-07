@@ -79,6 +79,25 @@ curl -X POST -H "Authorization: Bearer <YOUR_API_KEY>" -H "Content-Type: applica
 }' http://localhost:3000/rest/metadata/fields
 ```
 
+### Example: Gift Staging Object Provisioning
+
+The fundraising POC uses a `gift_staging` object to hold intake records before they are committed to the canonical `gift` object. Use the same REST endpoints shown above to create the object and its simple fields:
+
+```bash
+curl -X POST -H "Authorization: Bearer <YOUR_API_KEY>" -H "Content-Type: application/json" -d '{
+  "nameSingular": "giftStaging",
+  "namePlural": "giftStagings",
+  "labelSingular": "Gift Staging",
+  "labelPlural": "Gift Stagings",
+  "icon": "IconInbox",
+  "description": "Temporary staging record for gifts prior to commit."
+}' http://localhost:3000/rest/metadata/objects
+```
+
+Follow up by creating the supporting fields (all simple types that the API already supports): `Source`, `IntakeSource`, `SourceFingerprint`, `ExternalId`, `AmountMinor`, `Currency`, `PaymentMethod`, `DateReceived`, `ValidationStatus`, `DedupeStatus`, `PromotionStatus`, `AutoPromote`, `GiftAidEligible`, `GiftBatchId`, and `RawPayload`.
+
+Lookup fields (e.g., linking `gift_staging` to `gift` or `gift_batch`) still require manual creation in the Twenty UI until the metadata API accepts `RELATION` payloads.
+
 #### Challenges with `RELATION` / `LOOKUP` Fields
 
 As of this writing, we have been unsuccessful in programmatically creating a `RELATION` or `LOOKUP` field via the REST Metadata API. Attempts have resulted in various errors, including:

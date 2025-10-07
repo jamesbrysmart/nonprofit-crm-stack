@@ -50,10 +50,9 @@ Once these steps are ticketed/implemented, retire this note and rely on the main
 | `error_detail` | JSON / text | Optional machine + human readable diagnostics when validation/promotion fails. |
 | `gift_id` | UUID (nullable) | Reference to committed Gift once promotion succeeds. |
 | `amount_minor` | Integer | Captured amount in minor units. |
-| `currency` | String | Currency code (e.g., `GBP`). |
 | `date_received` | Date | Effective gift date. |
 | `payment_method` | Enum | Payment method captured/derived at intake. |
-| `fund_id` / `appeal_id` / `appeal_segment_id` / `tracking_code_id` | UUID (nullable) | Attribution defaults (if known). |
+| `fund_id` / `appeal_id` / `appeal_segment_id` / `tracking_code_id` | UUID (nullable) | Attribution defaults (if known). *(Temporarily omitted from runtime payload until metadata is provisioned.)* |
 | `contact_id` | UUID (nullable) | Linked contact; may be populated after dedupe. |
 | `household_id` | UUID (nullable) | Optional household linkage when confirmed. |
 | `notes` | Text (nullable) | Freeform notes from intake. |

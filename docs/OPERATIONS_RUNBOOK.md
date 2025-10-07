@@ -63,9 +63,9 @@ Inspect Compose health details | `docker inspect --format '{{json .State.Health}
 
 ## 6. Gift staging toggle (scaffold)
 
-- `FUNDRAISING_ENABLE_GIFT_STAGING=true` enables the new staging scaffold inside the fundraising-service.
-- When enabled, inbound gifts write to a temporary staging record (logged with event `gift_staging_stage`) before the service forwards the payload to Twenty.
-- Promotion is still automatic while the metadata objects are being finalised; logs (`gift_staging_committed`) show the link between staging id and Twenty gift id.
+- `FUNDRAISING_ENABLE_GIFT_STAGING=true` enables the staging flow inside the fundraising-service.
+- `FUNDRAISING_STAGING_AUTO_PROMOTE_DEFAULT` (default `true`) controls whether newly staged rows auto-commit when validation passes.
+- When enabled, inbound gifts write to `gift_staging` via the REST API (logs `gift_staging_stage`). Successful commits emit `gift_staging_committed` with the resulting gift id.
 - Leave the flag unset/false to retain the classic direct-to-gift behaviour while staging metadata is provisioned.
 
 ---
