@@ -1,7 +1,7 @@
 ## Gemini Added Memories
 - This project orchestrates the 'twenty' CRM, PostgreSQL, Redis, 'fundraising-service', and Nginx gateway using Docker Compose.
 - It is the central orchestration point for the AI-first non-profit CRM solution, which also involves the 'twenty-core' and 'fundraising-service' projects.
-- When discussing how to build new features, always consult the DECISIONS.md file first to ensure the proposed approach aligns with established architectural principles.
+- When discussing how to build or extend features, review the relevant specs under `docs/features/` first, then check `DECISIONS.md` to confirm the approach still aligns with recorded architectural principles.
 - For this project, I should constantly consider whether the current approach is the best one and challenge it or suggest alternatives if I believe it can be done better, especially for foundational architectural decisions.
 - When providing Docker commands, include a one-line explanation (e.g., what `-d`, `-f`, or `--force-recreate` do) so the team doesn’t have to look them up repeatedly.
 - Architectural decisions should be recorded in `DECISIONS.md` as an ADR. This includes new decisions and updating existing ones if they are reconsidered.
@@ -14,7 +14,8 @@
 - **Git Hygiene:** When submodule staging fails with `Unable to create .../index.lock` or `insufficient permission for adding an object`, reown the submodule Git data from the superproject root: `sudo chown -R jamesbryant:jamesbryant .git/modules/services/fundraising-service` (or the relevant submodule path) before retrying `git add`.
 - **Command Failures:** If npm/docker commands fail in this environment, retry once for transient issues; otherwise pause and ask James to run the command manually instead of applying nonstandard workarounds.
 - **Submodule Code Constraint:** Do not modify code within third-party Git submodules like `twenty-core`, as these changes can be overwritten or cause conflicts during updates. Propose non-invasive solutions or workarounds instead.
-- At the start of a new session, read the contents of README.md and DECISIONS.md to establish context.
+- At the start of a new session, read the contents of README.md, the relevant `docs/features/` specs, and DECISIONS.md to establish context.
+- Before making material code changes, share the intent (summary/plan) and wait for explicit confirmation; detailed docs are guidance, not a green light to proceed without stakeholder sign-off.
 - Use `docker compose` (with a space), not `docker-compose` (with a hyphen), as this project uses Docker Compose V2.
 - Default to the `--profile fast` flag when running docker compose commands so we reuse prebuilt Twenty images unless we deliberately opt into the source profile.
 - **Debugging Session (2025-09-12): Docker Compose Startup Issues for Twenty CRM Stack**

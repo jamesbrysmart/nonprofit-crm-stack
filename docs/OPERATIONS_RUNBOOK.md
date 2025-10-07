@@ -64,9 +64,17 @@ Inspect Compose health details | `docker inspect --format '{{json .State.Health}
 ## 6. Gift staging toggle (scaffold)
 
 - `FUNDRAISING_ENABLE_GIFT_STAGING=true` enables the staging flow inside the fundraising-service.
-- `FUNDRAISING_STAGING_AUTO_PROMOTE_DEFAULT` (default `true`) controls whether newly staged rows auto-commit when validation passes.
+- `FUNDRAISING_STAGING_AUTO_PROMOTE_DEFAULT` (default `true`) controls whether newly staged rows auto-commit when validation passes. Until batch-level review toggles exist, prefer setting this to `false` so rows require explicit approval.
 - When enabled, inbound gifts write to `gift_staging` via the REST API (logs `gift_staging_stage`). Successful commits emit `gift_staging_committed` with the resulting gift id.
+- If a request sets `autoPromote=false` (or the org default resolves to false) the service now returns a staging acknowledgement payload (`data.giftStaging`, `meta.stagedOnly=true`) and defers the gift creation step for manual approval.
+- Manual processing endpoint: `POST /gift-staging/:id/promote` returns one of `{status: 'committed'|'deferred'|'error', ...}`. Use only when staging is enabled; otherwise the route responds with `503 Service Unavailable`.
+- Reviewers can update staging statuses via `PATCH /gift-staging/:id/status` (supply `promotionStatus`, `validationStatus`, `dedupeStatus`; raw payload is preserved automatically if omitted).
 - Leave the flag unset/false to retain the classic direct-to-gift behaviour while staging metadata is provisioned.
+
+### Smoke test
+
+- Run `docker compose --profile fast exec -e SMOKE_GIFTS_BASE=http://gateway/api/fundraising fundraising-service npm run smoke:gifts`.
+- Flow: stage (autoPromote=false) → mark ready → promote → cleanup → legacy gift CRUD → persistent gift. A warning about missing `rawPayload` may appear if the API omits it; behaviour still passes.
 
 ---
 

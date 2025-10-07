@@ -28,6 +28,7 @@
 
 1. **Define staging object**: schema + persistence (DB table or Twenty object) with fields from `donation-staging.md`.
 2. **Update proxy intake**: write to staging (including `external_id`, `source_fingerprint`), return staging ID.
+   _Status_: staging write now honours `auto_promote` by deferring the gift commit when the flag (or org default) resolves to `false`. Criteria for automatically enabling that flag remain open—expect to lift the decision to the `gift_batch` level so cautious defaults win until review tooling exists.
 3. **Validation worker**: process staging rows, run dedupe, mark status, emit audit logs.
 4. **Promotion step**: when staging row approved, map to Gift payload using aligned field names and create the Twenty Gift.
 5. **Link records**: store Gift ID back on staging row for reconciliation/rollback.
