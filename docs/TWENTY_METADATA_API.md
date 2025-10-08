@@ -118,9 +118,9 @@ This suggests that either the OpenAPI schema is incomplete for this field type, 
 
 ---
 
-### `v1-initial-schema.mjs` Script Status
+### `setup-schema.mjs` Script Status
 
-The `services/fundraising-service/src/metadata-scripts/v1-initial-schema.mjs` script has been updated to use the REST Metadata API for creating custom objects (`campaign`, `gift`) and their simple fields (`StartDate`, `EndDate`, `Amount`, `Date`). This script is intended to be run on the spinup of a new workspace to provision these essential metadata elements.
+The `services/fundraising-service/scripts/setup-schema.mjs` script has been updated to use the REST Metadata API for creating custom objects (`campaign`, `gift`) and their simple fields (`StartDate`, `EndDate`, `Amount`, `Date`). This script is intended to be run on the spinup of a new workspace to provision these essential metadata elements.
 
 **Current Status and Known Limitations:**
 

@@ -27,6 +27,11 @@ Goal: Build a free-licensed, modular, NPSP-style nonprofit suite on top of Twent
 - Open & extensible: Free-licensed core; clean APIs; easy custom experiences (web forms/portals).
 - AI-first ergonomics: AI helpers for setup, mappings, and routine automation—without hiding the model.
 
+### 3a) Platform Alignment Principles
+
+- **Reuse Twenty first:** Always prefer Twenty-native APIs, components, and patterns before building bespoke functionality. Only add managed-extension logic when the platform cannot meet the requirement or we need extra metadata/guardrails.
+- **Configurable by design:** Ship default behaviours that work for most nonprofits, but structure code and data so matching rules, thresholds, or automations can be adjusted per workspace in the future (feature flags, metadata, or admin UI). Document assumptions and revisit criteria whenever we add new flows.
+
 ## 4) Modules & Must-Haves
 
 ### A. Fundraising (Phase 1 – priority)

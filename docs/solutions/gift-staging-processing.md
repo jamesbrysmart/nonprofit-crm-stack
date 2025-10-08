@@ -160,4 +160,56 @@ type ProcessGiftErrorReason =
 5. **Hardening & Observability**
    - Metrics (counts per status, processing duration), alerting on stuck rows, integration with reconciliation.
 
+---
+
+## Manual Entry Validation (2025-02-26, local stack)
+
+_Purpose:_ Validate the thin manual intake slice stages and processes a single gift end-to-end using the new UI.
+
+### Preconditions
+
+- `FUNDRAISING_ENABLE_GIFT_STAGING=true` and `FUNDRAISING_STAGING_AUTO_PROMOTE_DEFAULT=false` in `services/fundraising-service/.env`.
+- Twenty stack running via docker compose with admin credentials seeded (`ADMIN_EMAIL` / `ADMIN_PASSWORD`).
+
+### Runbook
+
+```bash
+# 1. Start / refresh core services (db, redis, Twenty, fundraising, gateway)
+docker compose --profile fast up -d --build
+
+# 2. (Optional) Follow fundraising-service logs for staging/process events
+docker compose logs -f fundraising-service
+
+# 3. In a browser, visit http://localhost:4000/fundraising
+#    - Sign in with ADMIN_EMAIL / ADMIN_PASSWORD when prompted
+#    - Enter a manual gift (GBP amount, donor name, optional email)
+#    - Submission should display "Gift committed in Twenty..." with both gift + staging ids
+
+# 4. Inspect the most recent staging record
+curl -s "http://localhost:4000/api/fundraising/gift-staging?limit=1&sort=updatedAt:desc" | jq '.data[0]'
+
+# 5. Verify the committed gift exists in Twenty (replace GIFT_ID from the success toast)
+curl -s -H "Authorization: Bearer $TWENTY_API_KEY" \
+  "http://localhost:4000/rest/gifts/GIFT_ID" | jq '.data.gift'
+```
+
+### Observations
+
+- Duplicate check fires before staging; selecting an existing supporter reuses their `donorId`.
+- Exact email matches now set `dedupeStatus=matched_existing`; fallback/partial matches set `dedupeStatus=needs_review` and carry diagnostics in the raw payload (`dedupeDiagnostics`).
+- Duplicate detection continues to reuse Twenty's `/people/duplicates` endpoint; managed logic only annotates results so reviewers have context and future per-workspace tuning (see guiding principles in `docs/PROJECT_CONTEXT.md` §3a).
+- Staging records now surface donor first/last name, email, and notes so CSV imports can map directly and the review UI can show the context without digging into `rawPayload`.
+- CSV imports should map `promotionStatus`, `validationStatus`, and `dedupeStatus` to `pending`; future work will make the service default missing values to `pending` automatically.
+- Staging response returns `{ stagedOnly: true }`, and processing yields `status: committed` with the new gift id.
+- Fundraising logs emit `gift_staging_stage`, `gift_staging_process_call_create`, and `gift_staging_committed` events with matching IDs.
+- Twenty REST lookup confirms the committed gift retains the submitted amount, currency, donor linkage, and timestamps.
+
+### Follow-ups
+
+1. Surface staged records in the review queue/drawer so Ops can inspect the row created above.
+2. Persist or display the raw payload in the UI to support future inline edits before processing.
+3. Expose admin-level knobs for matching thresholds/strategies so orgs can override defaults without code (tracked in configuration backlog per guiding principles).
+4. Default blank staging statuses from imports to `pending` so the queue stays consistent even when CSVs omit the columns.
+3. Expose admin-level knobs for matching thresholds/strategies so orgs can override defaults without code (tracked in configuration backlog per guiding principles).
+
 Document each slice in tickets/ADRs as we commit to implementation. Update this note (or migrate into feature specs) once decisions are locked.

@@ -16,6 +16,7 @@ Working draft that tracks automation tooling, patterns, and decisions for the ma
 | Tool | Use Case | Status | Notes |
 | --- | --- | --- | --- |
 | Twenty Workflows (in-app) | Native triggers/actions inside Twenty | Not yet evaluated | Need spike to confirm coverage for Gift object + custom rollups. Always proxy writes/reads via fundraising-service endpoints. |
+| Twenty Serverless (alpha) | New serverless functions & triggers runtime | Prototype-only | Twenty’s core repo now exposes GraphQL APIs for creating/publishing serverless functions and wiring triggers (cron, DB, routes). Await official docs, but plan future automations to reuse this runtime rather than duplicating execution engines. |
 | n8n (self-hosted) | Cross-system orchestration (webhooks, receipts) | Planned | Primary low-code orchestrator for pilot integrations; call fundraising-service REST API and emit request IDs into logs. Capture deployment decision (stack vs managed) and secret handling. |
 | fundraising-service jobs | Node scripts/cron for advanced logic | Existing | House compliance-critical flows (Gift Aid, receipts) and latency-sensitive work. Align with rollup calculations, webhook retries, receipt generation. |
 | Zapier (per-tenant) | Lightweight notifications or bespoke pilot glue | Planned | Allowed for scoped org-specific automations; document flows and hand-off criteria into n8n/service when they harden. |

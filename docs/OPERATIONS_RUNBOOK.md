@@ -77,6 +77,31 @@ Inspect Compose health details | `docker inspect --format '{{json .State.Health}
 - Run `docker compose --profile fast exec -e SMOKE_GIFTS_BASE=http://gateway/api/fundraising fundraising-service npm run smoke:gifts`.
 - Flow: stage (autoPromote=false) → mark ready → process → cleanup → legacy gift CRUD → persistent gift. A warning about missing `rawPayload` may appear if the API omits it; behaviour still passes.
 
+## 7. Bulk import via Twenty CSV wizard
+
+We reuse Twenty’s native data import tool to load staged donations in bulk—no custom uploader required.
+
+1. In the Twenty UI, navigate to **Admin → Data Import**.
+2. Choose the `gift_staging` object (or the friendly label once metadata is published).
+3. Upload the CSV file and reuse/saved the “Fundraising Gift Staging” column mapping template (ensures `external_id`, `intakeSource=csv_import`, amount/date fields, etc.).
+4. Run the import. Twenty will create one staging row per CSV record; they appear immediately in the managed staging queue for review/processing.
+5. Quick link: `/objects/giftStagings` opens the Twenty list view (from there you can trigger “Import Records”). The managed UI now includes an “Open in Twenty” shortcut on the staging queue header.
+
+Reference mapping template lives in `docs/features/donation-intake.md` (CSV section) and the sample CSV in `/templates/imports/gift-staging.csv` (TODO). Any future matching/config rules should continue to flow through Twenty’s import UI per the project principles (`docs/PROJECT_CONTEXT.md` §3a).
+
+_Recommended columns (map these to the new fields provisioned by `setup-schema`):_
+- `external_id`
+- `donor_first_name`
+- `donor_last_name`
+- `donor_email`
+- `amount_minor`
+- `currency`
+- `date_received`
+- `payment_method`
+- `intake_source` (set to `csv_import` in most cases)
+
+_Extensibility note:_ Twenty’s upcoming serverless functions/triggers runtime (see `docs/AUTOMATIONS.md`) can eventually host custom import validations or downstream automations; once GA, prefer embedding such logic there rather than in the fundraising-service.
+
 ---
 
 _Keep this document in sync with compose changes, health endpoints, and logging behaviour as we flesh out the runbook backlog item._
