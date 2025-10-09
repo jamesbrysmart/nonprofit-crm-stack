@@ -27,6 +27,21 @@ Goal: Build a free-licensed, modular, NPSP-style nonprofit suite on top of Twent
 - Open & extensible: Free-licensed core; clean APIs; easy custom experiences (web forms/portals).
 - AI-first ergonomics: AI helpers for setup, mappings, and routine automation—without hiding the model.
 
+### 3a) Platform Alignment Principles
+
+- **Reuse Twenty first:** Always prefer Twenty-native APIs, components, and patterns before building bespoke functionality. Only add managed-extension logic when the platform cannot meet the requirement or we need extra metadata/guardrails.
+- **Configurable by design:** Ship default behaviours that work for most nonprofits, but structure code and data so matching rules, thresholds, or automations can be adjusted per workspace in the future (feature flags, metadata, or admin UI). Document assumptions and revisit criteria whenever we add new flows.
+
+### 3b) Twenty's Architectural Vision: Self-Improving Software
+
+Félix Malfait's article "Self-Improving Software" (twenty.dev/self-improving-software/) provides key insights into the architectural philosophy behind Twenty, particularly its approach to extensibility and AI integration.
+
+**Key Takeaways:**
+*   **Hybrid AI/Fixed Code:** Software will combine AI's flexibility (for pattern discovery) with stable, deterministic code (for reliable execution), mirroring human learning.
+*   **Multi-tenancy & Extensibility:** The platform is designed for secure, efficient multi-tenancy, leveraging Micro-VMs (for isolated serverless functions), Micro-Frontends, and a shared, metadata-driven database. This enables powerful customization without compromising core stability.
+*   **Imperative Engine vs. Declarative Configuration:** This distinction is crucial. AI (and community contributions) are envisioned to excel at generating *declarative* business rules within constrained environments (like our `rollups.json`), while the core imperative engine remains with the team. This aligns perfectly with our Rollup Engine's design.
+*   **Embedded Feedback Loops:** The importance of tightly integrated tools that provide immediate feedback to AI and developers for continuous improvement.
+
 ## 4) Modules & Must-Haves
 
 ### A. Fundraising (Phase 1 – priority)
