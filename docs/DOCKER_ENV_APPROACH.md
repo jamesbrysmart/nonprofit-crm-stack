@@ -122,6 +122,14 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     docker compose --profile fast pull
     ```
 
+    > **Important (fast profile users):** The `fast` profile skips the `migrate` service, so the server container will never execute the TypeORM migrations on its own. Before starting the upgraded stack, apply migrations explicitly:
+    >
+> ```bash
+> docker compose run --rm migrate yarn nx run twenty-server:database:migrate:prod
+> ```
+    >
+    > This command uses the checked-in `services/twenty-core` code to migrate the database. Skipping it leaves the schema on the old version even though new containers are running.
+
 3.  **Stop Services & Apply New Version:**
     *   Take the stack down. The new image will be used on the next startup.
 
