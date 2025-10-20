@@ -30,9 +30,9 @@ The default configuration will provide common rollups for donor engagement and s
 *   `yearToDateGiftAmount` (Currency)
 *   `yearToDateGiftCount` (Number)
 
-#### 2.2. Configuration Schema (`rollups.json`)
+#### 2.2. Configuration Schema (embedded runtime config)
 
-A `rollups.json` file will define all rollup rules.
+Rollup rules ship with the bundle (`serverlessFunctions/calculaterollups/src/rollupConfig.ts`) and can be overridden via environment variables.
 
 **Example Configuration (Default):**
 ```json
@@ -43,7 +43,7 @@ A `rollups.json` file will define all rollup rules.
     "relationField": "donorId",
     "childFilters": [
       {
-        "field": "amount.value",
+        "field": "amount.amountMicros",
         "operator": "gt",
         "value": 0
       }
@@ -51,7 +51,8 @@ A `rollups.json` file will define all rollup rules.
     "aggregations": [
       {
         "type": "SUM",
-        "childField": "amount.value",
+        "childField": "amount.amountMicros",
+        "currencyField": "amount.currencyCode",
         "parentField": "lifetimeGiftAmount"
       },
       {
@@ -60,21 +61,22 @@ A `rollups.json` file will define all rollup rules.
       },
       {
         "type": "MAX",
-        "childField": "dateReceived",
+        "childField": "giftDate",
         "parentField": "lastGiftDate"
       },
       {
         "type": "MIN",
-        "childField": "dateReceived",
+        "childField": "giftDate",
         "parentField": "firstGiftDate"
       },
       {
         "type": "SUM",
-        "childField": "amount.value",
+        "childField": "amount.amountMicros",
         "parentField": "yearToDateGiftAmount",
+        "currencyField": "amount.currencyCode",
         "filters": [
           {
-            "field": "dateReceived",
+            "field": "giftDate",
             "operator": "gte",
             "dynamicValue": "startOfYear"
           }
@@ -85,7 +87,7 @@ A `rollups.json` file will define all rollup rules.
         "parentField": "yearToDateGiftCount",
         "filters": [
           {
-            "field": "dateReceived",
+            "field": "giftDate",
             "operator": "gte",
             "dynamicValue": "startOfYear"
           }

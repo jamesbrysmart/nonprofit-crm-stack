@@ -71,7 +71,6 @@ services:
 
   server:
     image: twentycrm/twenty:${TAG:-latest}
-    profiles: ["fast"]
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
     ports:
@@ -113,55 +112,11 @@ services:
     restart: always
     networks: [dev-net]
 
-  server-src:
-    build:
-      context: ./services/twenty-core
-      dockerfile: ./packages/twenty-docker/twenty/Dockerfile
-    profiles: ["source"]
+  worker:
+    image: twentycrm/twenty:${TAG:-latest}
+    command: ["yarn","worker:prod"]
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
-    ports:
-      - "3000:3000"
-    environment:
-      NODE_PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/${PG_DATABASE_NAME:-postgres}
-      PGHOST: db
-      PGPORT: "5432"
-      PGDATABASE: ${PG_DATABASE_NAME:-postgres}
-      PGUSER: ${PG_DATABASE_USER:-postgres}
-      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
-      PGSSLMODE: disable
-      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
-      DISABLE_DB_MIGRATIONS: "false"
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      SERVER_URL: ${SERVER_URL}
-      DISABLE_CRON_JOBS_REGISTRATION: ${DISABLE_CRON_JOBS_REGISTRATION}
-      STORAGE_TYPE: ${STORAGE_TYPE}
-      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
-      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
-      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-      APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
-    depends_on:
-      db:
-        condition: service_healthy
-      db-wait:
-        condition: service_completed_successfully
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:3000/healthz"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-    restart: always
-    networks: [dev-net]
-
-  worker:
-    image: twentycrm/twenty:${TAG:-v1.4.0}
-    command: ["yarn","worker:prod"]
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/postgres}
       PG_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
@@ -174,48 +129,12 @@ services:
       IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
       DISABLE_DB_MIGRATIONS: "true"
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      TWENTY_API_KEY: ${TWENTY_API_KEY:-}
+      TWENTY_API_BASE_URL: ${TWENTY_API_BASE_URL:-http://server:3000/rest}
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_healthy }
       server: { condition: service_healthy }
-    restart: always
-    networks: [dev-net]
-
-  worker-src:
-    build:
-      context: ./services/twenty-core
-      dockerfile: ./packages/twenty-docker/twenty/Dockerfile
-    profiles: ["source"]
-    command: ["yarn", "worker:prod"]
-    environment:
-      PG_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
-      SERVER_URL: ${SERVER_URL}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/postgres}
-      PGHOST: db
-      PGPORT: "5432"
-      PGDATABASE: ${PG_DATABASE_NAME:-postgres}
-      PGUSER: ${PG_DATABASE_USER:-postgres}
-      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
-      PGSSLMODE: disable
-      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
-      DISABLE_CRON_JOBS_REGISTRATION: "true"
-      STORAGE_TYPE: ${STORAGE_TYPE}
-      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
-      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
-      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-      APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-    depends_on:
-      db:
-        condition: service_healthy
-      db-wait:
-        condition: service_completed_successfully
-      server:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     restart: always
     networks: [dev-net]
 

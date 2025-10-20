@@ -10,5 +10,11 @@
   "$schema": "https://raw.githubusercontent.com/twentyhq/twenty/main/packages/twenty-cli/schemas/appManifest.schema.json",
   "universalIdentifier": "2b308f8c-6ff8-4838-9880-aa0271dfd8d8",
   "name": "Rollup engine",
-  "description": "Rollup engine"
+  "description": "Rollup engine",
+  "scripts": {
+    "smoke": "node --import tsx scripts/run-rollup-smoke.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  }
 }

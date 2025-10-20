@@ -1,5 +1,4 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
+import { defaultRollupConfig } from './rollupConfig';
 
 type AggregationType = 'SUM' | 'COUNT' | 'MAX' | 'MIN' | 'AVG';
 type Operator = 'equals' | 'notEquals' | 'in' | 'notIn' | 'gt' | 'gte' | 'lt' | 'lte';
@@ -19,10 +18,11 @@ interface AggregationConfig {
   type: AggregationType;
   parentField: string;
   childField?: string;
+  currencyField?: string;
   filters?: FilterConfig[];
 }
 
-interface RollupDefinition {
+export interface RollupDefinition {
   parentObject: string;
   childObject: string;
   relationField: string;
@@ -30,7 +30,7 @@ interface RollupDefinition {
   aggregations: AggregationConfig[];
 }
 
-type RollupConfig = RollupDefinition[];
+export type RollupConfig = RollupDefinition[];
 
 type ChildRecord = Record<string, unknown>;
 
@@ -94,11 +94,6 @@ const sanitizePayload = (payload: Record<string, unknown>) =>
 const getResourceName = (objectName: string) =>
   RESOURCE_PLURALS[objectName] ?? `${objectName}s`;
 
-const readJsonFile = async (filePath: string) => {
-  const raw = await readFile(filePath, 'utf-8');
-  return JSON.parse(raw) as unknown;
-};
-
 const operatorSet = new Set<Operator>([
   'equals',
   'notEquals',
@@ -120,7 +115,7 @@ const aggregationTypes = new Set<AggregationType>([
 
 const validateRollupConfig = (config: unknown): asserts config is RollupConfig => {
   if (!Array.isArray(config)) {
-    throw new Error('rollups.json must contain an array of rollup definitions');
+    throw new Error('Rollup configuration must contain an array of rollup definitions');
   }
 
   config.forEach((definition, index) => {
@@ -195,32 +190,25 @@ const validateRollupConfig = (config: unknown): asserts config is RollupConfig =
   });
 };
 
-const loadRollupConfig = async (): Promise<RollupConfig> => {
-  const candidatePaths = [
-    path.resolve(__dirname, '..', 'rollups.json'),
-    path.resolve(__dirname, 'rollups.json'),
-    path.resolve(__dirname, '../..', 'rollups.json'),
-    path.resolve(process.cwd(), 'rollups.json'),
-  ];
+const resolveRollupConfig = (): RollupConfig => {
+  const override =
+    process.env.ROLLUP_ENGINE_CONFIG ??
+    process.env.ROLLUPS_CONFIG ??
+    process.env.CALCULATE_ROLLUPS_CONFIG;
 
-  let config: unknown;
-  let lastError: unknown;
-
-  for (const candidate of candidatePaths) {
+  if (override) {
     try {
-      config = await readJsonFile(candidate);
-      break;
+      const parsed = JSON.parse(override) as unknown;
+      validateRollupConfig(parsed);
+      return parsed;
     } catch (error) {
-      lastError = error;
+      const reason =
+        error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
+      throw new Error(`Unable to parse rollup configuration override (reason: ${reason})`);
     }
   }
 
-  if (config === undefined) {
-    throw new Error(
-      `Unable to load rollup configuration (${(lastError as Error | undefined)?.message ?? 'unknown error'})`,
-    );
-  }
-
+  const config = defaultRollupConfig;
   validateRollupConfig(config);
   return config;
 };
@@ -413,7 +401,7 @@ const computeAggregations = (
   now: Date,
 ) => {
   const baseFiltered = applyFilters(records, definition.childFilters, now);
-  const result: Record<string, number | string | null> = {};
+  const result: Record<string, number | string | null | Record<string, unknown>> = {};
 
   definition.aggregations.forEach((aggregation) => {
     const scopedRecords = applyFilters(
@@ -430,19 +418,35 @@ const computeAggregations = (
         if (!aggregation.childField) {
           throw new Error('SUM aggregation requires childField');
         }
-        const total = scopedRecords.reduce((accumulator, record) => {
-          const rawValue = getNestedValue(record, aggregation.childField!);
-          const numeric = typeof rawValue === 'number'
-            ? rawValue
-            : typeof rawValue === 'string'
-              ? Number(rawValue)
-              : NaN;
-          if (Number.isNaN(numeric)) {
-            return accumulator;
-          }
-          return accumulator + numeric;
-        }, 0);
-        result[aggregation.parentField] = roundForSum(total);
+        const total = scopedRecords.reduce(
+          (accumulator, record) => {
+            const rawValue = getNestedValue(record, aggregation.childField!);
+            const currencyRaw =
+              aggregation.currencyField !== undefined
+                ? getNestedValue(record, aggregation.currencyField)
+                : undefined;
+            const numeric = typeof rawValue === 'number'
+              ? rawValue
+              : typeof rawValue === 'string'
+                ? Number(rawValue)
+                : NaN;
+            if (Number.isNaN(numeric)) {
+              return accumulator;
+            }
+            return {
+              amount: accumulator.amount + numeric,
+              currency:
+                typeof currencyRaw === 'string' && currencyRaw.trim().length > 0
+                  ? currencyRaw
+                  : accumulator.currency,
+            };
+          },
+          { amount: 0, currency: undefined as string | undefined },
+        );
+        result[aggregation.parentField] = {
+          amountMicros: Math.round(roundForSum(total.amount)),
+          currencyCode: total.currency ?? '',
+        };
         break;
       }
       case 'AVG': {
@@ -497,11 +501,15 @@ const computeAggregations = (
         } else if (typeof chosen.raw === 'number') {
           result[aggregation.parentField] = chosen.raw;
         } else if (chosen.raw instanceof Date) {
-          result[aggregation.parentField] = chosen.raw.toISOString();
+          result[aggregation.parentField] = chosen.raw.toISOString().slice(0, 10);
         } else if (chosen.raw === null || chosen.raw === undefined) {
           result[aggregation.parentField] = null;
         } else {
-          result[aggregation.parentField] = String(chosen.raw);
+          const rawString = String(chosen.raw);
+          const parsed = Date.parse(rawString);
+          result[aggregation.parentField] = Number.isNaN(parsed)
+            ? rawString
+            : new Date(parsed).toISOString().slice(0, 10);
         }
         break;
       }
@@ -786,7 +794,7 @@ const getApiCredentials = () => {
     process.env.API_KEY;
 
   if (!apiKey) {
-    throw new Error('TWENTY_API_KEY (or equivalent) is required for rollup execution');
+    return null;
   }
 
   const baseUrl =
@@ -817,7 +825,11 @@ const buildChildRecordIndex = async (
               [definition.relationField]: parentId,
             },
           });
-          return { parentId, records };
+          const filtered = records.filter((record) => {
+            const relationValue = getNestedValue(record, definition.relationField);
+            return typeof relationValue === 'string' && relationValue === parentId;
+          });
+          return { parentId, records: filtered };
         }),
       );
       batch.forEach(({ parentId, records }) => {
@@ -860,7 +872,7 @@ const formatSummary = (
 export const main = async (params: unknown): Promise<object> => {
   const start = Date.now();
   try {
-    const config = await loadRollupConfig();
+    const config = resolveRollupConfig();
     if (config.length === 0) {
       return { status: 'noop', reason: 'No rollup definitions configured' };
     }
@@ -877,7 +889,13 @@ export const main = async (params: unknown): Promise<object> => {
       }
     });
 
-    const { apiKey, baseUrl } = getApiCredentials();
+    const credentials = getApiCredentials();
+    if (!credentials) {
+      console.warn('[rollup] skipping execution because TWENTY_API_KEY is not set');
+      return { status: 'noop', reason: 'TWENTY_API_KEY not configured' };
+    }
+
+    const { apiKey, baseUrl } = credentials;
     const client = new TwentyClient(apiKey, baseUrl);
     const now = new Date();
     const summaries: ExecutionSummaryItem[] = [];
@@ -905,20 +923,48 @@ export const main = async (params: unknown): Promise<object> => {
         targetIds,
       );
 
-      const updates: Array<{ id: string; payload: Record<string, unknown> }> = [];
+      const updates: Array<{
+        id: string;
+        payload: Record<string, unknown>;
+        context: { relationId: string };
+      }> = [];
       childIndex.forEach((records, parentId) => {
+        const recordIds = records
+          .map((record) => getNestedValue(record, 'id'))
+          .filter((value): value is string => typeof value === 'string');
+        console.info(
+          `[rollup] relation ${parentId} includes ${recordIds.length} ${definition.childObject}(s): ${recordIds.join(', ')}`,
+        );
         const aggregates = computeAggregations(definition, records, now);
         const payload = sanitizePayload(aggregates);
         if (Object.keys(payload).length === 0) {
           return;
         }
-        updates.push({ id: parentId, payload });
+        console.info(
+          `[rollup] computed aggregates for ${definition.parentObject} ${parentId}: ${JSON.stringify(payload)}`,
+        );
+        updates.push({ id: parentId, payload, context: { relationId: parentId } });
       });
 
       let updatedCount = 0;
       for (const update of updates) {
-        await client.updateObject(definition.parentObject, update.id, update.payload);
-        updatedCount += 1;
+        try {
+          await client.updateObject(definition.parentObject, update.id, update.payload);
+          updatedCount += 1;
+          console.info(
+            `[rollup] updated ${definition.parentObject} ${update.id} (relation ${update.context.relationId})`,
+          );
+        } catch (error) {
+          const reason =
+            error instanceof Error
+              ? error.message || error.toString()
+              : typeof error === 'string'
+                ? error
+                : 'Unknown error';
+          console.warn(
+            `[rollup] failed to update ${definition.parentObject} ${update.id} (relation ${update.context.relationId}): ${reason}`,
+          );
+        }
       }
 
       summaries.push({
@@ -948,10 +994,19 @@ export const main = async (params: unknown): Promise<object> => {
     );
     return formatSummary(summaries, duration);
   } catch (error) {
-    console.error('[rollup] execution failed', error);
+    const serializedError =
+      error instanceof Error
+        ? `${error.name}: ${error.message}${error.stack ? `\n${error.stack}` : ''}`
+        : JSON.stringify(error);
+    console.error('[rollup] execution failed', serializedError);
     return {
       status: 'error',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      message:
+        error instanceof Error
+          ? error.message || 'Unknown error'
+          : typeof error === 'string'
+            ? error
+            : 'Unknown error',
     };
   }
 };

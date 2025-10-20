@@ -6,17 +6,13 @@ This document outlines the current approach to Docker, build processes, and envi
 
 The `dev-stack` repository acts as a "superproject" managing its constituent services (`fundraising-service`, `twenty-core`) as Git submodules within the `services/` directory. This structure allows for version pinning and independent development of each service.
 
-## 2. Build Optimizations
+## 2. Build Strategy (current)
 
-To address resource-intensive builds and improve development efficiency:
+- **Twenty CRM (`twenty-core`)**  
+  We now run the pre-built `twentycrm/twenty` image directly, with the version controlled by the `TAG` value in `.env`. Upgrades follow Twenty’s official guidance: `docker compose down`, edit `TAG`, `docker compose up -d`. If we ever need to build from source, we can do so explicitly, but the default workflow keeps Compose simple and ensures migrations execute automatically on boot.
 
-*   **Twenty CRM (`twenty-core`):**
-    *   `docker-compose.yml` uses build profiles (`fast` and `source`).
-    *   By default, the `fast` profile is used, pulling pre-built `twentycrm/twenty` images (e.g., `v1.4.0`) to avoid resource-heavy source builds.
-    *   The `source` profile is available for explicit source builds when needed.
-*   **Fundraising Service (`fundraising-service`):**
-    *   A `.dockerignore` file was created to reduce build context size.
-    *   The `Dockerfile` uses a multi-stage build process for efficiency and smaller image size.
+- **Fundraising Service (`fundraising-service`)**  
+  No changes: the service still uses the multi-stage Dockerfile and `.dockerignore` optimisations noted previously.
 
 ## 3. Database Initialization Strategy
 
@@ -48,7 +44,7 @@ The PostgreSQL database (`db` service) requires specific initialization for both
 
 Consistent and explicit environment variable configuration is crucial for inter-service communication and application behavior.
 
-*   **Standardized DB Connection Variables:** For `server`, `server-src`, `worker`, and `worker-src` services in `docker-compose.yml`, the following variables are explicitly set to ensure all code paths connect to `db:5432/postgres`:
+*   **Standardized DB Connection Variables:** For the `server` and `worker` services in `docker-compose.yml`, the following variables are explicitly set to ensure all code paths connect to `db:5432/postgres`:
     *   `PG_DATABASE_URL`
     *   `DATABASE_URL`
     *   `PGHOST: db`
@@ -57,12 +53,12 @@ Consistent and explicit environment variable configuration is crucial for inter-
     *   `PGUSER: ${PG_DATABASE_USER:-postgres}`
     *   `PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}`
     *   `PGSSLMODE: disable`
-    *   `.env` now defines a canonical `DATABASE_URL=postgres://postgres:postgres@db:5432/postgres`; the worker services additionally pin `PG_DATABASE_URL` directly to that string to prevent host shell overrides from introducing `localhost` DSNs. After editing `.env`, recreate `server` and `worker` (`docker compose --profile fast up -d --force-recreate server worker`) so the new value is applied.
+    *   `.env` defines a canonical `DATABASE_URL=postgres://postgres:postgres@db:5432/postgres`; the worker service also pins `PG_DATABASE_URL` directly to that string to prevent host shell overrides from introducing `localhost` DSNs. After editing `.env`, recreate `server` and `worker` (`docker compose up -d --force-recreate server worker`) so the new value is applied.
 *   **Configuration Mode:**
-    *   `IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"` is set for `server`, `server-src`, `worker`, and `worker-src`. This forces the application to read configuration from environment variables only, preventing premature database reads before migrations complete.
+    *   `IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"` is set for `server` and `worker`. This forces the application to read configuration from environment variables only, preventing premature database reads before migrations complete.
 *   **Migration Control:**
-    *   `DISABLE_DB_MIGRATIONS: "false"` for `server` and `server-src` (ensures migrations run).
-    *   `DISABLE_DB_MIGRATIONS: "true"` for `worker` and `worker-src` (prevents workers from running migrations).
+    *   `DISABLE_DB_MIGRATIONS: "false"` for `server` (ensures migrations run).
+    *   `DISABLE_DB_MIGRATIONS: "true"` for `worker` (prevents workers from running migrations).
 *   **Admin Credentials:** `ADMIN_EMAIL` and `ADMIN_PASSWORD` are passed from `.env` for first-boot setup.
 
 ## 5. Service Dependency Management
@@ -130,36 +126,29 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     >
     > This command uses the checked-in `services/twenty-core` code to migrate the database. Skipping it leaves the schema on the old version even though new containers are running.
 
-3.  **Stop Services & Apply New Version:**
-    *   Take the stack down. The new image will be used on the next startup.
-
-    ```bash
-    # This stops and removes containers without deleting the 'db-data' volume
-    docker compose --profile fast down
-    ```
-
-4.  **Start and Monitor Migrations:**
-    *   Start the core services. The `server` container will automatically run any necessary database migrations.
+3.  **Start and Monitor Migrations:**
+    *   Start the stack. The `server` container will automatically run any necessary database migrations.
     *   Watch the logs to ensure the migrations complete successfully.
 
     ```bash
-    # Start the core services in detached mode
-    docker compose --profile fast up -d server worker db redis
-
-    # Follow the server logs to monitor the upgrade
+    docker compose up -d
     docker compose logs -f server
     ```
     *   Look for messages indicating database migration or upgrade success. Once the logs are stable and the `server` is healthy, press `Ctrl+C` to stop watching.
 
 #### Step 3: Finalize and Verify
 
-1.  **Start All Services:**
-    *   Once the final version is upgraded and stable, bring the entire stack online.
+1.  **Deploy managed extensions**
+    *   Twenty’s Docker images do not bundle serverless/function code. After the core stack is healthy, re-sync each managed extension (rollup engine, hello-world, etc.) so the worker/CLI upload the latest bundle.
 
     ```bash
-    # This starts all services defined in the compose file with the 'fast' profile
-    docker compose --profile fast up -d
+    cd rollup-engine
+    twenty app sync        # or `twenty app dev` while iterating
+    cd ../services/twenty-core/packages/twenty-apps/hello-world
+    twenty app sync
+    cd ../../../..
     ```
+    *   For day-to-day development `twenty app dev` keeps the bundle hot-synced; close it with `Ctrl+C` once you’re done.
 
 2.  **Verify Health:**
     *   Check that all services are running and healthy.
@@ -168,7 +157,17 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     docker compose ps
     ```
 
-3.  **Run Smoke Test:**
+3.  **Spot-check migrations (recommended):**
+    *   Confirm the latest migrations appear in the ledger and any new columns exist.
+
+    ```bash
+    docker compose exec db psql -U postgres -d postgres \
+      -c "SELECT id,name FROM core.\"_typeorm_migrations\" ORDER BY id DESC LIMIT 5;"
+    docker compose exec db psql -U postgres -d postgres \
+      -c "\d+ core.\"serverlessFunction\""   # adjust table as needed per release notes
+    ```
+
+4.  **Run Smoke Test:**
     *   Execute the project's smoke test to ensure the `fundraising-service` can still communicate with Twenty.
 
     ```bash
@@ -177,8 +176,8 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     cd ../..
     ```
 
-4.  **Manual Check:**
-    *   Log in to the Twenty UI. Check the settings or about page to confirm the new version number and verify that your data is intact.
+5.  **Manual Check:**
+    *   Log in to the Twenty UI. Confirm the new version and sanity-check key records (people, gifts, rollup fields, etc.).
 
 ### Troubleshooting
 
@@ -199,12 +198,12 @@ For a clean and reliable start of the stack:
 
 1.  **Ensure Clean State:**
     ```bash
-    docker compose --profile fast down -v
+    docker compose down -v
     ```
     (Wait for this command to fully complete before proceeding.)
 2.  **Start the Stack:**
     ```bash
-    docker compose --profile fast up -d --build
+    docker compose up -d --build
     ```
     Wait for the command to finish (the shell prompt returns) before running follow-up commands such as `docker compose ps` or log checks; issuing new Docker commands while Compose is still starting/stopping services can produce misleading results.
 

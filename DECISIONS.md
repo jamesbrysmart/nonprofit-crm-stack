@@ -63,6 +63,57 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 ---
 
+## D-0017: Twenty Extensibility Alignment Strategy
+**Status**: Draft
+**Priority**: High
+
+**Context**
+- Twenty is rolling out an official extensibility surface (serverless functions, AI agents, packaged `twenty-apps`) distributed via `twenty-cli`, with `services/twenty-core/packages/twenty-apps/hello-world` published as the reference example.
+- Our dev stack currently forks `twenty-core`, adds bespoke services (rollup engine, fundraising-service), and treats Twenty as a submodule to unlock deeper schema and UX control than the Hello World pattern demonstrates.
+- We have limited visibility into the near-term capabilities of Twenty’s managed extensibility (metadata coverage, aggregation rules, deployment pathways), so committing fully today risks losing required flexibility for the modular nonprofit CRM.
+
+**Options**
+1. **Fork-first (status quo)** – Keep Twenty as a pinned submodule, layer our own services, and ship features like the rollup engine independently.
+   - *Pros*: Maximum control over schema, rollout cadence, and UX; unblockable by early platform gaps.
+   - *Cons*: Ongoing merge/upstream maintenance, bespoke deployment story, harder for community reuse.
+2. **Extensibility-only** – Rebuild features exclusively as packaged `twenty-apps` / serverless bundles managed by `twenty-cli`.
+   - *Pros*: Aligns with Twenty’s supported distribution path, easier community adoption, avoids maintaining a fork.
+   - *Cons*: Blocked by unknown platform limits (rollups, staging, metadata automation); constrains opinionated UX.
+3. **Hybrid** – Maintain the fork for deep modules while publishing discrete extensions (e.g., rollups) that can graduate into upstream/community channels once stable.
+   - *Pros*: Preserves flexibility where needed, lets us contribute reusable pieces, creates an escape hatch if Twenty’s APIs mature.
+   - *Cons*: Dual maintenance burden; requires discipline to keep code portable between architectures.
+
+**Decision**
+- Continue with the fork-first architecture through the Hackathon/MVP window while structuring sharable components (like `rollup-engine/serverlessFunctions/calculaterollups`) so they can also be packaged as official `twenty-cli` assets. Treat the hybrid option as the likely end state once Twenty’s extensibility surface proves it can cover our roadmap.
+
+**Why**
+- Building a comprehensive nonprofit suite still demands capabilities (gift staging, advanced rollups, metadata provisioning) that the Hello World example does not yet expose.
+- We already rely on upstream control to guarantee critical fields/workflows exist (`docs/PROJECT_CONTEXT.md` §4–7); abandoning that before Twenty documents parity would jeopardize delivery.
+- Designing with CLI compatibility now reduces the future “rewrite cost” if we later upstream or package features.
+
+**Consequences**
+- Accept the operational cost of tracking upstream Twenty changes and documenting divergence points.
+- Ensure every new module identifies which pieces could be expressed as official extensions so we can hand them off when viable.
+- Keep community contributions in mind (e.g., preparing PR-friendly bundles under `packages/twenty-apps`) without blocking core development.
+
+**Revisit triggers**
+- Twenty publishes GA documentation/SDK support covering custom metadata provisioning, declarative rollups, and distribution for complex apps.
+- Evidence that maintaining the fork materially slows delivery (merge conflicts, breaking upgrades).
+- Pilot requirements shift toward hosted distribution where official app marketplace support becomes mandatory.
+
+**Next actions**
+1. Produce a capability matrix comparing current dev-stack needs vs. confirmed Twenty extensibility features (start from `services/twenty-core/packages/twenty-apps/hello-world` + Discord updates).
+2. Plan a small spike to repackage a subset of the rollup engine as a `twenty-app` once relevant schemas land, validating hybrid feasibility.
+3. Track Twenty roadmap notes in `docs/PROJECT_CONTEXT.md` or a new log so we can rapidly revisit this ADR when the platform matures.
+
+**References**
+- `services/twenty-core/packages/twenty-apps/hello-world/README.md`
+- `services/twenty-core/packages/twenty-apps/hello-world/agents/hello-world-assistant.jsonc`
+- `rollup-engine/serverlessFunctions/calculaterollups/src/index.ts`
+- `docs/PROJECT_CONTEXT.md`
+
+---
+
 ## D-0004: Gift Staging & Intake Workflow
 **Status**: Draft (problem framing)
 **Priority**: High

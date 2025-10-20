@@ -59,3 +59,28 @@ Working draft that tracks automation tooling, patterns, and decisions for the ma
 4. Populate scenario sections with concrete runbooks, payload schemas, and retry policies once the first automation lands.
 
 (Placeholder: flesh out sections above as we validate tooling and ship the initial automation flows.)
+
+## 8. Serverless Functions – Current Learnings
+
+_Last updated: 2025-10-20_
+
+Twenty’s serverless runtime is where we now host the rollup engine. Experience so far:
+
+- **Bundle & overrides**
+  - Code lives under `serverlessFunctions/<name>/src`. We embed runtime config in TypeScript (`rollupConfig.ts`) rather than reading `rollups.json` from disk. Optional overrides come from env variables (`ROLLUP_ENGINE_CONFIG`, `ROLLUPS_CONFIG`, `CALCULATE_ROLLUPS_CONFIG`).
+  - `twenty app sync` pushes a snapshot; `twenty app dev` hot-syncs while coding. After a compose upgrade always re-run the sync so the worker sees the latest bundle (`docs/DOCKER_ENV_APPROACH.md`).
+- **Environment**
+  - Workers must receive `TWENTY_API_KEY` and the base URL (`TWENTY_API_BASE_URL`). We pass them explicitly in `docker-compose.yml` so the serverless function can call Twenty’s REST API. Missing keys now downgrade the run to a noop warning instead of an exception.
+  - Twenty includes both current and previous relation IDs in database-event payloads. We filter child records client-side and log the relation ID so orphaned donors don’t break the rollup.
+- **Logging & diagnostics**
+  - Each run logs:
+    - Relation membership (`relation … includes … gift(s)`).
+    - Computed aggregates (`{ amountMicros, currencyCode, … }`).
+    - Success/warning lines referencing the relation ID so we can diff against `/rest/gifts`.
+  - REST filters like `filter[donorId]` aren’t honored today; we perform filtering locally and watch the Twenty roadmap in case native filters appear.
+- **Data shape**
+  - Currency rollups must be `{ amountMicros, currencyCode }`; dates should be `YYYY-MM-DD`. The current bundle normalizes values taken from `gift.amount.amountMicros` and `giftDate`.
+- **Doc hygiene**
+  - Update this section whenever we learn something new (bundle limits, trigger quirks, cron intervals, etc.). Cross-reference with `docs/TWENTY_HACKATHON.md` for the rollup architecture narrative.
+
+(Placeholder: flesh out sections above as we validate tooling and ship the initial automation flows.)

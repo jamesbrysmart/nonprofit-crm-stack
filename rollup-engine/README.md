@@ -8,7 +8,7 @@ serverless function that aggregates Gift data onto parent Person records.
 - an `apiKey`. Go to `https://twenty.com/settings/api-webhooks` to generate one
 
 ## Configuration
-- `serverlessFunctions/calculaterollups/rollups.json` — declarative rollup definitions. The default bundle targets
+- `serverlessFunctions/calculaterollups/src/rollupConfig.ts` — declarative rollup definitions. The default bundle targets
   Gifts → Person via `donorId` and calculates lifetime, year-to-date, first, and
   last gift metrics. See below for the required Person fields.
 - Extend or fork this file to add new rollups (additional parent objects,
