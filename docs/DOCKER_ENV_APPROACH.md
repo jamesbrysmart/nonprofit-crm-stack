@@ -93,7 +93,7 @@ This guide provides a safe and repeatable process for upgrading the Twenty CRM v
 1.  **Commit Changes:** Ensure your current work is committed to Git so you have a clean state.
 2.  **Check Running Services**: Make sure the `db` container is running before trying to back it up.
     ```bash
-    docker compose --profile fast ps
+    docker compose ps
     ```
 3.  **Backup the Database:** Run the following command from the project root to create a timestamped backup of your PostgreSQL database. This command executes `pg_dumpall` inside the running `db` container.
 
@@ -114,17 +114,9 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     *   Download the new container image specified by the `TAG`.
 
     ```bash
-    # This pulls the images for the services in the 'fast' profile
-    docker compose --profile fast pull
+    # This pulls the images for the services
+    docker compose pull
     ```
-
-    > **Important (fast profile users):** The `fast` profile skips the `migrate` service, so the server container will never execute the TypeORM migrations on its own. Before starting the upgraded stack, apply migrations explicitly:
-    >
-> ```bash
-> docker compose run --rm migrate yarn nx run twenty-server:database:migrate:prod
-> ```
-    >
-    > This command uses the checked-in `services/twenty-core` code to migrate the database. Skipping it leaves the schema on the old version even though new containers are running.
 
 3.  **Start and Monitor Migrations:**
     *   Start the stack. The `server` container will automatically run any necessary database migrations.
@@ -192,9 +184,11 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     cat <your-backup-file.sql> | docker compose exec -T db psql -U ${PG_DATABASE_USER:-postgres}
     ```
 
-## 8. Recommended Startup/Shutdown Procedure
+## 8. Startup and Shutdown
 
-For a clean and reliable start of the stack:
+### Initial Setup
+
+For a clean first-time installation of the stack:
 
 1.  **Ensure Clean State:**
     ```bash
@@ -205,7 +199,21 @@ For a clean and reliable start of the stack:
     ```bash
     docker compose up -d --build
     ```
-    Wait for the command to finish (the shell prompt returns) before running follow-up commands such as `docker compose ps` or log checks; issuing new Docker commands while Compose is still starting/stopping services can produce misleading results.
+    The `--build` flag is necessary to build the `fundraising-service` image. Wait for the command to finish before running follow-up commands.
+
+### Everyday Development
+
+For daily development work:
+
+*   **To start the services:**
+    ```bash
+    docker compose up -d
+    ```
+*   **To stop the services:**
+    ```bash
+    docker compose down
+    ```
+    This command stops and removes the containers but preserves the database volume.
 
 ## 9. Known Issues & Caveats
 

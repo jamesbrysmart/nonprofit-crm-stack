@@ -50,13 +50,35 @@ These instructions will get you a copy of the project up and running on your loc
 
 4.  **Build and Run the Stack:**
 
-    Use Docker Compose to build the services from source and start them.
+    Use Docker Compose to build and start the services.
 
     ```bash
-    docker-compose up --build
+    docker compose up --build -d
     ```
 
-    The `--build` flag is important for the first run to build the images from the source code in the submodules.
+    The `--build` flag is necessary on the first run to build the `fundraising-service` image. The `-d` flag starts the services in detached mode.
+
+5.  **Accessing the Application:**
+
+    *   **Twenty CRM**: [http://localhost:3000](http://localhost:3000)
+    *   **Fundraising Service (via Gateway)**: [http://localhost:4000/fundraising](http://localhost:4000/fundraising) (or as configured in `nginx/gateway.conf`)
+
+## Upgrading
+
+To upgrade the version of Twenty CRM, follow these steps:
+
+1.  **Shut down the running services:**
+    ```bash
+    docker compose down
+    ```
+
+2.  **Update the version tag:**
+    Open the `.env` file and change the `TAG` variable to the desired version (e.g., `TAG=v1.5.0`).
+
+3.  **Pull the new images and restart the services:**
+    ```bash
+    docker compose up --build -d
+    ```
 
 5.  **Accessing the Application:**
 
