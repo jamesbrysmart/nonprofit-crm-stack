@@ -1,6 +1,6 @@
 # dev-stack Operations Runbook (POC baseline)
 
-_Last updated: 2025-02-07_
+_Last updated: 2025-10-21_
 
 This quick-start runbook captures the minimum steps to operate and diagnose the managed-extension stack during the Phase 1 POC. Update it as new behaviours land.
 
@@ -8,9 +8,9 @@ This quick-start runbook captures the minimum steps to operate and diagnose the 
 
 ```bash
 # clean restart (be patient; compose tears everything down first)
-docker compose --profile fast down -v
+docker compose down -v
 
-docker compose --profile fast up -d --build
+docker compose up -d --build
 ```
 
 Key checks while starting:
@@ -23,7 +23,7 @@ Service | Endpoint | Notes
 ---|---|---
 Fundraising service | `http://localhost:4500/health` | Returns `{"status":"ok"}` once Nest is ready.
 Twenty gateway (nginx) | `http://localhost:4000/health` | Proxied to fundraising-service; requires fundraising-service to be healthy.
-Twenty core (`server`) | `http://localhost:3000/health` | Requires DB migrations; check compose logs if it flaps between `starting`/`unhealthy`.
+Twenty core (`server`) | `http://localhost:3000/healthz` | Requires DB migrations; check compose logs if it flaps between `starting`/`unhealthy`.
 
 Use `docker compose ps <service>` to see the health result and `docker compose logs <service>` for detail.
 
@@ -54,7 +54,7 @@ Scenario | Command(s)
 Run smoke test only | `cd services/fundraising-service && npm run smoke:gifts`
 Check environment variables inside a container | `docker compose exec fundraising-service env | sort`
 Restart a single service | `docker compose restart fundraising-service`
-Inspect Compose health details | `docker inspect --format '{{json .State.Health}}' dev-stack-fundraising-service-1`
+Inspect Compose health details | 1. Find the container name with `docker compose ps`<br>2. `docker inspect --format '{{json .State.Health}}' <container_name>`
 
 ## 5. Known quirks (tracked)
 
