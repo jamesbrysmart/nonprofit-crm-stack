@@ -1,4 +1,4 @@
-import type { RollupConfig } from './index';
+import type { RollupConfig } from './types';
 
 export const defaultRollupConfig: RollupConfig = [
   {

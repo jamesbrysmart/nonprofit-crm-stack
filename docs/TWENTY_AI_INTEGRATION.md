@@ -1,83 +1,94 @@
 # Twenty AI Integration
 
-**Disclaimer:** These instructions are based on code analysis and have not been fully tested. They may not be 100% accurate. Please use with caution and report any issues.
+**Disclaimer:** These instructions are based on current testing in our dev
+stack. Please report any issues so we can refine the runbook.
 
-This document explains how to enable and configure the AI features in Twenty.
+This document explains how to enable the AI features in Twenty and documents the
+related prerequisites we discovered while enabling the Applications UI.
 
-## 1. Enabling AI Features
+## 1. Prerequisites – enable DB-backed config
 
-There are two potential methods to enable the AI features. The recommended and most reliable method is to set the feature flag in the database.
+Twenty only honours feature flags stored in `core."featureFlag"` when the
+containers are configured to read configuration from the database.
 
-### Method 1: Database (Recommended)
+1. Ensure `IS_CONFIG_VARIABLES_IN_DB_ENABLED` is set to `"true"` for both
+   `server` and `worker` in `docker-compose.yml`.
+2. Restart the containers so the new environment variables are picked up:
 
-The AI features are controlled by a feature flag in the database. To enable them, you need to insert a record into the `core."featureFlag"` table.
+   ```bash
+   docker compose up -d --force-recreate server worker
+   ```
 
-**Steps:**
+3. Flush the cache so the processes reload configuration. Either run
+   `npx nx run twenty-server:command cache:flush` from
+   `services/twenty-core`, or flush Redis directly:
 
-1.  Connect to the PostgreSQL database. You can do this by executing the following command from the root of the `dev-stack` project:
+   ```bash
+   docker compose exec redis redis-cli FLUSHALL
+   ```
 
-    ```bash
-    docker compose --profile fast exec -T db psql -U postgres
-    ```
+With those prerequisites in place, any feature flags inserted into the database
+take effect on the next restart/flush.
 
-2.  Once connected, run the following SQL command to insert the feature flag:
+## 2. Enable the AI feature flag
 
-    ```sql
-    INSERT INTO core."featureFlag" (key, value) VALUES ('IS_AI_ENABLED', true);
-    ```
+The recommended path is to set the flag in the database.
 
-3.  To verify that the flag has been set, you can run:
+```bash
+docker compose exec -T db psql -U postgres -c \
+  "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_AI_ENABLED';"
 
-    ```sql
-    SELECT * FROM core."featureFlag" WHERE key = 'IS_AI_ENABLED';
-    ```
+docker compose exec -T db psql -U postgres -c \
+  "INSERT INTO core.\"featureFlag\" (key, value)
+   SELECT 'IS_AI_ENABLED', true
+   WHERE NOT EXISTS (
+     SELECT 1 FROM core.\"featureFlag\" WHERE key = 'IS_AI_ENABLED'
+   );"
+```
 
-### Method 2: Environment Variable (Alternative)
+Re-run the cache flush from step 1 after inserting/updating the flag.
 
-It may also be possible to enable the AI features by setting an environment variable in your `.env` file. This method is not as well-documented as the database method, but it is worth trying if you prefer to manage configuration through environment variables.
+> You may see references to enabling the flag via environment variables in older
+> docs. Using the database flag has proven more reliable.
 
-**Steps:**
+## 3. Configure an AI provider
 
-1.  Add the following line to your `.env` file:
+Once the flag is active:
 
-    ```
-    IS_AI_ENABLED=true
-    ```
+1. Log in to the workspace as an administrator.
+2. In the Admin Panel, click **Options → Show hidden groups**.
+3. An **AI** section should appear.
+4. Select **OpenAI** or **Anthropic** and provide the corresponding API key.
 
-2.  Restart the Twenty server and worker containers to apply the changes:
-
-    ```bash
-    docker compose --profile fast up -d --force-recreate server worker
-    ```
-
-## 2. Configuring the AI Model
-
-Once you have enabled the AI features, you need to configure an AI model in the Twenty Admin Panel.
-
-**Steps:**
-
-1.  Log in to your Twenty workspace as an administrator.
-2.  In the Admin Panel, click on **Options** in the top right corner and select **Show hidden groups**.
-3.  A new "AI" or similarly named section should appear in the settings.
-4.  Select either **OpenAI** or **Anthropic** as the model provider.
-5.  Enter your API key for the selected provider.
-
-## 3. Required API Keys
-
-You will need API keys for the AI models you want to use.
-
-*   **OpenAI:** You can get an API key from the [OpenAI Platform](https://platform.openai.com/).
-*   **Anthropic:** You can get an API key from [Anthropic](https://www.anthropic.com/).
-
-Make sure to store these API keys securely. You can add them to your `.env` file:
+Store the keys securely (for local dev, add them to `.env`):
 
 ```
 OPENAI_API_KEY="your_openai_api_key"
 ANTHROPIC_API_KEY="your_anthropic_api_key"
 ```
 
-## 4. Testing the AI Features
+## 4. (Optional) Enable the Applications UI
 
-Once you have enabled and configured the AI features, you can test them by creating a workflow that uses an AI node.
+The Applications settings screen is gated by the `IS_APPLICATION_ENABLED` flag.
+You can enable it using the same pattern:
 
-*(This section can be expanded with a more detailed example once we have a better understanding of how to use the AI nodes in workflows.)*
+```bash
+docker compose exec -T db psql -U postgres -c \
+  "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_APPLICATION_ENABLED';"
+
+docker compose exec -T db psql -U postgres -c \
+  "INSERT INTO core.\"featureFlag\" (key, value)
+   SELECT 'IS_APPLICATION_ENABLED', true
+   WHERE NOT EXISTS (
+     SELECT 1 FROM core.\"featureFlag\" WHERE key = 'IS_APPLICATION_ENABLED'
+   );"
+```
+
+Flush the cache afterwards. At the time of writing our stack is running a
+pre-1.8 image, so the Applications UI is still hidden even though the flag is
+set—the backend endpoints will be ready once we upgrade.
+
+## 5. Testing
+
+With the flags active and a provider configured, create a workflow that includes
+an AI node to verify the integration end-to-end.

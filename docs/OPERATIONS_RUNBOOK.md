@@ -56,6 +56,24 @@ Check environment variables inside a container | `docker compose exec fundraisin
 Restart a single service | `docker compose restart fundraising-service`
 Inspect Compose health details | 1. Find the container name with `docker compose ps`<br>2. `docker inspect --format '{{json .State.Health}}' <container_name>`
 
+## 6. Feature flags & settings toggles (AI / Applications)
+
+- The stack reads feature flags from the database only when `IS_CONFIG_VARIABLES_IN_DB_ENABLED` is `"true"` for **both** `server` and `worker` in `docker-compose.yml`. We have this set in our repo; if you rebase onto upstream compose, confirm it remains.
+- After any change to `docker-compose.yml`, restart the containers that read the flag and flush cache:
+  ```bash
+  docker compose up -d --force-recreate server worker
+  docker compose exec redis redis-cli FLUSHALL   # or run `npx nx run twenty-server:command cache:flush` from services/twenty-core
+  ```
+- Toggle individual flags via SQL. Example (AI & Applications):
+  ```bash
+  docker compose exec -T db psql -U postgres -c "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_AI_ENABLED';"
+  docker compose exec -T db psql -U postgres -c "INSERT INTO core.\"featureFlag\" (key, value) SELECT 'IS_AI_ENABLED', true WHERE NOT EXISTS (SELECT 1 FROM core.\"featureFlag\" WHERE key = 'IS_AI_ENABLED');"
+
+  docker compose exec -T db psql -U postgres -c "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_APPLICATION_ENABLED';"
+  docker compose exec -T db psql -U postgres -c "INSERT INTO core.\"featureFlag\" (key, value) SELECT 'IS_APPLICATION_ENABLED', true WHERE NOT EXISTS (SELECT 1 FROM core.\"featureFlag\" WHERE key = 'IS_APPLICATION_ENABLED');"
+  ```
+- Remember to flush cache again after inserting/updating flags. The Applications UI still requires Twenty ≥ 1.8, so on older images the settings screen may not render even though the backend respects the flag. See `docs/TWENTY_AI_INTEGRATION.md` for more context.
+
 ## 5. Known quirks (tracked)
 
 - Twenty core still logs `Created new shared pg Pool for key "localhost|5432|postgres||no-ssl"` during boot. It is noisy but harmless.

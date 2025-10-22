@@ -86,7 +86,7 @@ services:
       PGUSER: ${PG_DATABASE_USER:-postgres}
       PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       PGSSLMODE: disable
-      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
+      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "true"
       DISABLE_DB_MIGRATIONS: "false"
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -126,7 +126,7 @@ services:
       PGUSER: ${PG_DATABASE_USER:-postgres}
       PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       PGSSLMODE: disable
-      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"
+      IS_CONFIG_VARIABLES_IN_DB_ENABLED: "true"
       DISABLE_DB_MIGRATIONS: "true"
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       TWENTY_API_KEY: ${TWENTY_API_KEY:-}

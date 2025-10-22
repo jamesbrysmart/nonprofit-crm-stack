@@ -171,6 +171,17 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
 5.  **Manual Check:**
     *   Log in to the Twenty UI. Confirm the new version and sanity-check key records (people, gifts, rollup fields, etc.).
 
+6.  **Enable feature flags (optional):**
+    *   If you want the AI or Applications sections in settings, follow the runbook in
+        `docs/TWENTY_AI_INTEGRATION.md`. In summary:
+        1. Set `IS_CONFIG_VARIABLES_IN_DB_ENABLED="true"` for `server` and `worker` in `docker-compose.yml`.
+        2. Restart `server`/`worker` and flush the cache (either via
+           `npx nx run twenty-server:command cache:flush` or `redis-cli FLUSHALL`).
+        3. Insert the desired flags into `core."featureFlag"` (e.g. `IS_AI_ENABLED`,
+           `IS_APPLICATION_ENABLED`).
+    *   Note: on images < 1.8 the Applications UI may remain hidden even with the flag set; the backend APIs are ready
+      for when we upgrade.
+
 ### Troubleshooting
 
 *   **Permissions Errors After Upgrade:** If you see authorization or permission errors in the UI, you may need to flush the application cache.

@@ -1,3 +1,5 @@
+import assert from 'node:assert/strict';
+
 import { main as runRollups } from '../serverlessFunctions/calculaterollups/src/index.ts';
 
 type Json = Record<string, unknown>;
@@ -8,18 +10,22 @@ interface RequestLogEntry {
   body?: unknown;
 }
 
+const now = new Date();
+const currentYear = now.getUTCFullYear();
+const previousYear = currentYear - 1;
+
 const mockGifts = [
   {
     id: 'gift-1',
     donorId: 'person-1',
-    amount: { value: 120.5 },
-    dateReceived: '2025-01-15T12:00:00.000Z',
+    amount: { amountMicros: 120_500_000, currencyCode: 'GBP' },
+    giftDate: `${currentYear}-01-15T12:00:00.000Z`,
   },
   {
     id: 'gift-2',
     donorId: 'person-1',
-    amount: { value: 79.5 },
-    dateReceived: '2024-12-20T09:00:00.000Z',
+    amount: { amountMicros: 79_500_000, currencyCode: 'GBP' },
+    giftDate: `${previousYear}-12-20T09:00:00.000Z`,
   },
 ];
 
@@ -95,6 +101,21 @@ async function main() {
   };
 
   const result = await runRollups(params);
+
+  assert.equal(result.status, 'ok', 'rollup execution should succeed');
+
+  const expectedPayload = {
+    lifetimeGiftAmount: { amountMicros: 200_000_000, currencyCode: 'GBP' },
+    lifetimeGiftCount: 2,
+    lastGiftDate: `${currentYear.toString().padStart(4, '0')}-01-15`,
+    firstGiftDate: `${previousYear.toString().padStart(4, '0')}-12-20`,
+    yearToDateGiftAmount: { amountMicros: 120_500_000, currencyCode: 'GBP' },
+    yearToDateGiftCount: 1,
+  };
+
+  const personUpdate = updatePayloads.find((payload) => payload.id === 'person-1');
+  assert(personUpdate, 'expected a PATCH payload for person-1');
+  assert.deepStrictEqual(personUpdate.payload, expectedPayload);
 
   console.log('--- Rollup execution summary ---');
   console.dir(result, { depth: null });
