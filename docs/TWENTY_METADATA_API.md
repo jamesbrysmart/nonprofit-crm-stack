@@ -81,14 +81,14 @@ curl -X POST -H "Authorization: Bearer <YOUR_API_KEY>" -H "Content-Type: applica
 
 #### Challenges with `RELATION` / `LOOKUP` Fields
 
-As of this writing, we have been unsuccessful in programmatically creating a `RELATION` or `LOOKUP` field via the REST Metadata API. Attempts have resulted in various errors, including:
+As of October 2025 we are still unable to programmatically create `RELATION` / `LOOKUP` fields via the REST Metadata API. Attempts keep returning errors such as:
 - `Field 'relation' is not defined by type 'CreateFieldInput'`
 - `Value 'LOOKUP' does not exist in 'FieldMetadataType' enum`
 - `Relation creation payload is not defined`
 
-This suggests that either the OpenAPI schema is incomplete for this field type, or there is a bug in the API. The GraphQL API may be the correct path, but further investigation is needed.
+This blocks automated provisioning for the recurring slice (e.g., `RecurringAgreement.contactId`, `Gift.recurringAgreementId`, `GiftStaging.recurringAgreementId`). Our current approach is to script all primitives and then create the required lookups in the Twenty UI until the API surface is officially documented or fixed.
 
-**Recommendation:** For now, create `RELATION` or `LOOKUP` fields manually in the Twenty UI.
+**Recommendation:** Document the manual lookup steps in the metadata runbook and raise the gap with Twenty; revisit once the metadata API exposes a supported payload.
 
 ---
 
@@ -116,7 +116,7 @@ Run `v1-initial-schema.mjs` on new workspace spinup. After execution, manually c
 
 ---
 
-_Last updated: 2025-09-26_
+_Last updated: 2025-10-07_
 
 ## Managed extension notes (2025-09-29)
 

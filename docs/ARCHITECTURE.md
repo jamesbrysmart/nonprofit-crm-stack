@@ -17,14 +17,14 @@ This document captures the evolving architecture for how our managed extensions 
 | --- | --- | --- | --- |
 | API-only proxy | Homepage widgets call Twenty REST/GraphQL on demand via our gateway. | Zero duplication, always canonical state, minimal infra. | Latency stacks up, limited aggregate shaping, rate-limit exposure, no offline view. |
 | API + cache | Short-lived caches (Redis/in-memory) layered on API responses. | Easy performance boost for repeated reads, still simple to operate. | Cache invalidation complexity, still lacks rich aggregations, stale just-created items hurt trust. |
-| Operational mirror (hybrid) | Mirror key objects into service-owned tables, apply optimistic updates, reconcile via webhooks/polling; writes still go through Twenty API. | Fast UX, custom aggregates, staging workflows, foundation for AI/dashboards, can seed warehouse. | Own sync logic, need drift monitoring, eventual consistency if webhook delays occur, extra infra. |
+| Operational mirror (hybrid) | Mirror key objects using Twenty custom objects (plus lightweight service caches when needed); writes still go through Twenty API. | Fast UX, custom aggregates, staging workflows, foundation for AI/dashboards, can seed warehouse. | Metadata automation maturity required, risk of schema bloat inside Twenty, still need drift monitoring. |
 | Direct Twenty DB access | Read Twenty’s Postgres schema/replica directly. | Immediate consistency, rich SQL without ETL. | Undocumented schema shifts, upgrade fragility, security/tenancy concerns, potential to impact Twenty performance. |
 | Warehouse-first | Use the analytics snapshot (Evidence spike) as the read source for UI + reporting. | Single pipeline powers dashboards, simplified analytics governance. | Refresh cadence too slow for interactive widgets, still need operational layer for staging and tasks. |
 
 ## 3. Current Working Plan (subject to change)
 
 1. **Prototype the operational mirror**
-   - Capture Gifts, People, Tasks, and staging entities in the fundraising-service database.
+   - Capture Gifts, People, Tasks, and staging entities through Twenty custom objects (no separate fundraising-service database).
    - Apply optimistic writes so newly created items appear instantly; reconcile via webhook/poll job results.
    - Instrument drift detection and logging (`x-request-id`) to follow requests end-to-end.
 2. **Feed analytics from the same pipeline**
@@ -37,7 +37,7 @@ This plan remains provisional. For the fundraising MVP we are proceeding with th
 
 ### 3.1 Gift Staging Lifecycle (draft)
 
-- **Intake**: Inbound gifts (manual UI, CSV, connectors, portal webhooks) land in staging tables within the operational mirror. Capture raw payload, channel metadata, and ingestion timestamps.
+- **Intake**: Inbound gifts (manual UI, CSV, connectors, portal webhooks) land in Twenty staging objects within the operational mirror. Capture raw payload, channel metadata, and ingestion timestamps.
 - **Validation**: Synchronous rules flag missing fields, amount anomalies, consent requirements, and run duplicate checks (e.g. `/people/duplicates`). AI-assisted reviews can layer on top.
 - **Review & Mapping**: Users (or automated flows) resolve donor/campaign/fund mapping, edit fields, or merge with existing donors. Audit log records each action.
 - **Promotion**: Approved staging records trigger write-through to Twenty via the fundraising-service proxy; on success, status flips to “posted” and stores the created Gift ID.

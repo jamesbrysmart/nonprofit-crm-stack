@@ -38,19 +38,18 @@ Plan to model agreements and installments inside Twenty metadata once relation f
 
 **Recurring Agreement (custom object)**
 - `id`
-- `contactId`
-- `provider` (`stripe` | `gocardless` | `manual`)
-- `providerAgreementId`
-- `paymentMethodId` (lookup)
-- `amountMinor`, `currency`
-- `frequency` (enum) + `intervalCount` (numeric)
-- `dayOfMonth` / `weekday` (nullable; depends on cadence)
-- `startDate`, `endDate`
+- `contactId` (lookup to Person)
 - `status` (`active`, `paused`, `canceled`, `completed`, `delinquent`)
-- Defaults: `campaignId`, `fundId`, `designationJson`
+- `cadence` (enum: `monthly`, `quarterly`, `annual`, `weekly`, `custom`)
+- `intervalCount` (numeric; pairs with `cadence`)
+- `amountMinor`, `currency`
+- `startDate`, optional `endDate`
+- `nextExpectedAt`
+- `autoPromoteEnabled` (boolean)
+- Defaults: `defaultCampaignId`, `defaultFundId`, `defaultSoftCreditJson`
 - Gift Aid: `giftAidDeclarationId`
-- Operational: `nextExpectedAt`, `source`, `createdBy`, `updatedAt`
-- Provider specifics: `mandateScheme` (GoCardless), `planNickname` (Stripe optional)
+- Provider linkage: `provider` (`stripe`, `gocardless`, `manual`, `imported`), `providerAgreementId`, optional `providerPaymentMethodId`, `mandateReference`, and `providerContext` (JSON blob for rail-specific metadata like scheme or plan nickname)
+- Source/audit: `source`, `createdById`, `updatedById`, timestamps (`createdAt`, `updatedAt`, `canceledAt`, `completedAt`)
 
 **Gift Installment (working name; posts as Gift)**
 - `id`
@@ -66,19 +65,14 @@ Plan to model agreements and installments inside Twenty metadata once relation f
 - Optional finance metadata: `payoutId`, `providerStatus`
 
 **Payment Method (custom object or extended existing)**
-- `id`
-- `contactId`
-- `provider`
-- `providerPaymentMethodId`
-- Card: `brand`, `last4`, `expiryMonth`, `expiryYear`
-- Bank: `sortCodeMask`, `accountLast2`, `mandateStatus`, `mandateReference`
-- `status` (`valid`, `expired`, `revoked`)
-- `updatedAt`
+- Defer for future iteration; MVP stores rail references on the agreement and installment via `providerPaymentMethodId` and `providerContext`. Retain this section as a placeholder for when we graduate to a reusable payment method object.
 
 **Supporting records (Phase 2+)**
 - `webhook_event` style object for idempotency and replay (`providerEventId`, `payloadHash`, `receivedAt`, `processedAt`, `status`, `error`).
 - `exception_queue` for unresolved failures (`context`, `severity`, `payloadRef`, `assignedTo`, `resolvedAt`).
 - Optional `settlement_payout` when finance reconciliation becomes a priority.
+
+> **Note:** The MVP does not pre-create “expected” installment records. We infer missed payments by comparing `RecurringAgreement.nextExpectedAt` against the latest posted Gift and only materialise installments once a real payload arrives (webhook, import, or manual entry).
 
 ## State Machines (Agreement & Installment)
 
@@ -108,6 +102,30 @@ Define thresholds (e.g., failure counts, timing) during Phase 1 implementation.
 
 ### 3. Clear status & audit trail
 - Separate "plan" vs. "installment" data even if they map to the same Gift record. Persist transitions for reporting and support.
+
+### 3a. First Slice Flow Blueprint
+
+**Stripe (card)**
+- Checkout/portal success → fundraising-service ensures `RecurringAgreement` exists/updates defaults, `autoPromoteEnabled=true`.
+- `checkout.session.completed` / `invoice.payment_succeeded` webhooks create a `GiftStaging` row with `autoPromote=true`, `recurringAgreementId`, `providerPaymentId`, `expectedAt`.
+- Staging auto-promotes on success → creates `Gift` (copies defaults, stores `recurringAgreementId` & `providerPaymentId`), updates agreement `nextExpectedAt`.
+- Failures (`invoice.payment_failed`) mark staging `validationStatus=failed`, agreement `status=delinquent`; recovery flips back to `active`.
+
+**GoCardless (direct debit)**
+- Mandate/subscription creation (outside scope) seeds/updates `RecurringAgreement` (`autoPromoteEnabled=false`, `mandateReference`).
+- `payment_created` webhook logs/updates staging row (`expectedAt`, `providerPaymentId`, `providerContext.providerStatus=pending`); remains pending.
+- `payment_confirmed` → staging auto-promote: create `Gift`, update `nextExpectedAt`, mark agreement `status=active`.
+- `payment_failed` / `payment_cancelled` → staging `validationStatus=failed`, agreement `status=delinquent` or `canceled` (via service logic).
+
+**Manual/import**
+- Admin or CSV import creates/updates `RecurringAgreement` (`provider=manual|imported`, `autoPromoteEnabled=false`).
+- Each payment entry generates a staging row with `expectedAt`, amount override, and optional `providerPaymentId`.
+- Admin uses staging UI to review, adjust, then process. Promotion creates `Gift`, updates `nextExpectedAt`. Missed periods surfaced by comparing agreement schedule vs. last posted gift.
+
+**Admin surfaces**
+- Agreement list: donor, amount, cadence, status, `nextExpectedAt`, last payment date, failed count.
+- Agreement detail: overview (fields above + defaults, provider info), installments tab (staging + posted Gifts filtered by `recurringAgreementId`), actions (pause/resume/cancel).
+- Staging queue: new filters for `recurringAgreementId`, provider, and failure states; detail drawer surfaces agreement context and auto-promote origin (`autoPromoteEnabled`).
 
 ### 4. Dunning & recovery (provider first, CRM smart)
 - Allow provider smart retries to run; mirror outcomes. Surface unresolved failures to an exception queue with SLAs and task routing.
@@ -178,6 +196,7 @@ Store `providerEventId` + `providerPaymentId` with a payload hash; log processin
 - Basic dunning (provider-driven), receipts policy (first/every), charge-level Gift Aid flagging.
 - Donor magic-link self-service (update method, cancel, amount/date change).
 - Dashboards: active MRR, failures, expiring cards.
+- No speculative installment records; missed payments inferred from `nextExpectedAt` plus actual Gift history.
 
 **Phase 2**
 - Pause/skip & schedule amendments; exception queue with SLAs.

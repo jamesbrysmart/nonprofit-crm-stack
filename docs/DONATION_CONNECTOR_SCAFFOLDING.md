@@ -7,6 +7,7 @@ Prepared to capture the shared understanding before we begin implementation work
 ## 1. Problem Statement
 - We need a reusable path for external donation platforms and first-party donation forms to inject gifts through the managed fundraising proxy without bespoke glue each time.
 - Stripe (card payments) and GoCardless (direct debit) are assumed to set the pattern for most online donation providers we will encounter; other connectors should be able to follow the same scaffold.
+- Fundraising-service now exposes `/webhooks/gocardless` (skeleton handler) so we can iterate on Direct Debit ingestion without blocking Stripe delivery.
 - The first delivery slice focuses on end-to-end payment ingestion; donor matching/dedupe and downstream automations (receipts, Gift Aid) follow immediately after we prove the pattern.
 
 ## 2. Goals & Outcomes
@@ -49,6 +50,7 @@ Future work will wrap these steps in UI/onboarding tooling; for now, this runboo
 4. **Contact Handling:** Initial milestone may prioritise creating gifts with minimal donor info; lightweight dedupe (e.g., email-based) becomes a near-term follow-up.
 5. **Execution Environment:** Connector logic may live inside fundraising-service, a companion worker, or external automation tooling (n8n/Twenty Workflows); we will validate and document the chosen approach.
 6. **Documentation Fidelity:** No code ships until this document (and linked references) reflect the agreed design. Source platform docs (Stripe/GoCardless) should be summarised or stored locally to avoid guesswork.
+7. **Recurring metadata handoff:** Stripe checkout flows must include `recurringAgreementId` (matching the Twenty metadata record) and may send `nextExpectedAt`; the webhook now uses these values to update agreements and embed provider context on staged gifts (`provider`, `providerPaymentId`, `providerContext`).
 
 ## 4. Open Questions (to resolve before coding)
 - **Reference Events:** Which Stripe objects drive the gift creation flow (e.g., `payment_intent.succeeded`, Checkout Session events, Charge API)? _(Thin slice uses `checkout.session.completed`; list remaining events for future phases.)_ For GoCardless, which webhook events (mandates, payouts) must we support day one?

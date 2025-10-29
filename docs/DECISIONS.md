@@ -23,9 +23,9 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 2. **API + cache** – layer Redis/in-memory caches with short TTL or explicit busting after writes.
    - *Pros*: quick win for repeated queries, still no separate persistence.
    - *Cons*: invalidation complexity, still constrained for rich analytics, risks stale “just created” items.
-3. **Operational mirror (hybrid)** – maintain a focused read/write store inside our services (e.g. Postgres tables for gifts, tasks, staging) populated via webhooks or polling, while writes propagate to Twenty via API.
+3. **Operational mirror (hybrid)** – materialise focused read/write views via Twenty custom objects (with optional lightweight service caches), populated through webhooks or polling while writes still propagate via Twenty API.
    - *Pros*: fast homepage, custom aggregates, pre-validation staging, strong foundation for AI features; can feed analytics warehouse.
-   - *Cons*: own sync logic and monitoring; eventual consistency unless we add optimistic updates; extra infra surface area.
+   - *Cons*: requires mature metadata automation, careful schema governance inside Twenty, ongoing sync logic and monitoring.
 4. **Direct Twenty DB access** – read from Twenty’s Postgres schema/replica.
    - *Pros*: immediate consistency, minimal processing, powerful SQL.
    - *Cons*: schema is undocumented/volatile, upgrades become brittle, elevated security/operational risk, hard to share safely between tenants.
@@ -52,7 +52,7 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - `docs/OPERATIONS_RUNBOOK.md` §3 (structured logging) for tracing cross-system flows.
 
 **Downstream decisions impacted**
-- D-0002 (object provisioning) – may evolve if we materialise staging objects in Twenty vs service DB.
+- D-0002 (object provisioning) – may evolve as we materialise additional staging objects in Twenty.
 - D-0016 (reporting module) – data-source choice must align with the operational mirror outcome.
 - Future module ADRs should cite D-0000 explicitly when selecting data access patterns.
 
@@ -129,11 +129,15 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - Enable automated checks (duplicate detection, amount thresholds, task assignment) while allowing human intervention when needed.
 - Ensure the staging lifecycle integrates with the operational data-plane decision (D-0000) so homepage widgets, AI summaries, and reporting can surface both pending and posted gifts.
 
-**Approach candidates (to evaluate next)**
-1. **Service-owned staging tables** – store raw + normalized payloads in fundraising-service DB, run validations, and promote to Twenty via API once approved.
-2. **Staging objects inside Twenty** – create custom “Gift Intake” objects in Twenty metadata, using Twenty UI/list views for review before conversion.
-3. **Hybrid** – capture staging in service DB for fast UX, but mirror approved batches into Twenty for audit/history.
-4. **Direct streaming to warehouse** – land raw donations in analytics store, then backfill operational gifts (likely insufficient for realtime corrections but worth noting).
+**Decision (MVP)**
+- Persist staging entirely inside Twenty using the custom objects provisioned via the metadata API (no fundraising-service database).
+- Allow connectors and manual entry to auto-promote when validations pass, with admins able to pause/override via the staging object workflow.
+- Surface downstream automation (receipts, Gift Aid checks) only after a staging record has been promoted to a Twenty Gift to keep side effects deterministic.
+
+**Rejected / deferred alternatives**
+- **Service-owned staging tables** – rejected (2025-10) to avoid operating a second database and duplicating schema for the MVP.
+- **Hybrid mirror** – deferred; revisit only if Twenty metadata cannot support required staging ergonomics or performance.
+- **Direct streaming to warehouse** – remains out of scope for operational staging; may appear later for analytics enrichment.
 
 **Key considerations**
 - Deduplication strategy (people, gifts), including use of `/people/duplicates` and future AI matching.
@@ -148,9 +152,9 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - Future AI CRM spike – potential for AI-assisted validation.
 
 **Next actions**
-1. Document detailed staging lifecycle and data model assumptions (`ARCHITECTURE.md`).
-2. Spike on prototype staging tables + promotion flow (manual UI path first).
-3. Update this decision with evaluated options, chosen approach, and revisit triggers after the spike.
+1. Document detailed staging lifecycle and data model assumptions in `ARCHITECTURE.md`, ensuring they reference the Twenty metadata objects.
+2. Validate metadata automation scripts cover the staging object lifecycle (create, update, promote) and capture any gaps.
+3. Update this decision once pilot feedback indicates changes needed to the Twenty-first staging model.
 
 ---
 
