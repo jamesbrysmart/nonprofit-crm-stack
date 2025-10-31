@@ -42,6 +42,10 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Follow-up tickets opened for additional providers once pattern validates.
 - **Notes:** Depends on API reliability improvements and Gift model completeness.
 
+#### 4a. CSV intake decision (2025-10-23)
+- Rather than building a bespoke `/gift-staging/imports` shell, we will lean on **Twenty’s native CSV import app** for pilot tenants. CSV files will enter Twenty through the existing UI, and we will map the imported gifts into staging using the metadata provided by the platform.
+- Follow-up engineering work focuses on documenting the Twenty import presets and ensuring imported rows land in the shared staging queue; no separate intake UI is planned unless the Twenty tool proves insufficient.
+
 ### 5. Gift Aid Export & Declaration UX
 - **Owner:** Engineering + Product
 - **Goal:** Ensure Gift Aid declarations are captured and a claim-ready export is available with minimal setup.
@@ -217,6 +221,11 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Review gateway/gateway-src healthchecks vs docs, fix discrepancies.
   - Runbook updated with realistic start/stop/diagnose steps.
   - Outstanding doc tickets opened if parity gaps remain.
+
+### 25. Settings & Feature Toggles (2025-10-23 update)
+- **Decision:** Instead of building custom flag scaffolding inside fundraising-service, we will pilot feature toggles through Twenty’s **Applications** framework. Managed extension functionality (Gift Aid, reconciliation, receipts) will be exposed as app-level toggles that can be enabled per workspace.
+- **Implication:** Engineering effort shifts to documenting which Twenty application (and metadata) must be installed, plus ensuring fundraising-service reads the workspace configuration before activating modules. No bespoke config UI is needed for the POC unless Twenty’s app toggles fall short.
+- **Follow-up:** Capture the required application IDs/permissions in `docs/USER_RUNBOOK.md` / onboarding materials once the toggle map is finalised.
 
 ---
 

@@ -28,6 +28,14 @@
 | Processing worker/service | Decide if the row can commit, transform payload to gift schema, call Twenty, update staging status. |
 | Human reviewer | Approve or fix rows that stall in pending/review states. |
 
+### Current admin tooling (2025-10-23)
+
+- **Queue table** exposes inline actions for “Mark ready” (forces `promotionStatus=ready_for_commit`) and “Process now” (hits `/gift-staging/:id/process`), alongside a “Resolve duplicates” shortcut that opens the drawer focused on dedupe diagnostics.
+- **Detail drawer** lets reviewers adjust amount/currency/date, coding fields, batch assignment, and notes without dropping to raw JSON. Saving issues a PATCH that preserves the raw payload while applying deltas.
+- **Donor reassignment** buttons reuse diagnostics embedded in the staged payload; selecting a suggested supporter patches `donorId` and updates `dedupeStatus=matched_existing`.
+- **Recurring tab** shows linked agreement ID, expected installment date, and provider context so staff can confirm webhook wiring before committing.
+- **Raw payload** remains accessible behind an explicit toggle to keep the drawer lightweight while still supporting audit/debug use cases.
+
 ## State Model (gift_staging)
 
 | Status | Meaning | Transitions |

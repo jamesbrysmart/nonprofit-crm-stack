@@ -67,6 +67,9 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 - **Keyboard-first, sticky defaults**: select batch defaults (appeal, fund, date, method); tab through fields.
 - **Inline contact search + quick-create**: search by name/email/phone; if not found, quick-create with minimal fields; household suggestion if address matches.
 - **Smart mapping**: prefill `appeal/fund` from batch defaults; show last used for this contact; allow one-click change.
+- **Supporter search & dedupe tiers**: inline panel surfaces exact/review/partial matches returned from Twenty’s `/people/duplicates`, with quick “use supporter” actions and a modal directory search when manual tweaks are needed.
+- **Recurring association picker**: optional toggle reveals a filtered list of active `RecurringAgreement` records so manual installments stay linked without retyping IDs.
+- **Staging duplicate warning**: when an existing supporter is selected the form checks current staging rows for same-amount/same-day entries and warns before saving.
 - **Dedup prevention (before save)**:
   - Level 1: same contact + same amount + same date (±1d) → warn + “proceed anyway/merge”.
   - Level 2: same external reference → block as duplicate.
@@ -82,6 +85,8 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 2. Add line: pick/quick-create contact → amount/date → (auto) appeal/fund → eligibility → save.  
 3. Dedupe check → confirm or merge.  
 4. Post-commit hooks: rollups, receipting (if queued), reconciliation signals.
+
+> **Next iteration:** extend the pre-save duplicate check to include the latest posted gifts for the selected supporter so admins can see recent committed entries, not just staging collisions.
 
 ---
 
@@ -134,6 +139,7 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 **Admin UX**
 - Stepper: Upload → Map → Validate → Preview/Dry-run → Review & Commit → Summary (with exportable error log).
 - Save mapping profiles per source.
+- _2025-10-23 update_: For the POC we plan to lean on Twenty’s native CSV import experience rather than ship a bespoke `/gift-staging/imports` UI. The managed extension will document the required mapping presets and rely on Twenty’s tooling to land rows in staging; we only revisit a custom shell if the platform import falls short during pilot feedback.
 
 ---
 

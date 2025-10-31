@@ -19,6 +19,14 @@
 
 > Working outline for the internal UI that supports the fundraising staging → processing flow. This supplements the feature specs and keeps visual/interaction decisions deliberate so we do not ship a placeholder that becomes legacy debt.
 
+### 1.1 Current slice (2025-10-23)
+
+- **Manual gift entry** now includes a supporter search drawer: inline duplicate rows surface exact/review/partial matches with badges, while the “Search supporters…” modal queries the wider directory before the form allows save. Selecting a supporter pins a summary card above contact inputs.
+- **Recurring toggle** adds a lightweight picker filtered to the most recent Twenty `RecurringAgreement` objects so staff can attach manual installments without pasting IDs; the control disappears again once unchecked to keep the form lean.
+- **Duplicate guardrails** warn when a staged gift already exists for the same supporter/amount/date, reinforcing the “don’t double enter” flow before submission. (Committed-gift lookup still todo.)
+- **Staging queue** renders status pills plus row-level actions, with a detail drawer supporting inline edits (amount, coding, batch, notes), status transitions (“Mark ready”, “Process now”), and donor reassignment shortcuts that call back into Twenty duplicates diagnostics.
+- **Recurring health widget** in the queue header provides a quick read on pending vs auto-promoted installments and latest webhook activity so admins can spot integration drift without leaving the page.
+
 ## 1. Scope & Audience
 
 - **Primary user:** Back-office fundraiser / operations teammate reviewing staged gifts before they post to Twenty.
