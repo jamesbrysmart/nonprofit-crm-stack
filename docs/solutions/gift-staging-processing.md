@@ -163,7 +163,7 @@ type ProcessGiftErrorReason =
    - Implement retry/backoff logic and batch rollups.
 
 4. **UI & Admin Tooling**
-   - Surface staging queues, approval, error diagnostics, and retry controls in the console.
+   - Surface staging queues, summary chips (status/intake/batch), and drawer-first review controls in the console.
 
 5. **Hardening & Observability**
    - Metrics (counts per status, processing duration), alerting on stuck rows, integration with reconciliation.
@@ -203,10 +203,11 @@ curl -s -H "Authorization: Bearer $TWENTY_API_KEY" \
 
 ### Observations
 
-- Duplicate check fires before staging; selecting an existing supporter reuses their `donorId`.
+- Duplicate check fires before staging; selecting an existing donor reuses their `donorId`.
 - Exact email matches now set `dedupeStatus=matched_existing`; fallback/partial matches set `dedupeStatus=needs_review` and carry diagnostics in the raw payload (`dedupeDiagnostics`).
 - Duplicate detection continues to reuse Twenty's `/people/duplicates` endpoint; managed logic only annotates results so reviewers have context and future per-workspace tuning (see guiding principles in `docs/PROJECT_CONTEXT.md` §3a).
 - Staging records now surface donor first/last name, email, and notes so CSV imports can map directly and the review UI can show the context without digging into `rawPayload`.
+- Queue shows lean columns with status/alert pills; summary chips filter by intake source, batch, and duplicates, and the drawer owns edits + processing.
 - CSV imports should map `promotionStatus`, `validationStatus`, and `dedupeStatus` to `pending`; future work will make the service default missing values to `pending` automatically.
 - Staging response returns `{ stagedOnly: true }`, and processing yields `status: committed` with the new gift id.
 - Fundraising logs emit `gift_staging_stage`, `gift_staging_process_call_create`, and `gift_staging_committed` events with matching IDs.
@@ -214,10 +215,9 @@ curl -s -H "Authorization: Bearer $TWENTY_API_KEY" \
 
 ### Follow-ups
 
-1. Surface staged records in the review queue/drawer so Ops can inspect the row created above.
-2. Persist or display the raw payload in the UI to support future inline edits before processing.
-3. Expose admin-level knobs for matching thresholds/strategies so orgs can override defaults without code (tracked in configuration backlog per guiding principles).
-4. Default blank staging statuses from imports to `pending` so the queue stays consistent even when CSVs omit the columns.
-3. Expose admin-level knobs for matching thresholds/strategies so orgs can override defaults without code (tracked in configuration backlog per guiding principles).
+1. Gift batch UX: promote batches to first-class cards with batch-level processing (see `docs/POC-backlog.md` §3a).
+2. Donor context panel: surface recent gifts/agreements in manual entry and drawer (POC backlog §2a).
+3. Recurring insights: extend agreement triage with drill-down actions once pause/resume APIs are ready (POC backlog §4b).
+4. Persist raw payload diffs for inline edits (still TODO) and continue planning matching-threshold configuration knobs.
 
 Document each slice in tickets/ADRs as we commit to implementation. Update this note (or migrate into feature specs) once decisions are locked.

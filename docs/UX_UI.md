@@ -19,13 +19,13 @@
 
 > Working outline for the internal UI that supports the fundraising staging → processing flow. This supplements the feature specs and keeps visual/interaction decisions deliberate so we do not ship a placeholder that becomes legacy debt.
 
-### 1.1 Current slice (2025-10-23)
+### 1.1 Current slice (2025-11-04)
 
-- **Manual gift entry** now includes a supporter search drawer: inline duplicate rows surface exact/review/partial matches with badges, while the “Search supporters…” modal queries the wider directory before the form allows save. Selecting a supporter pins a summary card above contact inputs.
+- **Manual gift entry** now requires an explicit donor confirmation: inline matches surface exact/review/partial suggestions with badges, the “Search donors…” modal handles deep lookups, and the donor summary card offers a one-click “Clear” so admins can back out before saving. Leaving the card empty creates a new donor at submission.
 - **Recurring toggle** adds a lightweight picker filtered to the most recent Twenty `RecurringAgreement` objects so staff can attach manual installments without pasting IDs; the control disappears again once unchecked to keep the form lean.
-- **Duplicate guardrails** warn when a staged gift already exists for the same supporter/amount/date, reinforcing the “don’t double enter” flow before submission. (Committed-gift lookup still todo.)
-- **Staging queue** renders status pills plus row-level actions, with a detail drawer supporting inline edits (amount, coding, batch, notes), status transitions (“Mark ready”, “Process now”), and donor reassignment shortcuts that call back into Twenty duplicates diagnostics.
-- **Recurring health widget** in the queue header provides a quick read on pending vs auto-promoted installments and latest webhook activity so admins can spot integration drift without leaving the page.
+- **Duplicate guardrails** warn when a staged gift already exists for the same donor/amount/date, reinforcing the “don’t double enter” flow before submission. (Committed-gift lookup still todo.)
+- **Staging queue** opens with status/intake/batch summary chips, a lean table (ID · donor · amount · updated · status · source · alerts), and a drawer-first “Review → Process” workflow. Contextual quick actions (e.g., “Process now” only when ready) keep the row surface calm.
+- **Recurring agreements tab** pivots to exception buckets (overdue, paused/canceled, delinquent) with filter chips and status pills so admins triage the riskiest plans first.
 
 ## 1. Scope & Audience
 
@@ -41,41 +41,34 @@
 
 ### 2.1 Review Queue (List/Table)
 
-Columns (initial set):
+Columns (current):
 - `stagingId` (link to detail drawer)
-- `createdAt` / elapsed time
-- Donor preview (name/email if resolved; highlight “unresolved contact”)
-- Amount + currency
-- `validationStatus`, `dedupeStatus`, `promotionStatus` (rename displayed to “Processing Status”)
-- Intake source (manual UI, Stripe, CSV, etc.)
-- `giftBatchId` (if present) with tooltip showing batch label/risk
-- Error detail (only when status = `commit_failed`), truncated with tooltip/full view
+- Donor summary (name/email/id when resolved, “Pending donor resolution” otherwise)
+- Amount (currency-aware)
+- Last updated timestamp
+- Processing status pill (Pending / Needs review / Ready / Commit failed / Committed)
+- Intake source with inline batch badge (if `giftBatchId` present)
+- Alert stack (duplicate / unresolved donor / recurring / duplicate warning)
 
 Interactions:
-- Filters for common queues: `ready_for_commit`, `commit_failed`, `pending_review`.
-- Bulk action seed (checkbox column) but actual multi-select defer until we validate need.
-- Per-row actions (icon buttons):
-  - “Mark ready” → sets `promotionStatus=ready_for_commit`
-  - “Process now” → calls new processing endpoint (Disable button when already `committing`)
-  - “Retry” → only visible when `commit_failed`
-  - “Edit” → opens detail drawer with editable fields (see below)
+- Summary chips surface status totals, intake sources, and gift batches; “Duplicates” toggle and recurring-agreement search box round out the filters.
+- Primary row action is **Review**, which opens the detail drawer; contextual buttons (“Process now”, “Retry”) only appear when appropriate.
+- Drawer owns status transitions, donor reassignment, attribution edits, and processing.
 
 Empty states:
-- Show friendly guidance when there are zero staged gifts.
-- When API errors, present toast + inline error panel (avoid silent failures).
-- _Implementation status:_ thin read-only table now surfaces latest staging rows (no filters/actions yet). Style and component alignment with Twenty tokens still pending.
+- Friendly “you’re caught up” guidance when filters produce zero rows.
+- Inline error panel (plus toast) when list fetch fails.
+- _Implementation status:_ summary chips + lean table + drawer-first workflow landed in the 2025-11 slice; bulk/batch processing still on the roadmap.
 
 ### 2.2 Detail Drawer (or modal)
 
 Sections:
-- **Summary:** same top metadata as list row + status badges.
-- **Normalized payload:** editable fields we allow staff to tweak before re-processing (amount, date, contact overrides, attribution). Save operates via `PATCH /gift-staging/:id/status` with updated payload (remember to hydrate `rawPayload` from the service if UI sends only delta).
-- **Diagnostics:** show raw validation/dedupe errors, history of status changes (if/when we capture).
+- **Overview:** mirrors list metadata (status pill, intake, batch) with alerts called out at the top.
+- **Editable fields:** amount/date, attribution (fund/appeal/batch), donor overrides when allowed. Saves via `PATCH /gift-staging/:id` (`rawPayload` hydration handled server-side).
+- **Diagnostics:** validation/dedupe messages, webhook metadata, status history (when available).
 - **Raw payload viewer:** collapsible JSON viewer for support/debugging (read-only).
-- _Implementation status:_ drawer now loads basic metadata + raw payload (read-only). Editing/actions still TODO; copy/status badges will be aligned with Twenty styling in a follow-up slice.
-- _Duplicate diagnostics:_ raw payload includes `dedupeDiagnostics` (match type, donor id, candidates). Drawer surfaces this context; future work will add reassignment controls for partial matches.
-- _Platform reuse:_ Duplicate checks lean on Twenty's `/people/duplicates`; managed UI only adds context and review controls per the project guiding principles (`docs/PROJECT_CONTEXT.md` §3a).
-- _Future config:_ Plan a simple “matching profile” toggle so orgs can refine duplicate rules/thresholds without code changes once the admin surface exists.
+- _Implementation status:_ overview + edit controls + processing buttons are live; status history remains TODO. Duplicate reassignment leans on `dedupeDiagnostics` from Twenty; we surface controls for partial matches inside the drawer.
+- _Future config:_ planned matching-profile toggle to adjust duplicate thresholds without code changes once the admin surface exists.
 
 Actions inside drawer:
 - “Save draft” → `PATCH /gift-staging/:id/status` with edits, keep status `pending`.

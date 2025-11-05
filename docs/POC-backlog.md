@@ -24,6 +24,15 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Follow-up notes captured for contact matching/deduping and future auth unification.
 - **Notes:** UI + proxy now create a Person (via `/people`) then a Gift linked by `donorId`; success banner surfaces the gift ID. The UI is served via the gateway at `/fundraising/`. Next steps: add contact matching/dedupe, and tighten UI styling.
 
+#### 2a. Manual Entry Donor Context Panel *(New)*
+- **Owner:** Engineering + Product
+- **Goal:** Surface recent gifts, recurring plans, and staged rows for the selected donor so admins can spot duplicates before submitting.
+- **Acceptance hints:**
+  - Summary card shows last gift date/amount plus active recurring agreements when a donor is selected.
+  - Staging drawer mirrors the same context to support review decisions.
+  - Additional lookups stay within documented performance budgets; caching strategy captured.
+- **Notes:** Builds on the explicit donor confirmation UX shipped in Nov 2025.
+
 ### 3. Gift Rollups & Dashboard Foundations
 - **Owner:** Engineering
 - **Goal:** Deliver deterministic rollups (lifetime, YTD/LY, first/last gift) and seed dashboards that satisfy Phase 1 reporting promises.
@@ -32,6 +41,15 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Dashboard JSON/templates committed; smoke data renders expected totals in Twenty.
   - Rollup rebuild procedure documented for post-import reconciliation.
 - **Notes:** Reuse learnings from API smoke work; coordinate with Feature Audit for field availability.
+
+#### 3a. Gift Batch UX & Processing Follow-up *(New)*
+- **Owner:** Engineering + Product
+- **Goal:** Promote `giftBatch` to a first-class UI construct so admins can process one chunk at a time (batch cards, defaults, completion signal).
+- **Acceptance hints:**
+  - Summary chips expose open batches (counts + totals) and let admins focus the queue.
+  - Drawer and processing actions respect batch context; batch completion indicator clears once all rows are committed.
+  - Batch-level “Process all ready rows” guarded by validation/confirmation.
+- **Notes:** Builds on the November summary-bar refactor; required groundwork for enhanced CSV/import tooling.
 
 ### 4. Payment/Form Connector Scaffolding
 - **Owner:** Engineering
@@ -230,3 +248,11 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 ---
 
 _Maintainer: update this file as tickets progress or new findings alter priorities._
+- #### 4b. Recurring Agreement Insights Iteration *(New)*
+- **Owner:** Engineering + Product
+- **Goal:** Iterate on the recurring agreements triage view (exception widgets, drill-down, automation hooks).
+- **Acceptance hints:**
+  - Chips/filters persist across sessions; table supports pagination/search.
+  - Agreement detail exposes quick actions (pause/resume/cancel) once API scaffolding lands.
+  - Metrics feed downstream alerts/digests (e.g., Slack summary of overdue plans).
+- **Notes:** Depends on agreement metadata automation; coordinate with dunning/delinquency initiatives.

@@ -88,6 +88,8 @@ As of October 2025 we are still unable to programmatically create `RELATION` / `
 
 This blocks automated provisioning for the recurring slice (e.g., `RecurringAgreement.contactId`, `Gift.recurringAgreementId`, `GiftStaging.recurringAgreementId`). Our current approach is to script all primitives and then create the required lookups in the Twenty UI until the API surface is officially documented or fixed.
 
+> **Update (2025-11-04):** Twenty confirmed that relation fields can be created today via the GraphQL metadata API even though the REST surface still rejects them. We are not switching workflows yet, but note this option for future automation spikes.
+
 **Recommendation:** Document the manual lookup steps in the metadata runbook and raise the gap with Twenty; revisit once the metadata API exposes a supported payload.
 
 ---

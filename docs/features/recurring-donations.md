@@ -123,9 +123,9 @@ Define thresholds (e.g., failure counts, timing) during Phase 1 implementation.
 - Admin uses staging UI to review, adjust, then process. Promotion creates `Gift`, updates `nextExpectedAt`. Missed periods surfaced by comparing agreement schedule vs. last posted gift.
 
 **Admin surfaces**
-- Agreement list: donor, amount, cadence, status, `nextExpectedAt`, last payment date, failed count.
+- Agreement overview: status/intake chips highlight overdue, paused/canceled, and delinquent plans; table remains the drill-down (donor, amount, cadence, next expected, status, provider).
 - Agreement detail: overview (fields above + defaults, provider info), installments tab (staging + posted Gifts filtered by `recurringAgreementId`), actions (pause/resume/cancel).
-- Staging queue: new filters for `recurringAgreementId`, provider, and failure states; detail drawer surfaces agreement context and auto-promote origin (`autoPromoteEnabled`).
+- Staging queue: summary chips for intake sources and batches, drawer-first workflow, and contextual actions (review → process/retry) keep recurring and manual work in the same surface.
 
 ### 4. Dunning & recovery (provider first, CRM smart)
 - Allow provider smart retries to run; mirror outcomes. Surface unresolved failures to an exception queue with SLAs and task routing.

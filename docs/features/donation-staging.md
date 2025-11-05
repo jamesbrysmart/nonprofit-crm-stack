@@ -26,10 +26,11 @@ This document summarizes best practices and design considerations for implementi
 - Treat recurring installments as auto-promote candidates only once their provider confirms payment (e.g., GoCardless `payment_confirmed`); earlier lifecycle events remain staged for review.
 
 ### 5. User-Friendly Review UI
-- Spreadsheet-like interface with:
-  - Color-coded errors and warnings.
-  - Inline editing for quick corrections.
-  - Click-to-resolve duplicate suggestions.
+- Dashboard style queue with:
+  - Summary chips for status, intake source, and gift batch counts so admins can focus on one slice at a time.
+  - A lean table (ID, donor, amount, updated, status, source, alerts) with pills and badges instead of dozens of columns.
+  - Primary “Review” action that opens a detail drawer; drawer is the work surface for dedupe, coding edits, and processing.
+  - Contextual quick actions (e.g., “Process now” only when a row is ready, “Retry” on commit failures) surfaced next to each row.
 
 ### 6. Audit Trail & Reconciliation
 - Maintain an import log linking staging rows to final records.
@@ -51,6 +52,11 @@ This document summarizes best practices and design considerations for implementi
 - Staging payloads accept `recurringAgreementId`, `expectedAt`, and `providerPaymentId` so installments from Stripe, GoCardless, or manual imports map back to their plan.
 - `autoPromote` defaults flow from the agreement (`autoPromoteEnabled`); admins can override per installment when edge cases arise.
 - Missed payments surface by comparing `nextExpectedAt` with the latest posted Gift, keeping the staging layer reactive instead of speculative.
+
+### 10. Near-Term Enhancements (queued)
+- Promote `giftBatch` to a first-class UI element: explicit batch cards, batch-level processing, and default coding controls.
+- Add donor context panel in manual entry and staging drawer (recent gifts, active recurring agreements) to further cut down duplicates.
+- Extend recurring insights in the staging queue (e.g., dedicated recurring view once the batch slice lands).
 
 ## Outcome
 A modern staging design should:
