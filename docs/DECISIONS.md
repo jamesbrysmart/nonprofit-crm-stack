@@ -335,6 +335,16 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 **Future**
 - Replace Nginx stub with **Apollo Router** for schema federation and auth enforcement.
 
+**Current notes (2025-11)**
+- The fundraising managed UI (served from `fundraising-service` behind the gateway) still renders when a visitor is logged out of Twenty because we do not yet have a supported way to validate the Twenty session/JWT from that service.
+- Proposed interim solution (parked pending official guidance):
+  1. Inject Twenty’s `APP_SECRET` (or equivalent signing material) into `fundraising-service`, mirror `JwtWrapperService.generateAppSecret`/`verify`, and wrap all `/api/fundraising/*` handlers plus the `/fundraising` static route with a Nest guard/middleware that validates the bearer token—whitelisting webhook endpoints.
+  2. Update the React client to forward the access token it already stores (`tokenPair` cookie) on every request; ensure `fetch` calls reuse `credentials` or set the header explicitly.
+  3. Require an internal API key header from the gateway so direct hits to `:4500` without the gateway are rejected, even before JWT validation.
+  4. Optionally add an Nginx `auth_request` check for `/fundraising` as a belt-and-braces measure once a lightweight validation endpoint exists.
+- Risks: sharing `APP_SECRET` increases blast radius and couples us to internal token semantics; we expect Twenty to publish an extension-friendly session validation path soon, so hold implementation until that direction lands.
+- Track follow-up in the managed extension backlog and escalate with the Twenty team during the upcoming extensibility discussions.
+
 ---
 
 ## D-0006: Version pinning & upgrades

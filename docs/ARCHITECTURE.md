@@ -54,6 +54,7 @@ _Open design questions: batching vs single record promotion, SLA expectations fo
 - **Tenancy**: For the single-tenant pilot model, do we provision separate databases or schemas per org? What changes if we move to multi-tenant?
 - **AI readiness**: What additional enrichment or embeddings do we store to power AI assistants without leaking PII?
 - **Observability**: What metrics and alerts confirm mirror health (lag, failed webhooks, cache hit rate)?
+- **Extension auth enforcement**: Keep managed UIs (fundraising and future modules) strictly behind the Twenty login once the platform exposes a supported session validation path; today the `/fundraising` React bundle is reachable when logged out, so plan mitigations and revisit after Twenty’s extensibility guidance ships.
 
 ## 5. Related Documents
 
