@@ -14,6 +14,7 @@ function that aggregates Gift data onto parent Person records.
 - Add these fields to the `person` object: `lifetimeGiftAmount`,
   `lifetimeGiftCount`, `lastGiftDate`, `firstGiftDate`, `yearToDateGiftAmount`,
   `yearToDateGiftCount`. Keep the API names camelCase.
+- Add these fields to the `appeal` object: `raisedAmount`, `giftCount`.
 
 ## Runtime configuration
 - `serverlessFunctions/calculaterollups/src/rollupConfig.ts` contains the
@@ -37,6 +38,12 @@ function that aggregates Gift data onto parent Person records.
 | `firstGiftDate` | Date | Earliest `giftDate`. |
 | `yearToDateGiftAmount` | Currency (`amountMicros`, `currencyCode`) | Sum of Gifts on/after the current calendar year start. |
 | `yearToDateGiftCount` | Number | Count of Gifts on/after the current calendar year start. |
+
+### Default Gift → Appeal rollups
+| Parent field | Suggested type | Description |
+| --- | --- | --- |
+| `raisedAmount` | Currency (`amountMicros`, `currencyCode`) | Sum of positive Gifts linked to the Appeal. |
+| `giftCount` | Number | Count of Gifts linked to the Appeal. |
 
 Assumptions:
 - The Gifts API exposes `donorId`, `amount.amountMicros`, `amount.currencyCode`,

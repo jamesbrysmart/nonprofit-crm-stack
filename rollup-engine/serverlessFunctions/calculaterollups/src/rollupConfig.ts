@@ -59,4 +59,28 @@ export const defaultRollupConfig: RollupConfig = [
       },
     ],
   },
+  {
+    parentObject: 'appeal',
+    childObject: 'gift',
+    relationField: 'appealId',
+    childFilters: [
+      {
+        field: 'amount.amountMicros',
+        operator: 'gt',
+        value: 0,
+      },
+    ],
+    aggregations: [
+      {
+        type: 'SUM',
+        childField: 'amount.amountMicros',
+        parentField: 'raisedAmount',
+        currencyField: 'amount.currencyCode',
+      },
+      {
+        type: 'COUNT',
+        parentField: 'giftCount',
+      },
+    ],
+  },
 ];

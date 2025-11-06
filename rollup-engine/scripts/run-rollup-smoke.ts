@@ -18,12 +18,14 @@ const mockGifts = [
   {
     id: 'gift-1',
     donorId: 'person-1',
+    appealId: 'appeal-1',
     amount: { amountMicros: 120_500_000, currencyCode: 'GBP' },
     giftDate: `${currentYear}-01-15T12:00:00.000Z`,
   },
   {
     id: 'gift-2',
     donorId: 'person-1',
+    appealId: 'appeal-1',
     amount: { amountMicros: 79_500_000, currencyCode: 'GBP' },
     giftDate: `${previousYear}-12-20T09:00:00.000Z`,
   },
@@ -52,9 +54,12 @@ global.fetch = async (
 
   if (url.pathname.endsWith('/gifts') && method === 'GET') {
     const donorId = url.searchParams.get('filter[donorId]');
-    const items = donorId
-      ? mockGifts.filter((gift) => gift.donorId === donorId)
-      : mockGifts;
+    const appealId = url.searchParams.get('filter[appealId]');
+    const items = mockGifts.filter((gift) => {
+      const donorMatch = donorId ? gift.donorId === donorId : true;
+      const appealMatch = appealId ? gift.appealId === appealId : true;
+      return donorMatch && appealMatch;
+    });
     return jsonResponse({
       data: {
         gifts: items,
@@ -70,6 +75,13 @@ global.fetch = async (
     const payload = safeParse(init?.body) ?? {};
     updatePayloads.push({ id, payload });
     return jsonResponse({ data: { people: [{ id, ...payload }] } });
+  }
+
+  if (url.pathname.includes('/appeals/') && method === 'PATCH') {
+    const id = url.pathname.split('/').pop() ?? 'unknown';
+    const payload = safeParse(init?.body) ?? {};
+    updatePayloads.push({ id, payload });
+    return jsonResponse({ data: { appeals: [{ id, ...payload }] } });
   }
 
   throw new Error(`Unhandled request in mock fetch: ${method} ${url.toString()}`);
@@ -96,8 +108,8 @@ async function main() {
 
   const params = {
     trigger: { type: 'databaseEvent' },
-    record: { donorId: 'person-1' },
-    gift: { donorId: 'person-1' },
+    record: { donorId: 'person-1', appealId: 'appeal-1' },
+    gift: { donorId: 'person-1', appealId: 'appeal-1' },
   };
 
   const result = await runRollups(params);
@@ -116,6 +128,13 @@ async function main() {
   const personUpdate = updatePayloads.find((payload) => payload.id === 'person-1');
   assert(personUpdate, 'expected a PATCH payload for person-1');
   assert.deepStrictEqual(personUpdate.payload, expectedPayload);
+
+  const appealUpdate = updatePayloads.find((payload) => payload.id === 'appeal-1');
+  assert(appealUpdate, 'expected a PATCH payload for appeal-1');
+  assert.deepStrictEqual(appealUpdate.payload, {
+    raisedAmount: { amountMicros: 200_000_000, currencyCode: 'GBP' },
+    giftCount: 2,
+  });
 
   console.log('--- Rollup execution summary ---');
   console.dir(result, { depth: null });

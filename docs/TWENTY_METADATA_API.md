@@ -103,7 +103,7 @@ This blocks automated provisioning for the recurring slice (e.g., `RecurringAgre
 
 ### `v1-initial-schema.mjs` Script Status
 
-The `services/fundraising-service/src/metadata-scripts/v1-initial-schema.mjs` script has been updated to use the REST Metadata API for creating custom objects (`campaign`, `gift`) and their simple fields (`StartDate`, `EndDate`, `Amount`, `Date`). This script is intended to be run on the spinup of a new workspace to provision these essential metadata elements.
+The `services/fundraising-service/scripts/setup-schema.mjs` script has been updated to use the REST Metadata API for creating custom objects (`campaign`, `appeal`, `gift`, `giftStaging`, `recurringAgreement`, `solicitationSnapshot`) and their simple fields. Note: some field names (e.g. plain `type`) are rejected by the API; we prefer explicit names such as `appealType`. This script is intended to be run on the spinup of a new workspace to provision these essential metadata elements.
 
 **Current Status and Known Limitations:**
 

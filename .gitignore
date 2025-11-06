@@ -6,3 +6,9 @@ repomix.config.json
 # Local database dumps produced during upgrades
 db-backup-*.sql
 db_backups/
+
+# Node dependencies
+node_modules/
+
+# Yarn artifacts
+.yarn/

@@ -15,14 +15,18 @@ This runbook captures the repeatable steps for provisioning the Campaign and Gif
 Run the initial schema script from the repo root so it can locate `.env` automatically:
 
 ```bash
-node services/fundraising-service/src/metadata-scripts/v1-initial-schema.mjs
+node services/fundraising-service/scripts/setup-schema.mjs
 ```
 
 What the script does:
-- Creates the custom `campaign` and `gift` objects if they do not already exist.
-- Adds simple fields:
-  - `campaign`: `StartDate` (`DATE`), `EndDate` (`DATE`).
-  - `gift`: `Amount` (`CURRENCY`), `Date` (`DATE`).
+- Creates the custom fundraising objects if they do not already exist: `campaign`, `appeal`, `gift`, `giftStaging`, `recurringAgreement`, `solicitationSnapshot`.
+- Adds simple fields (no lookups yet), for example:
+  - `campaign`: `startDate`, `endDate`.
+  - `appeal`: `appealType` (use this instead of `type`—Twenty reserves the generic name), `description`, `startDate`, `endDate`, `goalAmount`, `targetSolicitedCount`, `budgetAmount`, `raisedAmount`, `giftCount`, `donorCount`, `responseRate`, `costPerPound`, `lastGiftAt`.
+  - `gift`: `amount`, `date`, `externalId`, `paymentMethod`, donor/contact scaffolding, provider metadata.
+  - `giftStaging`: intake metadata, validation statuses, donor snapshot, payload storage.
+  - `recurringAgreement`: cadence, status, provider references, defaults.
+  - `solicitationSnapshot`: `countSolicited`, `source`, `capturedAt`, `notes`.
 - Logs "Object already exists" when rerun against a workspace that already has the objects. (Field creation is skipped in that case because the API cannot fetch the existing object ID.)
 
 Limitations to note:
@@ -38,8 +42,17 @@ Until Twenty exposes a stable payload for lookup metadata, add the relational fi
 3. Click **New field** and create the following:
    - `Campaign` — `Lookup` to `Campaign`. Mark as required if desired.
    - `Contact` — `Lookup` to `Person`. Keep optional for now; adjust when the data model is finalised.
+   - `Appeal` — `Lookup` to `Appeal`. Keep optional for now so non-attributed gifts still commit.
 4. (Optional) Add descriptions to clarify how the fundraising proxy uses each field.
-5. Publish the changes.
+5. Navigate to **Settings → Objects → Appeals → Fields** and add:
+   - `Appeal Type` (`appealType`) keeps the default script label; no manual lookup required.
+   - `Parent Appeal` — `Lookup` to `Appeal`.
+   - `Default Fund` — `Lookup` to your designation object (optional until funds ship).
+   - `Default Tracking Code` — `Lookup` to `Tracking Code` (future slice; optional placeholder).
+6. Navigate to **Settings → Objects → Solicitation Snapshots → Fields** and add:
+   - `Appeal` — `Lookup` to `Appeal`.
+   - `Appeal Segment` — `Lookup` to `Appeal Segment` (optional; add once segments exist).
+7. Publish the changes.
 
 Record any additional manual fields here as they become part of the POC scope.
 
