@@ -28,24 +28,24 @@
 
 ### `contact`
 - Core person fields (name, salutation variants, emails, phones).
-- `primary_household_id` (nullable FK) → household membership derived from this reference.
-- `primary_org_id` (lookup to organisation) with supporting metadata fields (`org_role`, `org_title`, `org_department`, `org_start_date`, `org_end_date`, `org_notes`). This mirrors Twenty’s native person→organisation lookup rather than introducing a junction object.
-- Current address fields (start with one; add alternates later).
+- `householdId` (nullable FK) → household membership derived from this reference.
+- `companyId` (lookup to organisation) with supporting metadata fields (`orgRole`, `orgTitle`, `orgDepartment`, `orgStartDate`, `orgEndDate`, `orgNotes`). This mirrors Twenty’s native person→organisation lookup rather than introducing a junction object.
+- Mailing address field (single `ADDRESS` type for MVP, add alternates later).
 - Gift Aid declaration FK (UK) and channel consents (per `docs/features/gift-receipts.md`).
 - Contact-level rollups (lifetime, YTD, last gift) supplied by the managed rollup engine.
 
 ### `household`
 - `id`, `name` (default `"{Surname} Household"` on create).
-- `primary_contact_id` (must be a member).
-- Mailing fields: `envelope_name`, `salutation` (formal/informal).
+- `primaryContactId` (lookup to person; created manually in metadata UI, must be a member).
+- Mailing fields: `envelopeName`, `salutation` (formal/informal) plus shared mailing `ADDRESS`.
 - Shared address (defaults to primary contact, can diverge).
 - Rollups materialised via the same engine used for contacts (lifetime total, YTD, last gift date + by whom).
-- `created_at`, `updated_at`, audit metadata.
+- `createdAt`, `updatedAt`, audit metadata.
 
-Membership is derived: any contact with `primary_household_id = household.id` is a member. No separate members array needed unless Twenty surfaces one later.
+Membership is derived: any contact with `householdId = household.id` is a member. No separate members array needed unless Twenty surfaces one later.
 
-### (Deferred) `contact_contact_relationship`
-- Phase 2+. If introduced: `from_contact_id`, `to_contact_id`, `type` (Spouse/Partner, Parent/Child, Sibling, Other), reciprocity rules, optional `start_date`, `end_date`.
+### (Deferred) `contactContactRelationship`
+- Phase 2+. If introduced: `fromContactId`, `toContactId`, `type` (Spouse/Partner, Parent/Child, Sibling, Other), reciprocity rules, optional `startDate`, `endDate`.
 
 ---
 
@@ -56,11 +56,13 @@ Membership is derived: any contact with `primary_household_id = household.id` is
 2. Search for existing household (by name/address) or create new (`{Surname} Household`).
 3. Confirm primary contact (default current contact), auto-generate envelope + salutation, inherit address with option to override.
 4. Show members list with **Make primary / Remove** actions and a link to open the household record.
+- **Pilot delivery:** Flow launches inside the Fundraising Admin console (our manual intake UI) before we wire it into core contact pages.
 
 ### Address Management
 - Updating the household address prompts to apply to all members (default **Yes**).
 - Updating an individual address prompts user to **split (remove from household)** or **update household address**.
 - Gift Aid declarations remain per individual even when sharing addresses.
+- **Pilot delivery:** Start with a manual “copy shared address to member” action instead of auto-sync to keep scope lean and reversible.
 
 ### Mailings & Receipting
 - Print mail defaults to **one per household**, using household salutation/address; can override to individual per send.
@@ -132,9 +134,14 @@ AI never auto-commits; all structural changes require human confirmation.
 
 ## Release Slices (Proposal)
 
+- **Release 0 — Admin Pilot (current focus)**
+  - Add `householdId` to contacts and introduce a lean `household` object with shared `ADDRESS` + salutation fields.
+  - Manage households from the Fundraising Admin console: search/add members, create new households, and manually copy addresses.
+  - No rollups, suggestions, or dedupe automation yet—validate appetite and data expectations first.
+
 - **Release 1 — Foundations**
-  - Manual create/join household flow with shared address prompts.
-  - Household record (members, primary, salutation/address fields).
+  - Manual create/join household flow embedded on contact + household records with guided prompts.
+  - Household record (members, primary, salutation/address fields) surfaced in core Twenty UI.
   - Household rollups (lifetime, YTD, last gift) powered by the existing rollup engine.
   - Print-mail dedupe toggle (one-per-household) and visibility of household rollups on contact pages.
 - Person↔organisation lookup UI (role, primary employer metadata exposed on contact form).
@@ -167,9 +174,9 @@ Roadmap may slim Release 1 further during planning; this breakdown sets initial 
 
 - Validate how Twenty’s native merge handles child records/affiliations; schedule a spike to test merge flows end-to-end.
 - Confirm rollup engine capabilities for household totals (incremental vs nightly) and performance impact.
-- Determine whether Twenty exposes household membership arrays we can reuse; otherwise rely on `primary_household_id`.
+- Determine whether Twenty exposes household membership arrays we can reuse; otherwise rely on `householdId`.
 - Explore whether household records should support custom fields (e.g., notes, preferred comms) in Phase 2.
-- Validate whether single `primary_org_id` lookup is sufficient for most pilots or if secondary affiliations require an earlier enhancement.
+- Validate whether single `companyId` lookup is sufficient for most pilots or if secondary affiliations require an earlier enhancement.
 
 ---
 

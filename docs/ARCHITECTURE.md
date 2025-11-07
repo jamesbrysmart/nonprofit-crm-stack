@@ -64,3 +64,47 @@ _Open design questions: batching vs single record promotion, SLA expectations fo
 - `docs/OPERATIONS_RUNBOOK.md` – logging and health-check practices to extend once the mirror is implemented.
 
 _Update this file whenever spikes conclude or new constraints emerge so future modules can align without rediscovering past decisions._
+
+## 6. API Rate Limiting and Backpressure
+
+### Impact Assessment
+
+- The throttler config Twenty shared (API_RATE_LIMITING_LONG_TTL_IN_MS = 60000, API_RATE_LIMITING_LONG_LIMIT =
+  100) effectively caps every workspace/API key at ≈100 calls per minute (1.6 rps). Our stack multiplexes a single
+  TWENTY_API_KEY across the fundraising proxy, staging flows, metadata helpers, and the rollup engine (services/
+  fundraising-service/src/twenty/twenty-api.service.ts:18), so all those surfaces compete for the same bucket.
+- A single gift submission already consumes multiple requests: GiftService.createGift hits /people/duplicates to
+  dedupe (services/fundraising-service/src/gift/gift.service.ts:342), optionally /people to create the contact
+  (services/fundraising-service/src/gift/gift.service.ts:297), and finally /gifts (services/fundraising-service/
+  src/gift/gift.service.ts:81). If gift staging is enabled we add POST /giftStagings on entry (services/fundraising-
+  service/src/gift-staging/gift-staging.service.ts:164) plus a PATCH when we mark it committed (services/fundraising-
+  service/src/gift-staging/gift-staging.service.ts:321). That means a burst of 25–50 gifts/minute is enough to drain
+  the 100 rpm allowance even before considering other traffic.
+- Deferred/manual processing multiplies the load: each staged record a reviewer commits triggers GET /
+  giftStagings/:id, POST /gifts, PATCH /giftStaging, and possibly PATCH /recurringAgreements in
+  GiftStagingProcessingService.processGift (services/fundraising-service/src/gift-staging/gift-staging-
+  processing.service.ts:45, 173, 237, 243). Stripe webhooks do the same fan-out and also update the agreement
+  immediately (services/fundraising-service/src/stripe/stripe-webhook.service.ts:122), so a fundraising campaign that
+  fires dozens of checkout sessions inside a minute can easily cross the limit.
+  parent (rollup-engine/serverlessFunctions/calculaterollups/src/client.ts:207, 231, 250). A full rebuild over a
+  few thousand gifts could fire several hundred requests in one execution, and with buildChildRecordIndex allowing
+  concurrency of 5 (rollup-engine/serverlessFunctions/calculaterollups/src/client.ts:273) those calls arrive in quick
+  bursts that the throttler will see as an attack.
+  transient 5xx errors, but it means a hard rate-limit will surface as end-user failures instead of graceful queueing
+  because we never wait out the 60‑second window.
+
+### Recommended Actions
+
+- Introduce shared backpressure in TwentyApiService (token bucket or p-limit) so all callers queue once we approach
+  ~80 rpm, and honour Retry-After even when it’s missing by falling back to a sane minimum (e.g., 5–10 s). Instrument
+  429s so we know whether we’re flirting with the cap.
+- For high-volume connectors (Stripe, future JustGiving, CSV imports) stop doing synchronous fan-out; acknowledge the
+  webhook quickly, enqueue the normalized payload, and let a worker drain the queue at a controlled rate with retries.
+  If staging is enabled, keep “auto-promote” off by default whenever we detect we’re already throttled.
+- Throttle the rollup engine: lower the page size from 200, add await sleep between page fetches, and gate the
+  concurrency in buildChildRecordIndex so a full rebuild can’t hammer Twenty; alternatively, split full rebuilds into
+  smaller cron jobs that process one parent batch per minute.
+- Document operational guidance in the runbooks: e.g., pause rollups and manual staging when you’re about to run a
+  bulk import, and space out automation scripts (setup-schema, smoke tests) so they don’t overlap with live traffic.
+- Add observability (logs or metrics) around request volume per endpoint so we can prove to Twenty—and to ourselves—
+  whether we need a higher tier or whether software throttling is enough before pilots scale up.

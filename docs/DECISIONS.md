@@ -458,3 +458,36 @@ We evaluated several open-source and custom approaches for modular reporting in 
 | **Custom build** | Fully integrated, ultimate flexibility, no licensing risk. | Higher dev effort and maintenance, risk of reinventing BI features over time. |
 
 **Decision (interim):** Start with **Evidence.dev** for the POC. It fits our developer-driven model (dashboards are code-reviewed assets), gives us strong integration control, and avoids enterprise licensing hurdles. Data sourcing (direct API vs. staging warehouse) remains open until the evaluation spike is complete.
+
+---
+
+## D-0018: API Rate Limiting & Backpressure Strategy
+**Status**: Draft
+**Priority**: Medium
+
+**Context**
+- Our services (fundraising proxy, staging flows, rollup engine) all share a single Twenty API key, which is subject to a rate limit of approximately 100 requests per minute.
+- Analysis in `ARCHITECTURE.md` shows that high-volume operations like bulk gift processing, Stripe webhooks, or full rollup engine rebuilds can easily exceed this limit.
+- Exceeding the limit results in `429` errors, which currently surface as user-facing failures rather than being gracefully handled.
+
+**Decision**
+- We acknowledge the architectural risk posed by the shared API rate limit. However, implementation of a comprehensive backpressure and throttling solution is **deferred** for now.
+- No immediate changes will be made to the `TwentyApiService` or high-volume connectors.
+- The recommended actions in `ARCHITECTURE.md` (shared backpressure, asynchronous webhook processing, rollup engine throttling) will be prioritized and implemented in a future workstream, likely when pilot usage scales up or when rate-limiting errors become more frequent in testing.
+
+**Why**
+- The current focus is on delivering the core fundraising MVP features. The risk of hitting rate limits during the initial, low-volume pilot phase is considered acceptable.
+- Implementing a robust queuing and throttling system requires significant effort. Deferring this allows us to focus on more immediate feature goals.
+
+**Consequences**
+- The system remains vulnerable to transient failures and performance degradation if API call volume spikes.
+- We must rely on operational guidance (e.g., avoiding concurrent bulk operations) as a temporary mitigation.
+- Observability for `429` errors should be considered to monitor how frequently we are hitting the rate limit.
+
+**Revisit triggers**
+- Increased frequency of `429` errors observed in logs.
+- Onboarding of a pilot user with high-volume data import requirements.
+- Before beginning any work on high-throughput connectors (e.g., large-scale CSV imports, JustGiving).
+
+**References**
+- `docs/ARCHITECTURE.md` §6 (API Rate Limiting and Backpressure) for the full impact assessment and recommended actions.
