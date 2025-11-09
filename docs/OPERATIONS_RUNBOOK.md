@@ -7,15 +7,16 @@ This quick-start runbook captures the minimum steps to operate and diagnose the 
 ## 1. Bring the stack up / down
 
 ```bash
-# clean restart (be patient; compose tears everything down first)
-docker compose down -v
-
-docker compose up -d --build
+# clean restart (preserves DB volume)
+docker compose down
+docker compose up -d
 ```
+
+> Note: When running these commands through Codex CLI, rerun with a higher timeout if the harness cancels them early—otherwise long pulls may stop before `worker`/`gateway` come up.
 
 Key checks while starting:
 - `docker compose ps` – expect `server`, `fundraising-service`, `gateway`, `redis`, `db` to reach `healthy`.
-- `npm run smoke:gifts` from `services/fundraising-service` – validates proxy → Twenty flow and leaves a “Persistent Smoke Test Gift” in Twenty for UI confirmation.
+- `GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts` from `services/fundraising-service` – validates proxy → Twenty flow and leaves a “Persistent Smoke Test Gift” in Twenty for UI confirmation. (Without the `GATEWAY_BASE` override the host can’t resolve `gateway:80`.)
 
 ## 2. Health & readiness endpoints
 
@@ -51,7 +52,7 @@ Use `docker compose ps <service>` to see the health result and `docker compose l
 
 Scenario | Command(s)
 ---|---
-Run smoke test only | `cd services/fundraising-service && npm run smoke:gifts`
+Run smoke test only | `cd services/fundraising-service && GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts`
 Check environment variables inside a container | `docker compose exec fundraising-service env | sort`
 Restart a single service | `docker compose restart fundraising-service`
 Inspect Compose health details | 1. Find the container name with `docker compose ps`<br>2. `docker inspect --format '{{json .State.Health}}' <container_name>`

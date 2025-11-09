@@ -9,7 +9,8 @@ The `dev-stack` repository acts as a "superproject" managing its constituent ser
 ## 2. Build Strategy (current)
 
 - **Twenty CRM (`twenty-core`)**  
-  We now run the pre-built `twentycrm/twenty` image directly, with the version controlled by the `TAG` value in `.env`. Upgrades follow Twenty’s official guidance: `docker compose down`, edit `TAG`, `docker compose up -d`. If we ever need to build from source, we can do so explicitly, but the default workflow keeps Compose simple and ensures migrations execute automatically on boot.
+  We now run the pre-built `twentycrm/twenty` image directly, with the version controlled by the `TAG` value in `.env`. Upgrades follow Twenty’s official guidance: `docker compose down`, edit `TAG`, `docker compose up -d`. If we ever need to build from source, we can do so explicitly, but the default workflow keeps Compose simple and ensures migrations execute automatically on boot.  
+  **Important:** we removed the bespoke `migrate` service and now mirror Twenty’s stock docker-compose pattern where the `server` container applies migrations itself (`DISABLE_DB_MIGRATIONS="false"`). This keeps us aligned with upstream expectations and avoids Yarn/peer-dependency drift inside the previously custom container.
 
 - **Fundraising Service (`fundraising-service`)**  
   No changes: the service still uses the multi-stage Dockerfile and `.dockerignore` optimisations noted previously.
@@ -65,14 +66,14 @@ Consistent and explicit environment variable configuration is crucial for inter-
 
 `depends_on` conditions are used in `docker-compose.yml` to ensure services start in the correct order and only when their dependencies are ready.
 
-*   **`db-wait` service:** Ensures `db` and `redis` are ready before other services start.
+*   **`db-wait` service:** Provides a simple “ready” gate for Postgres so that `server` only starts once the database accepts connections.
 *   **`gateway` service:**
     *   `depends_on` `server` with `condition: service_healthy`.
     *   `depends_on` `fundraising-service` with `condition: service_started` (to avoid issues with its healthcheck).
 
 ## 6. Image Tagging Policy
 
-*   The `twentycrm/twenty` image tag is explicitly pinned to `v1.4.0` in the `.env` file (`TAG=v1.4.0`) instead of `latest` for reproducible builds and to prevent unexpected behavior changes.
+*   The `twentycrm/twenty` image tag is explicitly pinned to `v1.10.2` in the `.env` file (`TAG=v1.10.2`) instead of `latest` for reproducible builds and to prevent unexpected behavior changes.
 
 ## 7. Upgrading Twenty CRM
 
@@ -126,6 +127,7 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     docker compose up -d
     docker compose logs -f server
     ```
+    *   **Codex CLI users:** the default harness kills long-running commands after ~10 seconds. When running `docker compose up -d/down` through Codex, rerun the command with a higher timeout or wait for it to complete so every service (especially `worker`/`gateway`) actually starts. If the command times out during an image pull, simply rerun it—the compose workflow will pick up where it left off.
     *   Look for messages indicating database migration or upgrade success. Once the logs are stable and the `server` is healthy, press `Ctrl+C` to stop watching.
 
 #### Step 3: Finalize and Verify
@@ -164,9 +166,10 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
 
     ```bash
     cd services/fundraising-service
-    npm run smoke:gifts
+    GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts
     cd ../..
     ```
+    *   Use this command when running from the host. If you exec into a container (where `gateway` resolves), `npm run smoke:gifts` without the override still works.
 
 5.  **Manual Check:**
     *   Log in to the Twenty UI. Confirm the new version and sanity-check key records (people, gifts, rollup fields, etc.).

@@ -35,29 +35,6 @@ services:
     restart: "no"
     networks: [dev-net]
 
-  migrate:
-    image: node:20-alpine
-    working_dir: /app
-    volumes:
-      - ./services/twenty-core:/app:ro
-    environment:
-      DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@db:5432/postgres
-      PGHOST: db
-      PGPORT: "5432"
-      PGUSER: ${PG_DATABASE_USER:-postgres}
-      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
-      PGDATABASE: postgres
-    depends_on:
-      db: { condition: service_healthy }
-      db-wait: { condition: service_completed_successfully }
-    networks: [dev-net]
-    command: >
-      sh -lc ' 
-        corepack enable &&
-        (yarn --immutable || yarn) &&
-        (yarn nx database:reset --configuration=no-seed || yarn nx database:migrate)
-      '
-
   redis:
     image: redis:7-alpine
     command: ["--maxmemory-policy", "noeviction"]

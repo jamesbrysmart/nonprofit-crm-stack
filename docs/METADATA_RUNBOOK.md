@@ -61,7 +61,7 @@ Record any additional manual fields here as they become part of the POC scope.
 - Re-run the smoke test to confirm Gift CRUD still works through the proxy:
   ```bash
   cd services/fundraising-service
-  npm run smoke:gifts
+  GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts
   ```
 - In the Twenty UI, confirm:
   - `Campaign` and `Gift` objects are visible with the expected fields.

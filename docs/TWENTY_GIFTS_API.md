@@ -98,7 +98,7 @@ Quick check:
 
 ```bash
 cd services/fundraising-service
-npm run smoke:gifts
+GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts
 ```
 
 The script exercises create → list → get → update → delete through the proxy so any regression shows up before manual metadata work.

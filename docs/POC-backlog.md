@@ -12,7 +12,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Twenty shows the new record; response payload matches expectations.
   - Manual metadata setup (API or UI) captured in docs.
   - Logs reviewed, with open issues noted.
-- **Notes:** Depends on the manual object/field setup; no local Postgres use. `npm run smoke:gifts` now automates create → list → get → update → delete and leaves a persistent record labelled "Persistent Smoke Test Gift" for UI verification.
+- **Notes:** Depends on the manual object/field setup; no local Postgres use. `GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts` (host) now automates create → list → get → update → delete and leaves a persistent record labelled "Persistent Smoke Test Gift" for UI verification. Inside containers you can omit the override.
 
 ### 2. Fundraising Admin Gift Entry UI
 - **Owner:** Engineering
