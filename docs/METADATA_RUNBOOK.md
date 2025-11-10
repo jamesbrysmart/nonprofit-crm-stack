@@ -43,16 +43,25 @@ Until Twenty exposes a stable payload for lookup metadata, add the relational fi
    - `Campaign` — `Lookup` to `Campaign`. Mark as required if desired.
    - `Contact` — `Lookup` to `Person`. Keep optional for now; adjust when the data model is finalised.
    - `Appeal` — `Lookup` to `Appeal`. Keep optional for now so non-attributed gifts still commit.
+   - `Opportunity` (`opportunityId`) — `Lookup` to `Opportunity`. Required for linking pledge/grant gifts.
+   - `Company` (`companyId`) — `Lookup` to `Company`/Organisation so corporate gifts carry the employer context.
 4. (Optional) Add descriptions to clarify how the fundraising proxy uses each field.
 5. Navigate to **Settings → Objects → Appeals → Fields** and add:
    - `Appeal Type` (`appealType`) keeps the default script label; no manual lookup required.
    - `Parent Appeal` — `Lookup` to `Appeal`.
    - `Default Fund` — `Lookup` to your designation object (optional until funds ship).
    - `Default Tracking Code` — `Lookup` to `Tracking Code` (future slice; optional placeholder).
-6. Navigate to **Settings → Objects → Solicitation Snapshots → Fields** and add:
+6. Navigate to **Settings → Objects → Opportunities → Fields** and add:
+   - `Default Fund` — `Lookup` to your designation/fund object (used for auto-coding gifts that link to the Opportunity).
+   - `Default Appeal` — `Lookup` to `Appeal`.
+   - (Optional) Add descriptions referencing the fundraising-service defaults so admins know how they’re applied.
+7. Navigate to **Settings → Objects → Gift Staging → Fields** and add:
+   - `Opportunity` (`opportunityId`) — `Lookup` to `Opportunity`.
+   - `Company` (`companyId`) — `Lookup` to `Company`.
+8. Navigate to **Settings → Objects → Solicitation Snapshots → Fields** and add:
    - `Appeal` — `Lookup` to `Appeal`.
    - `Appeal Segment` — `Lookup` to `Appeal Segment` (optional; add once segments exist).
-7. Publish the changes.
+9. Publish the changes.
 
 Record any additional manual fields here as they become part of the POC scope.
 

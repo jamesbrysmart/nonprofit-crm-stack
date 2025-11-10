@@ -21,6 +21,8 @@
 - **API Usage:** Never rely on assumptions for Twenty’s Data/Metadata APIs—always consult the live OpenAPI schemas or.
 - **Data Persistence:** Avoid deleting the Twenty workspace. Be mindful of Docker commands like `docker compose down -v` that destroy data. When tearing down the environment, prefer `docker compose down` and only use the `-v` flag if explicitly confirmed that a database reset is intended.
 - **Task Management:** If I see an outstanding task in my memory, I will ask if it's completed and for permission to update it to completed rather than running it blindly.
+- **Known Issue:** Some staging rows (e.g., seeded `commit_failed` data) appear in Twenty and via the fundraising-service API but not in the React queue. Root cause still unknown; gather more telemetry (IDs/filters/pagination) before fixing.
+- Reminder: Twenty metadata still uses the legacy `promotionStatus` field on gift staging; plan a migration to rename it to `processingStatus` and update all references once safe.
 
 ### TEMP NOTES – 2025-10-23 (remove after next session)
 - Known UI bugs to fix next time: (1) `StagingQueue` misses the `useEffect` import and crashes at runtime; (2) recurring health widget counts “unlinked” rows but the component never sets `hasRecurringMetadata`; (3) `useGiftStagingList` should refetch when statuses/intake filters change. Leave code as-is for now; tackle alongside the next UI cleanup.

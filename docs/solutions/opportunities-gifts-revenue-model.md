@@ -35,34 +35,34 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 
 ### Opportunity (solicitation / pledge / pipeline)
 - `id`
-- **Who**: `primary_contact_id` (or `org_id`), *optional household visibility*
-- **What**: `name`, `type_subtype` *(Grant | MajorGift | Corporate | Legacy | Membership-Acquisition | Other)*
-- **Pipeline**: `stage`, `probability`, `expected_close_date`, `amount_target`
-- **Commitment (optional)**: `amount_committed`, `commitment_date` *(pledge/award recorded but unpaid)*
-- **Defaults (optional)**: `default_fund_id`, `default_appeal_id`
-- **Admin & Collab**: `owner_id`, notes, tasks, followers, files
+- **Who**: `primaryContactId` (or `orgId`), *optional household visibility*
+- **What**: `name`, `typeSubtype` *(Grant | MajorGift | Corporate | Legacy | Membership-Acquisition | Other)*
+- **Pipeline**: `stage`, `probability`, `expectedCloseDate`, `amountTarget`
+- **Commitment (optional)**: `amountCommitted`, `commitmentDate` *(pledge/award recorded but unpaid)*
+- **Defaults (optional)**: `defaultFundId`, `defaultAppealId`
+- **Admin & Collab**: `ownerId`, notes, tasks, followers, files
 - **Rollups (read-only)**:
-  - `gifts_count`
-  - `gifts_received_amount`
-  - `balance_outstanding = amount_committed - gifts_received_amount` *(null-safe)*
+  - `giftsCount`
+  - `giftsReceivedAmount`
+  - `balanceOutstanding = amountCommitted - giftsReceivedAmount` *(null-safe)*
 
 > Notes  
-> - We intentionally **do not** treat `amount_committed` as revenue. Gifts are revenue.  
+> - We intentionally **do not** treat `amountCommitted` as revenue. Gifts are revenue.  
 > - If more granular expected installments are needed later, add optional `OpportunityPaymentSchedule` (see Roadmap).
 
 ---
 
 ### Gift (every payment / receipt)
 - `id`
-- **Who/When**: `contact_id` (or `org_id`), `date_received`, `currency`, `amount`
-- **Linkage**: `opportunity_id` *(nullable — only when sourced from a solicitation)*
-- **Method**: `payment_method` *(card, direct_debit, cash, cheque, bank_transfer, in_kind, other)*  
-  - For reversals: `reversal_of_gift_id` *(optional negative gift pattern)*
-- **Attribution**: `fund_id` *(designation)*, `appeal_id`, `appeal_segment_id`, `tracking_code_id`
-- **Gift Aid (UK)**: `gift_aid_eligible`, `gift_aid_declaration_id`
-- **External refs**: `processor_txn_id`, `import_row_id`, `source_system`
-- **Extras (optional)**: `soft_credit_contact_id`, `split_allocations[]` *(list of `{fund_id, amount}`)*, `notes`
-- **In-kind**: `is_in_kind` (bool), `in_kind_description`, `estimated_value`
+- **Who/When**: `contactId` (or `orgId`), `dateReceived`, `currency`, `amount`
+- **Linkage**: `opportunityId` *(nullable — only when sourced from a solicitation)*
+- **Method**: `paymentMethod` *(card, directDebit, cash, cheque, bankTransfer, inKind, other)*  
+  - For reversals: `reversalOfGiftId` *(optional negative gift pattern)*
+- **Attribution**: `fundId` *(designation)*, `appealId`, `appealSegmentId`, `trackingCodeId`
+- **Gift Aid (UK)**: `giftAidEligible`, `giftAidDeclarationId`
+- **External refs**: `processorTxnId`, `importRowId`, `sourceSystem`
+- **Extras (optional)**: `softCreditContactId`, `splitAllocations[]` *(list of `{fundId, amount}`)*, `notes`
+- **In-kind**: `isInKind` (bool), `inKindDescription`, `estimatedValue`
 
 > Pattern  
 > - **One installment = one Gift.**  
@@ -73,20 +73,20 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 ### Optional helpers (feature-flagged)
 
 **OpportunityPaymentSchedule** *(child of Opportunity)*  
-- `due_date`, `scheduled_amount`, `status` *(Due/Paid/Deferred/Cancelled)*  
+- `dueDate`, `scheduledAmount`, `status` *(Due/Paid/Deferred/Cancelled)*  
 > Used to track *expected* installments; Gifts are created only when cash lands.
 
 **RecurringAgreement** *(for DD/cards)*  
-- `contact_id`, `provider` *(Stripe/GoCardless)*, `start_date`, `cadence`, `status`, `amount`  
+- `contactId`, `provider` *(Stripe/GoCardless)*, `startDate`, `cadence`, `status`, `amount`  
 > Source of truth is the provider; webhooks generate Gifts and update status.
 
 **Membership (separate module)**  
-- `contact_id`, `membership_type`, `start_date`, `end_date`, `status`, `auto_renew`  
+- `contactId`, `membershipType`, `startDate`, `endDate`, `status`, `autoRenew`  
 > Membership **payments are Gifts**; link Gift→Membership for lifecycle analytics.
 
 **Event (separate module)**  
-- `event_id`, metadata (name, date, location, capacity)  
-> Event income are **Gifts** tagged with `event_id` or via `appeal_id`.
+- `eventId`, metadata (name, date, location, capacity)  
+> Event income are **Gifts** tagged with `eventId` or via `appealId`.
 
 ---
 
@@ -104,26 +104,26 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 
 ### 1) Simple/Online Donation (no Opportunity)
 1. Donor pays via **Stripe/GoCardless** form (SCA/mandate handled).
-2. Webhook creates **Gift** (auto-attributes `appeal_id`/`tracking_code_id` via UTM).
+2. Webhook creates **Gift** (auto-attributes `appealId`/`trackingCodeId` via UTM).
 3. Receipting/Gift Aid queued per org rules; reconciliation picks up deposit.
 
 ### 2) Grant or Major Gift (with Opportunity)
-1. Fundraiser creates **Opportunity**, sets `type_subtype`, `stage`, `amount_target`; collaborates via tasks/notes.
-2. When awarded/pledged: set `amount_committed` (+ optional schedule).
+1. Fundraiser creates **Opportunity**, sets `typeSubtype`, `stage`, `amountTarget`; collaborates via tasks/notes.
+2. When awarded/pledged: set `amountCommitted` (+ optional schedule).
 3. As funds arrive: create **Gifts** linked to the Opportunity (prefill fund/appeal defaults).
-4. Rollups update: `gifts_received_amount`, `balance_outstanding = amount_committed - gifts_received_amount`.  
+4. Rollups update: `giftsReceivedAmount`, `balanceOutstanding = amountCommitted - giftsReceivedAmount`.  
    Reports use Gifts for income; Opportunities for forecast.
 
 ### 3) Pledge / Multi-installment
-- Minimal: track `amount_committed` on Opportunity; each payment → Gift.  
+- Minimal: track `amountCommitted` on Opportunity; each payment → Gift.  
 - With schedule (opt): define due dates; overdue reminders; still only Gifts count as income.
 
 ### 4) Legacy / Bequest
-- Opportunity `type_subtype=Legacy`, stages (Notified → Probate → Realised).
+- Opportunity `typeSubtype=Legacy`, stages (Notified → Probate → Realised).
 - Each estate distribution → **Gift** linked to the Opportunity.
 
 ### 5) Corporate Sponsorship / In-Kind
-- Opportunity for negotiation/stage; **Gift** with `is_in_kind` & description (and/or cash component).  
+- Opportunity for negotiation/stage; **Gift** with `isInKind` & description (and/or cash component).  
 - Deliverables tracked as tasks/files (or future light “Deliverables” child if needed).
 
 ### 6) Membership (module on)
@@ -135,7 +135,7 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 ## UX / UI
 
 **Opportunity workspace**
-- Pipeline Kanban/list with filters by `type_subtype` and owner.
+- Pipeline Kanban/list with filters by `typeSubtype` and owner.
 - Header rollup: *Committed £X / Received £Y / Outstanding £Z*.
 - Tabs: Overview, Activity (tasks/notes/emails), Files, Gifts (linked), Schedule (if enabled).
 - Quick actions: Add Gift (prefilled), Log Task, Advance Stage.
@@ -160,15 +160,15 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 ## Validation & Rules
 
 - **Gifts**
-  - `amount > 0`, `date_received <= today` (overrideable by permission).
-  - `payment_method` consistent (e.g., `direct_debit` respects Bacs lead times).
-  - `fund_id` required if org enforces designation; `appeal_id` recommended (auto for digital).
-  - **Duplicate prevention**: block on identical `processor_txn_id`; warn on same contact+amount+date (±1d).
+  - `amount > 0`, `dateReceived <= today` (overrideable by permission).
+  - `paymentMethod` consistent (e.g., `directDebit` respects Bacs lead times).
+  - `fundId` required if org enforces designation; `appealId` recommended (auto for digital).
+  - **Duplicate prevention**: block on identical `processorTxnId`; warn on same contact+amount+date (±1d).
   - Gift Aid: require active declaration or capture inline if eligible.
 
 - **Opportunities**
-  - `expected_close_date` required when stage in pipeline.
-  - `amount_committed` cannot be negative; **report-only** (not revenue).
+  - `expectedCloseDate` required when stage in pipeline.
+  - `amountCommitted` cannot be negative; **report-only** (not revenue).
   - Stage transitions may auto-create tasks (e.g., stewardship on Close Won).
 
 ---
@@ -178,7 +178,7 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 - **Income (actuals)**: Gifts by fund, appeal, channel, method; YoY; donor cohorts.
 - **Campaign performance**: Gifts by appeal/segment/tracking code; response rates via solicitation snapshots.
 - **Pipeline**: Opportunities by stage/probability/owner; forecast vs targets.
-- **Pledge realisation**: Opportunities with `amount_committed` vs sum(Gifts).
+- **Pledge realisation**: Opportunities with `amountCommitted` vs sum(Gifts).
 - **Legacy pipeline**: counts by stage, realised amounts.
 - **Membership** (module): active/lapsed counts; revenue (Gifts) by type.
 
@@ -189,14 +189,14 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 ## API & Integrations
 
 - **Webhooks ingestion**: Stripe/GoCardless events (verified, idempotent) → Gifts.
-- **Marketing**: send “Gift created” events; audience sync from segments; campaign `appeal_id` ties comms→gifts.
+- **Marketing**: send “Gift created” events; audience sync from segments; campaign `appealId` ties comms→gifts.
 - **Accounting (later)**: deposit summaries; push grouped Gifts (net/gross/fees) to Xero/QuickBooks.
 
 ---
 
 ## KPIs / Success Criteria
 
-- ≥ **95%** online Gifts auto-attributed to `appeal_id` via tracking.
+- ≥ **95%** online Gifts auto-attributed to `appealId` via tracking.
 - **Zero** double counting: revenue = sum(Gifts); commitments excluded.
 - **Time to log a Gift** (manual) ≤ **30s** p95 with defaults.
 - **Forecast accuracy**: (Committed − Outstanding) trend improves after adoption.
@@ -227,7 +227,7 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 **Phase 1 (MVP)**
 - Opportunity & Gift entities with fields above.
 - Gift entry (batch), online forms (Stripe cards+wallets; GoCardless DD one-off/monthly).
-- UTM/Tracking → `appeal_id`; Gift Aid capture; basic dashboards.
+- UTM/Tracking → `appealId`; Gift Aid capture; basic dashboards.
 - Reconciliation summaries based on Gifts.
 
 **Phase 2**
