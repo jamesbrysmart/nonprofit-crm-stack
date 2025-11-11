@@ -39,7 +39,7 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 ## Minimal Data Surface (fields we must set)
 
 **Donation**  
-- `contact_id` (or new contact created)  
+- `contact_id` (or new contact created) **or** `company_id` (grants/corporate in-kind)  
 - `amount`, `currency` (GBP default), `date_received`  
 - `payment_method` (`card`, `direct_debit`, `cash`, `cheque`, `bank_transfer`, `other`)  
 - `appeal_id` (required if attributable), `appeal_segment_id` (opt), `tracking_code_id` (opt, auto for digital)  
@@ -61,13 +61,13 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 
 ### A) Manual Gift Entry (Admin UI)
 
-**Use cases**: cash, cheques, phone gifts, event day batches, manual corrections.
+**Use cases**: cash, cheques, phone gifts, event day batches, manual corrections, grant/corporate installments.
 
 **UX requirements**
 - **Keyboard-first, sticky defaults**: select batch defaults (appeal, fund, date, method); tab through fields.
-- **Inline contact search + quick-create**: search by name/email/phone; if not found, quick-create with minimal fields; household suggestion if address matches.
-- **Smart mapping**: prefill `appeal/fund` from batch defaults; show last used for this contact; allow one-click change.
-- **Donor search & confirmation**: inline panel surfaces exact/review/partial matches returned from Twenty’s `/people/duplicates`. Admins must explicitly choose “Use donor” before it is applied; a donor summary card shows the selected record with a one-click “Clear” option. A modal directory search is available for deeper lookups, and leaving the selection blank creates a new donor record on submit.
+- **Inline contact search + quick-create**: search by name/email/phone; if not found, quick-create with minimal fields; household suggestion if address matches. **For grant/corporate intents, skip the contact flow and focus on organisation lookup instead.**
+- **Smart mapping**: prefill `appeal/fund` from batch defaults; show last used for this contact or organisation; allow one-click change.
+- **Donor search & confirmation**: inline panel surfaces exact/review/partial matches returned from Twenty’s `/people/duplicates`. Admins must explicitly choose “Use donor” before it is applied; a donor summary card shows the selected record with a one-click “Clear” option. A modal directory search is available for deeper lookups, and leaving the selection blank creates a new donor record on submit. _Grant / corporate intents bypass this panel — instead the organisation lookup is mandatory._
 - **Recurring association picker**: optional toggle reveals a filtered list of active `RecurringAgreement` records so manual installments stay linked without retyping IDs.
 - **Staging duplicate warning**: when an existing donor is selected the form checks current staging rows for same-amount/same-day entries and warns before saving.
 - **Dedup prevention (before save)**:
