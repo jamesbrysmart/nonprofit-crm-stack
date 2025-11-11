@@ -278,6 +278,7 @@ _Keep this document updated while the UI spec evolves. When the design hardens o
 - **Scope:** Tailwind only rides in `services/fundraising-service/client`; we do *not* add it inside the Twenty core repo.
 - **Theme mirroring:** Configure `tailwind.config.js` to replicate the Twenty tokens already defined in `styles.css` (Inter font stack, 4px spacing grid, cobalt primary, slate neutrals, existing radii/shadows). Any new colour/spacing token must be added to the config before use—no inline hex/rgb shortcuts.
 - **Component layer:** Common UI atoms live in `@layer components` with semantic `.f-*` classes such as `.f-page`, `.f-card`, `.f-heading-sm`, `.f-heading-md`, `.f-text-muted`, `.f-badge`, `.f-pill-status--{state}`. These encode typography, border, radius, and elevation so JSX stays readable.
+- **Buttons & alerts:** Use `.f-btn--primary|secondary|ghost` plus `.f-alert--{error|info}` and `.f-state-block` for loading/empty states. These are now wired through Tailwind (`services/fundraising-service/client/src/tailwind.css`) and power the staging + recurring pages.
 - **Utilities vs. components:** Reach for the `.f-*` component classes whenever a pattern appears in multiple views. Reserve Tailwind utilities in JSX for local layout needs (e.g., `flex`, `grid`, `gap-*`, `justify-*`). If we copy the same utility combo three or more times, promote it into the component layer.
 - **Prefixing:** Optionally enable the `f-` Tailwind prefix (`f-flex`, `f-gap-4`, etc.) to guarantee our utilities cannot collide with future Twenty core CSS or browser defaults.
 - **Readability bar:** Keep class strings intentional—ideally one or more `.f-*` semantic classes plus no more than ~3–5 structural utilities (layout/spacing/alignment). This keeps diffs small and ensures component intent is obvious during reviews.
@@ -302,3 +303,5 @@ _Keep this document updated while the UI spec evolves. When the design hardens o
 - **Twenty-specific cues:** Keep the right-hand review drawer width, backdrop, and `box-shadow` (`styles.css:266`–`styles.css:330`), plus the queue table typography/border rhythm (`styles.css:348` onward) until Tailwind replacements explicitly match them.
 
 Use this list as the checklist when migrating sections; when a token/component moves fully into Tailwind, annotate the new `.f-*` recipe so this section stays current.
+
+_Migration log:_ Manual gift entry + donor search modal now rely on the Tailwind form primitives (`f-input`, `f-btn`, `f-alert`) introduced in this pass, the staging queue remains on the controller pattern, and the recurring agreements view (`RecurringAgreementList.tsx`) is the first full list/table slice using the `.f-btn`/`.f-state-block` recipes.
