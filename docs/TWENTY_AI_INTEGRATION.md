@@ -92,3 +92,42 @@ set—the backend endpoints will be ready once we upgrade.
 
 With the flags active and a provider configured, create a workflow that includes
 an AI node to verify the integration end-to-end.
+
+## 6. Ask AI chat + default agents
+
+Even before you configure anything in **Settings → Workspace → AI**, Twenty
+ships a set of standard agents (Helper/Data Navigator, etc.) and exposes
+an **Ask AI** entry in the left navigation whenever `IS_AI_ENABLED` is true.
+
+1. Click **Ask AI** in the nav (or press `@`) to open the chat surface.
+2. Click the **New chat** button if no thread exists yet.
+3. Type a prompt and watch the live routing message as the workspace
+   selects the best built-in agent.
+
+If you want to change which models those agents use, open **Settings →
+Workspace → AI → Settings** and switch the **Router Model** (or edit each
+agent under the **Agents** tab). Setting both to `gpt-4o-mini` keeps token
+usage low while you are on the default OpenAI quota.
+
+## 7. Troubleshooting: OpenAI TPM limits
+
+During local testing we hit OpenAI’s per-minute token limit with the default
+`gpt-4o` model. When that happens you’ll see the chat bubble show
+`Failed to get response [object Object]` and the server log records:
+
+```
+Request too large for gpt-4o … Limit 30000, Requested ~57k tokens per min.
+```
+
+To work around this while your OpenAI account is still on the entry tier
+(< $50 spend and < 7 days since first payment):
+
+1. Use lighter models such as `gpt-4o-mini` for both the router and any
+   workspace agents (see section 6).
+2. Keep prompts/tools lean—each standard agent loads a rich system prompt
+   and a long list of tools (Data Navigator, etc.), so trimming custom
+   additions helps stay under the quota.
+3. Retry the chat once you’ve made the change; the limit resets quickly.
+
+If you need higher TPM headroom, upgrade your OpenAI account (or add an
+Anthropic key and switch models in the same settings screen).
