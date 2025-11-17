@@ -111,6 +111,7 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - `services/twenty-core/packages/twenty-apps/hello-world/agents/hello-world-assistant.jsonc`
 - `rollup-engine/serverlessFunctions/calculaterollups/src/index.ts`
 - `docs/PROJECT_CONTEXT.md`
+- `docs/PARTNER_MODULE_BLUEPRINT.md`
 
 ---
 
@@ -379,7 +380,7 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 ## D-0009: Metadata as code (Twenty)
 **Decision**
-- Keep idempotent scripts in `scripts/metadata/` that call **`/graphql/metadata`** with `x-api-key` to create/alter custom objects (e.g., `Gift__c`, `Campaign__c`).
+- Keep idempotent scripts in `scripts/metadata/` that call **`/graphql/metadata`** (GraphQL) or `/rest/metadata/*` (REST) with an `Authorization: Bearer <API_KEY>` header to create/alter custom objects (e.g., `Gift__c`, `Campaign__c`). Use the GraphQL endpoint when relation fields are required.
 
 **Why**
 - Reproducible environments; no click-drift between dev/stage/prod.

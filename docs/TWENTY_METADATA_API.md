@@ -79,18 +79,50 @@ curl -X POST -H "Authorization: Bearer <YOUR_API_KEY>" -H "Content-Type: applica
 }' http://localhost:3000/rest/metadata/fields
 ```
 
-#### Challenges with `RELATION` / `LOOKUP` Fields
+#### Creating `RELATION` / `LOOKUP` Fields (GraphQL path)
 
-As of October 2025 we are still unable to programmatically create `RELATION` / `LOOKUP` fields via the REST Metadata API. Attempts keep returning errors such as:
-- `Field 'relation' is not defined by type 'CreateFieldInput'`
-- `Value 'LOOKUP' does not exist in 'FieldMetadataType' enum`
-- `Relation creation payload is not defined`
+The REST Metadata API still rejects relation payloads, but the **GraphQL metadata endpoint** handles them. Use the `/metadata` endpoint with a bearer token:
 
-This blocks automated provisioning for the recurring slice (e.g., `RecurringAgreement.contactId`, `Gift.recurringAgreementId`, `GiftStaging.recurringAgreementId`). Our current approach is to script all primitives and then create the required lookups in the Twenty UI until the API surface is officially documented or fixed.
+```bash
+curl -s -X POST http://localhost:3000/metadata \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TWENTY_API_KEY}" \
+  -d '{"query":"mutation CreateRelationField($input: CreateOneFieldMetadataInput!) { createOneField(input: $input) { id name type relation { type targetObjectMetadata { id nameSingular } targetFieldMetadata { id name label } } } }","variables":{"input":{"field":{"type":"RELATION","name":"donorLinkAuto","label":"Donor","objectMetadataId":"03f097db-58f0-44eb-991f-d963e9fa955d","relationCreationPayload":{"type":"MANY_TO_ONE","targetObjectMetadataId":"8fa66908-0811-43dc-b792-efe8e3bd7c21","targetFieldLabel":"Gifts","targetFieldIcon":"IconGift"}}}}}'
+```
 
-> **Update (2025-11-04):** Twenty confirmed that relation fields can be created today via the GraphQL metadata API even though the REST surface still rejects them. We are not switching workflows yet, but note this option for future automation spikes.
+Response excerpt (gift → person relation):
 
-**Recommendation:** Document the manual lookup steps in the metadata runbook and raise the gap with Twenty; revisit once the metadata API exposes a supported payload.
+```json
+{
+  "data": {
+    "createOneField": {
+      "id": "0d8080e0-48b9-49ec-ad13-6ba6f645ddcb",
+      "name": "donorLinkAuto",
+      "type": "RELATION",
+      "relation": {
+        "type": "MANY_TO_ONE",
+        "targetObjectMetadata": {
+          "id": "8fa66908-0811-43dc-b792-efe8e3bd7c21",
+          "nameSingular": "person"
+        },
+        "targetFieldMetadata": {
+          "id": "b029d728-1f11-46f3-8e1c-20d0bc1df16f",
+          "name": "giftsAuto",
+          "label": "Gifts"
+        }
+      }
+    }
+  }
+}
+```
+
+- `type` accepts `MANY_TO_ONE` or `ONE_TO_MANY` (see `RelationType` in `twenty-shared`).
+- `targetFieldLabel` / `targetFieldIcon` describe the inverse field that Twenty auto-creates on the target object.
+- Discover `objectMetadataId` values via `GET /rest/metadata/objects` or the metadata runbook.
+
+Our `setup-schema.mjs` script now uses this pattern (via `ensureRelationField`) to create the Gift → Person lookup automatically. Continue porting the remaining manual lookups—Gift → Appeal, Gift Staging → Gift, Recurring Agreement → Person, etc.—by supplying the relevant object IDs and labels in the same mutation structure.
+
+**Recommendation:** Prefer this GraphQL workflow for any field type that requires `relationCreationPayload` (relations, morph relations). Keep REST for simple primitives, but standardise on `Authorization: Bearer <API_KEY>` headers everywhere.
 
 ---
 
