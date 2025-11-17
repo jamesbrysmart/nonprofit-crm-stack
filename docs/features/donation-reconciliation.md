@@ -34,23 +34,24 @@ This feature aims to **reduce manual effort, detect discrepancies early, and imp
 ## Functional Overview
 
 ### 1. **Data Ingestion**
-Support two modes of bringing external donation records into the system:
-- **Direct integrations** (Stripe, GoCardless, PayPal, JustGiving): use API or webhooks to pull transactions on schedule.
-- **Manual CSV upload**: users upload reports from external systems (monthly, weekly, or ad hoc).
+All external donation activity continues to flow through the existing **gift staging** pipeline described in the Intake/Staging specs. We simply add a `giftPayoutId` relation on staging rows (and later the committed gifts) so each external transaction knows which payout/bank deposit it belongs to.
 
-All imported records land in a **temporary staging table** (`donation_import_staging`).
+Support two ingestion paths:
+- **Direct integrations** (Stripe, GoCardless, PayPal, JustGiving): API/webhooks pull transactions and payout references on a schedule. Each payload lands in `giftStaging` with `providerPaymentId`, `feeAmount`, and optional `giftPayoutId` if we already know the payout.
+- **Manual / CSV**: admins use Twenty’s native CSV import to load payout files or transaction lists. Mapping templates populate the same staging fields plus `giftPayoutId` or payout metadata when available.
 
-| Field         | Description                      |
-|---------------|----------------------------------|
-| `external_id`   | Unique transaction ID from source|
-| `source_system` | e.g. Stripe, PayPal, JustGiving  |
-| `donor_name` / `email` | For fallback matching            |
-| `amount`      | Donation amount                  |
-| `date`        | Transaction date                 |
-| `status`      | Successful, refunded, pending    |
-| `reference`   | Bank ref or payout batch ID      |
-| `fees`        | (optional) processor fee         |
-| `import_batch_id` | Links multiple imports together  |
+Key staging fields for reconciliation:
+
+| Field | Description |
+| --- | --- |
+| `externalId` | Unique transaction ID from source |
+| `source` / `intakeSource` | e.g. Stripe webhook, PayPal CSV |
+| `giftPayoutId` | Relation to the payout/deposit record |
+| `amount` / `amountMinor` | Gross donation amount |
+| `feeAmount` | Processor/bank fees captured per transaction |
+| `dateReceived` | Transaction date |
+| `providerPaymentId` / `reference` | Processor reference or payout batch ID |
+| `rawPayload` | Audit trail for troubleshooting |
 
 ---
 
@@ -71,7 +72,7 @@ Each record is flagged as:
 - ❌ **Unmatched** – appears in external data but no CRM equivalent.
 - 🌀 **Duplicate** – multiple CRM records linked to the same external transaction.
 
-These are stored in a `donation_reconciliation_log`.
+Staging and gift records share the same status history; reconciliation status is an additional layer that records whether the external payout amount matches the sum of linked gifts (see `giftPayout` below).
 
 ---
 
@@ -109,8 +110,8 @@ To help finance staff verify totals:
 
 Example summary table:
 
-| Deposit Date | Source | Deposit Ref | CRM Total | Bank Total | Variance |
-|---------------|---------|-------------|------------|-------------|-----------|
+| Deposit Date | Source | Deposit Ref | CRM Net Total | Deposit Net | Variance |
+|---------------|---------|-------------|----------------|---------------|-----------|
 | 2025-09-30 | Stripe | POUT-981 | £5,030.00 | £5,030.00 | £0.00     |
 | 2025-09-29 | PayPal | PAY-172 | £1,950.00 | £1,900.00 | -£50.00 ⚠️ |
 
@@ -133,13 +134,38 @@ Once resolved, entries move to a “Reconciled” state and appear in reports.
 
 | Object | Description |
 |--------|-------------|
-| `donation_import_staging` | Temporary holding for external transaction data |
-| `donation_reconciliation_log` | Audit of matches, mismatches, resolutions |
-| `donation_reconciliation_batch` | Each import or reconciliation session |
-| `donation_payout_group` | Groups of donations by payout or deposit (optional) |
+| `giftStaging` | Existing staging object enriched with `giftPayoutId` and `feeAmount` for reconciliation |
+| `gift` | Final donation record gains `feeAmount` and `giftPayoutId` relations so net amounts can be rolled up |
+| `giftPayout` | New object representing the actual payout/deposit as it appears in Stripe/GoCardless/bank |
 
-Each donation record gains a new field:  
-- `external_reference` (links to source transaction or batch)
+### `giftPayout` fields (MVP)
+
+| Field | Purpose |
+| --- | --- |
+| `sourceSystem` | Stripe, GoCardless, manual_bank, etc. |
+| `payoutReference` | Processor/bank reference ID |
+| `depositDate` | Date the net amount hit the bank |
+| `grossAmount` (CURRENCY) | Sum of associated transactions before fees |
+| `feesAmount` (CURRENCY) | Total fees withheld in the payout |
+| `netAmount` (CURRENCY) | Amount paid to the org (the value finance sees) |
+| `expectedItemCount` | Optional number of transactions from the source export |
+| `status` | `pending`, `partially_reconciled`, `reconciled`, `variance`, etc. |
+| `varianceAmount` / `varianceReason` | Track explained differences |
+| `note`, `confirmedAt`, `confirmedBy` | Audit trail once finance signs off |
+
+Rollups (powered by fundraising-service’s rollup engine) populate `crmGrossAmount`, `crmFeeAmount`, `crmGiftCount`, and `pendingStagingCount`; the UI derives the CRM net total by subtracting fees so we never lose sight of processor deductions.
+
+---
+
+## Lifecycle
+
+1. **Create payout** – via integration (future), CSV import, or manual entry. The payout record stores deposit metadata and, when possible, the list/count of expected transactions.
+2. **Ingest transactions** – all external donations enter `giftStaging` with `giftPayoutId` + fee data. Manual gifts can also be linked to a payout when created.
+3. **Validate & promote** – staging follows the existing Stage → Validate → Commit flow. When a row promotes, its `giftPayoutId` moves to the final `gift` record.
+4. **Rollups & status** – rollupEngine calculates CRM gross/fee totals vs. payout totals. Status flips to `reconciled` automatically when `(crmGrossAmount - crmFeeAmount) === netAmount` and no pending staging remains; otherwise it stays `pending`, `partially_reconciled`, or `variance`.
+5. **Resolution** – ops link missing gifts, create new ones, or record an explained variance. Finance confirms the payout once satisfied.
+
+Automated payout ingestion (Stripe/GoCardless) and richer CSV tooling are Phase 2+ enhancements; MVP focuses on the shared data model, manual entry, and dashboard experience.
 
 ---
 
@@ -194,23 +220,23 @@ PayPal Batch PAY-172 £1,900.00 ⚠ -£50 Variance
 
 ## Rollout Roadmap
 
-### **Phase 1 – Foundation**
-- CSV import for external transactions
-- Auto-match by external ID / donor + date + amount
-- Dashboard to view and resolve mismatches
+### **Phase 1 – Foundation (this slice)**
+- Add `giftPayout` object + relations on `gift`/`giftStaging`
+- Manual/CSV payout creation (via Twenty import or inline form)
+- Reconciliation dashboard with rollups + variance tracking
 - Manual variance entry & export
 
 ### **Phase 2 – Integrations & Automation**
-- Stripe and GoCardless API connectors
-- Payout grouping and deposit summaries
-- Automated nightly reconciliation job
-- Basic AI/fuzzy matching and variance alerts
+- Stripe and GoCardless payout connectors + nightly sync
+- Auto-link transactions to payouts during ingestion
+- Automated reconciliation job & alerts when payouts stall
+- Initial AI/fuzzy matching for tricky donor/date combos
 
 ### **Phase 3 – Intelligence & Finance Sync**
 - AI-driven anomaly detection and explanations
-- Optional push to accounting (e.g. Xero)
-- Multi-org or multi-currency support
-- “Finance module” option for orgs with accounting integration needs
+- Optional push to accounting (e.g. Xero) using `giftPayout` as bridge
+- Multi-org/multi-currency support and deeper finance workflows
+- “Finance module” option for orgs needing ledger-level controls
 
 ---
 

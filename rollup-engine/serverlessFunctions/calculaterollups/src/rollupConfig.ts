@@ -83,4 +83,52 @@ export const defaultRollupConfig: RollupConfig = [
       },
     ],
   },
+  {
+    parentObject: 'giftPayout',
+    childObject: 'gift',
+    relationField: 'giftPayoutId',
+    childFilters: [
+      {
+        field: 'amount.amountMicros',
+        operator: 'gt',
+        value: 0,
+      },
+    ],
+    aggregations: [
+      {
+        type: 'SUM',
+        childField: 'amount.amountMicros',
+        parentField: 'matchedGrossAmount',
+        currencyField: 'amount.currencyCode',
+      },
+      {
+        type: 'SUM',
+        childField: 'feeAmount.amountMicros',
+        parentField: 'matchedFeeAmount',
+        currencyField: 'feeAmount.currencyCode',
+      },
+      {
+        type: 'COUNT',
+        parentField: 'matchedGiftCount',
+      },
+    ],
+  },
+  {
+    parentObject: 'giftPayout',
+    childObject: 'giftStaging',
+    relationField: 'giftPayoutId',
+    aggregations: [
+      {
+        type: 'COUNT',
+        parentField: 'pendingStagingCount',
+        filters: [
+          {
+            field: 'promotionStatus',
+            operator: 'notEquals',
+            value: 'committed',
+          },
+        ],
+      },
+    ],
+  },
 ];

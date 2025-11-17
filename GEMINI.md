@@ -27,3 +27,4 @@
 ### TEMP NOTES – 2025-10-23 (remove after next session)
 - Known UI bugs to fix next time: (1) `StagingQueue` misses the `useEffect` import and crashes at runtime; (2) recurring health widget counts “unlinked” rows but the component never sets `hasRecurringMetadata`; (3) `useGiftStagingList` should refetch when statuses/intake filters change. Leave code as-is for now; tackle alongside the next UI cleanup.
 - Follow-up implementation focus: tighten manual-entry duplicate guard with committed gift checks, finish GoCardless ingestion + staging auto-promote policy, and add integration tests covering manual entry → staging queue → commit.
+- Outstanding lint debt (run `npm run lint` in `services/fundraising-service`): existing violations in appeal/company/people/opportunity services, gift staging tests, GoCardless webhook, stripe webhook, and others currently block a clean pass. Revisit before the next sizable backend merge.
