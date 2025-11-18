@@ -169,6 +169,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Break backend services that exceed ~500 LOC into focused modules (e.g., staging list/filter logic vs. payload merge).
   - Document the refactor plan (order of files, risks) and ensure no behaviour regressions via smoke tests.
 - **Notes:** Several files now exceed 1,000 LOC; this work unblocks faster iteration for testing + connectors.
+  - *21a. API client helper*: create a shared `fetchJson` utility for `client/src/api.ts` + incremental refactor of the largest fetchers (gifts, payouts) with unit tests. Afterwards, split the module into per-domain files (`api/gifts.ts`, etc.) to keep code maintainable.
 
 ### 22. Recurring Agreement Parity for Manual/Auto Flows *(New)*
 - **Owner:** Engineering
