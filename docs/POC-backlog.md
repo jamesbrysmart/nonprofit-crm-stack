@@ -13,6 +13,8 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Manual metadata setup (API or UI) captured in docs.
   - Logs reviewed, with open issues noted.
 - **Notes:** Depends on the manual object/field setup; no local Postgres use. `GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts` (host) now automates create → list → get → update → delete and leaves a persistent record labelled "Persistent Smoke Test Gift" for UI verification. Inside containers you can omit the override.
+**Status:** ✅ Delivered (Nov 2025). Keep the smoke script/runbook as regression tooling; revise only if proxy contract changes.
+**Status:** ✅ Delivered (Nov 2025). Keep the script/runbook as regression tooling; no new work unless the proxy contract changes.
 
 ### 2. Fundraising Admin Gift Entry UI
 - **Owner:** Engineering
@@ -52,6 +54,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Dashboard JSON/templates committed; smoke data renders expected totals in Twenty.
   - Rollup rebuild procedure documented for post-import reconciliation.
 - **Notes:** Reuse learnings from API smoke work; coordinate with Feature Audit for field availability.
+**Status:** ✅ Delivered (rollup engine + Evidence slice live). Ongoing regression coverage tracked under item 24.
 
 #### 3a. Gift Batch UX & Processing Follow-up *(New)*
 - **Owner:** Engineering + Product
@@ -70,6 +73,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Configuration guide (environment variables/secrets) committed.
   - Follow-up tickets opened for additional providers once pattern validates.
 - **Notes:** Depends on API reliability improvements and Gift model completeness.
+**Status:** 🟡 Stripe checkout session path implemented; GoCardless + additional providers covered under item 23 before we expand scope.
 
 #### 4a. CSV intake decision (2025-10-23)
 - Rather than building a bespoke `/gift-staging/imports` shell, we will lean on **Twenty’s native CSV import app** for pilot tenants. CSV files will enter Twenty through the existing UI, and we will map the imported gifts into staging using the metadata provided by the platform.
@@ -83,6 +87,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Export script/report template produces HMRC-ready CSV for sample data.
   - Consent/retention checklist cross-referenced in onboarding docs.
 - **Notes:** Coordinates with GDPR tasks under Cross-phase; feeds the Phase 1 exit criteria.
+**Status:** 🟡 Declaration capture guidance in place; export tooling still due.
 
 ### 6. Twenty API Resilience & Structured Logging
 - **Owner:** Engineering
@@ -92,6 +97,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Alerting or TODO path defined for repeated failures (manual drill log suffices for now).
   - Failure simulation captured in docs with expected behaviour.
 - **Status:** JSON logs now include `requestId`, `event` (e.g., `twenty_proxy_attempt`, `twenty_proxy_retry`, `twenty_proxy_network_error`), and timing metadata; metrics TODO and DLQ/webhook backlog still outstanding.
+**Status:** 🟡 Structured logging done; alerting/metrics + dead-letter strategy still open.
 
 ### 7. Operational Hygiene & Runbook
 - **Owner:** Engineering
@@ -101,6 +107,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Logging expectations (format, correlation IDs) captured.
   - Runbook snippet covering build/run/diagnose steps committed to docs.
 - **Status:** `docs/OPERATIONS_RUNBOOK.md` now documents startup/shutdown, health endpoints, and structured log fields; keep expanding with future procedures.
+**Status:** 🟡 Continue expanding (reconciliation/connector troubleshooting).
 
 ### 8. Metadata Runbook & Release Watch
 - **Owner:** Product + Engineering
@@ -110,6 +117,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Table/log of Twenty versions tested, outcomes, and next actions.
   - Reminder or issue to re-test when new images drop.
 - **Status:** `docs/METADATA_RUNBOOK.md` documents script usage, manual lookup steps, and a release watch table; update as lookup automation unblocks.
+**Status:** 🟡 Active; refresh when relation field automation unlocks or metadata schema changes.
 
 ### 9. Evidence Dashboard POC
 - **Owner:** Engineering + Product
