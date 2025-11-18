@@ -305,3 +305,34 @@ _Keep this document updated while the UI spec evolves. When the design hardens o
 Use this list as the checklist when migrating sections; when a token/component moves fully into Tailwind, annotate the new `.f-*` recipe so this section stays current.
 
 _Migration log:_ Manual gift entry + donor search modal now rely on the Tailwind form primitives (`f-input`, `f-btn`, `f-alert`) introduced in this pass, the staging queue remains on the controller pattern, and the recurring agreements view (`RecurringAgreementList.tsx`) is the first full list/table slice using the `.f-btn`/`.f-state-block` recipes.
+
+## 8. Reconciliation UI Enhancements (Payout ↔ Gift Linking)
+
+> Goal: make the reconciliation view actionable by exposing the gifts tied to each payout and allowing admins to link/unlink records without dropping to APIs.
+
+### 8.1 Payout Drawer Layout
+
+- **Header** (already shipping) keeps source + deposit date, status controls, and Close button.
+- **Summary cards** stay at the top (deposit net, matched net, variance, expected items, matched gifts, pending staging).
+- **Linked Gifts panel** (new block beneath the summary):
+  - Table columns: `Gift` (linked to Twenty detail), `Donor`, `Amount`, `Status`, `Linked via` (staging/manual), and a right-aligned action menu.
+  - Supports multi-select checkboxes for bulk unlink, pagination (25 rows), and a search box that matches gift id, donor name/email, or external reference.
+  - Empty state copy: “No gifts linked yet” with a primary “Link gifts” button.
+- **Inline actions**:
+  - `Link gifts` opens a slide-in selector showing unmatched gifts. Filters: donor lookup, amount min/max, date range, payout batch, gift batch. Selected gifts appear in a confirmation list before committing.
+  - `Unlink` is available per row (kebab menu) and in bulk via the checkboxes; confirmation modal summarises the variance impact (“Removing 2 gifts will increase variance by £X”).
+  - After link/unlink, the drawer refreshes the gifts table and recomputes the rollup cards; show a toast summarising the result (e.g., “Linked 3 gifts, variance now £0.00”).
+- **State messaging**:
+  - When variance ≠ 0, display a subtle banner explaining the difference and pointing to pending staging count if nonzero.
+  - When actions fail (e.g., API error), keep the panel visible and surface an inline alert with retry guidance.
+
+### 8.2 Interaction Notes
+
+- Only fundraising admins see the link/unlink buttons; others get a tooltip (“Requires fundraising admin role”).
+- The link selector fetches via a dedicated endpoint (`GET /gifts?giftPayoutId=null&…`) so we’re not loading the full dataset client-side; apply the same search filters on the server.
+- Filter presets (e.g., donor search term) persist per user/session to reduce repetitive typing; include a “Reset filters” affordance.
+- Suggested links rely on simple heuristics for MVP: gifts within ±5 days of the deposit date, total amount ≤ payout amount, and (when available) matching intake source. Finance can still fall back to manual ID entry when the heuristics do not surface the desired gift.
+- Linking a gift automatically updates `gift.giftPayoutId` and triggers rollup recalculation; unlinking sets `giftPayoutId=null`.
+- When a payout reaches status `reconciled`, keep link/unlink available (finance may still adjust), but show a warning dialog noting the status change.
+
+Capture these requirements in backlog items so engineering has clear acceptance criteria when we implement the enhanced drawer.
