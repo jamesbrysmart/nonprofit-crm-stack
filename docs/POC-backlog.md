@@ -23,6 +23,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Successful submissions surface confirmation with a link to the new Gift record in Twenty.
   - Follow-up notes captured for contact matching/deduping and future auth unification.
 - **Notes:** UI + proxy now create a Person (via `/people`) then a Gift linked by `donorId`; success banner surfaces the gift ID. The UI is served via the gateway at `/fundraising/`. Next steps: add contact matching/dedupe, and tighten UI styling.
+**Status:** ✅ Delivered (Dec 2025). Manual entry intentionally auto-promotes; follow-up improvements live under 2a/2b.
 
 #### 2a. Manual Entry Donor Context Panel *(New)*
 - **Owner:** Engineering + Product
@@ -32,6 +33,16 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Staging drawer mirrors the same context to support review decisions.
   - Additional lookups stay within documented performance budgets; caching strategy captured.
 - **Notes:** Builds on the explicit donor confirmation UX shipped in Nov 2025.
+**Status:** 🟡 Design captured, engineering pending (needs donor history API).
+
+#### 2b. Manual Entry Duplicate & Coding Hardening *(New)*
+- **Owner:** Engineering
+- **Goal:** Extend duplicate protection to include recently committed gifts and ensure fund/appeal metadata survives the proxy when manual gifts auto-promote.
+- **Acceptance hints:**
+  - Selecting an existing donor checks both staging rows and committed gifts (amount/date window) with actionable warnings.
+  - Fund/appeal inputs persist on the final Gift record; assumptions about Gift Aid/tracking scope documented in docs.
+  - Regression tests cover autopromote + staged pathways.
+- **Notes:** Captures gaps raised during Nov 2025 testing; keeps manual entry safe even without staging.
 
 ### 3. Gift Rollups & Dashboard Foundations
 - **Owner:** Engineering
@@ -141,6 +152,51 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Interim defaults recorded in `DECISIONS.md` (or draft ADR) with TODOs for revisit triggers.
   - Follow-on implementation tickets opened if configuration work is required for Phase 1 delivery.
 - **Notes:** Time-boxed spike; aim for decisions that keep the POC lean without closing future doors.
+
+### 21. Fundraising-service Refactor & Component Breakup *(New)*
+- **Owner:** Engineering
+- **Goal:** Reduce the size/complexity of key files (e.g., `ManualGiftEntry.tsx`, `GiftStagingService`, reconciliation drawer) so future changes are easier to reason about and test.
+- **Acceptance hints:**
+  - Extract shared hooks/components (currency/date helpers, donor panels, table utilities) with Jest coverage where practical.
+  - Break backend services that exceed ~500 LOC into focused modules (e.g., staging list/filter logic vs. payload merge).
+  - Document the refactor plan (order of files, risks) and ensure no behaviour regressions via smoke tests.
+- **Notes:** Several files now exceed 1,000 LOC; this work unblocks faster iteration for testing + connectors.
+
+### 22. Recurring Agreement Parity for Manual/Auto Flows *(New)*
+- **Owner:** Engineering
+- **Goal:** Ensure gifts created outside the staging processor (manual entry auto-promote, connector auto-promote) still update recurring agreements (next expected date, status).
+- **Acceptance hints:**
+  - Manual entry + Stripe webhook paths trigger the same `RecurringAgreementService.updateAgreement` logic as staged rows.
+  - Tests cover both paths; documentation updated to reflect the behaviour.
+  - Observability (logs/metrics) added so support can confirm agreement updates.
+- **Notes:** Today only the staging processor updates agreements; this caused gaps during Nov 2025 testing.
+
+### 23. Connector Reliability & Test Harness *(New)*
+- **Owner:** Engineering
+- **Goal:** Harden Stripe/GoCardless ingestion with replay-safe validation, feature flags, and automated tests before expanding connector coverage.
+- **Acceptance hints:**
+  - Integration tests (or high-fidelity mocks) cover `checkout.session.completed` and representative GoCardless events.
+  - Error handling (signature failures, missing metadata) produces actionable logs/toasts.
+  - Backlog entries created for additional providers once the harness is in place.
+- **Notes:** Stripe is partially wired; GoCardless currently logs only. No automated regression exists today.
+
+### 24. Rollup Regression Suite *(New)*
+- **Owner:** Engineering
+- **Goal:** Add automated coverage for the rollup engine + Evidence dashboard so future schema changes don’t silently break KPIs.
+- **Acceptance hints:**
+  - Script populates sample data (one-off, recurring, refunds) and asserts rollup outputs via unit or integration tests.
+  - Dashboard JSON checked into repo with expected values; docs updated with rebuild steps.
+  - Hooks added to smoke pipeline (manual or CI) to run the suite.
+- **Notes:** Complements item 3; ensures the delivered rollups remain trustworthy.
+
+### 25. Reconciliation Automation & Audit *(New)*
+- **Owner:** Engineering + Product
+- **Goal:** Build on the new payout drawer by adding automated suggestions, audit logging, and rollup recalculations so finance can close payouts confidently.
+- **Acceptance hints:**
+  - Suggested gifts heuristics (date/amount/source) configurable per workspace; manual overrides logged.
+  - Linking/unlinking writes audit entries (user, timestamp, variance deltas).
+  - Rollup engine confirms matched/pending counts post-link; variance banners updated automatically.
+- **Notes:** MVP drawer now supports manual linking; this follow-up hardens the workflow before pilot testing.
 
 ## Phase 2 – Volunteers
 
