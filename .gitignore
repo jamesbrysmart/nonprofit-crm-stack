@@ -11,4 +11,4 @@ db_backups/
 node_modules/
 
 # Yarn artifacts
-.yarn/
+.yarn/package-lock.json

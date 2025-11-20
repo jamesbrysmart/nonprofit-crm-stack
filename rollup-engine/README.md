@@ -24,10 +24,12 @@ function that aggregates Gift data onto parent Person records.
   a JSON array before syncing the app.
 - `filters[].dynamicValue` currently supports `"startOfYear"` (UTC midnight on
   the first day of the current calendar year).
-- Environment: set `TWENTY_API_KEY` (required) and optionally
-  `TWENTY_API_BASE_URL` for self-hosted stacks. Once the updated Twenty CLI lands
-  you can declare these under `env.serverlessFunctions` in `package.json` so the
-  Applications UI surfaces the required variables.
+- Environment: set `TWENTY_API_KEY` (required) and `TWENTY_API_BASE_URL`.
+  - **Local dev:** the default `application.config.ts` points `TWENTY_API_BASE_URL`
+    to `http://localhost:3000/rest`, so you only need a dev API key.
+  - **Cloud workspace:** override `TWENTY_API_BASE_URL` to
+    `https://app.twenty.com/rest` in the Applications UI and supply a cloud API key.
+  - Environment changes require redeploying/restarting the app before tests.
 
 ### Default Gift → Person rollups
 | Parent field | Suggested type | Description |

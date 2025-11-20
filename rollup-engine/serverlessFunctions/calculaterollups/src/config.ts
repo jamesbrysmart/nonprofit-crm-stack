@@ -6,6 +6,10 @@ import type {
   RollupDefinition,
 } from './types';
 
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 const operatorSet = new Set<FilterConfig['operator']>([
   'equals',
   'notEquals',
@@ -28,7 +32,7 @@ const aggregationTypes = new Set<AggregationConfig['type']>([
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-export const validateRollupConfig = (config: unknown): asserts config is RollupConfig => {
+export const validateRollupConfig = (config: unknown): RollupConfig => {
   if (!Array.isArray(config)) {
     throw new Error('Rollup configuration must contain an array of rollup definitions');
   }
@@ -115,6 +119,8 @@ export const validateRollupConfig = (config: unknown): asserts config is RollupC
       }
     });
   });
+
+  return config as RollupConfig;
 };
 
 const collectValuesByKey = (
@@ -159,8 +165,7 @@ export const resolveRollupConfig = (): RollupConfig => {
   if (override) {
     try {
       const parsed = JSON.parse(override) as unknown;
-      validateRollupConfig(parsed);
-      return parsed;
+      return validateRollupConfig(parsed);
     } catch (error) {
       const reason =
         error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown error';
@@ -168,7 +173,5 @@ export const resolveRollupConfig = (): RollupConfig => {
     }
   }
 
-  const config = defaultRollupConfig;
-  validateRollupConfig(config);
-  return config;
+  return validateRollupConfig(defaultRollupConfig);
 };

@@ -2,7 +2,8 @@ import { computeAggregations } from './aggregations';
 import { buildChildRecordIndex, TwentyClient } from './client';
 import { extractRelationValues, resolveRollupConfig } from './config';
 import { getNestedValue } from './filtering';
-import type { ExecutionSummaryItem, RollupDefinition } from './types';
+import type { ExecutionSummaryItem } from './types';
+import { type ServerlessFunctionConfig } from 'twenty-sdk/application';
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -46,11 +47,16 @@ const getApiCredentials = () => {
     return null;
   }
 
-  const baseUrl =
+  const baseUrlRaw =
     process.env.TWENTY_API_BASE_URL ??
     process.env.TWENTY_REST_BASE_URL ??
     process.env.TWENTY_API_URL ??
-    'https://api.twentycrm.com/rest';
+    '';
+
+  const baseUrl =
+    typeof baseUrlRaw === 'string' && baseUrlRaw.trim().length > 0
+      ? baseUrlRaw
+      : 'https://app.twenty.com/rest';
 
   return { apiKey, baseUrl };
 };
@@ -199,4 +205,28 @@ export const main = async (params: unknown): Promise<object> => {
             : 'Unknown error',
     };
   }
+};
+
+export const config: ServerlessFunctionConfig = {
+  universalIdentifier: 'c3ec36c8-5b1d-421f-9172-a9e035ab9c18',
+  name: 'calculaterollups',
+  triggers: [
+    {
+      universalIdentifier: 'eec8aaf2-b0cc-47fd-b522-8d4aa5fe4bd3',
+      type: 'databaseEvent',
+      eventName: 'gift.*',
+    },
+    {
+      universalIdentifier: 'a3fea230-1121-44a6-b395-5811c3031f8e',
+      type: 'cron',
+      pattern: ' 0 2 * * *',
+    },
+    {
+      universalIdentifier: 'd33b0fe4-4b2b-45c0-aa2f-e617fdbba484',
+      type: 'route',
+      path: '/recalculate-all',
+      httpMethod: 'POST',
+      isAuthRequired: true,
+    },
+  ],
 };

@@ -60,6 +60,103 @@ export const defaultRollupConfig: RollupConfig = [
     ],
   },
   {
+    parentObject: 'household',
+    childObject: 'person',
+    relationField: 'householdId',
+    aggregations: [
+      {
+        type: 'SUM',
+        childField: 'lifetimeGiftAmount.amountMicros',
+        parentField: 'lifetimeGiftAmount',
+        currencyField: 'lifetimeGiftAmount.currencyCode',
+      },
+      {
+        type: 'SUM',
+        childField: 'lifetimeGiftCount',
+        parentField: 'lifetimeGiftCount',
+      },
+      {
+        type: 'MIN',
+        childField: 'firstGiftDate',
+        parentField: 'firstGiftDate',
+      },
+      {
+        type: 'MAX',
+        childField: 'lastGiftDate',
+        parentField: 'lastGiftDate',
+      },
+      {
+        type: 'SUM',
+        childField: 'yearToDateGiftAmount.amountMicros',
+        parentField: 'yearToDateGiftAmount',
+        currencyField: 'yearToDateGiftAmount.currencyCode',
+      },
+      {
+        type: 'SUM',
+        childField: 'yearToDateGiftCount',
+        parentField: 'yearToDateGiftCount',
+      },
+    ],
+  },
+  {
+    parentObject: 'company',
+    childObject: 'gift',
+    relationField: 'companyId',
+    childFilters: [
+      {
+        field: 'amount.amountMicros',
+        operator: 'gt',
+        value: 0,
+      },
+    ],
+    aggregations: [
+      {
+        type: 'SUM',
+        childField: 'amount.amountMicros',
+        parentField: 'lifetimeGiftAmount',
+        currencyField: 'amount.currencyCode',
+      },
+      {
+        type: 'COUNT',
+        parentField: 'lifetimeGiftCount',
+      },
+      {
+        type: 'MAX',
+        childField: 'giftDate',
+        parentField: 'lastGiftDate',
+      },
+      {
+        type: 'MIN',
+        childField: 'giftDate',
+        parentField: 'firstGiftDate',
+      },
+      {
+        type: 'SUM',
+        childField: 'amount.amountMicros',
+        parentField: 'yearToDateGiftAmount',
+        currencyField: 'amount.currencyCode',
+        filters: [
+          {
+            field: 'giftDate',
+            operator: 'gte',
+            dynamicValue: 'startOfYear',
+          },
+        ],
+      },
+      {
+        type: 'COUNT',
+        parentField: 'yearToDateGiftCount',
+        filters: [
+          {
+            field: 'giftDate',
+            operator: 'gte',
+            dynamicValue: 'startOfYear',
+          },
+        ],
+      },
+    ],
+  },
+  {
     parentObject: 'appeal',
     childObject: 'gift',
     relationField: 'appealId',
@@ -80,6 +177,35 @@ export const defaultRollupConfig: RollupConfig = [
       {
         type: 'COUNT',
         parentField: 'giftCount',
+      },
+    ],
+  },
+  {
+    parentObject: 'recurringAgreement',
+    childObject: 'gift',
+    relationField: 'recurringAgreementId',
+    childFilters: [
+      {
+        field: 'amount.amountMicros',
+        operator: 'gt',
+        value: 0,
+      },
+    ],
+    aggregations: [
+      {
+        type: 'SUM',
+        childField: 'amount.amountMicros',
+        parentField: 'totalReceivedAmount',
+        currencyField: 'amount.currencyCode',
+      },
+      {
+        type: 'COUNT',
+        parentField: 'paidInstallmentCount',
+      },
+      {
+        type: 'MAX',
+        childField: 'giftDate',
+        parentField: 'lastPaidAt',
       },
     ],
   },

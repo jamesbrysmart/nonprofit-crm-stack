@@ -14,7 +14,11 @@
   "scripts": {
     "smoke": "node --import tsx scripts/run-rollup-smoke.ts"
   },
+  "dependencies": {
+    "twenty-sdk": "^0.0.3"
+  },
   "devDependencies": {
+    "@types/node": "^24.7.2",
     "tsx": "^4.20.6"
   }
 }
