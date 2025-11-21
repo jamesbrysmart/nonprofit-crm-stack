@@ -52,6 +52,7 @@ Félix Malfait's article "Self-Improving Software" (twenty.dev/self-improving-so
 
 - Contacts & Accounts (people & orgs), optional Household grouping.
 - Donations (one-off, recurring, pledges); Payment Schedules for pledges/grants.
+- **Receipts (first slice):** receipt state lives on Gift (`receiptStatus`, `receiptSentAt`, `receiptPolicyApplied`, `receiptChannel`, `receiptTemplateVersion`, `receiptError`, `receiptDedupeKey`); email-only send; no separate receipt object. Recurring annual acknowledgement tracked on `RecurringAgreement` (`annualReceiptStatus`, `annualReceiptSentAt`, `annualReceiptPeriod`, `annualReceiptPolicy`). Attach PDF to the Gift via Twenty Files only if/when supported; otherwise skip attachment.
 - Gift Aid: Declarations, eligibility tagging, claim totals, export/report scaffolding.
 - Campaigns: Attribute donations; simple hierarchy; ROI basics.
 - Core rollups: Lifetime giving, YTD/LY, last/first gift—fast & reliable.

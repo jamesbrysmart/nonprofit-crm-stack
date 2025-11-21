@@ -42,10 +42,12 @@
 - Conditional blocks (first gift, tribute, fee covered, in-kind) and lightweight branding (logo, colour, e-signature).
 - Preview + test-send per version; maintain version history for audit.
 
-### 6. Data Model (minimal, explicit)
-- `receipt`: `id`, `contact_id`, `gift_id`/`gift_installment_id`, `type`, `delivery`, `template_id`, `rendered_at`, `sent_at`, `channel_message_id`, `status`, `dedupe_key`, `resend_of`.
-- `gift` / `gift_installment`: `receipted`, `receipt_id`, `gift_aid_eligible`, `refunded`, `refund_adjusted` (extends fields in `recurring-donations.md`).
-- `annual_statement`: `id`, `contact_id`, `fiscal_year`, `total_amount`, `gift_count`, `sent_at`, `receipt_ids[]`.
+### 6. Data Model (future-ready; first slice is on-gift)
+- **First slice:** receipt state lives on the Gift (see “Current first slice”); annual acknowledgement state lives on `RecurringAgreement`. No separate receipt object or file linkage field is required for MVP.
+- **Future (if we need resend history or multi-channel analytics):**
+  - `receipt`: `id`, `contact_id`, `gift_id`/`gift_installment_id`, `type`, `delivery`, `template_id`, `rendered_at`, `sent_at`, `channel_message_id`, `status`, `dedupe_key`, `resend_of`.
+  - `gift` / `gift_installment`: `receipted`, `receipt_id`, `gift_aid_eligible`, `refunded`, `refund_adjusted` (extends fields in `recurring-donations.md`).
+  - `annual_statement`: `id`, `contact_id`, `fiscal_year`, `total_amount`, `gift_count`, `sent_at`, `receipt_ids[]`.
 
 ### 7. Admin UX
 - Receipting dashboard highlighting unsent gifts, failures, and upcoming annual jobs.
@@ -63,7 +65,7 @@
 
 ## Recommended Defaults (UK Small–Mid Orgs)
 
-- **Online one-off gifts:** Immediate HTML receipt (optional PDF) + Gift Aid reminder if declaration missing.
+- **Online one-off gifts:** Immediate HTML receipt (PDF attachment when renderer lands) + Gift Aid reminder if declaration missing.
 - **Recurring gifts:** Default to first instalment receipt + annual statement each April; allow donors to opt into per-instalment emails.
 - **Offline/imported gifts:** Batch receipting tool with dedupe preview.
 - **Refunds:** Issue revised receipt note automatically, flip Gift Aid flags, optionally notify donor.
@@ -73,11 +75,19 @@
 
 ## Release Slices (Proposal)
 
+- **Current first slice (2025-11 agreement): lean, on-gift fields only**
+  - **No standalone receipt object in MVP.** We store receipt state on the Gift; resends are rare and overwrite those fields. Future escape hatch is to add a receipt log object only if we need resend/audit history.
+  - **Gift fields (add via metadata):** `receiptStatus` (`pending|sent|failed|suppressed`), `receiptSentAt`, `receiptPolicyApplied` (`per_gift|first_installment|annual|suppressed`), `receiptChannel` (`email|none`), `receiptTemplateVersion` (string), `receiptError` (string), `receiptDedupeKey` (e.g., `providerPaymentId` or hash of gift+policy). No `fileId` field unless Twenty Files linkage is confirmed.
+  - **Annual acknowledgements:** Track on `RecurringAgreement` (not a new object): `annualReceiptStatus`, `annualReceiptSentAt`, `annualReceiptPeriod` (tax-year string), `annualReceiptPolicy` (e.g., `annual` or `first+annual`). One-off donors’ annual statements deferred until we validate demand.
+  - **Send criteria (lean policy):** Defaults: one-off → `per_gift`; recurring → `first_installment_only` or `annual` (config). Auto-send only when under a configurable amount threshold and donor/org opts in; otherwise mark `receiptStatus='suppressed'` for manual stewardship. Idempotency: skip send if `receiptStatus='sent'` for the same `receiptDedupeKey`.
+  - **Attachments:** If/when Twenty Files support linking to Gifts, attach the PDF to the Gift and optionally note the chosen file in logs. Until then, no attachment field is required.
+  - **Email channel:** Email-only in MVP; PDF rendering, postal, SMS, and template editor are out-of-scope. Sending is via existing/future Twenty email capabilities or a simple SMTP adapter; we mirror success/failure onto the Gift fields above.
+
 - **Release 1 — MVP foundations**
   - Org/contact policies with UK tax-year defaults.
   - Webhook-triggered receipts with idempotent dedupe.
-  - HTML email delivery (inline content) plus optional PDF.
-  - `receipt` records with status + audit metadata.
+  - HTML email delivery (inline content) only; PDF generation deferred.
+  - On-gift receipt fields capture status/timestamps (no separate receipt object).
   - Minimal dashboard (unsent list, resend, suppression) and historic batch tool.
 
 - **Release 2 — Operational polish**
@@ -95,7 +105,7 @@
 
 ## Solution Options
 
-- **Native stack with OSS bricks (MVP bias):** Embed `GrapesJS` for editing MJML/Nunjucks templates, render HTML + inline CSS server-side, and generate PDFs via headless Chrome/Gotenberg. Fundraising-service stores `receipt` records, enqueues jobs, and hands off to a pluggable SMTP adapter (tenants can point at SES/SendGrid/Postal without code changes).
+- **Native stack with OSS bricks (MVP bias):** Embed `GrapesJS` for editing MJML/Nunjucks templates, render HTML + inline CSS server-side, and generate PDFs via headless Chrome/Gotenberg. MVP writes receipt status to Gifts (no receipt table); pluggable SMTP adapter (SES/SendGrid/Postal) handles email. Add a receipt log object and PDF storage later if needed.
 
 - **Twenty workflows for email delivery:** Twenty already sends transactional emails via Workflows ([user guide](https://twenty.com/user-guide/section/integrations/emails)). Validate whether receipts triggered through that surface hit timing, merge-field, and logging needs; improvements are expected in future Twenty releases, so keeping this option alive avoids bespoke send code if it satisfies MVP.
 
@@ -119,8 +129,8 @@
 
 ## Conclusion
 
-1. Model receipts as first-class records linked to gifts/installments; keep status, idempotency, and audit data explicit.
-2. Trigger from authoritative success events to avoid manual timing errors and stay aligned with the staging and recurring patterns already defined.
-3. Default to UK-sensible policies (first-instalment + annual) while letting donors/orgs override within consent bounds.
-4. Delight donors and reduce admin through rich HTML receipts, optional PDFs, and self-service history.
-5. Start lean with modular OSS components, evaluate Twenty workflow emails, and spike PDF tooling early so future regional expansion slips into the same scaffold.
+1. For the MVP, keep receipt state on the Gift (and annual status on `RecurringAgreement`), with email-only sending and no separate receipt object; add a receipt log object later only if resend/audit needs grow.
+2. Trigger from authoritative success events (staging commits, webhooks) to avoid timing errors and stay aligned with recurring/staging flows; guard with idempotent `receiptDedupeKey`.
+3. Default to UK-sensible policies (one-off per-gift, recurring first or annual) plus thresholds for high-value/manual stewardship; honor opt-outs.
+4. Defer PDFs/attachments and template editors until core email flow is reliable; optionally attach PDFs to Gifts via Twenty Files once supported.
+5. Stay modular: prefer Twenty workflows/email handling when it satisfies timing/merge needs; keep SMTP/OSS options available as pluggable adapters.
