@@ -31,7 +31,7 @@
 ### Current admin tooling (2025-10-23)
 
 - **Queue table** exposes inline actions for “Mark ready” (forces `promotionStatus=ready_for_commit`) and “Process now” (hits `/gift-staging/:id/process`), alongside a “Resolve duplicates” shortcut that opens the drawer focused on dedupe diagnostics.
-- **Detail drawer** lets reviewers adjust amount/currency/date, coding fields, batch assignment, and notes without dropping to raw JSON. Saving issues a PATCH that preserves the raw payload while applying deltas.
+- **Detail drawer** lets reviewers adjust amount/currency/date, coding fields, batch assignment, and notes without dropping to raw JSON. Saving issues a PATCH that preserves the raw payload while applying deltas. The drawer now reuses the same donor panel and gift form components as Manual Entry, so donor suggestions, selection, and search behave identically across both flows.
 - **Donor reassignment** buttons reuse diagnostics embedded in the staged payload; selecting a suggested supporter patches `donorId` and updates `dedupeStatus=matched_existing`.
 - **Recurring tab** shows linked agreement ID, expected installment date, and provider context so staff can confirm webhook wiring before committing.
 - **Raw payload** remains accessible behind an explicit toggle to keep the drawer lightweight while still supporting audit/debug use cases.

@@ -64,7 +64,7 @@ Empty states:
 
 Sections:
 - **Overview:** mirrors list metadata (status pill, intake, batch) with alerts called out at the top.
-- **Editable fields:** amount/date, attribution (fund/appeal/batch), donor overrides when allowed. Saves via `PATCH /gift-staging/:id` (`rawPayload` hydration handled server-side).
+- **Editable fields:** amount/date, attribution (fund/appeal/batch), donor overrides when allowed. Saves via `PATCH /gift-staging/:id` (`rawPayload` hydration handled server-side). Staging now reuses the same donor-selection and gift-details components as Manual Entry, so duplicate review, donor search, and field layouts are consistent.
 - **Diagnostics:** validation/dedupe messages, webhook metadata, status history (when available).
 - **Raw payload viewer:** collapsible JSON viewer for support/debugging (read-only).
 - _Implementation status:_ overview + edit controls + processing buttons are live; status history remains TODO. Duplicate reassignment leans on `dedupeDiagnostics` from Twenty; we surface controls for partial matches inside the drawer.
