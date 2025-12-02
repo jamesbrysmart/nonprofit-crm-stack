@@ -1,0 +1,1 @@
+- [ ] 2025-12-02 18:25 UTC: During promotion, if no donorId/contact is present but staging has donorFirstName/LastName/Email, synthesize a contact from those fields, run duplicate/person creation, and use the resulting donorId for the gift. Keep flat donor fields on staging for UI/receipts, but do not forward them to the outbound gift payload.

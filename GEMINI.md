@@ -122,3 +122,4 @@ npm test      # Run the service’s Jest suites when making backend changes here
    Address these alongside the next UI cleanup so we stop regressing queue visibility.
 - **Workflow improvements:** tighten the manual-entry duplicate guard with committed gift checks, finish GoCardless ingestion plus staging auto-promote policy, and add integration tests for manual entry → staging queue → commit.
 - **Metadata rename backlog:** plan a migration to rename the legacy `promotionStatus` field on gift staging to `processingStatus` throughout Twenty metadata once it is safe.
+- [ ] 2025-12-02 18:25 UTC: Gift staging promotion should create/link donor when only flat donor fields exist (donorFirstName/LastName/Email) and no donorId/contact are set. Implement promotion-time synthesis of contact from staging donor fields, run duplicate/person creation, and strip flat donor fields from outbound gift payload (keep on staging for UI/receipts).
