@@ -8,12 +8,14 @@ _Living log of notable changes inside `services/twenty-core` that affect the fut
 - **Steps:** `git fetch upstream`, check out `upstream/main`, skim `packages/twenty-apps`, `packages/twenty-cli`, `packages/twenty-sdk`, and related commits; capture highlights and open questions below.
 - **Output:** summarize deltas here and bubble any required actions into ADRs/blueprints.
 
-## Current Extensibility Surface (Nov 2025 snapshot)
+## Current Extensibility Surface (Dec 2025 snapshot)
 
 - **twenty-cli** (packages/twenty-cli):
-  - Supports `auth login/logout/status`, `app sync`, and `app dev` to push/update bundled metadata + serverless functions.
-  - Latest mainline adds workspace-aware auth output and simplifies profile config (commit `ab967bf81f`).
-  - Upcoming branches (`migration-and-upgrade-command-twenty-apps`, `sdk-on-demand-twenty-cli`) hint at forthcoming migration helpers and dynamic SDK loading.
+  - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
+  - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
+- **create-twenty-app** (packages/create-twenty-app):
+  - New scaffolder with prewired scripts (`yarn auth`, `yarn generate`, `yarn dev`, `yarn sync`, `yarn logs`, `yarn uninstall`) to wrap the `twenty` CLI.
+  - Ships with a typed client generation flow (`yarn generate`) and guided entity creation.
 - **What gets packaged today:** the `AppManifest` only includes the application definition, custom objects/fields, serverless functions (with route/cron/database triggers), and static sources (`services/twenty-core/packages/twenty-cli/src/types/config.types.ts`). No React/micro-frontend surface is described, and the CLI sync/dev commands merely watch files and re-upload the manifest bundle (`packages/twenty-cli/src/commands/app-dev.command.ts`).
 - **Sample apps (packages/twenty-apps):**
   - `hello-world`: provisions a `postCard` custom object, deploys a `create-new-post-card` serverless function, and wires both an HTTP route trigger and a `people.created` database trigger. README still describes manual `.env` + `twenty auth login` + `twenty app sync` workflow.
@@ -54,8 +56,8 @@ _Living log of notable changes inside `services/twenty-core` that affect the fut
    - `packages/twenty-apps/project.json` still only lists `scope:apps`, so no manifest changes to mirror yet.
 
 5. **Tags & branches to watch**:
-   - New tags `v1.10.7`, `v1.11.0` published.
-   - Fresh upstream branches like `migration-and-upgrade-command-twenty-apps` and `sdk-on-demand-twenty-cli` suggest ongoing CLI work; monitor these for future breaking changes.
+  - New tags `v1.10.7`, `v1.11.0` published.
+  - Fresh upstream branches like `migration-and-upgrade-command-twenty-apps` and `sdk-on-demand-twenty-cli` suggest ongoing CLI work; monitor these for future breaking changes.
 
 **Open Questions / Follow-ups**
 
@@ -64,3 +66,28 @@ _Living log of notable changes inside `services/twenty-core` that affect the fut
 - Do the composite-type moves imply we can share declaration files between Twenty and partner modules, or are there licensing considerations for redistributing `twenty-shared`?
 
 _Next review target: late November or after the Twenty roadmap conversation, whichever comes first._
+
+---
+
+### Snapshot — 2025-12-24
+
+**Context:** Synced `services/twenty-core` to `upstream/main` at `06d0ac13c4` (after upgrading the stack to `twentycrm/twenty:v1.14`).
+
+**Highlights**
+
+1. **CLI shift to `twenty-sdk` + new scaffolder:**
+   - `packages/twenty-cli/README.md` explicitly deprecates `twenty-cli` and instructs installing `twenty-sdk` instead; the `twenty` command name remains.
+   - `packages/create-twenty-app/README.md` introduces the new scaffolder with scripts for `auth`, `generate`, `dev`, `sync`, `logs`, and `uninstall`.
+   - The official docs now reference `create-twenty-app` and `twenty-sdk`, with `twenty app generate` producing a fully typed client and `twenty app logs` for function logs.
+
+2. **Application settings UI improvements:**
+   - `158a7a89d5` ("extensibility improve application settings section") updates the Applications settings UX, likely aligning with the new app tooling and log visibility.
+
+3. **App catalog growth:**
+   - Community apps (e.g., `packages/twenty-apps/community/fireflies`) were substantially expanded and moved out of Hacktoberfest examples, hinting at more maintainable app templates.
+
+**Open Questions / Follow-ups**
+
+- Confirm how the `twenty-sdk` CLI release cadence maps to image tags (is SDK decoupled from `twenty-core` or versioned in lockstep?).
+- Validate whether `twenty app logs` requires a specific role/permission or feature flag in v1.14.
+- Review the new `create-twenty-app` template expectations (Node 24 + Yarn 4) vs. our local tooling.

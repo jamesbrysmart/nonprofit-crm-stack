@@ -54,7 +54,7 @@ This note captures the first pass at how external partners can build light exten
 
 ## 7. Roadmap Alignment & Evolution
 
-- Today’s approach mirrors our current “fork + managed services” architecture. As Twenty’s official extensibility (twenty-cli apps, micro-frontends, serverless) matures and hits parity with our needs, we plan to pivot toward packaging modules for their marketplace. This blueprint will evolve accordingly.
+- Today’s approach mirrors our current “fork + managed services” architecture. As Twenty’s official extensibility (twenty-sdk apps, micro-frontends, serverless) matures and hits parity with our needs, we plan to pivot toward packaging modules for their marketplace. This blueprint will evolve accordingly.
 - Revisit triggers:
   - Twenty delivers documented support for our metadata/rollup needs.
   - Multiple partners require a heavier certification or shared hosting model.
@@ -67,4 +67,3 @@ This note captures the first pass at how external partners can build light exten
 3. Update `docs/DECISIONS.md` once the partner approach and licensing stance settle post-discussion with Twenty.
 
 _Questions, tweaks, or partner feedback should be captured inline here until we promote the content into formal ADRs._
-

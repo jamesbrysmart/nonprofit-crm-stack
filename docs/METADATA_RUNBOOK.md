@@ -1,6 +1,6 @@
 # Metadata Provisioning Runbook — Fundraising POC
 
-_Last updated: 2025-02-07_
+_Last updated: 2025-12-24_
 
 This runbook captures the repeatable steps for provisioning the Campaign and Gift objects required by the fundraising-service proxy while Twenty's Metadata API is still evolving. Update this file whenever the script behaviour, manual UI flow, or Twenty release status changes.
 
@@ -84,7 +84,8 @@ Track Metadata API behaviour whenever we upgrade the Twenty image or bump the `t
 
 | Date | Twenty tag / commit | Script outcome | Manual steps result | Notes |
 | --- | --- | --- | --- | --- |
-| 2025-02-07 | `v1.4.0` (current) | ✅ Objects + simple fields created; skipped when rerun | ✅ Campaign + Contact lookups created via UI | Lookup API still unsupported; script requires `.env` with API key |
+| 2025-12-24 | `v1.14` | Not re-run | Not re-run | Upgrade completed; metadata provisioning not revalidated yet. |
+| 2025-02-07 | `v1.4.0` | ✅ Objects + simple fields created; skipped when rerun | ✅ Campaign + Contact lookups created via UI | Lookup API still unsupported; script requires `.env` with API key |
 
 Add a new row after every metadata-related test, including failures. Highlight regressions and link to follow-up issues where needed.
 

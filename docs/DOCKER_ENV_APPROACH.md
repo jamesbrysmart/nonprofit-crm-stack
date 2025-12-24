@@ -73,7 +73,7 @@ Consistent and explicit environment variable configuration is crucial for inter-
 
 ## 6. Image Tagging Policy
 
-*   The `twentycrm/twenty` image tag is explicitly pinned to `v1.10.2` in the `.env` file (`TAG=v1.10.2`) instead of `latest` for reproducible builds and to prevent unexpected behavior changes.
+*   The `twentycrm/twenty` image tag is explicitly pinned to `v1.14` in the `.env` file (`TAG=v1.14`) instead of `latest` for reproducible builds and to prevent unexpected behavior changes.
 
 ## 7. Upgrading Twenty CRM
 

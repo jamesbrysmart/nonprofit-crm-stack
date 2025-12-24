@@ -84,9 +84,9 @@ docker compose exec -T db psql -U postgres -c \
    );"
 ```
 
-Flush the cache afterwards. At the time of writing our stack is running a
-pre-1.8 image, so the Applications UI is still hidden even though the flag is
-set—the backend endpoints will be ready once we upgrade.
+Flush the cache afterwards. With `v1.14`, the Applications UI should appear
+once the flag is set; if it remains hidden, re-check the flag, cache flush, and
+server logs.
 
 ## 5. Testing
 

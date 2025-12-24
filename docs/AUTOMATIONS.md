@@ -77,6 +77,7 @@ Twenty’s serverless runtime is where we now host the rollup engine. Experience
     - Relation membership (`relation … includes … gift(s)`).
     - Computed aggregates (`{ amountMicros, currencyCode, … }`).
     - Success/warning lines referencing the relation ID so we can diff against `/rest/gifts`.
+  - `twenty app logs` streams function logs from the workspace; use it after deploys or when debugging rollup runs.
   - REST filters like `filter[donorId]` aren’t honored today; we perform filtering locally and watch the Twenty roadmap in case native filters appear.
 - **Data shape**
   - Currency rollups must be `{ amountMicros, currencyCode }`; dates should be `YYYY-MM-DD`. The current bundle normalizes values taken from `gift.amount.amountMicros` and `giftDate`.

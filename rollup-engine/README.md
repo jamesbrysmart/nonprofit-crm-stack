@@ -4,7 +4,7 @@ Gift rollup engine for Twenty workspaces. The project ships a serverless
 function that aggregates Gift data onto parent Person records.
 
 ## Requirements
-- twenty-cli `npm install -g twenty-cli`
+- twenty-sdk `npm install -g twenty-sdk` (command name stays `twenty`)
 - an API key with access to your workspace. Generate one at
   `https://twenty.com/settings/api-webhooks`.
 
