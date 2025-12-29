@@ -10,6 +10,7 @@ This document captures the evolving architecture for how our managed extensions 
 - Keep writes flowing through the fundraising/volunteer services so Twenty’s API remains the source of truth and we avoid hard forking the core schema.
 - Allow future modules to reuse the same pattern without cornering ourselves if we need to pivot.
 - Prefer solutions that deliver cross-module wins (gift staging, rollups, reporting, AI) rather than bespoke pipelines for each feature.
+- Keep custom logic packaged as Twenty apps in the parent repo (provisional) so submodules stay vendor-clean.
 
 ## 2. Option Summary
 

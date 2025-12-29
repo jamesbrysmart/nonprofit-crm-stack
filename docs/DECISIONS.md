@@ -96,6 +96,11 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - Ensure every new module identifies which pieces could be expressed as official extensions so we can hand them off when viable.
 - Keep community contributions in mind (e.g., preparing PR-friendly bundles under `packages/twenty-apps`) without blocking core development.
 
+**Operating model (provisional)**
+- Keep `services/*` submodules vendor-clean; ship custom logic as Twenty apps in the parent repo under `apps/`.
+- Separate **ownership** (fundraising-owned vs cross-module) from **packaging** (standalone app now; potential bundle later).
+- This is a packaging convention until Twenty apps support richer UI/layouts and hosted distribution paths mature.
+
 **Revisit triggers**
 - Twenty publishes GA documentation/SDK support covering custom metadata provisioning, declarative rollups, and distribution for complex apps.
 - Evidence that maintaining the fork materially slows delivery (merge conflicts, breaking upgrades).

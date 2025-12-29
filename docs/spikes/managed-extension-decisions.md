@@ -48,6 +48,11 @@ Scope: Q4 FY25 managed-extension proof of concept
 - **Allocations/Funds**: Keep allocations **out of the core MVP**. Capture requirements during Grants planning and introduce as an optional add-on when we can validate real usage. Provide guidance for mapping GAU allocations during imports so data isn’t lost.
 - **Portal Strategy**: For the POC, **lean on third-party donation/volunteer connectors plus documentation**. Produce a short “bring-your-own form” guide and defer bundled portal templates until we finish the volunteer UX spike.
 
+## Toggleable Capability Bundles (draft)
+- **Goal:** avoid toggle sprawl by grouping related features into capability packs with clear dependencies.
+- **Example pack:** “Advanced Relationships” could bundle Enhanced Households + Enhanced Appeals junction models.
+- **Rule of thumb:** ship defaults that keep the model simple; only enable advanced packs with explicit admin intent and migration guidance.
+
 ## Revisit Triggers
 - Households default reviewed when ≥2 pilot orgs request it during onboarding or when volunteer schema lands.
 - Allocation scope re-evaluated before Grants module build or if a pilot requires restricted gift reporting.

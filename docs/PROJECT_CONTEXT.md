@@ -42,6 +42,39 @@ Félix Malfait's article "Self-Improving Software" (twenty.dev/self-improving-so
 *   **Imperative Engine vs. Declarative Configuration:** This distinction is crucial. AI (and community contributions) are envisioned to excel at generating *declarative* business rules within constrained environments (like our `rollups.json`), while the core imperative engine remains with the team. This aligns perfectly with our Rollup Engine's design.
 *   **Embedded Feedback Loops:** The importance of tightly integrated tools that provide immediate feedback to AI and developers for continuous improvement.
 
+### 3c) Hosting & Extensibility Modes (working definitions)
+
+- **Self-hosted:** Org runs the stack. Full code access; bespoke logic is possible in core services and Twenty apps.
+- **Managed hosting (single-tenant):** We run the stack for the org. Full code access on our side; bespoke logic is allowed and may be billable.
+- **Cloud/SaaS (standardized):** We run the stack with strict extension boundaries. No bespoke code per org; only toggleable modules, Twenty apps, and declarative workflows unless Twenty ships an Apex-style per-tenant code surface.
+
+**Implication:** Until Twenty offers safe per-tenant code in a hosted environment, custom code is limited to self-hosted or managed hosting. Cloud/SaaS customization must be declarative or packaged extensions.
+
+### 3d) Toggleable Capabilities (draft examples)
+
+These are additive features we can enable per workspace. Keep them grouped to avoid toggle sprawl.
+
+- **Core rollups** (default): lifetime/YTD totals, first/last gift, basic donor metrics.
+- **Gift Aid (UK-only):** declarations, eligibility checks, claim export flows.
+- **Receipts:** generation + audit trail, channel options, template versioning.
+- **Enhanced Households:** relationship/junction model between Contact and Household.
+- **Enhanced Appeals:** junction model to track recipient/engagement relationships.
+- **Advanced data hygiene:** dedupe heuristics, enrichment hooks, data quality alerts.
+
+_Open question:_ which toggles should be bundled into “capability packs” (e.g., “Advanced Relationships”) vs shipped as stand-alone switches.
+
+### 3e) Packaging vs Ownership (provisional)
+
+Until Twenty apps support richer layouts, we separate **ownership** (which module owns the feature) from **packaging** (how it is deployed).
+
+- **Packaging (self-hosted today):** custom code ships as Twenty apps in the parent repo under `apps/`, keeping `services/*` submodules clean.
+- **Ownership:** group apps by module (e.g., `apps/fundraising/*`) vs cross-module (`apps/core/*`).
+- **Future direction:** if/when Twenty app UI/layout support lands, fundraising-owned apps may be bundled into a single “Fundraising App” for cloud/SaaS.
+
+Examples (current operating model):
+- **Rollup engine:** cross-module → `apps/core/rollup-engine`.
+- **Gift Aid:** fundraising-owned → `apps/fundraising/gift-aid`.
+
 ## 4) Modules & Must-Haves
 
 ### A. Fundraising (Phase 1 – priority)

@@ -36,6 +36,12 @@ This note captures the first pass at how external partners can build light exten
 3. **Starter kit:** we will provide a thin template (Nest service + React panel + metadata scripts + Dockerfile) so partners can scaffold quickly and align with our logging/auth conventions.
 4. **Auth & data access:** modules call Twenty through the same API credentials/patterns fundraising-service uses. No direct DB access or bespoke persistence without an approved ADR.
 
+### 4a. Client-Specific Extensions (draft)
+
+- **Managed hosting:** allow bespoke code for a single org when it is paid for and isolated to their deployment. Keep changes inside the partner module or a dedicated submodule to avoid polluting core services.
+- **Cloud/SaaS:** do not ship bespoke code per org until Twenty provides a safe per-tenant code surface. Use toggleable modules, Twenty apps, and declarative workflows instead.
+- **Decision rule:** if the logic is reusable for multiple orgs, promote it into a toggleable module; if it is truly one-off, keep it isolated and document the support boundary.
+
 ## 5. Certification & Guardrails (light-touch for MVP)
 
 - **Checklists before inclusion in our stack:**

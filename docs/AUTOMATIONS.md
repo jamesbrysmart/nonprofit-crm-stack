@@ -30,6 +30,17 @@ Working draft that tracks automation tooling, patterns, and decisions for the ma
 - **Service-owned jobs**: Fall back to Nest cron/queues when the flow is compliance-critical, latency-sensitive, or needs bespoke retry/error semantics.
 - **Observability baseline**: Whatever the orchestrator, pass through `x-request-id` and log context so `docs/OPERATIONS_RUNBOOK.md` remains the single troubleshooting path.
 
+### 3a) Extensibility Decision Guide (draft)
+
+- **Twenty Workflows**: use for simple in-product rules with minimal external dependencies.
+- **n8n**: use for cross-system orchestration, pilots, and “good enough” workflows that may later harden.
+- **Serverless functions (Twenty apps)**: default path for custom code (both reusable and org-specific) because it keeps us aligned with Twenty’s extension surface and avoids patching the core fork.
+- **fundraising-service jobs/endpoints**: use when logic must live in our service runtime (long-running jobs, complex integrations, or logic tightly coupled to fundraising-service APIs).
+
+_Hosting note:_ in a cloud/SaaS model, bespoke code is out of scope until Twenty supports safe per-tenant code execution; prefer Workflows or n8n in that case.
+
+_Packaging note (provisional):_ for self-hosted deployments, Twenty apps live in the parent repo under `apps/` so submodules remain vendor-clean.
+
 ## 4. Core Scenarios to Map
 - **Gift Rollups & Snapshots**: Automate rebuilds post-import and nightly refresh; ensure alignment with backlog item 3.
 - **Donation Receipt Pipeline**: Trigger PDF/email receipts after successful gift creation, capture retries, and surface audit trails for HMRC/GDPR compliance.
