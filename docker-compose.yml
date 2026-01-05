@@ -130,11 +130,6 @@ services:
       - services/fundraising-service/.env
     environment:
       PORT: 4500
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: fundraising
-      DB_USER: ${PG_DATABASE_USER:-postgres}
-      DB_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
       TWENTY_API_KEY: ${TWENTY_API_KEY:-}
       TWENTY_API_BASE_URL: ${TWENTY_API_BASE_URL:-http://server:3000/rest}
     healthcheck:

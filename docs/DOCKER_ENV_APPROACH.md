@@ -13,11 +13,12 @@ The `dev-stack` repository acts as a "superproject" managing its constituent ser
   **Important:** we removed the bespoke `migrate` service and now mirror Twenty’s stock docker-compose pattern where the `server` container applies migrations itself (`DISABLE_DB_MIGRATIONS="false"`). This keeps us aligned with upstream expectations and avoids Yarn/peer-dependency drift inside the previously custom container.
 
 - **Fundraising Service (`fundraising-service`)**  
-  No changes: the service still uses the multi-stage Dockerfile and `.dockerignore` optimisations noted previously.
+  Currently built locally via `docker compose up --build` using the multi-stage Dockerfile and `.dockerignore` optimisations noted previously. This is ideal for rapid pilot iteration because local code changes are immediately baked into the container without publishing an image.
+  **Future client-ready direction (not required for pilot):** publish versioned fundraising images (e.g. `fundraising-service:v0.1.0`) to a registry and switch Compose to use `image:` instead of `build:`. This gives reproducible deployments, faster cold starts, and clear rollback points when onboarding client environments.
 
 ## 3. Database Initialization Strategy
 
-The PostgreSQL database (`db` service) requires specific initialization for both the Twenty CRM and the fundraising service.
+The PostgreSQL database (`db` service) requires specific initialization for Twenty CRM.
 
 *   **Centralized Database Name:**
     *   The `PG_DATABASE_NAME` environment variable in `.env` is set to `postgres`. This aligns the entire stack to use the `postgres` database, which some internal Twenty CRM code paths default to.
@@ -29,15 +30,6 @@ The PostgreSQL database (`db` service) requires specific initialization for both
         psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
           CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
           CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-        EOSQL
-        ```
-    *   `db/init/01-init-fundraising-db.sh`: This script runs after `00-twenty-init.sh`. It connects to the `$POSTGRES_DB` (now `postgres`) and creates the `fundraising` database.
-        ```bash
-        #!/bin/bash
-        set -e
-        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-            SELECT 'CREATE DATABASE fundraising'
-            WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'fundraising')\gexec
         EOSQL
         ```
 
@@ -69,11 +61,12 @@ Consistent and explicit environment variable configuration is crucial for inter-
 *   **`db-wait` service:** Provides a simple “ready” gate for Postgres so that `server` only starts once the database accepts connections.
 *   **`gateway` service:**
     *   `depends_on` `server` with `condition: service_healthy`.
-    *   `depends_on` `fundraising-service` with `condition: service_started` (to avoid issues with its healthcheck).
+    *   `depends_on` `fundraising-service` with `condition: service_healthy`.
 
 ## 6. Image Tagging Policy
 
 *   The `twentycrm/twenty` image tag is explicitly pinned to `v1.14` in the `.env` file (`TAG=v1.14`) instead of `latest` for reproducible builds and to prevent unexpected behavior changes.
+*   The fundraising service currently has no published tag; it is built from the local repo at runtime. That is fine for pilot work, but for client deployments we should introduce a release tag scheme and record it alongside the Twenty version so the stack can be reproduced exactly.
 
 ## 7. Upgrading Twenty CRM
 
