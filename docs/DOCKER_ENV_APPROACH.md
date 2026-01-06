@@ -37,16 +37,10 @@ The PostgreSQL database (`db` service) requires specific initialization for Twen
 
 Consistent and explicit environment variable configuration is crucial for inter-service communication and application behavior.
 
-*   **Standardized DB Connection Variables:** For the `server` and `worker` services in `docker-compose.yml`, the following variables are explicitly set to ensure all code paths connect to `db:5432/postgres`:
-    *   `PG_DATABASE_URL`
-    *   `DATABASE_URL`
-    *   `PGHOST: db`
-    *   `PGPORT: "5432"`
-    *   `PGDATABASE: ${PG_DATABASE_NAME:-postgres}`
-    *   `PGUSER: ${PG_DATABASE_USER:-postgres}`
-    *   `PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}`
-    *   `PGSSLMODE: disable`
-    *   `.env` defines a canonical `DATABASE_URL=postgres://postgres:postgres@db:5432/postgres`; the worker service also pins `PG_DATABASE_URL` directly to that string to prevent host shell overrides from introducing `localhost` DSNs. After editing `.env`, recreate `server` and `worker` (`docker compose up -d --force-recreate server worker`) so the new value is applied.
+*   **Standardized DB Connection Variable:** For the `server` and `worker` services in `docker-compose.yml`, `PG_DATABASE_URL` is set using a Compose template:
+    *   `postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-postgres}`
+    *   This mirrors Twenty’s self-hosting pattern so you can override host/user/password/db/port via env vars without editing Compose when moving between local, CI, or client deployments.
+    *   After changing DB settings, recreate `server` and `worker` (`docker compose up -d --force-recreate server worker`) so the new value is applied.
 *   **Configuration Mode:**
     *   `IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"` is set for `server` and `worker`. This forces the application to read configuration from environment variables only, preventing premature database reads before migrations complete.
 *   **Migration Control:**

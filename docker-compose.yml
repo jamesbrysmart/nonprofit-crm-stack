@@ -5,7 +5,6 @@ services:
     image: postgres:16
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"   # optional (for local psql/GUI)
     environment:
@@ -54,15 +53,8 @@ services:
       - "3000:3000"
     environment:
       NODE_PORT: 3000
-      PG_DATABASE_URL: ${DATABASE_URL}
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-postgres}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DATABASE_URL: ${DATABASE_URL}
-      PGHOST: db
-      PGPORT: "5432"
-      PGDATABASE: ${PG_DATABASE_NAME:-postgres}
-      PGUSER: ${PG_DATABASE_USER:-postgres}
-      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
-      PGSSLMODE: disable
       IS_CONFIG_VARIABLES_IN_DB_ENABLED: "true"
       DISABLE_DB_MIGRATIONS: "false"
       ADMIN_EMAIL: ${ADMIN_EMAIL}
@@ -97,16 +89,10 @@ services:
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/postgres}
-      PG_DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
-      PGHOST: db
-      PGPORT: "5432"
-      PGDATABASE: ${PG_DATABASE_NAME:-postgres}
-      PGUSER: ${PG_DATABASE_USER:-postgres}
-      PGPASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
-      PGSSLMODE: disable
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-postgres}
       IS_CONFIG_VARIABLES_IN_DB_ENABLED: "true"
       DISABLE_DB_MIGRATIONS: "true"
+      APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       TWENTY_API_KEY: ${TWENTY_API_KEY:-}
       TWENTY_API_BASE_URL: ${TWENTY_API_BASE_URL:-http://server:3000/rest}
