@@ -19,9 +19,9 @@ This document is intended to become the human-friendly “source of truth”, wh
 Older runbooks referenced manually creating lookup/relation fields. That guidance predates the discovery that **relationship fields can be created via Twenty’s GraphQL metadata API**.
 
 Current state:
-- Relationship provisioning is available via GraphQL and is being standardised in the provisioning script.
-- Until the script is fully updated, some relationships are documented here as **assumptions pending confirmation**.
-- **Naming convention for this document:** use `<objectName>Id` for relations (e.g., `householdId`, `appealId`), except for Person where we assume `donorId`.
+- Relationship provisioning is available via GraphQL and is standardised in the provisioning script for core fundraising links.
+- Optional/roadmap relationships remain documented as **assumptions pending confirmation** until automated.
+- **Naming convention for this document:** list the relation field API name without the `Id` suffix (e.g., `appeal`, `household`, `donor`). The REST payloads still accept `<relationName>Id` for linking (e.g., `appealId`, `householdId`, `donorId`).
 
 ---
 
@@ -31,7 +31,7 @@ Current state:
 > Suggested diagram nodes:
 > - Twenty core: `person`, `company`, `opportunity`
 > - Fundraising custom objects: `gift`, `giftStaging`, `recurringAgreement`, `appeal`, `solicitationSnapshot`, `giftPayout`, `household`
-> - Main relations: `giftStaging → gift` (promotion), and `gift/giftStaging → donorId/appealId/recurringAgreementId/giftPayoutId` (links)
+> - Main relations: `giftStaging → gift` (promotion), and `gift/giftStaging → donor/appeal/recurringAgreement/giftPayout` (links)
 
 ---
 
@@ -75,15 +75,15 @@ Canonical committed donation record in Twenty; this is the output of the intake 
 | `receiptError` | Receipt Error | `TEXT` | Error detail if receipt generation/sending failed (WIP). |
 | `receiptDedupeKey` | Receipt Dedupe Key | `TEXT` | Idempotency key for receipting (WIP). |
 
-**Relationship fields (assumed; pending confirmation + script alignment)**
+**Relationship fields (scripted via GraphQL)**
 | API name | Label | Type | Target | Purpose / Notes |
 |---|---|---|---|---|
-| `donorId` | Donor | `RELATION` | `person` | Links the gift to the donor/supporter (Person). Pending confirmation of exact field name and provisioning in script. |
-| `companyId` | Company | `RELATION` | `company` | Links an organisation gift/employer context. Pending confirmation/provisioning. |
-| `opportunityId` | Opportunity | `RELATION` | `opportunity` | Links to opportunity-style records (pledges/grants/major gifts). Pending confirmation/provisioning. |
-| `appealId` | Appeal | `RELATION` | `appeal` | Attribution for appeal/campaign reporting. Pending confirmation/provisioning. |
-| `recurringAgreementId` | Recurring Agreement | `RELATION` | `recurringAgreement` | Links installment gifts to the underlying agreement. Pending confirmation/provisioning. |
-| `giftPayoutId` | Gift Payout | `RELATION` | `giftPayout` | Links gifts to payout/deposit for reconciliation. Pending confirmation of API name; script provisions a relation named `giftPayout` via GraphQL. |
+| `donor` | Donor | `RELATION` | `person` | Links the gift to the donor/supporter (Person). |
+| `company` | Company | `RELATION` | `company` | Links an organisation gift/employer context. |
+| `opportunity` | Opportunity | `RELATION` | `opportunity` | Links to opportunity-style records (pledges/grants/major gifts). |
+| `appeal` | Appeal | `RELATION` | `appeal` | Attribution for appeal/campaign reporting. |
+| `recurringAgreement` | Recurring Agreement | `RELATION` | `recurringAgreement` | Links installment gifts to the underlying agreement. |
+| `giftPayout` | Gift Payout | `RELATION` | `giftPayout` | Links gifts to payout/deposit for reconciliation. |
 
 > **Screenshot placeholder — Gift record in Twenty**
 >
@@ -129,15 +129,16 @@ Temporary staging record used to validate/dedupe/review gifts before committing 
 | `inKindDescription` | In-Kind Description | `TEXT` | In-kind description. |
 | `estimatedValue` | Estimated Value | `NUMBER` | In-kind estimated value. |
 
-**Relationship fields (assumed; pending confirmation + script alignment)**
+**Relationship fields (scripted via GraphQL)**
 | API name | Label | Type | Target | Purpose / Notes |
 |---|---|---|---|---|
-| `donorId` | Donor | `RELATION` | `person` | Selected/matched donor; used during processing and review. Pending confirmation/provisioning. |
-| `companyId` | Company | `RELATION` | `company` | Organisation gifts/corporate context. Pending confirmation/provisioning. |
-| `opportunityId` | Opportunity | `RELATION` | `opportunity` | Optional linkage for opportunity-style records. Pending confirmation/provisioning. |
-| `appealId` | Appeal | `RELATION` | `appeal` | Attribution for appeal reporting. Pending confirmation/provisioning. |
-| `recurringAgreementId` | Recurring Agreement | `RELATION` | `recurringAgreement` | Installment linkage for recurring operations. Pending confirmation/provisioning. |
-| `giftPayoutId` | Gift Payout | `RELATION` | `giftPayout` | Links staged rows to a payout/deposit for reconciliation. Pending confirmation of API name; script provisions a relation named `giftPayout` via GraphQL. |
+| `donor` | Donor | `RELATION` | `person` | Selected/matched donor; used during processing and review. |
+| `company` | Company | `RELATION` | `company` | Organisation gifts/corporate context. |
+| `opportunity` | Opportunity | `RELATION` | `opportunity` | Optional linkage for opportunity-style records. |
+| `appeal` | Appeal | `RELATION` | `appeal` | Attribution for appeal reporting. |
+| `recurringAgreement` | Recurring Agreement | `RELATION` | `recurringAgreement` | Installment linkage for recurring operations. |
+| `giftPayout` | Gift Payout | `RELATION` | `giftPayout` | Links staged rows to a payout/deposit for reconciliation. |
+| `gift` | Gift | `RELATION` | `gift` | Linked committed gift after promotion. |
 
 > **Screenshot placeholder — Gift staging record review**
 >
@@ -206,10 +207,10 @@ Count snapshots (e.g., “we solicited 2,500 people via Mailchimp”) used for r
 | `capturedAt` | Captured At | `DATE_TIME` | When the snapshot was captured. |
 | `notes` | Notes | `TEXT` | Context/notes. |
 
-**Relationship fields (assumed; pending confirmation + script alignment)**
+**Relationship fields (scripted via GraphQL)**
 | API name | Label | Type | Target | Purpose / Notes |
 |---|---|---|---|---|
-| `appealId` | Appeal | `RELATION` | `appeal` | Links a snapshot to an appeal for response rate context. Pending confirmation/provisioning. |
+| `appeal` | Appeal | `RELATION` | `appeal` | Links a snapshot to an appeal for response rate context. |
 
 ---
 
@@ -223,8 +224,8 @@ Donor’s recurring commitment: amount, cadence, defaults, provider linkage. In 
 | `status` | Status | `TEXT` | Status (active/paused/canceled/delinquent/etc.) (WIP). |
 | `cadence` | Cadence | `TEXT` | Cadence marker (monthly/annual/etc.) (WIP). |
 | `intervalCount` | Interval Count | `NUMBER` | Interval for cadence (WIP). |
+| `amount` | Amount | `CURRENCY` | Agreement amount (currency field). |
 | `amountMinor` | Amount (minor units) | `NUMBER` | Amount in minor units (display/filter convenience). |
-| `currency` | Currency | `TEXT` | Currency code. |
 | `startDate` | Start Date | `DATE` | Start date. |
 | `endDate` | End Date | `DATE` | End date (if applicable). |
 | `nextExpectedAt` | Next Expected At | `DATE` | Next expected payment/installment date. |
@@ -250,10 +251,10 @@ Donor’s recurring commitment: amount, cadence, defaults, provider linkage. In 
 | `annualReceiptPeriod` | Annual Receipt Period | `TEXT` | Period identifier for annual receipt runs. |
 | `annualReceiptPolicy` | Annual Receipt Policy | `TEXT` | Policy marker/version for annual receipts. |
 
-**Relationship fields (assumed; pending confirmation + script alignment)**
+**Relationship fields (scripted via GraphQL)**
 | API name | Label | Type | Target | Purpose / Notes |
 |---|---|---|---|---|
-| `donorId` | Donor | `RELATION` | `person` | Links the agreement to the supporter. Pending confirmation/provisioning. |
+| `donor` | Donor | `RELATION` | `person` | Links the agreement to the supporter. |
 
 ---
 
@@ -276,10 +277,10 @@ Optional stewardship grouping for shared mail details and rollups (individuals r
 | `yearToDateGiftCount` | Year-To-Date Gift Count | `NUMBER` | Rollup count (WIP). |
 | `lastGiftMemberName` | Last Gift Member Name | `TEXT` | Convenience field for “who gave last” (WIP). |
 
-**Relationship fields (assumed; pending confirmation + script alignment)**
+**Relationship fields (scripted via GraphQL)**
 | API name | Label | Type | Target | Purpose / Notes |
 |---|---|---|---|---|
-| `primaryContactId` | Primary Contact | `RELATION` | `person` | Primary person for addressing defaults. Pending confirmation/provisioning. |
+| `primaryContact` | Primary Contact | `RELATION` | `person` | Primary person for addressing defaults. |
 
 ---
 
@@ -296,6 +297,11 @@ The provisioning script also adds fundraising-related fields to core objects.
 | `yearToDateGiftAmount` | Year-To-Date Gift Amount | `CURRENCY` | Rollup target. |
 | `yearToDateGiftCount` | Year-To-Date Gift Count | `NUMBER` | Rollup target. |
 | `mailingAddress` | Mailing Address | `ADDRESS` | Used in household stewardship workflows. |
+
+**Relationship fields (scripted via GraphQL)**
+| API name | Label | Type | Target | Purpose / Notes |
+|---|---|---|---|---|
+| `household` | Household | `RELATION` | `household` | Links the person to a household for shared stewardship/mailing. |
 
 ### Company (`company`)
 | API name | Label | Type | Purpose |
@@ -368,4 +374,3 @@ Likely future/optional fundraising entities (explicitly WIP until implemented/va
 - Households direction: `docs/features/households.md`
 - Reconciliation direction: `docs/features/donation-reconciliation.md`
 - Recurring direction (forward-looking): `docs/features/recurring-donations.md`
-

@@ -120,7 +120,7 @@ Response excerpt (gift → person relation):
 - `targetFieldLabel` / `targetFieldIcon` describe the inverse field that Twenty auto-creates on the target object.
 - Discover `objectMetadataId` values via `GET /rest/metadata/objects` or the metadata runbook.
 
-Our `setup-schema.mjs` script now uses this pattern (via `ensureRelationField`) to create the Gift → Person lookup automatically. Continue porting the remaining manual lookups—Gift → Appeal, Gift Staging → Gift, Recurring Agreement → Person, etc.—by supplying the relevant object IDs and labels in the same mutation structure.
+Our `setup-schema.mjs` script now uses this pattern (via `ensureRelationField`) to create the core fundraising relations automatically (Gift, Gift Staging, Recurring Agreement, Solicitation Snapshot, Household, Person). Continue porting any remaining optional/roadmap relations by supplying the relevant object IDs and labels in the same mutation structure.
 
 **Recommendation:** Prefer this GraphQL workflow for any field type that requires `relationCreationPayload` (relations, morph relations). Keep REST for simple primitives, but standardise on `Authorization: Bearer <API_KEY>` headers everywhere.
 
@@ -129,7 +129,7 @@ Our `setup-schema.mjs` script now uses this pattern (via `ensureRelationField`) 
 
 ## Open Questions
 
-- Automating `RELATION` / `LOOKUP` fields via the API remains unsolved; continue to create those manually in the UI until Twenty documents the payload or fixes the schema.
+- Confirm whether Twenty will expose relation field creation in the REST Metadata API; today we rely on GraphQL for relations and REST for primitives.
 
 ---
 
@@ -142,11 +142,11 @@ The `services/fundraising-service/scripts/setup-schema.mjs` script has been upda
 -   **Object and Simple Field Creation:** The script successfully creates custom objects and simple fields (e.g., `TEXT`, `DATE`, `CURRENCY`).
 -   **Naming Conventions:** It has been observed that `nameSingular` and `namePlural` fields for objects must be in `camelCase` (e.g., `campaign`, `campaigns`) to avoid `400 Bad Request` errors from the Twenty API.
 -   **Idempotency (Partial):** The script attempts to handle existing objects gracefully. If an object already exists, it will log a "Skipped: Object already exists." message. However, the current REST Metadata API does not provide a direct way to `GET` an object by its `nameSingular` via query parameters (e.g., `/rest/metadata/objects?filter[nameSingular]=campaign`). This means if an object exists, the script cannot programmatically retrieve its `id` to create associated fields in the same run.
--   **LOOKUP/RELATION Fields:** Programmatic creation of `LOOKUP` or `RELATION` fields via the API remains problematic. These fields (e.g., linking `gift` to `campaign`, or `gift` to `person`) still require manual creation in the Twenty UI after the script has run.
+-   **LOOKUP/RELATION Fields:** Relation fields are created via the GraphQL metadata endpoint (`/metadata`). The provisioning script uses this path for core fundraising relations; reserve manual UI creation for optional/roadmap relations or if the script fails.
 
 **Recommendation:**
 
-Run `v1-initial-schema.mjs` on new workspace spinup. After execution, manually create any necessary `LOOKUP` or `RELATION` fields in the Twenty UI. Further attention is needed to enhance the script's idempotency for field creation and to address the `LOOKUP` field creation via API once Twenty's Metadata API supports it.
+Run `v1-initial-schema.mjs` on new workspace spinup. After execution, validate relations in the Twenty UI and add any optional/roadmap lookup fields that are not yet scripted. Further attention is needed to enhance the script's idempotency for field creation and to address the `LOOKUP` field creation via API once Twenty's Metadata API supports it.
 
 ---
 
@@ -154,7 +154,7 @@ _Last updated: 2025-10-07_
 
 ## Managed extension notes (2025-09-29)
 
-- Gift → Person lookup field API name: `donorId` (provision via metadata runbook; admin UI relies on it).
+- Gift → Person relation field API name: `donor` (REST payloads use `donorId` when linking).
 - Person create payload (Core `/people`) observed in schema:
   ```json
   {
