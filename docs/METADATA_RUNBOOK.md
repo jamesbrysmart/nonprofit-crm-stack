@@ -30,38 +30,20 @@ What the script does:
 - Logs "Object already exists" when rerun against a workspace that already has the objects. (Field creation is skipped in that case because the API cannot fetch the existing object ID.)
 
 Limitations to note:
-- Lookup/relation fields are **not** created (see §3).
+- Relation fields are created via the GraphQL metadata API for the core fundraising links (Gift, Gift Staging, Household, Recurring Agreement, Solicitation Snapshot). See §3 for any remaining manual steps.
 - If the script exits early, rerun it after clearing any partially created objects/fields manually.
 
 ## 3. Manual UI steps (lookup/relationship fields)
 
-Until Twenty exposes a stable payload for lookup metadata, add the relational fields in the UI after the script succeeds:
+Most fundraising relations are now provisioned by the script via the GraphQL metadata endpoint. Only add manual lookup fields if:
+- You are enabling roadmap objects (e.g., Fund/Designation, Tracking Code, Appeal Segment), or
+- The script fails to create a relation and you need a temporary workaround.
 
+If manual creation is required:
 1. Sign in to the Twenty workspace as an admin.
-2. Navigate to **Settings → Objects → Gifts → Fields**.
-3. Click **New field** and create the following:
-   - `Campaign` — `Lookup` to `Campaign`. Mark as required if desired.
-   - `Contact` — `Lookup` to `Person`. Keep optional for now; adjust when the data model is finalised.
-   - `Appeal` — `Lookup` to `Appeal`. Keep optional for now so non-attributed gifts still commit.
-   - `Opportunity` (`opportunityId`) — `Lookup` to `Opportunity`. Required for linking pledge/grant gifts.
-   - `Company` (`companyId`) — `Lookup` to `Company`/Organisation so corporate gifts carry the employer context.
-4. (Optional) Add descriptions to clarify how the fundraising proxy uses each field.
-5. Navigate to **Settings → Objects → Appeals → Fields** and add:
-   - `Appeal Type` (`appealType`) keeps the default script label; no manual lookup required.
-   - `Parent Appeal` — `Lookup` to `Appeal`.
-   - `Default Fund` — `Lookup` to your designation object (optional until funds ship).
-   - `Default Tracking Code` — `Lookup` to `Tracking Code` (future slice; optional placeholder).
-6. Navigate to **Settings → Objects → Opportunities → Fields** and add:
-   - `Default Fund` — `Lookup` to your designation/fund object (used for auto-coding gifts that link to the Opportunity).
-   - `Default Appeal` — `Lookup` to `Appeal`.
-   - (Optional) Add descriptions referencing the fundraising-service defaults so admins know how they’re applied.
-7. Navigate to **Settings → Objects → Gift Staging → Fields** and add:
-   - `Opportunity` (`opportunityId`) — `Lookup` to `Opportunity`.
-   - `Company` (`companyId`) — `Lookup` to `Company`.
-8. Navigate to **Settings → Objects → Solicitation Snapshots → Fields** and add:
-   - `Appeal` — `Lookup` to `Appeal`.
-   - `Appeal Segment` — `Lookup` to `Appeal Segment` (optional; add once segments exist).
-9. Publish the changes.
+2. Navigate to **Settings → Objects** and create the missing lookup fields.
+3. Use the naming convention from `docs/FUNDRAISING_DATA_MODEL.md` (relation field name without the `Id` suffix).
+4. Publish the changes and re-run the smoke test.
 
 Record any additional manual fields here as they become part of the POC scope.
 
