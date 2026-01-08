@@ -47,6 +47,25 @@ This plan remains provisional. For the fundraising MVP we are proceeding with th
 
 _Open design questions: batching vs single record promotion, SLA expectations for different channels, how to expose staging state in the homepage UI, and whether certain connectors bypass staging with heightened validation._
 
+### 3.2 Managed Extension Auth Enforcement (Fundraising)
+
+- **Goal**: Keep the fundraising extension feeling like a native Twenty surface by requiring a valid Twenty session and preserving role-based permissions.
+- **Request auth rules**:
+  - `/api/fundraising/*` requires a Twenty access token in `Authorization: Bearer <token>` (fallback: `?token=` for edge cases where headers are unavailable).
+  - `/fundraising` UI is only served when a session indicator exists; otherwise redirect to `/welcome?redirect=...`.
+  - `/health` and `/api/fundraising/webhooks/*` remain unauthenticated; `OPTIONS` preflight is allowed.
+- **Token propagation & enforcement**:
+  - The fundraising service extracts the access token, stores it in request context, and forwards it to Twenty on outbound API calls to preserve per-role enforcement.
+  - `TWENTY_API_KEY` is used only when no user token is present (e.g., webhook/health contexts).
+  - Twenty 401/403 responses are returned so the client can refresh or redirect.
+- **Client session flow**:
+  - The UI reads the `tokenPair` cookie for `accessOrWorkspaceAgnosticToken` and `refreshToken`.
+  - API calls include the access token; on 401 the client calls `/graphql` `renewToken`, updates the cookie, and retries once.
+  - A lightweight auth gate runs before rendering the UI to avoid a logged-out flash; it validates token expiry and shows a brief blank state while checking.
+- **Security posture**:
+  - UI gating is a UX guardrail; the API layer remains the definitive enforcement point.
+  - Avoid logging tokens; query-string tokens are only for constrained edge cases.
+
 ## 4. Open Questions & Work Items
 
 - **Sync mechanics**: Do we receive webhooks from Twenty or poll REST endpoints? How do we batch updates and handle retries?
@@ -55,7 +74,7 @@ _Open design questions: batching vs single record promotion, SLA expectations fo
 - **Tenancy**: For the single-tenant pilot model, do we provision separate databases or schemas per org? What changes if we move to multi-tenant?
 - **AI readiness**: What additional enrichment or embeddings do we store to power AI assistants without leaking PII?
 - **Observability**: What metrics and alerts confirm mirror health (lag, failed webhooks, cache hit rate)?
-- **Extension auth enforcement**: Keep managed UIs (fundraising and future modules) strictly behind the Twenty login once the platform exposes a supported session validation path; today the `/fundraising` React bundle is reachable when logged out, so plan mitigations and revisit after Twenty’s extensibility guidance ships.
+- **Extension auth enforcement**: See section 3.2 for the current pattern; reuse it for future managed UIs.
 
 ## 5. Related Documents
 
