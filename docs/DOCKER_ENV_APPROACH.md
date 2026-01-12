@@ -21,28 +21,18 @@ The `dev-stack` repository acts as a "superproject" managing its constituent ser
 The PostgreSQL database (`db` service) requires specific initialization for Twenty CRM.
 
 *   **Centralized Database Name:**
-    *   The `PG_DATABASE_NAME` environment variable in `.env` is set to `postgres`. This aligns the entire stack to use the `postgres` database, which some internal Twenty CRM code paths default to.
-*   **Database Initialization Scripts (mounted into `/docker-entrypoint-initdb.d`):**
-    *   `db/init/00-twenty-init.sh`: This script is executed first. It connects to the `$POSTGRES_DB` (which is now `postgres`), ensures required extensions (`uuid-ossp`, `pgcrypto`) exist, and sets the database `search_path` to prefer the `core` schema once migrations create it. Schema creation itself is left to the Twenty application migrations.
-        ```bash
-        #!/bin/bash
-        set -e
-        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
-          CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-          CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-        EOSQL
-        ```
+    *   The `PG_DATABASE_NAME` environment variable in `.env` is set to `default` to match Twenty’s stock Docker Compose setup.
 
 ## 4. Environment Variable Management
 
 Consistent and explicit environment variable configuration is crucial for inter-service communication and application behavior.
 
 *   **Standardized DB Connection Variable:** For the `server` and `worker` services in `docker-compose.yml`, `PG_DATABASE_URL` is set using a Compose template:
-    *   `postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-postgres}`
+    *   `postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-default}`
     *   This mirrors Twenty’s self-hosting pattern so you can override host/user/password/db/port via env vars without editing Compose when moving between local, CI, or client deployments.
     *   After changing DB settings, recreate `server` and `worker` (`docker compose up -d --force-recreate server worker`) so the new value is applied.
 *   **Configuration Mode:**
-    *   `IS_CONFIG_VARIABLES_IN_DB_ENABLED: "false"` is set for `server` and `worker`. This forces the application to read configuration from environment variables only, preventing premature database reads before migrations complete.
+    *   `IS_CONFIG_VARIABLES_IN_DB_ENABLED: "true"` is set for `server` and `worker`, matching Twenty’s default multi-container setup. Admin panel changes flow to both containers via the shared database.
 *   **Migration Control:**
     *   `DISABLE_DB_MIGRATIONS: "false"` for `server` (ensures migrations run).
     *   `DISABLE_DB_MIGRATIONS: "true"` for `worker` (prevents workers from running migrations).
@@ -142,9 +132,9 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     *   Confirm the latest migrations appear in the ledger and any new columns exist.
 
     ```bash
-    docker compose exec db psql -U postgres -d postgres \
+    docker compose exec db psql -U postgres -d ${PG_DATABASE_NAME:-default} \
       -c "SELECT id,name FROM core.\"_typeorm_migrations\" ORDER BY id DESC LIMIT 5;"
-    docker compose exec db psql -U postgres -d postgres \
+    docker compose exec db psql -U postgres -d ${PG_DATABASE_NAME:-default} \
       -c "\d+ core.\"serverlessFunction\""   # adjust table as needed per release notes
     ```
 
@@ -209,6 +199,10 @@ For daily development work:
 *   **To start the services:**
     ```bash
     docker compose up -d
+    ```
+*   **Optional local port exposure:** if you need host access to Postgres/Redis/MinIO or direct service ports, opt in with the local override:
+    ```bash
+    docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
     ```
 *   **To stop the services:**
     ```bash

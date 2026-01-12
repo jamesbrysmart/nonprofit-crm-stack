@@ -35,10 +35,10 @@ take effect on the next restart/flush.
 The recommended path is to set the flag in the database.
 
 ```bash
-docker compose exec -T db psql -U postgres -c \
+docker compose exec -T db psql -U postgres -d ${PG_DATABASE_NAME:-default} -c \
   "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_AI_ENABLED';"
 
-docker compose exec -T db psql -U postgres -c \
+docker compose exec -T db psql -U postgres -d ${PG_DATABASE_NAME:-default} -c \
   "INSERT INTO core.\"featureFlag\" (key, value)
    SELECT 'IS_AI_ENABLED', true
    WHERE NOT EXISTS (
@@ -73,10 +73,10 @@ The Applications settings screen is gated by the `IS_APPLICATION_ENABLED` flag.
 You can enable it using the same pattern:
 
 ```bash
-docker compose exec -T db psql -U postgres -c \
+docker compose exec -T db psql -U postgres -d ${PG_DATABASE_NAME:-default} -c \
   "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_APPLICATION_ENABLED';"
 
-docker compose exec -T db psql -U postgres -c \
+docker compose exec -T db psql -U postgres -d ${PG_DATABASE_NAME:-default} -c \
   "INSERT INTO core.\"featureFlag\" (key, value)
    SELECT 'IS_APPLICATION_ENABLED', true
    WHERE NOT EXISTS (

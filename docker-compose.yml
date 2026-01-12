@@ -5,12 +5,10 @@ services:
     image: postgres:16
     volumes:
       - db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"   # optional (for local psql/GUI)
     environment:
       POSTGRES_USER: ${PG_DATABASE_USER:-postgres}
       POSTGRES_PASSWORD: ${PG_DATABASE_PASSWORD:-postgres}
-      POSTGRES_DB: ${PG_DATABASE_NAME:-postgres}
+      POSTGRES_DB: ${PG_DATABASE_NAME:-default}
     healthcheck:
       test: ["CMD-SHELL","pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 2s
@@ -48,9 +46,6 @@ services:
   minio:
     image: minio/minio:latest
     command: ["server", "/data", "--console-address", ":9001"]
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
@@ -69,11 +64,9 @@ services:
     image: twentycrm/twenty:${TAG:-latest}
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
-    ports:
-      - "3000:3000"
     environment:
       NODE_PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-postgres}
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-default}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       IS_CONFIG_VARIABLES_IN_DB_ENABLED: "true"
       DISABLE_DB_MIGRATIONS: "false"
@@ -102,6 +95,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 60s
     restart: always
     networks: [dev-net]
 
@@ -111,7 +105,7 @@ services:
     volumes:
       - server-local-data:/app/packages/twenty-server/.local-storage
     environment:
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-postgres}
+      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/${PG_DATABASE_NAME:-default}
       IS_CONFIG_VARIABLES_IN_DB_ENABLED: "true"
       DISABLE_DB_MIGRATIONS: "true"
       APP_SECRET: ${APP_SECRET:-replace_me_with_a_random_string}
@@ -131,8 +125,6 @@ services:
     build:
       context: ./services/fundraising-service
       dockerfile: Dockerfile
-    ports:
-      - "4500:4500"
     env_file:
       - .env
       - services/fundraising-service/.env

@@ -67,11 +67,11 @@ Inspect Compose health details | 1. Find the container name with `docker compose
   ```
 - Toggle individual flags via SQL. Example (AI & Applications):
   ```bash
-  docker compose exec -T db psql -U postgres -c "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_AI_ENABLED';"
-  docker compose exec -T db psql -U postgres -c "INSERT INTO core.\"featureFlag\" (key, value) SELECT 'IS_AI_ENABLED', true WHERE NOT EXISTS (SELECT 1 FROM core.\"featureFlag\" WHERE key = 'IS_AI_ENABLED');"
+  docker compose exec -T db psql -U postgres -d ${PG_DATABASE_NAME:-default} -c "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_AI_ENABLED';"
+  docker compose exec -T db psql -U postgres -d ${PG_DATABASE_NAME:-default} -c "INSERT INTO core.\"featureFlag\" (key, value) SELECT 'IS_AI_ENABLED', true WHERE NOT EXISTS (SELECT 1 FROM core.\"featureFlag\" WHERE key = 'IS_AI_ENABLED');"
 
-  docker compose exec -T db psql -U postgres -c "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_APPLICATION_ENABLED';"
-  docker compose exec -T db psql -U postgres -c "INSERT INTO core.\"featureFlag\" (key, value) SELECT 'IS_APPLICATION_ENABLED', true WHERE NOT EXISTS (SELECT 1 FROM core.\"featureFlag\" WHERE key = 'IS_APPLICATION_ENABLED');"
+  docker compose exec -T db psql -U postgres -d ${PG_DATABASE_NAME:-default} -c "UPDATE core.\"featureFlag\" SET value = true WHERE key = 'IS_APPLICATION_ENABLED';"
+  docker compose exec -T db psql -U postgres -d ${PG_DATABASE_NAME:-default} -c "INSERT INTO core.\"featureFlag\" (key, value) SELECT 'IS_APPLICATION_ENABLED', true WHERE NOT EXISTS (SELECT 1 FROM core.\"featureFlag\" WHERE key = 'IS_APPLICATION_ENABLED');"
   ```
 - Remember to flush cache again after inserting/updating flags. The Applications UI still requires Twenty ≥ 1.8, so on older images the settings screen may not render even though the backend respects the flag. See `docs/TWENTY_AI_INTEGRATION.md` for more context.
 

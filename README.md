@@ -60,8 +60,8 @@ These instructions will get you a copy of the project up and running on your loc
 
 5.  **Accessing the Application:**
 
-    *   **Twenty CRM**: [http://localhost:3000](http://localhost:3000)
-    *   **Fundraising Service (via Gateway)**: [http://localhost:4000/fundraising](http://localhost:4000/fundraising) (or as configured in `nginx/gateway.conf`)
+    *   **Gateway entrypoint (Twenty + Fundraising)**: [http://localhost:4000](http://localhost:4000)
+    *   **Fundraising UI**: [http://localhost:4000/fundraising](http://localhost:4000/fundraising) (or as configured in `nginx/gateway.conf`)
 
 ## Upgrading
 
@@ -82,8 +82,18 @@ To upgrade the version of Twenty CRM, follow these steps:
 
 5.  **Accessing the Application:**
 
-    *   **Twenty CRM**: [http://localhost:3000](http://localhost:3000)
-    *   **Fundraising Service (via Gateway)**: [http://localhost:4000/fundraising](http://localhost:4000/fundraising) (or as configured in `nginx/gateway.conf`)
+    *   **Gateway entrypoint (Twenty + Fundraising)**: [http://localhost:4000](http://localhost:4000)
+    *   **Fundraising UI**: [http://localhost:4000/fundraising](http://localhost:4000/fundraising) (or as configured in `nginx/gateway.conf`)
+
+### Optional local ports
+
+By default, only the gateway is published on the host. If you need local access to internal services (Postgres, Redis, MinIO, or direct server/fundraising ports), opt in with the local Compose file:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+```
+
+Note: when using the gateway-only setup, set `SERVER_URL=http://localhost:4000` so the Twenty UI points API calls at the gateway rather than `:3000`.
 
 ## Development Workflow
 

@@ -9,7 +9,7 @@ This guide explains how to work with the Evidence.dev prototype and the analytic
 ```bash
 cat scripts/analytics/load_gifts_snapshot.sql \
   | docker compose --profile fast exec -T db \
-    psql -U postgres -d postgres
+    psql -U postgres -d ${PG_DATABASE_NAME:-default}
 ```
 
 The script creates (or refreshes) `analytics.gifts_snapshot` with gift data sourced from Twenty's workspace schema. Rerun whenever fresh data is needed for the dashboards.
