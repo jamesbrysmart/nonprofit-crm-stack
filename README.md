@@ -95,6 +95,16 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 
 Note: when using the gateway-only setup, set `SERVER_URL=http://localhost:4000` so the Twenty UI points API calls at the gateway rather than `:3000`.
 
+### Optional n8n profile
+
+The stack supports n8n as an optional companion service. Enable it with:
+
+```bash
+docker compose --profile n8n up -d
+```
+
+Configure n8n-related environment variables in `.env` (see `.env.example`) and review `automations/n8n/runbook.md` for hosting and security guidance.
+
 ## Development Workflow
 
 ### Pulling Updates

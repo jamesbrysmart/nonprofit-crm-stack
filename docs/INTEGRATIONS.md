@@ -13,7 +13,8 @@ This file tracks external systems we plan to connect to the Twenty + fundraising
 
 ### Execution Pattern Snapshot
 - Subscribe to provider webhooks first, normalise the payload into the canonical gift/integration event shape (see `docs/DONATION_CONNECTOR_SCAFFOLDING.md`), and forward it to the fundraising-service REST API.
-- Use n8n as the default orchestration surface for pilot connectors; export flows into source control and tag them with the relevant backlog item.
+- Use n8n as the default optional orchestration surface for pilot connectors; export flows into source control and tag them with the relevant backlog item.
+- When hosted, prefer a separate n8n subdomain (see `automations/n8n/runbook.md`).
 - Allow Zapier for tenant-specific or short-lived glue, but document the Zap and define when it graduates into n8n or service-owned code.
 - Push compliance or latency-sensitive logic down into fundraising-service jobs to keep retries, idempotency, and logging consistent with DECISIONS D-0000/D-0001.
 
@@ -55,6 +56,7 @@ This file tracks external systems we plan to connect to the Twenty + fundraising
 - Automation hook requirements live in `AUTOMATIONS.md` (webhook processing, job scheduling).
 - Donation connector design plan lives in `docs/DONATION_CONNECTOR_SCAFFOLDING.md`; keep status notes in sync.
 - API endpoints, duplicate handling, and merge behaviour documented in `docs/TWENTY_METADATA_API.md`.
+- n8n setup and security guidance lives in `automations/n8n/runbook.md`.
 - Any new integration should have a corresponding ticket in `/docs/POC-backlog.md` before implementation.
 - Automation ownership and tooling guardrails live in `AUTOMATIONS.md`; ensure every integration has a matching automation entry before launch.
 
