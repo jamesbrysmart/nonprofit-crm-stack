@@ -14,7 +14,7 @@ This file tracks external systems we plan to connect to the Twenty + fundraising
 ### Execution Pattern Snapshot
 - Subscribe to provider webhooks first, normalise the payload into the canonical gift/integration event shape (see `docs/DONATION_CONNECTOR_SCAFFOLDING.md`), and forward it to the fundraising-service REST API.
 - Use n8n as the default optional orchestration surface for pilot connectors; export flows into source control and tag them with the relevant backlog item.
-- When hosted, prefer a separate n8n subdomain (see `automations/n8n/runbook.md`).
+- When hosted, deploy n8n at `automations.<domain>` with strong auth, persistent storage, and `N8N_ENCRYPTION_KEY` (see `automations/n8n/runbook.md`).
 - Allow Zapier for tenant-specific or short-lived glue, but document the Zap and define when it graduates into n8n or service-owned code.
 - Push compliance or latency-sensitive logic down into fundraising-service jobs to keep retries, idempotency, and logging consistent with DECISIONS D-0000/D-0001.
 

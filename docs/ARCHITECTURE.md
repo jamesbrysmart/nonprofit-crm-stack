@@ -24,21 +24,20 @@ This document captures the evolving architecture for how our managed extensions 
 
 ## 3. Current Working Plan (subject to change)
 
-1. **Prototype the operational mirror**
-   - Capture Gifts, People, Tasks, and staging entities through Twenty custom objects (no separate fundraising-service database).
-   - Apply optimistic writes so newly created items appear instantly; reconcile via webhook/poll job results.
-   - Instrument drift detection and logging (`x-request-id`) to follow requests end-to-end.
-2. **Feed analytics from the same pipeline**
-   - Surface mirror tables (or derived views) to the reporting warehouse discussed in D-0016.
-   - Maintain a clear cadence difference: realtime for operational queries, scheduled snapshots for heavy analytics.
-3. **Keep direct DB access as an experiment**
-   - Limit any direct-read spike to read-only roles, document schema touchpoints, and define rollback criteria before attempting.
+1. **API-first default**
+   - Reads go through Twenty REST/GraphQL via the gateway; writes flow through the fundraising/volunteer services.
+   - Use small targeted caching/batching only when needed.
+2. **Operational safety**
+   - Add shared throttling/backpressure to avoid 429s across all callers.
+   - Queue high-volume ingestion (webhooks/imports) instead of synchronous fan-out.
+3. **Deferred options**
+   - Operational mirror and direct DB access remain deferred and require an explicit revisit decision.
 
-This plan remains provisional. For the fundraising MVP we are proceeding with the API proxy approach and small targeted caching, while designing read/write layers that can adopt the operational mirror when we hit the revisit triggers in `DECISIONS.md`. Once the MVP feature set stabilises—or sooner if the triggers fire—we will return to this plan, spike the mirror prototype, and update the architecture accordingly.
+This plan reflects the current decision: API-first is the default posture for current deployments. We will only revisit an operational mirror if the triggers in `DECISIONS.md` fire.
 
 ### 3.1 Gift Staging Lifecycle (draft)
 
-- **Intake**: Inbound gifts (manual UI, CSV, connectors, portal webhooks) land in Twenty staging objects within the operational mirror. Capture raw payload, channel metadata, and ingestion timestamps.
+- **Intake**: Inbound gifts (manual UI, CSV, connectors, portal webhooks) land in Twenty staging objects. Capture raw payload, channel metadata, and ingestion timestamps.
 - **Validation**: Synchronous rules flag missing fields, amount anomalies, consent requirements, and run duplicate checks (e.g. `/people/duplicates`). AI-assisted reviews can layer on top.
 - **Review & Mapping**: Users (or automated flows) resolve donor/campaign/fund mapping, edit fields, or merge with existing donors. Audit log records each action.
 - **Promotion**: Approved staging records trigger write-through to Twenty via the fundraising-service proxy; on success, status flips to “posted” and stores the created Gift ID.
@@ -68,12 +67,12 @@ _Open design questions: batching vs single record promotion, SLA expectations fo
 
 ## 4. Open Questions & Work Items
 
-- **Sync mechanics**: Do we receive webhooks from Twenty or poll REST endpoints? How do we batch updates and handle retries?
+- **API throttling**: What shared backpressure strategy do we enforce across all Twenty callers?
 - **Staging lifecycle**: Where do we record in-flight gift entries/imports, and how do we promote them to canonical Gifts?
 - **Conflict resolution**: How are simultaneous edits (Twenty UI vs managed UI) surfaced and resolved?
 - **Tenancy**: For the single-tenant pilot model, do we provision separate databases or schemas per org? What changes if we move to multi-tenant?
 - **AI readiness**: What additional enrichment or embeddings do we store to power AI assistants without leaking PII?
-- **Observability**: What metrics and alerts confirm mirror health (lag, failed webhooks, cache hit rate)?
+- **Observability**: What metrics confirm API health (latency, 429s, queue depth, cache hit rate)?
 - **Extension auth enforcement**: See section 3.2 for the current pattern; reuse it for future managed UIs.
 
 ## 5. Related Documents
@@ -81,7 +80,7 @@ _Open design questions: batching vs single record promotion, SLA expectations fo
 - `DECISIONS.md` – D-0000 (operational data plane), D-0002 (object provisioning), D-0016 (reporting module).
 - `docs/PROJECT_CONTEXT.md` – module priorities and product principles.
 - `docs/POC-backlog.md` – spikes for rollups, AI CRM proof-of-concept, reporting.
-- `docs/OPERATIONS_RUNBOOK.md` – logging and health-check practices to extend once the mirror is implemented.
+- `docs/OPERATIONS_RUNBOOK.md` – logging and health-check practices to extend as the stack matures.
 
 _Update this file whenever spikes conclude or new constraints emerge so future modules can align without rediscovering past decisions._
 

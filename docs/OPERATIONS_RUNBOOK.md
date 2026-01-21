@@ -2,7 +2,22 @@
 
 _Last updated: 2025-10-21_
 
-This quick-start runbook captures the minimum steps to operate and diagnose the managed-extension stack during the Phase 1 POC. Update it as new behaviours land.
+This quick-start runbook captures the minimum steps to operate and diagnose the managed-extension stack during hosted deployments and pilots. Update it as new behaviours land.
+
+## 3. Hosted deployment operations
+
+### TLS and gateway
+- In hosted environments, TLS is typically terminated by the platform; nginx `gateway` remains the entry point for Twenty + fundraising.
+- Build the gateway container from `nginx/Dockerfile` so platforms do not need file mounts.
+
+### Backups and restore drill
+- Enable daily automated Postgres backups with a clear retention policy.
+- Run a monthly restore drill into a fresh environment; verify login plus a couple of known records.
+- Restore ownership: if we host, we own restores; if the client self-hosts, the client owns restores (we provide runbook/support); managed hosting should make restore ownership explicit in the agreement.
+
+### n8n (optional but deployed)
+- Serve at `https://automations.<domain>` with strong auth.
+- Use persistent storage and set `N8N_ENCRYPTION_KEY`.
 
 ## 1. Bring the stack up / down
 
@@ -34,7 +49,7 @@ Use `docker compose ps <service>` to see the health result and `docker compose l
 - Each submission creates a Person via Twenty `/people`, then a Gift via `/gifts`, linking the new person through `donorId`.
 - Success banner surfaces the gift id and links to the Twenty gifts list (`/objects/gifts`).
 
-## 3. Structured logs & request IDs
+## 4. Structured logs & request IDs
 
 - Every inbound HTTP request now carries an `x-request-id`. If the client does not provide one, the proxy mints a UUID and echoes it back.
 - Logs emitted by `fundraising-service` are JSON with the following keys:
@@ -48,7 +63,7 @@ Use `docker compose ps <service>` to see the health result and `docker compose l
   ```
 - When debugging a failure, search for the `requestId` in both the fundraising-service logs and the Twenty core logs (if available) to follow the request through the stack.
 
-## 4. Common diagnostics
+## 5. Common diagnostics
 
 Scenario | Command(s)
 ---|---
@@ -75,7 +90,7 @@ Inspect Compose health details | 1. Find the container name with `docker compose
   ```
 - Remember to flush cache again after inserting/updating flags. The Applications UI still requires Twenty ≥ 1.8, so on older images the settings screen may not render even though the backend respects the flag. See `docs/TWENTY_AI_INTEGRATION.md` for more context.
 
-## 5. Known quirks (tracked)
+## 7. Known quirks (tracked)
 
 - Twenty core still logs `Created new shared pg Pool for key "localhost|5432|postgres||no-ssl"` during boot. It is noisy but harmless.
 - Metadata automation for lookup fields remains manual; run `npm run smoke:gifts` after any metadata change to confirm proxy health.

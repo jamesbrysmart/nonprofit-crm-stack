@@ -34,9 +34,9 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
    - *Cons*: refresh cadence limits “realtime” feel; still need an operational layer for interactive widgets.
 
 **Current working approach (subject to change)**
-- **MVP (now)**: ship with the API-first proxy pattern (option 1), layering small server-side batching/caching where needed. This keeps implementation velocity high for the fundraising homepage and staging proof-of-concept.
-- **Design for evolution**: structure read layers so we can swap in an operational mirror later without rewriting every feature (`ARCHITECTURE.md` captures guidance).
-- **Planned revisit**: prototype the operational mirror (option 3) once MVP feature set is stable or when documented triggers (below) fire. Keep the direct-DB tap (option 4) only for controlled spikes with rollback plans.
+- **Default posture**: stay API-first (option 1), layering small server-side batching/caching and backpressure where needed. This keeps implementation velocity high and avoids additional persistence.
+- **Defer the mirror**: operational mirror (option 3) is not planned; revisit only if the triggers below fire.
+- **Direct DB access**: keep option 4 limited to controlled spikes with rollback plans.
 
 **Revisit triggers**
 - Homepage or staging UX suffers due to API latency/limitations (e.g. new tasks not appearing immediately, lack of audit history).
@@ -57,9 +57,9 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - Future module ADRs should cite D-0000 explicitly when selecting data access patterns.
 
 **Next actions**
-1. Draft detailed architecture notes (see `ARCHITECTURE.md`).
-2. Schedule a spike to validate webhook-driven mirroring and quantify latency.
-3. Update dependent decisions once the prototype proves (or disproves) the hybrid path.
+1. Keep `ARCHITECTURE.md` aligned with the API-first posture and backpressure guidance.
+2. Implement shared throttling/backpressure in Twenty API calls where needed.
+3. Revisit this decision only if the triggers fire or outcomes force a change.
 
 ---
 

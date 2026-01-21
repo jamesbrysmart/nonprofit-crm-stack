@@ -1,0 +1,50 @@
+server {
+    listen 80;
+    server_name localhost;
+    client_max_body_size 10m;
+
+    # Set these per environment:
+    # - NGINX_RESOLVER (e.g. Docker: 127.0.0.11, other: your DNS resolver)
+    # - FUNDRAISING_UPSTREAM (e.g. Docker: fundraising-service:4500)
+    # - TWENTY_UPSTREAM (e.g. Docker: server:3000)
+    #
+    # Using a resolver + variable-based proxy_pass makes nginx re-resolve periodically,
+    # avoiding stale DNS when upstream service IPs change after redeploys.
+    resolver ${NGINX_RESOLVER} valid=10s ipv6=on;
+    resolver_timeout 5s;
+
+    set $fundraising_upstream ${FUNDRAISING_UPSTREAM};
+    set $twenty_upstream ${TWENTY_UPSTREAM};
+
+    # Proxy to fundraising-service
+    location /api/fundraising/ {
+        proxy_pass http://$fundraising_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /fundraising {
+        return 301 /fundraising/;
+    }
+
+    location /fundraising/ {
+        proxy_pass http://$fundraising_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Proxy to twenty-server
+    location / {
+        proxy_pass http://$twenty_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

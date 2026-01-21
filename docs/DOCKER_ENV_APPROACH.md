@@ -38,6 +38,12 @@ Consistent and explicit environment variable configuration is crucial for inter-
     *   `DISABLE_DB_MIGRATIONS: "true"` for `worker` (prevents workers from running migrations).
 *   **Admin Credentials:** `ADMIN_EMAIL` and `ADMIN_PASSWORD` are passed from `.env` for first-boot setup.
 
+### Storage configuration (S3-compatible)
+
+*   **Default posture:** Use S3-compatible storage with Cloudflare R2 as the default provider (AWS S3 supported with the same pattern).
+*   **Required vars (S3 mode):** `STORAGE_TYPE=s3`, `STORAGE_S3_NAME`, `STORAGE_S3_REGION`, and (for R2) `STORAGE_S3_ENDPOINT`, plus access keys as needed.
+*   **Bucket policy:** Keep the bucket private; Twenty serves uploads/downloads via the API layer rather than a public bucket.
+
 ## 5. Service Dependency Management
 
 `depends_on` conditions are used in `docker-compose.yml` to ensure services start in the correct order and only when their dependencies are ready.

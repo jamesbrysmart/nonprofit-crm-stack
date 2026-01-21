@@ -167,11 +167,16 @@ services:
     networks: [dev-net]
 
   gateway:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     ports:
       - "4000:80"
-    volumes:
-      - ./nginx/gateway.conf:/etc/nginx/conf.d/default.conf
+    environment:
+      # Docker's embedded DNS resolver for container name resolution.
+      NGINX_RESOLVER: 127.0.0.11
+      FUNDRAISING_UPSTREAM: fundraising-service:4500
+      TWENTY_UPSTREAM: server:3000
     depends_on:
       server:
         condition: service_healthy
