@@ -497,3 +497,46 @@ We evaluated several open-source and custom approaches for modular reporting in 
 
 **References**
 - `docs/ARCHITECTURE.md` §6 (API Rate Limiting and Backpressure) for the full impact assessment and recommended actions.
+
+---
+
+## D-0019: Fundraising Module Packaging Path (Self-hosted vs SaaS)
+**Status**: Pending (explicitly re-reviewed on every Twenty upstream sync)
+**Priority**: Critical
+
+**Context**
+- Twenty’s “Apps” extensibility surface is evolving quickly (manifest schema, build pipeline, serverless/tools, and early UI component packaging).
+- Our current stack uses a hybrid approach: Twenty core + gateway + bespoke services (e.g., fundraising-service), with some functionality already expressed as Twenty apps (e.g., rollup-engine).
+- We expect to support both:
+  - **Self-hosted / managed-hosted** (we have full infra/code control).
+  - **SaaS** (customers do not run bespoke code; installation should be “install an app”, with minimal per-tenant ops).
+
+**Decision (not final)**
+- Keep the long-term target **app-first**, but keep the implementation posture **hybrid** until Twenty Apps cover the required UX + operational primitives.
+- Treat this as a *packaging decision*, not a product decision: we can keep shipping the best UX while continuously moving compatible pieces into Twenty Apps.
+
+**Provisional models under evaluation**
+1. **Self-hosted / managed-hosted (hybrid)**
+   - **In-Twenty layer (App):** fundraising schema/roles, serverless functions (incl. “tools”), and any native UI surfaces as they become available.
+   - **Edge layer (services):** high-volume connectors (Stripe/etc), queues/retries, long-running jobs, backpressure, and ops tooling.
+2. **SaaS (app + vendor-managed edge)**
+   - **In-Twenty layer (App):** same app bundle installed into each customer workspace.
+   - **Edge layer (vendor-managed):** our hosted multi-tenant integration service talks to each workspace via Twenty APIs/webhooks using scoped credentials; customers do not run code.
+   - If Twenty later provides durable queues/connectors/observability primitives, progressively shrink our edge layer.
+
+**Why this remains pending**
+- The manifest/build surface is changing (e.g., new fields, renamed keys, check-summed build artifacts), and the UI packaging story is still emerging.
+- Committing too early risks rework, but ignoring the direction risks accumulating bespoke surfaces that become hard to unwind.
+
+**Operating rule**
+- Re-review this decision every time we bump `services/twenty-core` from upstream and record the delta in `docs/TWENTY_EXTENSIBILITY_WATCH.md`.
+
+**Revisit triggers**
+- Twenty Apps reaches a stable distribution + UI surface we can rely on for core Fundraising UX.
+- Twenty provides platform-grade primitives for ingestion/queues/retries/logging that remove the need for an external edge layer.
+- We decide to prioritize SaaS distribution as the primary path (which increases the value of app-first packaging).
+
+**References**
+- `docs/TWENTY_EXTENSIBILITY_WATCH.md` (primary living log and per-sync checklist)
+- `docs/DOCKER_ENV_APPROACH.md` (upgrade process + extension sync steps)
+- `docs/DECISIONS.md` D-0017 (extensibility alignment strategy), D-0000 (data plane strategy)
