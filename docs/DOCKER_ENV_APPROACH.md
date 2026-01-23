@@ -94,15 +94,7 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     *   Open the `.env` file in the project root.
     *   Update the `TAG` variable to the *next sequential version*. For example: `TAG=v1.5.0`.
 
-2.  **Pull the New Image:**
-    *   Download the new container image specified by the `TAG`.
-
-    ```bash
-    # This pulls the images for the services
-    docker compose pull
-    ```
-
-3.  **Start and Monitor Migrations:**
+2.  **Start Twenty (pull happens automatically if needed):**
     *   Start the stack. The `server` container will automatically run any necessary database migrations.
     *   Watch the logs to ensure the migrations complete successfully.
 
@@ -110,6 +102,7 @@ You will repeat these steps for each sequential version you need to apply (e.g.,
     docker compose up -d
     docker compose logs -f server
     ```
+    *   Compose will automatically pull `twentycrm/twenty:${TAG}` if it is not already present locally. If you prefer pulling explicitly, run `docker compose pull` before `up -d`.
     *   **Codex CLI users:** the default harness kills long-running commands after ~10 seconds. When running `docker compose up -d/down` through Codex, rerun the command with a higher timeout or wait for it to complete so every service (especially `worker`/`gateway`) actually starts. If the command times out during an image pull, simply rerun it—the compose workflow will pick up where it left off.
     *   Look for messages indicating database migration or upgrade success. Once the logs are stable and the `server` is healthy, press `Ctrl+C` to stop watching.
 

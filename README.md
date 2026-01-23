@@ -75,10 +75,11 @@ To upgrade the version of Twenty CRM, follow these steps:
 2.  **Update the version tag:**
     Open the `.env` file and change the `TAG` variable to the desired version (e.g., `TAG=v1.5.0`).
 
-3.  **Pull the new images and restart the services:**
+3.  **Bring the stack back up:**
     ```bash
     docker compose up --build -d
     ```
+    *   Note: `docker compose up` will pull the new `twentycrm/twenty:${TAG}` image automatically if it’s not already present. Use `docker compose pull` first only if you prefer pulling explicitly.
 
 5.  **Accessing the Application:**
 
