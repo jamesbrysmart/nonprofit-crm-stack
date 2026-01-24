@@ -95,6 +95,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 ```
 
 Note: when using the gateway-only setup, set `SERVER_URL=http://localhost:4000` so the Twenty UI points API calls at the gateway rather than `:3000`.
+If you plan to run metadata scripts locally (e.g. `setup-schema.mjs`), ensure the Twenty server can resolve its own `SERVER_URL` inside Docker. The local compose file sets `SERVER_URL=http://server:3000` so REST metadata calls can loop back correctly while the gateway stays on `:4000`.
 
 ### Optional n8n profile
 

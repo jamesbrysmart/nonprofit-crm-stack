@@ -32,6 +32,7 @@ docker compose up -d
 Key checks while starting:
 - `docker compose ps` – expect `server`, `fundraising-service`, `gateway`, `redis`, `db` to reach `healthy`.
 - `GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts` from `services/fundraising-service` – validates proxy → Twenty flow and leaves a “Persistent Smoke Test Gift” in Twenty for UI confirmation. (Without the `GATEWAY_BASE` override the host can’t resolve `gateway:80`.)
+ - If you are running metadata provisioning scripts locally, ensure `SERVER_URL` is reachable inside the `server` container. The local compose override sets `SERVER_URL=http://server:3000` so REST metadata calls can loop back to `/metadata` without 500s.
 
 ## 2. Health & readiness endpoints
 
