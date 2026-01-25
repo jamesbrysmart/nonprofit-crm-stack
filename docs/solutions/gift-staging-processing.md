@@ -65,7 +65,7 @@
 2. **Eligibility Checks**
    - Ensure validation/dedupe statuses are `passed`.
    - Confirm batch exists and (if auto-processing) batch `auto_promote=true` and not archived.
-   - Verify required fields (`amount_minor`, `currency`, `date_received`, `contact_id`/resolved donor).
+   - Verify required fields (`amount.amountMicros`, `amount.currencyCode`, `giftDate`, `contact_id`/resolved donor).
   - Re-check idempotency: confirm no existing gift with same `external_id` or `source_fingerprint`.
 
 3. **Payload Build**

@@ -25,7 +25,7 @@ All routes are rooted at `https://api.twentycrm.com`, and in our local stack the
     curl -s \
       -H "Authorization: Bearer ${TWENTY_API_KEY}" \
       -H "Content-Type: application/json" \
-      -d '{"amount":{"currencyCode":"GBP","value":100}}' \
+      -d '{"amount":{"currencyCode":"GBP","amountMicros":100000000}}' \
       http://localhost:3000/rest/gifts
     ```
 
@@ -38,6 +38,7 @@ All routes are rooted at `https://api.twentycrm.com`, and in our local stack the
           "id": "<uuid>",
           "name": "Untitled",
           "amount": {
+            "amountMicros": 100000000,
             "currencyCode": "GBP"
           },
           "createdBy": {
@@ -107,7 +108,7 @@ The script exercises create → list → get → update → delete through the p
 
 ### Validation guardrails & contact auto-create
 
-- Incoming payloads must include `amount.currencyCode` (non-empty string) and `amount.value` (numeric). Known string fields such as `contactId`, `campaignId`, `date`, `name`, `description`, `notes`, and `externalId` are trimmed; unsupported fields on updates pass through unchanged for forward compatibility.
+- Incoming payloads must include `amount.currencyCode` (non-empty string) and `amount.amountMicros` (numeric). Known string fields such as `contactId`, `campaignId`, `giftDate`, `name`, `description`, `notes`, and `externalId` are trimmed; unsupported fields on updates pass through unchanged for forward compatibility.
 - `POST` requests may include a `contact` object with `firstName` / `lastName` (and optional `email`). The service will create a Person via Twenty’s `/people` endpoint and inject the resulting `donorId` into the Gift payload before forwarding to `/gifts`.
 - Responses from Twenty are sanity-checked so the expected `createGift` / `updateGift` / `deleteGift` / `gift` / `gifts` payloads exist. Missing data surfaces as a 400 error, making upstream issues obvious during development.
 - Transient errors from Twenty (429/5xx or network hiccups) are retried up to three times with a short backoff; persistent failures bubble back so callers see the real status code and payload.
@@ -119,7 +120,7 @@ TWENTY_API_KEY=$(sed -n 's/^TWENTY_API_KEY=\(.*\)$/\1/p' .env | tr -d '"')
 curl -s \
   -H "Authorization: Bearer ${TWENTY_API_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"amount":{"currencyCode":"GBP","value":100}}' \
+  -d '{"amount":{"currencyCode":"GBP","amountMicros":100000000}}' \
   http://localhost:4000/api/fundraising/gifts
 ```
 

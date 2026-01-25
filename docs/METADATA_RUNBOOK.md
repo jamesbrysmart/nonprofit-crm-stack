@@ -23,7 +23,7 @@ What the script does:
 - Adds simple fields (no lookups yet), for example:
   - `campaign`: `startDate`, `endDate`.
   - `appeal`: `appealType` (use this instead of `type`—Twenty reserves the generic name), `description`, `startDate`, `endDate`, `goalAmount`, `targetSolicitedCount`, `budgetAmount`, `raisedAmount`, `giftCount`, `donorCount`, `responseRate`, `costPerPound`, `lastGiftAt`.
-  - `gift`: `amount`, `date`, `externalId`, `paymentMethod`, donor/contact scaffolding, provider metadata, **receipt fields** (`receiptStatus`, `receiptSentAt`, `receiptPolicyApplied`, `receiptChannel`, `receiptTemplateVersion`, `receiptError`, `receiptDedupeKey`).
+  - `gift`: `amount`, `giftDate`, `externalId`, `paymentMethod`, donor/contact scaffolding, provider metadata, **receipt fields** (`receiptStatus`, `receiptSentAt`, `receiptPolicyApplied`, `receiptChannel`, `receiptTemplateVersion`, `receiptError`, `receiptDedupeKey`).
   - `giftStaging`: intake metadata, validation statuses, donor snapshot, payload storage.
   - `recurringAgreement`: cadence, status, provider references, defaults, **annual receipt fields** (`annualReceiptStatus`, `annualReceiptSentAt`, `annualReceiptPeriod`, `annualReceiptPolicy`).
   - `solicitationSnapshot`: `countSolicited`, `source`, `capturedAt`, `notes`.

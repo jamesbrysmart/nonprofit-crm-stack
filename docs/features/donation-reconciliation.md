@@ -47,9 +47,9 @@ Key staging fields for reconciliation:
 | `externalId` | Unique transaction ID from source |
 | `source` / `intakeSource` | e.g. Stripe webhook, PayPal CSV |
 | `giftPayoutId` | Relation to the payout/deposit record |
-| `amount` / `amountMinor` | Gross donation amount |
+| `amount` | Gross donation amount (currency field) |
 | `feeAmount` | Processor/bank fees captured per transaction |
-| `dateReceived` | Transaction date |
+| `giftDate` | Transaction date (date the donor made the gift) |
 | `providerPaymentId` / `reference` | Processor reference or payout batch ID |
 | `rawPayload` | Audit trail for troubleshooting |
 

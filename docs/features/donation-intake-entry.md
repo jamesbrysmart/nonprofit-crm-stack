@@ -40,7 +40,7 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 
 **Donation**  
 - `contact_id` (or new contact created) **or** `company_id` (grants/corporate in-kind)  
-- `amount`, `currency` (GBP default), `date_received`  
+- `amount`, `currency` (GBP default), `giftDate` (date the donor made the gift, not settlement/payout)  
 - `payment_method` (`card`, `direct_debit`, `cash`, `cheque`, `bank_transfer`, `other`)  
 - `appeal_id` (required if attributable), `appeal_segment_id` (opt), `tracking_code_id` (opt, auto for digital)  
 - `fund_id` (designation; defaultable)  

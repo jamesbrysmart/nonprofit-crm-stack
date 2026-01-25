@@ -54,7 +54,7 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 
 ### Gift (every payment / receipt)
 - `id`
-- **Who/When**: `contactId` (or `orgId`), `dateReceived`, `currency`, `amount`
+- **Who/When**: `contactId` (or `orgId`), `giftDate`, `currency`, `amount`
 - **Linkage**: `opportunityId` *(nullable — only when sourced from a solicitation)*
 - **Method**: `paymentMethod` *(card, directDebit, cash, cheque, bankTransfer, inKind, other)*  
   - For reversals: `reversalOfGiftId` *(optional negative gift pattern)*
@@ -160,7 +160,7 @@ This keeps day-to-day finance and reporting clean (Gifts), while making pipeline
 ## Validation & Rules
 
 - **Gifts**
-  - `amount > 0`, `dateReceived <= today` (overrideable by permission).
+  - `amount > 0`, `giftDate <= today` (overrideable by permission).
   - `paymentMethod` consistent (e.g., `directDebit` respects Bacs lead times).
   - `fundId` required if org enforces designation; `appealId` recommended (auto for digital).
   - **Duplicate prevention**: block on identical `processorTxnId`; warn on same contact+amount+date (±1d).

@@ -73,8 +73,8 @@ curl -X POST -H "Authorization: Bearer <YOUR_API_KEY>" -H "Content-Type: applica
 ```bash
 curl -X POST -H "Authorization: Bearer <YOUR_API_KEY>" -H "Content-Type: application/json" -d '{
   "type": "DATE",
-  "name": "date",
-  "label": "Date",
+  "name": "giftDate",
+  "label": "Gift Date",
   "objectMetadataId": "<YOUR_OBJECT_METADATA_ID>"
 }' http://localhost:3000/rest/metadata/fields
 ```
@@ -126,6 +126,19 @@ Our `setup-schema.mjs` script now uses this pattern (via `ensureRelationField`) 
 
 ---
 
+## Twenty Metadata Gotchas & Tips
+
+Keep this short and actionable; link deeper notes elsewhere if needed.
+
+- **CURRENCY fields are composite:** Twenty stores currency as `{ amountMicros, currencyCode }` (e.g., `amount.amountMicros`).
+  - `amountMicros` is the canonical stored value (integer micros, i.e. 1.00 = 1_000_000). API writes/reads should use it.
+  - UI inputs (and any import tooling) are expected to accept human values and convert to micros before persistence. That’s why you’ll see UI code divide/multiply by 1_000_000.
+  - Filtering/sorting/reporting on currency fields uses `amountMicros` under the hood, so do not add parallel “amountMinor” or “amount” fields; keep a single currency composite per value.
+  - **Reference (Twenty core):** subfields are defined in `services/twenty-core/packages/twenty-shared/src/constants/CompositeFieldTypeSubFieldsNames.ts`; UI conversion uses `amountMicros` in `services/twenty-core/packages/twenty-front/src/modules/object-record/record-field/ui/utils/computeDraftValueFromFieldValue.ts` and `services/twenty-core/packages/twenty-front/src/modules/object-record/record-field/ui/meta-types/input/components/CurrencyFieldInput.tsx`.
+- **Reserved field names:** Some field API names are rejected (observed: `type`, `currency`). Prefer explicit names like `appealType` or `currencyCodeOverride` where needed.
+- **Evolving features:** Twenty recently added polymorphic relation fields (a single relation that can point to multiple object types). We have not adopted this yet, but it is relevant for future donor modeling (Person vs Company). Re-check current metadata capabilities before schema changes.
+
+---
 
 ## Open Questions
 

@@ -42,7 +42,7 @@ Plan to model agreements and installments inside Twenty metadata once relation f
 - `status` (`active`, `paused`, `canceled`, `completed`, `delinquent`)
 - `cadence` (enum: `monthly`, `quarterly`, `annual`, `weekly`, `custom`)
 - `intervalCount` (numeric; pairs with `cadence`)
-- `amountMinor`, `currency`
+- `amount` (`amountMicros`, `currencyCode`)
 - `startDate`, optional `endDate`
 - `nextExpectedAt`
 - `autoPromoteEnabled` (boolean)
@@ -56,7 +56,7 @@ Plan to model agreements and installments inside Twenty metadata once relation f
 - `recurringAgreementId`
 - `providerPaymentId`
 - `expectedAt`, `postedAt`
-- `amountMinor`, `currency`
+- `amount` (`amountMicros`, `currencyCode`)
 - `status` (`pending`, `paid`, `failed`, `refunded`, `canceled`)
 - `failureReason`, `retryCount`
 - Coding overrides: `campaignId`, `fundId`, `softCreditJson`

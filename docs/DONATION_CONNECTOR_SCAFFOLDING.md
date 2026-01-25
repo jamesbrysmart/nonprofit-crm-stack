@@ -82,7 +82,7 @@ The adapter produces the following envelope before invoking fundraising-service 
   },
   "gift": {
     "amount": { "currencyCode": "GBP", "value": 25.0 },
-    "date": "2025-10-05",
+    "giftDate": "2025-10-05",
     "externalId": "cs_test_a1B…",
     "description": "Autumn appeal",
     "metadata": {

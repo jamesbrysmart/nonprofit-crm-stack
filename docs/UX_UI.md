@@ -117,7 +117,7 @@ Actions inside drawer:
 | --- | --- | --- |
 | High-level wireframe (list + detail) | Pending | Create lightweight mock in Figma or even ASCII sketch before coding. |
 | API contract for list endpoint | Pending | Decide whether to implement new controller in fundraising-service vs. rely on Twenty REST filters. |
-| Edit fields allowed | Pending | Align with validation rules (we shouldn’t let users edit derived fields without recalculating `amountMinor`, etc.). |
+| Edit fields allowed | Pending | Align with validation rules (we shouldn’t let users edit derived amounts without recalculating `amount.amountMicros`, etc.). |
 | Status terminology in UI | Confirmed | Display “Processing Status”, “Validation Status”, “Duplicate Check”, map from existing enum names. |
 | Autosave vs. explicit save | Pending | MVP can stick with explicit “Save changes” to avoid accidental writes. |
 | Loading states | Pending | Need skeleton rows or spinner to avoid blank flash. |
@@ -132,7 +132,7 @@ Actions inside drawer:
   - `intakeSource` – optional filter by source.
   - `search` – optional string that matches staging ID, donor name/email, or external ID.
   - `limit` (default 25), `cursor` (opaque string) for pagination.
-  - `sort` – default `createdAt:desc`, allow `createdAt:asc`, `amountMinor:desc`.
+  - `sort` – default `createdAt:desc`, allow `createdAt:asc`, `amount.amountMicros:desc`.
 - **Response shape (per entry):**
   ```jsonc
   {
@@ -148,9 +148,8 @@ Actions inside drawer:
     "externalId": "pi_123",
     "giftBatchId": "batch_001",                   // nullable
     "autoPromote": false,
-    "amountMinor": 12345,
-    "currency": "GBP",
-    "dateReceived": "2025-10-08",
+    "amount": { "amountMicros": 123450000, "currencyCode": "GBP" },
+    "giftDate": "2025-10-08",
     "paymentMethod": "card",
     "giftAidEligible": false,
     "donorId": "person_456",                      // nullable
@@ -190,7 +189,7 @@ Actions inside drawer:
 ### 2.4 `POST /gift-staging`
 
 - Manual entry slice requires a lightweight `POST /gift-staging` (or equivalent proxy helper) to create a staging record directly from the admin UI.
-- Payload (MVP): `donor` block (either `{ contactId }` or `{ firstName, lastName, email? }`), `amountMinor`, `currency`, `dateReceived`. Include `intakeSource = manual_ui` for downstream filtering.
+- Payload (MVP): `donor` block (either `{ contactId }` or `{ firstName, lastName, email? }`), `amount` (`amountMicros`, `currencyCode`), `giftDate`. Include `intakeSource = manual_ui` for downstream filtering.
 - Response should return the newly created `stagingId` plus current statuses so the client can immediately poll/process without refetching the list.
 - ⚠️ Confirm idempotency expectations (e.g., hash on donor+date+amount) before launch; document behaviour if the service returns an existing staging record instead of creating a duplicate.
 

@@ -51,7 +51,7 @@ Canonical committed donation record in Twenty; this is the output of the intake 
 |---|---|---|---|
 | `amount` | Amount | `CURRENCY` | Gift amount (currency field). |
 | `feeAmount` | Fee Amount | `CURRENCY` | Fees associated with the payment (if known). |
-| `date` | Gift Date | `DATE` | Gift date for reporting/rollups. |
+| `giftDate` | Gift Date | `DATE` | Date the donor made the gift (not record entry, bank settlement, or payout date). For recurring gifts, this is the installment date. |
 | `externalId` | External ID | `TEXT` | External reference for idempotency (processor transaction ID / import row key). |
 | `paymentMethod` | Payment Method | `TEXT` | High-level method (card, direct debit, cash, cheque, bank transfer, etc.). |
 | `donorFirstName` | Donor First Name | `TEXT` | Donor snapshot for ops visibility and audit. |
@@ -103,11 +103,9 @@ Temporary staging record used to validate/dedupe/review gifts before committing 
 | `sourceFingerprint` | Source Fingerprint | `TEXT` | Idempotency fingerprint across retries/import runs. |
 | `externalId` | External ID | `TEXT` | External transaction/import identifier. |
 | `amount` | Amount | `CURRENCY` | Amount as currency field (used for review + commit). |
-| `amountMinor` | Amount (minor units) | `NUMBER` | Amount in minor units for quick filtering and display. |
 | `feeAmount` | Fee Amount | `CURRENCY` | Fee amount (if known). |
-| `feeAmountMinor` | Fee Amount (minor units) | `NUMBER` | Fee in minor units (ops convenience). |
 | `paymentMethod` | Payment Method | `TEXT` | Payment method snapshot. |
-| `dateReceived` | Date Received | `DATE` | Operational “received” date (used across intake flows). |
+| `giftDate` | Gift Date | `DATE` | Date the donor made the gift (not record entry, bank settlement, or payout date). For recurring gifts, this is the installment date. |
 | `expectedAt` | Expected At | `DATE` | Expected payment/installment date (recurring operations). |
 | `validationStatus` | Validation Status | `TEXT` | Validation state marker (WIP but used by the console). |
 | `dedupeStatus` | Dedupe Status | `TEXT` | Dedupe state marker (WIP but used by the console). |
@@ -225,7 +223,6 @@ Donor’s recurring commitment: amount, cadence, defaults, provider linkage. In 
 | `cadence` | Cadence | `TEXT` | Cadence marker (monthly/annual/etc.) (WIP). |
 | `intervalCount` | Interval Count | `NUMBER` | Interval for cadence (WIP). |
 | `amount` | Amount | `CURRENCY` | Agreement amount (currency field). |
-| `amountMinor` | Amount (minor units) | `NUMBER` | Amount in minor units (display/filter convenience). |
 | `startDate` | Start Date | `DATE` | Start date. |
 | `endDate` | End Date | `DATE` | End date (if applicable). |
 | `nextExpectedAt` | Next Expected At | `DATE` | Next expected payment/installment date. |
