@@ -37,7 +37,7 @@ Consistent and explicit environment variable configuration is crucial for inter-
     *   `DISABLE_DB_MIGRATIONS: "false"` for `server` (ensures migrations run).
     *   `DISABLE_DB_MIGRATIONS: "true"` for `worker` (prevents workers from running migrations).
 *   **Admin Credentials:** `ADMIN_EMAIL` and `ADMIN_PASSWORD` are passed from `.env` for first-boot setup.
-*   **`SERVER_URL` (local vs gateway):** The REST metadata wrapper calls back into the GraphQL metadata endpoint using `SERVER_URL`. For local Docker, `SERVER_URL` must be reachable from inside the `server` container (we set `SERVER_URL=http://server:3000` in `docker-compose.local.yml`). If `SERVER_URL` points at the gateway (`http://localhost:4000`), `/rest/metadata/*` will return 500s because the container cannot reach that address.
+*   **`SERVER_URL` (local vs gateway):** The REST metadata wrapper calls back into the GraphQL metadata endpoint using `SERVER_URL`. For local Docker, keep `SERVER_URL=http://localhost:3000` so `/rest/metadata/*` works without extra routing. In hosted deployments, set `SERVER_URL` to the public gateway/domain.
 
 ### Storage configuration (S3-compatible)
 

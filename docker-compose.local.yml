@@ -17,12 +17,7 @@ services:
   server:
     ports:
       - "3000:3000"
-    environment:
-      SERVER_URL: http://server:3000
 
   fundraising-service:
     ports:
       - "4500:4500"
-    environment:
-      TWENTY_METADATA_BASE_URL: http://server:3000/rest/metadata
-      TWENTY_METADATA_GRAPHQL_URL: http://server:3000/metadata

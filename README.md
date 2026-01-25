@@ -94,8 +94,7 @@ By default, only the gateway is published on the host. If you need local access 
 docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 ```
 
-Note: when using the gateway-only setup, set `SERVER_URL=http://localhost:4000` so the Twenty UI points API calls at the gateway rather than `:3000`.
-If you plan to run metadata scripts locally (e.g. `setup-schema.mjs`), ensure the Twenty server can resolve its own `SERVER_URL` inside Docker. The local compose file sets `SERVER_URL=http://server:3000` so REST metadata calls can loop back correctly while the gateway stays on `:4000`.
+Note: for local development we keep `SERVER_URL=http://localhost:3000` so metadata scripts (e.g. `setup-schema.mjs`) can call the REST metadata wrapper without 500s. Use the gateway URL (`http://localhost:4000`) as the public entrypoint in hosted deployments.
 
 ### Optional n8n profile
 
