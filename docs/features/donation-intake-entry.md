@@ -77,7 +77,7 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 - **Gift Aid assist**: show existing declaration status; one-click “record new declaration” inline (with template text); eligibility checkbox (UK rules simplified).
 - **Receipting toggle**: “Queue receipt” (now/later/none), respect channel consents.
 - **Error handling**: inline validation (amount > 0, date not future unless pledge, fund/appeal presence if required).
-- **Batch actions**: apply/override defaults, undo last, bulk delete uncommitted lines.
+- **Batch actions**: apply/override defaults, undo last, bulk delete unprocessed lines.
 - **Accessibility**: WCAG 2.2 AA; screen reader labels; clear error summaries.
 
 **Flow**
@@ -85,9 +85,9 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 2. Add line: pick/quick-create contact → amount/date → (auto) appeal/fund → eligibility → save.  
 3. Review suggested donors → select an existing donor or leave blank to create a new one.  
 4. Dedupe check → confirm or merge.  
-5. Post-commit hooks: rollups, receipting (if queued), reconciliation signals.
+5. Post-process hooks: rollups, receipting (if queued), reconciliation signals.
 
-> **Next iteration:** extend the pre-save duplicate check to include the latest posted gifts for the selected donor so admins can see recent committed entries, not just staging collisions.
+> **Next iteration:** extend the pre-save duplicate check to include the latest posted gifts for the selected donor so admins can see recent processed entries, not just staging collisions.
 
 ---
 
@@ -129,16 +129,16 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 - **Transformations**: trim, case-normalize, date parsing, currency normalization, amount sanitization.
 - **Validation**: required columns present; per-row checks (amount > 0; date parseable; mutually exclusive fields).
 - **Preview**: counts by outcome (create/update/skip), sample errors, dedupe warnings; **Dry-run** mode.
-- **Staging**: import to `donation_import_staging`; run matching engine; present **Review & Commit** screen.
+- **Staging**: import to `donation_import_staging`; run matching engine; present **Review & Process** screen.
 - **Matching & idempotency**:
   - Primary: `external_id` (transaction/ref) → upsert.
   - Secondary: (email/name) + amount + date window.
   - Fingerprint hash of row → skip re-imports.
-- **Partial commit**: commit valid rows; export errors with row numbers and reasons; allow fix-and-retry.
+- **Partial processing**: process valid rows; export errors with row numbers and reasons; allow fix-and-retry.
 - **Batch defaults**: set appeal/fund/date if missing.
 
 **Admin UX**
-- Stepper: Upload → Map → Validate → Preview/Dry-run → Review & Commit → Summary (with exportable error log).
+- Stepper: Upload → Map → Validate → Preview/Dry-run → Review & Process → Summary (with exportable error log).
 - Save mapping profiles per source.
 - _2025-10-23 update_: For the POC we plan to lean on Twenty’s native CSV import experience rather than ship a bespoke `/gift-staging/imports` UI. The managed extension will document the required mapping presets and rely on Twenty’s tooling to land rows in staging; we only revisit a custom shell if the platform import falls short during pilot feedback.
 
@@ -150,7 +150,7 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 - Exact: email/phone matches existing → suggest select instead of create.
 - Fuzzy: name + address/postcode similarity → suggest householding or link.
 
-**Donation-level** (pre-commit)
+**Donation-level** (pre-process)
 - Hard duplicate: same `external_reference` → block.
 - Likely duplicate: same contact + same amount + same date (±1d) → warn + require confirm.
 - Fuzzy duplicate: similar contact + amount + within window → warn w/ confidence.
@@ -170,7 +170,7 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 
 ---
 
-## Post-Commit Hooks
+## Post-Process Hooks
 
 - Rollups: contact + household + appeal/segment + tracking code totals.
 - Receipting: enqueue per org rules (instant vs batch).
@@ -181,7 +181,7 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 
 ## Admin Controls & Audit
 
-- **Batches**: status (`open`, `committed`), owner, created_at, defaults, item count, totals.
+- **Batches**: status (`open`, `processed`), owner, created_at, defaults, item count, totals.
 - **Logs**: intake events, validation failures, dedupe decisions, webhook deliveries, user actions.
 - **Exports**: batch summary CSV, reconciliation handoff.
 - **Permissions**: who can override dedupe, backdate, quick-create funds/appeals, issue refunds (if permitted).
@@ -224,7 +224,7 @@ Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong da
 - **Portal conversion**: +10–20% vs baseline (wallets/Apple Pay enabled).
 - **Auto-attribution**: ≥ 95% online gifts tagged to appeal via tracking code.
 - **Duplicate rate**: < 1% of new gifts flagged as confirmed dupes.
-- **CSV success**: ≥ 98% valid rows committed on first pass; clear error exports.
+- **CSV success**: ≥ 98% valid rows processed on first pass; clear error exports.
 
 ---
 

@@ -25,7 +25,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
   - Successful submissions surface confirmation with a link to the new Gift record in Twenty.
   - Follow-up notes captured for contact matching/deduping and future auth unification.
 - **Notes:** UI + proxy now create a Person (via `/people`) then a Gift linked by `donorId`; success banner surfaces the gift ID. The UI is served via the gateway at `/fundraising/`. Next steps: add contact matching/dedupe, and tighten UI styling.
-**Status:** ✅ Delivered (Dec 2025). Manual entry intentionally auto-promotes; follow-up improvements live under 2a/2b.
+**Status:** ✅ Delivered (Dec 2025). Manual entry intentionally auto-processes; follow-up improvements live under 2a/2b.
 
 #### 2a. Manual Entry Donor Context Panel *(New)*
 - **Owner:** Engineering + Product
@@ -39,11 +39,11 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 #### 2b. Manual Entry Duplicate & Coding Hardening *(New)*
 - **Owner:** Engineering
-- **Goal:** Extend duplicate protection to include recently committed gifts and ensure fund/appeal metadata survives the proxy when manual gifts auto-promote.
+- **Goal:** Extend duplicate protection to include recently processed gifts and ensure fund/appeal metadata survives the proxy when manual gifts auto-process.
 - **Acceptance hints:**
-  - Selecting an existing donor checks both staging rows and committed gifts (amount/date window) with actionable warnings.
+  - Selecting an existing donor checks both staging rows and processed gifts (amount/date window) with actionable warnings.
   - Fund/appeal inputs persist on the final Gift record; assumptions about Gift Aid/tracking scope documented in docs.
-  - Regression tests cover autopromote + staged pathways.
+  - Regression tests cover auto-process + staged pathways.
 - **Notes:** Captures gaps raised during Nov 2025 testing; keeps manual entry safe even without staging.
 
 ### 3. Gift Rollups & Dashboard Foundations
@@ -61,7 +61,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 - **Goal:** Promote `giftBatch` to a first-class UI construct so admins can process one chunk at a time (batch cards, defaults, completion signal).
 - **Acceptance hints:**
   - Summary chips expose open batches (counts + totals) and let admins focus the queue.
-  - Drawer and processing actions respect batch context; batch completion indicator clears once all rows are committed.
+  - Drawer and processing actions respect batch context; batch completion indicator clears once all rows are processed.
   - Batch-level “Process all ready rows” guarded by validation/confirmation.
 - **Notes:** Builds on the November summary-bar refactor; required groundwork for enhanced CSV/import tooling.
 
@@ -173,7 +173,7 @@ Working list of tickets focused on validating the Twenty-managed extension appro
 
 ### 22. Recurring Agreement Parity for Manual/Auto Flows *(New)*
 - **Owner:** Engineering
-- **Goal:** Ensure gifts created outside the staging processor (manual entry auto-promote, connector auto-promote) still update recurring agreements (next expected date, status).
+- **Goal:** Ensure gifts created outside the staging processor (manual entry auto-process, connector auto-process) still update recurring agreements (next expected date, status).
 - **Acceptance hints:**
   - Manual entry + Stripe webhook paths trigger the same `RecurringAgreementService.updateAgreement` logic as staged rows.
   - Tests cover both paths; documentation updated to reflect the behaviour.

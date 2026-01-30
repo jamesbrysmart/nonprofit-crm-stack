@@ -40,11 +40,11 @@ This plan reflects the current decision: API-first is the default posture for cu
 - **Intake**: Inbound gifts (manual UI, CSV, connectors, portal webhooks) land in Twenty staging objects. Capture raw payload, channel metadata, and ingestion timestamps.
 - **Validation**: Synchronous rules flag missing fields, amount anomalies, consent requirements, and run duplicate checks (e.g. `/people/duplicates`). AI-assisted reviews can layer on top.
 - **Review & Mapping**: Users (or automated flows) resolve donor/campaign/fund mapping, edit fields, or merge with existing donors. Audit log records each action.
-- **Promotion**: Approved staging records trigger write-through to Twenty via the fundraising-service proxy; on success, status flips to “posted” and stores the created Gift ID.
+- **Processing**: Approved staging records trigger write-through to Twenty via the fundraising-service proxy; on success, status flips to “posted” and stores the created Gift ID.
 - **Post actions**: Downstream automations (receipts, Gift Aid queues) key off the posted state to avoid firing on unreviewed staging records.
-- **Error handling**: Failed promotions stay in staging with surfaced errors, allowing retries or rollbacks without orphaned data in Twenty.
+- **Error handling**: Failed processing stays in staging with surfaced errors, allowing retries or rollbacks without orphaned data in Twenty.
 
-_Open design questions: batching vs single record promotion, SLA expectations for different channels, how to expose staging state in the homepage UI, and whether certain connectors bypass staging with heightened validation._
+_Open design questions: batching vs single record processing, SLA expectations for different channels, how to expose staging state in the homepage UI, and whether certain connectors bypass staging with heightened validation._
 
 ### 3.2 Managed Extension Auth Enforcement (Fundraising)
 
@@ -68,7 +68,7 @@ _Open design questions: batching vs single record promotion, SLA expectations fo
 ## 4. Open Questions & Work Items
 
 - **API throttling**: What shared backpressure strategy do we enforce across all Twenty callers?
-- **Staging lifecycle**: Where do we record in-flight gift entries/imports, and how do we promote them to canonical Gifts?
+- **Staging lifecycle**: Where do we record in-flight gift entries/imports, and how do we process them into canonical Gifts?
 - **Conflict resolution**: How are simultaneous edits (Twenty UI vs managed UI) surfaced and resolved?
 - **Tenancy**: For the single-tenant pilot model, do we provision separate databases or schemas per org? What changes if we move to multi-tenant?
 - **AI readiness**: What additional enrichment or embeddings do we store to power AI assistants without leaking PII?
@@ -96,10 +96,10 @@ _Update this file whenever spikes conclude or new constraints emerge so future m
   dedupe (services/fundraising-service/src/gift/gift.service.ts:342), optionally /people to create the contact
   (services/fundraising-service/src/gift/gift.service.ts:297), and finally /gifts (services/fundraising-service/
   src/gift/gift.service.ts:81). If gift staging is enabled we add POST /giftStagings on entry (services/fundraising-
-  service/src/gift-staging/gift-staging.service.ts:164) plus a PATCH when we mark it committed (services/fundraising-
+  service/src/gift-staging/gift-staging.service.ts:164) plus a PATCH when we mark it processed (services/fundraising-
   service/src/gift-staging/gift-staging.service.ts:321). That means a burst of 25–50 gifts/minute is enough to drain
   the 100 rpm allowance even before considering other traffic.
-- Deferred/manual processing multiplies the load: each staged record a reviewer commits triggers GET /
+- Deferred/manual processing multiplies the load: each staged record a reviewer processes triggers GET /
   giftStagings/:id, POST /gifts, PATCH /giftStaging, and possibly PATCH /recurringAgreements in
   GiftStagingProcessingService.processGift (services/fundraising-service/src/gift-staging/gift-staging-
   processing.service.ts:45, 173, 237, 243). Stripe webhooks do the same fan-out and also update the agreement
@@ -119,7 +119,7 @@ _Update this file whenever spikes conclude or new constraints emerge so future m
   429s so we know whether we’re flirting with the cap.
 - For high-volume connectors (Stripe, future JustGiving, CSV imports) stop doing synchronous fan-out; acknowledge the
   webhook quickly, enqueue the normalized payload, and let a worker drain the queue at a controlled rate with retries.
-  If staging is enabled, keep “auto-promote” off by default whenever we detect we’re already throttled.
+  If staging is enabled, keep “auto-process” off by default whenever we detect we’re already throttled.
 - Throttle the rollup engine: lower the page size from 200, add await sleep between page fetches, and gate the
   concurrency in buildChildRecordIndex so a full rebuild can’t hammer Twenty; alternatively, split full rebuilds into
   smaller cron jobs that process one parent batch per minute.

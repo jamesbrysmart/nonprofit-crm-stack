@@ -34,7 +34,7 @@ This feature aims to **reduce manual effort, detect discrepancies early, and imp
 ## Functional Overview
 
 ### 1. **Data Ingestion**
-All external donation activity continues to flow through the existing **gift staging** pipeline described in the Intake/Staging specs. We simply add a `giftPayoutId` relation on staging rows (and later the committed gifts) so each external transaction knows which payout/bank deposit it belongs to.
+All external donation activity continues to flow through the existing **gift staging** pipeline described in the Intake/Staging specs. We simply add a `giftPayoutId` relation on staging rows (and later the processed gifts) so each external transaction knows which payout/bank deposit it belongs to.
 
 Support two ingestion paths:
 - **Direct integrations** (Stripe, GoCardless, PayPal, JustGiving): API/webhooks pull transactions and payout references on a schedule. Each payload lands in `giftStaging` with `providerPaymentId`, `feeAmount`, and optional `giftPayoutId` if we already know the payout.
@@ -161,7 +161,7 @@ Rollups (powered by fundraising-service’s rollup engine) populate `crmGrossAmo
 
 1. **Create payout** – via integration (future), CSV import, or manual entry. The payout record stores deposit metadata and, when possible, the list/count of expected transactions.
 2. **Ingest transactions** – all external donations enter `giftStaging` with `giftPayoutId` + fee data. Manual gifts can also be linked to a payout when created.
-3. **Validate & promote** – staging follows the existing Stage → Validate → Commit flow. When a row promotes, its `giftPayoutId` moves to the final `gift` record.
+3. **Validate & process** – staging follows the existing Stage → Validate → Process flow. When a row processes, its `giftPayoutId` moves to the final `gift` record.
 4. **Rollups & status** – rollupEngine calculates CRM gross/fee totals vs. payout totals. Status flips to `reconciled` automatically when `(crmGrossAmount - crmFeeAmount) === netAmount` and no pending staging remains; otherwise it stays `pending`, `partially_reconciled`, or `variance`.
 5. **Resolution** – ops link missing gifts, create new ones, or record an explained variance. Finance confirms the payout once satisfied.
 

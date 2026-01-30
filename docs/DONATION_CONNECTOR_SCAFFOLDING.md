@@ -172,7 +172,7 @@ This process validates the end-to-end flow from a Stripe payment to a Gift recor
 ## 8. Current Status (2025-10-03)
 - **Webhook delivery proven:** `stripe listen --forward-to http://localhost:4500/api/fundraising/webhooks/stripe` now hits the Nest controller and the adapter logs `stripe_checkout_session_forward` attempts.
 - **Contact dedupe minimised:** fundraising-service now checks Twenty’s `/people/duplicates` endpoint using the Stripe email before creating a Person. If a match exists we reuse the existing `personId`; otherwise we create a new record.
-- **Auto-promote guardrails:** Stripe payloads default to `autoPromote=true`, but we now downgrade to staging review whenever the checkout session lacks a confident email match (e.g., donor skipped the email field); this keeps medium-confidence entries in the queue instead of posting directly.
+- **Auto-process guardrails:** Stripe payloads default to `autoProcess=true`, but we now downgrade to staging review whenever the checkout session lacks a confident email match (e.g., donor skipped the email field); this keeps medium-confidence entries in the queue instead of posting directly.
 - **Stripe session traceability:** currently lives in logs only; once metadata fields land we can persist identifiers directly on the Gift records.
 - **Happy path verified:** 2025-10-03 manual smoke test (unique email flow) confirmed `checkout.session.completed` → Person create → Gift create succeeds without errors.
 - **Duplicate reuse verified:** 2025-10-03 webhook replay with an existing donor email reused the Person returned by `/people/duplicates` and created the Gift without errors.

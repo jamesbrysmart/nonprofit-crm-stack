@@ -31,7 +31,7 @@ Current state:
 > Suggested diagram nodes:
 > - Twenty core: `person`, `company`, `opportunity`
 > - Fundraising custom objects: `gift`, `giftStaging`, `recurringAgreement`, `appeal`, `solicitationSnapshot`, `giftPayout`, `household`
-> - Main relations: `giftStaging → gift` (promotion), and `gift/giftStaging → donor/appeal/recurringAgreement/giftPayout` (links)
+> - Main relations: `giftStaging → gift` (processing), and `gift/giftStaging → donor/appeal/recurringAgreement/giftPayout` (links)
 
 ---
 
@@ -44,7 +44,7 @@ Tables list:
 
 ### 1) Gift (`gift`)
 **What it represents**
-Canonical committed donation record in Twenty; this is the output of the intake + staging pipeline.
+Canonical processed donation record in Twenty; this is the output of the intake + staging pipeline.
 
 **Scripted fields**
 | API name | Label | Type | Purpose |
@@ -93,7 +93,7 @@ Canonical committed donation record in Twenty; this is the output of the intake 
 
 ### 2) Gift Staging (`giftStaging`)
 **What it represents**
-Temporary staging record used to validate/dedupe/review gifts before committing a canonical Gift.
+Temporary staging record used to validate/dedupe/review gifts before processing a canonical Gift.
 
 **Scripted fields**
 | API name | Label | Type | Purpose |
@@ -102,15 +102,15 @@ Temporary staging record used to validate/dedupe/review gifts before committing 
 | `intakeSource` | Intake Source | `TEXT` | Ingestion channel (manual entry, webhook, import, etc.). |
 | `sourceFingerprint` | Source Fingerprint | `TEXT` | Idempotency fingerprint across retries/import runs. |
 | `externalId` | External ID | `TEXT` | External transaction/import identifier. |
-| `amount` | Amount | `CURRENCY` | Amount as currency field (used for review + commit). |
+| `amount` | Amount | `CURRENCY` | Amount as currency field (used for review + processing). |
 | `feeAmount` | Fee Amount | `CURRENCY` | Fee amount (if known). |
 | `paymentMethod` | Payment Method | `TEXT` | Payment method snapshot. |
 | `giftDate` | Gift Date | `DATE` | Date the donor made the gift (not record entry, bank settlement, or payout date). For recurring gifts, this is the installment date. |
 | `expectedAt` | Expected At | `DATE` | Expected payment/installment date (recurring operations). |
 | `validationStatus` | Validation Status | `TEXT` | Validation state marker (WIP but used by the console). |
 | `dedupeStatus` | Dedupe Status | `TEXT` | Dedupe state marker (WIP but used by the console). |
-| `promotionStatus` | Promotion Status | `TEXT` | Processing/commit lifecycle marker (legacy naming; see Status section). |
-| `autoPromote` | Auto Promote | `BOOLEAN` | Whether rows can be auto-processed (policy-driven). |
+| `processingStatus` | Processing Status | `TEXT` | Processing lifecycle marker (see Status section). |
+| `autoProcess` | Auto Process | `BOOLEAN` | Whether rows can be auto-processed (policy-driven). |
 | `giftAidEligible` | Gift Aid Eligible | `BOOLEAN` | UK-only eligibility marker (WIP). |
 | `giftBatchId` | Gift Batch ID | `TEXT` | Batch/group marker (WIP; currently an ID string). |
 | `provider` | Provider | `TEXT` | Provider identifier (stripe/gocardless/manual/import). |
@@ -136,7 +136,7 @@ Temporary staging record used to validate/dedupe/review gifts before committing 
 | `appeal` | Appeal | `RELATION` | `appeal` | Attribution for appeal reporting. |
 | `recurringAgreement` | Recurring Agreement | `RELATION` | `recurringAgreement` | Installment linkage for recurring operations. |
 | `giftPayout` | Gift Payout | `RELATION` | `giftPayout` | Links staged rows to a payout/deposit for reconciliation. |
-| `gift` | Gift | `RELATION` | `gift` | Linked committed gift after promotion. |
+| `gift` | Gift | `RELATION` | `gift` | Linked processed gift after processing. |
 
 > **Screenshot placeholder — Gift staging record review**
 >
@@ -166,7 +166,7 @@ Processor payout or bank deposit grouping multiple gifts for reconciliation.
 | `matchedGrossAmount` | Matched Gross Amount | `CURRENCY` | Sum of linked gifts (gross). |
 | `matchedFeeAmount` | Matched Fee Amount | `CURRENCY` | Sum of linked gift fees. |
 | `matchedGiftCount` | Matched Gift Count | `NUMBER` | Count of linked gifts. |
-| `pendingStagingCount` | Pending Staging Count | `NUMBER` | Count of staged rows linked but not yet committed. |
+| `pendingStagingCount` | Pending Staging Count | `NUMBER` | Count of staged rows linked but not yet processed. |
 
 ---
 
@@ -226,7 +226,7 @@ Donor’s recurring commitment: amount, cadence, defaults, provider linkage. In 
 | `startDate` | Start Date | `DATE` | Start date. |
 | `endDate` | End Date | `DATE` | End date (if applicable). |
 | `nextExpectedAt` | Next Expected At | `DATE` | Next expected payment/installment date. |
-| `autoPromoteEnabled` | Auto Promote Enabled | `BOOLEAN` | Whether installments can auto-promote (policy-driven). |
+| `autoProcessEnabled` | Auto Process Enabled | `BOOLEAN` | Whether installments can auto-process (policy-driven). |
 | `defaultAppealId` | Default Appeal ID | `TEXT` | Default appeal attribution (likely becomes relation later). |
 | `defaultFundId` | Default Fund ID | `TEXT` | Default fund/designation (roadmap; likely becomes relation). |
 | `defaultSoftCreditJson` | Default Soft Credit JSON | `RAW_JSON` | Placeholder for soft-credit defaults (WIP). |
@@ -322,13 +322,14 @@ The provisioning script also adds fundraising-related fields to core objects.
 ## Status conventions (WIP)
 This section lists known values in current POC flows and should be treated as evolving.
 
-### Gift staging lifecycle (current naming uses `promotionStatus`)
+### Gift staging lifecycle
 Examples used in the POC console/processing flow:
 - `pending`
-- `ready_for_commit`
-- `committing`
-- `committed`
-- `commit_failed`
+- `pending`
+- `ready_for_process`
+- `processing`
+- `processed`
+- `process_failed`
 
 ### Validation and dedupe
 Examples:

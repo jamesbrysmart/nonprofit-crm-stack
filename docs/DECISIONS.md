@@ -70,7 +70,7 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 **Context**
 - Twenty is rolling out an official extensibility surface (serverless functions, AI agents, packaged `twenty-apps`) distributed via `twenty-sdk` (command name remains `twenty`), with `services/twenty-core/packages/twenty-apps/hello-world` and `create-twenty-app` as the reference on-ramps.
 - Our dev stack currently forks `twenty-core`, adds bespoke services (rollup engine, fundraising-service), and treats Twenty as a submodule to unlock deeper schema and UX control than the Hello World pattern demonstrates.
-- We have limited visibility into the near-term capabilities of Twenty’s managed extensibility (metadata coverage, aggregation rules, deployment pathways), so committing fully today risks losing required flexibility for the modular nonprofit CRM.
+- We have limited visibility into the near-term capabilities of Twenty’s managed extensibility (metadata coverage, aggregation rules, deployment pathways), so processing fully today risks losing required flexibility for the modular nonprofit CRM.
 
 **Options**
 1. **Fork-first (status quo)** – Keep Twenty as a pinned submodule, layer our own services, and ship features like the rollup engine independently.
@@ -127,18 +127,18 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 **Context**
 - Donation intake spans managed UI gift entry, CSV imports, portal/webhook feeds, and future connectors. Each source carries high risk of user error (duplicate or misspelled donors, incorrect amounts, wrong campaign/fund attribution).
 - Downstream automation—receipts, acknowledgements, Gift Aid claims—can trigger before humans notice mistakes, creating costly clean-up.
-- Industry patterns (e.g. Salesforce Gift Entry) rely on staging or “batch” records to validate, dedupe, and map donations prior to promoting a canonical gift.
+- Industry patterns (e.g. Salesforce Gift Entry) rely on staging or “batch” records to validate, dedupe, and map donations prior to processing into a canonical gift.
 
 **Goals**
-- Provide a controlled “staging” area where inbound gifts can be reviewed, enriched, matched to donors/campaigns/funds, and flagged for issues before committing to Twenty.
+- Provide a controlled “staging” area where inbound gifts can be reviewed, enriched, matched to donors/campaigns/funds, and flagged for issues before processing to Twenty.
 - Support multiple intake channels with consistent validation rules and audit trails (who approved, when, original payload).
 - Enable automated checks (duplicate detection, amount thresholds, task assignment) while allowing human intervention when needed.
 - Ensure the staging lifecycle integrates with the operational data-plane decision (D-0000) so homepage widgets, AI summaries, and reporting can surface both pending and posted gifts.
 
 **Decision (MVP)**
 - Persist staging entirely inside Twenty using the custom objects provisioned via the metadata API (no fundraising-service database).
-- Allow connectors and manual entry to auto-promote when validations pass, with admins able to pause/override via the staging object workflow.
-- Surface downstream automation (receipts, Gift Aid checks) only after a staging record has been promoted to a Twenty Gift to keep side effects deterministic.
+- Allow connectors and manual entry to auto-process when validations pass, with admins able to pause/override via the staging object workflow.
+- Surface downstream automation (receipts, Gift Aid checks) only after a staging record has been processed into a Twenty Gift to keep side effects deterministic.
 
 **Rejected / deferred alternatives**
 - **Service-owned staging tables** – rejected (2025-10) to avoid operating a second database and duplicating schema for the MVP.
@@ -159,7 +159,7 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 
 **Next actions**
 1. Document detailed staging lifecycle and data model assumptions in `ARCHITECTURE.md`, ensuring they reference the Twenty metadata objects.
-2. Validate metadata automation scripts cover the staging object lifecycle (create, update, promote) and capture any gaps.
+2. Validate metadata automation scripts cover the staging object lifecycle (create, update, process) and capture any gaps.
 3. Update this decision once pilot feedback indicates changes needed to the Twenty-first staging model.
 
 ---

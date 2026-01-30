@@ -45,7 +45,7 @@ Plan to model agreements and installments inside Twenty metadata once relation f
 - `amount` (`amountMicros`, `currencyCode`)
 - `startDate`, optional `endDate`
 - `nextExpectedAt`
-- `autoPromoteEnabled` (boolean)
+- `autoProcessEnabled` (boolean)
 - Defaults: `defaultCampaignId`, `defaultFundId`, `defaultSoftCreditJson`
 - Gift Aid: `giftAidDeclarationId`
 - Provider linkage: `provider` (`stripe`, `gocardless`, `manual`, `imported`), `providerAgreementId`, optional `providerPaymentMethodId`, `mandateReference`, and `providerContext` (JSON blob for rail-specific metadata like scheme or plan nickname)
@@ -106,21 +106,21 @@ Define thresholds (e.g., failure counts, timing) during Phase 1 implementation.
 ### 3a. First Slice Flow Blueprint
 
 **Stripe (card)**
-- Checkout/portal success → fundraising-service ensures `RecurringAgreement` exists/updates defaults, `autoPromoteEnabled=true`.
-- `checkout.session.completed` / `invoice.payment_succeeded` webhooks create a `GiftStaging` row with `autoPromote=true`, `recurringAgreementId`, `providerPaymentId`, `expectedAt`.
-- Staging auto-promotes on success → creates `Gift` (copies defaults, stores `recurringAgreementId` & `providerPaymentId`), updates agreement `nextExpectedAt`.
+- Checkout/portal success → fundraising-service ensures `RecurringAgreement` exists/updates defaults, `autoProcessEnabled=true`.
+- `checkout.session.completed` / `invoice.payment_succeeded` webhooks create a `GiftStaging` row with `autoProcess=true`, `recurringAgreementId`, `providerPaymentId`, `expectedAt`.
+- Staging auto-processes on success → creates `Gift` (copies defaults, stores `recurringAgreementId` & `providerPaymentId`), updates agreement `nextExpectedAt`.
 - Failures (`invoice.payment_failed`) mark staging `validationStatus=failed`, agreement `status=delinquent`; recovery flips back to `active`.
 
 **GoCardless (direct debit)**
-- Mandate/subscription creation (outside scope) seeds/updates `RecurringAgreement` (`autoPromoteEnabled=false`, `mandateReference`).
+- Mandate/subscription creation (outside scope) seeds/updates `RecurringAgreement` (`autoProcessEnabled=false`, `mandateReference`).
 - `payment_created` webhook logs/updates staging row (`expectedAt`, `providerPaymentId`, `providerContext.providerStatus=pending`); remains pending.
-- `payment_confirmed` → staging auto-promote: create `Gift`, update `nextExpectedAt`, mark agreement `status=active`.
+- `payment_confirmed` → staging auto-process: create `Gift`, update `nextExpectedAt`, mark agreement `status=active`.
 - `payment_failed` / `payment_cancelled` → staging `validationStatus=failed`, agreement `status=delinquent` or `canceled` (via service logic).
 
 **Manual/import**
-- Admin or CSV import creates/updates `RecurringAgreement` (`provider=manual|imported`, `autoPromoteEnabled=false`).
+- Admin or CSV import creates/updates `RecurringAgreement` (`provider=manual|imported`, `autoProcessEnabled=false`).
 - Each payment entry generates a staging row with `expectedAt`, amount override, and optional `providerPaymentId`.
-- Admin uses staging UI to review, adjust, then process. Promotion creates `Gift`, updates `nextExpectedAt`. Missed periods surfaced by comparing agreement schedule vs. last posted gift.
+- Admin uses staging UI to review, adjust, then process. Processing creates `Gift`, updates `nextExpectedAt`. Missed periods surfaced by comparing agreement schedule vs. last posted gift.
 
 **Admin surfaces**
 - Agreement overview: status/intake chips highlight overdue, paused/canceled, and delinquent plans; table remains the drill-down (donor, amount, cadence, next expected, status, provider).

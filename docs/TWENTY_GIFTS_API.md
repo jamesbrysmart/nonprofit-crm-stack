@@ -99,12 +99,28 @@ Quick check:
 
 ```bash
 cd services/fundraising-service
-GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts
+npm run smoke:gifts:docker
 ```
 
 The script exercises create → list → get → update → delete through the proxy so any regression shows up before manual metadata work.
 
 > Always re-run the smoke script after significant gateway/service changes so we catch regressions before touching metadata or UI flows.
+
+Note: `smoke:gifts:docker` reads `TWENTY_API_KEY` from the repo `.env` (or set `SMOKE_AUTH_TOKEN` explicitly).
+
+Host-side alternative (only if your host can reach the gateway directly):
+
+```bash
+cd services/fundraising-service
+GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts
+```
+
+Hosted/VPS alternative (untested; verify before relying on it in automation):
+
+```bash
+cd services/fundraising-service
+SMOKE_GIFTS_BASE=https://your-gateway SMOKE_AUTH_TOKEN=<api-key> npm run smoke:gifts
+```
 
 ### Validation guardrails & contact auto-create
 

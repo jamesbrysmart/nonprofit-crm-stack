@@ -98,7 +98,7 @@ Actions inside drawer:
 - **Listing endpoint:** we do not yet have a dedicated `GET /gift-staging` proxy. Options:
   - Quick path: expose a read endpoint in fundraising-service that proxies Twenty’s metadata list (with filters). Needs pagination + sorting for list performance.
   - Longer-term: shift to local mirror once operational DB lands (per `ARCHITECTURE.md`).
-- **Field naming:** backend still uses `promotionStatus`. UI should present it as “Processing Status” but maybe keep the raw key visible somewhere for debugging until metadata rename happens.
+- **Field naming:** backend uses `processingStatus`. UI should present it as “Processing Status” and can surface the raw key in debug views if helpful.
 - **Error detail:** new `errorDetail` string is already persisted when processing fails—UI should display this prominently.
 - **Permissions:** reuse whatever auth we apply to the admin gift form for now; flag follow-up for role-based access (only staff with staging rights should see these controls).
 - **Batch context:** we only store `giftBatchId`. If we want to show batch label/risk we either query Twenty for the metadata or cache it locally.
@@ -128,7 +128,7 @@ Actions inside drawer:
 
 - **Purpose:** Fetch paginated staging records for review queue.
 - **Query params (proposed):**
-  - `status` (`ready_for_commit`, `commit_failed`, `pending`, etc.) – optional, multi-value allowed.
+  - `status` (`ready_for_process`, `process_failed`, `pending`, etc.) – optional, multi-value allowed.
   - `intakeSource` – optional filter by source.
   - `search` – optional string that matches staging ID, donor name/email, or external ID.
   - `limit` (default 25), `cursor` (opaque string) for pagination.
@@ -139,7 +139,7 @@ Actions inside drawer:
     "id": "stg_123",
     "createdAt": "2025-10-08T12:34:56Z",
     "updatedAt": "2025-10-08T12:35:10Z",
-    "processingStatus": "ready_for_commit",       // maps from promotionStatus
+    "processingStatus": "ready_for_process",
     "validationStatus": "passed",
     "dedupeStatus": "passed",
     "errorDetail": "network error",               // nullable
@@ -147,7 +147,7 @@ Actions inside drawer:
     "sourceFingerprint": "stripe:pi_123",
     "externalId": "pi_123",
     "giftBatchId": "batch_001",                   // nullable
-    "autoPromote": false,
+    "autoProcess": false,
     "amount": { "amountMicros": 123450000, "currencyCode": "GBP" },
     "giftDate": "2025-10-08",
     "paymentMethod": "card",
@@ -172,7 +172,7 @@ Actions inside drawer:
 - **Implementation notes:**
   - Start with a simple proxy to Twenty’s `/giftStagings` REST endpoint; map fields into the shape above.
   - Exclude `rawPayload` from list response (fetch on detail by ID).
-  - Provide derived `processingStatus` string; keep raw `promotionStatus` internal.
+  - Provide `processingStatus` directly in the response.
   - If Twenty lacks `createdAt`/`updatedAt`, fall back to timestamps stored in staging payload or omit until schema updated.
 
 ### 2.2 `GET /gift-staging/:id`
@@ -221,7 +221,7 @@ Actions inside drawer:
    - If duplicates surface, select an existing contact or choose “create new contact” to proceed.
    - On successful staging create, immediately trigger “Process now” and display inline toast with gift ID plus link to staging detail (temporary: plain text summary until drawer ships).
 3. **Verification**
-   - Fetch staging record by ID to ensure `promotionStatus` progressed to `committed`.
+   - Fetch staging record by ID to ensure `processingStatus` progressed to `processed`.
    - Retrieve resulting gift via Twenty API and confirm amount, donor linkage, and timestamps.
    - Record findings (screenshots/logs) in `REPORTING_EVIDENCE.md` or linked test run so we can reuse the scenario during regressions.
 
@@ -318,7 +318,7 @@ _Migration log:_ Manual gift entry + donor search modal now rely on the Tailwind
   - Supports multi-select checkboxes for bulk unlink, pagination (25 rows), and a search box that matches gift id, donor name/email, or external reference.
   - Empty state copy: “No gifts linked yet” with a primary “Link gifts” button.
 - **Inline actions**:
-  - `Link gifts` opens a slide-in selector showing unmatched gifts. Filters: donor lookup, amount min/max, date range, payout batch, gift batch. Selected gifts appear in a confirmation list before committing.
+  - `Link gifts` opens a slide-in selector showing unmatched gifts. Filters: donor lookup, amount min/max, date range, payout batch, gift batch. Selected gifts appear in a confirmation list before processing.
   - `Unlink` is available per row (kebab menu) and in bulk via the checkboxes; confirmation modal summarises the variance impact (“Removing 2 gifts will increase variance by £X”).
   - After link/unlink, the drawer refreshes the gifts table and recomputes the rollup cards; show a toast summarising the result (e.g., “Linked 3 gifts, variance now £0.00”).
 - **State messaging**:

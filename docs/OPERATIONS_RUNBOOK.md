@@ -29,9 +29,16 @@ docker compose up -d
 
 > Note: When running these commands through Codex CLI, rerun with a higher timeout if the harness cancels them early—otherwise long pulls may stop before `worker`/`gateway` come up.
 
+Local development with host-accessible ports (UI, `server:3000`, db/redis/minio):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+```
+
 Key checks while starting:
 - `docker compose ps` – expect `server`, `fundraising-service`, `gateway`, `redis`, `db` to reach `healthy`.
-- `GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts` from `services/fundraising-service` – validates proxy → Twenty flow and leaves a “Persistent Smoke Test Gift” in Twenty for UI confirmation. (Without the `GATEWAY_BASE` override the host can’t resolve `gateway:80`.)
+- `npm run smoke:gifts:docker` from `services/fundraising-service` – runs the smoke script inside the fundraising-service container so `gateway:80` resolves reliably, and leaves a “Persistent Smoke Test Gift” in Twenty for UI confirmation. Reads `TWENTY_API_KEY` from `.env` (or set `SMOKE_AUTH_TOKEN` explicitly).
+- `GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts` from `services/fundraising-service` – host-side alternative if you can reach the gateway directly. (Without the `GATEWAY_BASE` override the host can’t resolve `gateway:80`.)
 - If you are running metadata provisioning scripts locally, keep `SERVER_URL=http://localhost:3000` so REST metadata calls can loop back without 500s. Use the gateway URL in hosted deployments.
 
 ## 2. Health & readiness endpoints
@@ -68,7 +75,9 @@ Use `docker compose ps <service>` to see the health result and `docker compose l
 
 Scenario | Command(s)
 ---|---
-Run smoke test only | `cd services/fundraising-service && GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts`
+Run smoke test (preferred local) | `cd services/fundraising-service && npm run smoke:gifts:docker`
+Run smoke test (host-side) | `cd services/fundraising-service && GATEWAY_BASE=http://localhost:4000 npm run smoke:gifts`
+Run smoke test (hosted/VPS, unverified) | `cd services/fundraising-service && SMOKE_GIFTS_BASE=https://your-gateway SMOKE_AUTH_TOKEN=<api-key> npm run smoke:gifts`
 Check environment variables inside a container | `docker compose exec fundraising-service env | sort`
 Restart a single service | `docker compose restart fundraising-service`
 Inspect Compose health details | 1. Find the container name with `docker compose ps`<br>2. `docker inspect --format '{{json .State.Health}}' <container_name>`
@@ -94,7 +103,7 @@ Inspect Compose health details | 1. Find the container name with `docker compose
 ## 7. Known quirks (tracked)
 
 - Twenty core still logs `Created new shared pg Pool for key "localhost|5432|postgres||no-ssl"` during boot. It is noisy but harmless.
-- Metadata automation for lookup fields remains manual; run `npm run smoke:gifts` after any metadata change to confirm proxy health.
+- Metadata automation for lookup fields remains manual; run `npm run smoke:gifts:docker` after any metadata change to confirm proxy health.
 
 ---
 

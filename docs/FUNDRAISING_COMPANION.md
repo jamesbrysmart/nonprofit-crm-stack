@@ -48,17 +48,17 @@ The project is explicitly modular, but today the only implemented module is fund
 
 ### 1) Gift staging queue (review → resolve → process)
 **What it’s for**
-A staging queue is the safety layer between inbound donation capture and committed CRM records. It supports validation, dedupe, and review workflows so the CRM stays clean even when inputs are messy (manual entry, webhooks, future imports).
+A staging queue is the safety layer between inbound donation capture and processed CRM records. It supports validation, dedupe, and review workflows so the CRM stays clean even when inputs are messy (manual entry, webhooks, future imports).
 
 **What exists in the POC UI**
 - A queue of staged gifts with filters and summary counts.
 - A “drawer-first” review workflow (review a row, resolve issues, then act).
-- Actions to mark items ready and to process/commit when appropriate.
+- Actions to mark items ready and to process when appropriate.
 - Duplicate-related indicators to help staff focus on rows that need attention.
 
 **Why this is valuable**
 - Makes ingestion resilient: problems are handled in the queue rather than “poisoning” core data.
-- Gives ops staff a predictable daily workflow: review, fix, commit.
+- Gives ops staff a predictable daily workflow: review, fix, process.
 - Creates a foundation for imports and integrations without multiplying bespoke admin screens.
 
 **References (background design)**
@@ -241,4 +241,3 @@ Today, we reference these modules only as roadmap context. The fundraising slice
 - Appeals direction: `docs/features/campaigns-appeals.md`
 - Households direction: `docs/features/households.md`
 - Reconciliation direction: `docs/features/donation-reconciliation.md`
-
