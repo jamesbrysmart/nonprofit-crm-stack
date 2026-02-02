@@ -57,7 +57,6 @@ These are helpful when implementing, but validate against upstream/API schemas w
 
 These look duplicative or at risk of drifting. Preferred approach is to pick one canonical doc and turn the other into a short pointer.
 
-- `GIFT_STAGING_PROCESSING.md` vs `solutions/gift-staging-processing.md` — likely consolidate into the solutions doc + make the short file a pointer.
 - `data-model.md` vs `FUNDRAISING_DATA_MODEL.md` (and relevant ADRs) — consider making `data-model.md` a pointer or merging the overlapping sections.
 - `ARCHITECTURE.md` overlaps with `DECISIONS.md` (data plane strategy) — decide whether `ARCHITECTURE.md` remains “working notes” or becomes a pointer to the ADR(s).
 - `TWENTY_*` reference docs — consider adding “last verified against version X on date Y” to reduce accidental staleness.

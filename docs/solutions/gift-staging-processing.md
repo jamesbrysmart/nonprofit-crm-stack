@@ -19,6 +19,28 @@
 
 **Diagnostics contract (vNext):** any API response that returns staging records should include `processingDiagnostics` (eligibility, blockers, warnings, identityConfidence). Treat this as the stable signal that Stage 3 will rely on for admin-facing reasoning and bulk workflows, even if UI work lands later. On create, if the fresh staging read does not yet include diagnostics, fall back to the normalized payload’s computed diagnostics; once persisted, the staging record remains the source of truth.
 
+## Implementation alignment (as of 2026-01-30)
+
+This is a brief reality-check so the contract stays grounded in what ships today.
+
+- Staging accepts `donorFirstName`/`donorLastName`/`donorEmail` without creating a `Person`; donor resolution happens at processing time and writes back `donorId` on success.
+- Dedupe runs on staging create using donor/contact fields when present, sets `dedupeDiagnostics` + `dedupeStatus`, and **does not** auto-link `donorId`.
+- `processingDiagnostics` is persisted on staging rows and included in list/get/create responses (with normalized payload fallback on create).
+- Name-only identity yields weak confidence (not a blocker); missing all identity fields remains a blocker.
+- `gift_date_missing` is treated as a blocker in processing eligibility.
+
+## Stage 3 UX alignment (what this enables)
+
+The contract above is intentionally UX-facing. It is designed to support:
+
+- A **blocker-first** queue lens (Eligible now vs Needs attention).
+- An **edit-first** review drawer that keeps core fields (amount/date/donor) visible and treats diagnostics as assistive.
+- **Donor match at scale** by surfacing staged donor details with suggested matches (no auto-linking in staging).
+- **Batch review** via a "prepare for processing" sequence that cycles through unready rows without requiring list navigation.
+- A **deliberate processing moment** that explains what will happen and why it is safe.
+
+These patterns should be treated as the intended admin workflow; UI implementations can evolve as long as they preserve the contract.
+
 ## Key Inputs & References
 
 - `gift_staging` object (metadata draft in `gift-schema-alignment.md`)
@@ -153,13 +175,12 @@ Before processing, the system must be able to summarize:
 | Processing worker/service | Decide if the row can process, transform payload to gift schema, call Twenty, update staging status. |
 | Human reviewer | Approve or fix rows that stall in pending/review states. |
 
-### Current admin tooling (2025-10-23)
+### Current admin tooling (snapshot, early 2026)
 
-- **Queue table** exposes inline actions for “Mark ready” (forces `processingStatus=ready_for_process`) and “Process now” (hits `/gift-staging/:id/process`), alongside a “Resolve duplicates” shortcut that opens the drawer focused on dedupe diagnostics.
-- **Detail drawer** lets reviewers adjust amount/currency/date, coding fields, batch assignment, and notes without dropping to raw JSON. Saving issues a PATCH that preserves the raw payload while applying deltas. The drawer now reuses the same donor panel and gift form components as Manual Entry, so donor suggestions, selection, and search behave identically across both flows.
-- **Donor reassignment** buttons reuse diagnostics embedded in the staged payload; selecting a suggested supporter patches `donorId` and updates `dedupeStatus=matched_existing`.
-- **Recurring tab** shows linked agreement ID, expected installment date, and provider context so staff can confirm webhook wiring before processing.
-- **Raw payload** remains accessible behind an explicit toggle to keep the drawer lightweight while still supporting audit/debug use cases.
+- **Queue table** centers on eligibility (Eligible vs Needs attention) with row-level diagnostics context and primary review/process actions.
+- **Detail drawer** is edit-first: amount/date/donor are always visible, diagnostics are assistive, and processing is a deliberate action.
+- **Donor panel** surfaces staged donor fields alongside suggested matches when dedupe finds candidates (no auto-linking in staging).
+- **Raw payload** remains accessible behind an explicit toggle for audit/debug cases.
 
 ## State Model (gift_staging)
 

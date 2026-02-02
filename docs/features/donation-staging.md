@@ -2,10 +2,44 @@
 
 This document summarizes best practices and design considerations for implementing a staging process for donation intake in a fundraising CRM. The goal is to ensure data quality, deduplication, and user-friendly workflows before donations are processed into the core system.
 
+**Stage 3 contract note:** The authoritative admin-experience contract lives in `docs/solutions/gift-staging-processing.md`. Treat this file as supporting principles and keep it aligned with the contract rather than extending it with new requirements.
+
 ## Stage 3 Admin Experience (North Star)
 
 This section describes the intended donation admin experience around staging and processing. It is intentionally
 product-level (no UI specification) and is the primary reference point for Stage 3 work.
+
+### Admin workflow (current direction)
+
+This is the practical experience we are building toward, expressed as flow rather than UI.
+
+1) **See the workstream**
+- Admins land on a staging queue that is a normal part of daily operations, not a failure list.
+- The queue is primarily split by **eligibility**: Eligible now vs Needs attention (blockers).
+
+2) **Understand "why" at a glance**
+- Each row makes the "why" legible without opening the drawer:
+  - blockers (if any),
+  - key warnings (only when they add signal),
+  - identity confidence (secondary signal, not a blocker).
+
+3) **Review and resolve (single or batch)**
+- The review surface is **edit-first**: amount/date/donor are always visible.
+- Diagnostics are assistive and collapsible, not the primary content.
+- Admins can resolve issues row-by-row, but **batch-first** is the default for CSV imports.
+
+4) **Confirm donors with confidence**
+- When identity is weak or ambiguous, staged donor details are visible alongside suggested matches.
+- Admins can accept a suggested donor, keep the staged donor (create new), or search manually.
+- This donor match step is designed to be fast and repeatable for batches.
+
+5) **Process deliberately**
+- Processing is a deliberate, confidence-building action.
+- Admins see what will happen, why it is safe, and what remains unresolved.
+
+6) **Correct after processing**
+- Mistakes are expected; corrections happen on the canonical gift record with audit/history.
+- Staging is not re-processed to fix post-processing errors.
 
 ### Staging is a workstream, not a problem list
 
@@ -18,9 +52,9 @@ so admins can move from “what happened?” to “what do I need to decide?” 
 
 Admins should be able to quickly separate:
 - **Eligible now**: no blockers, safe to process immediately (single or bulk).
-- **Needs attention**: blockers or low identity confidence require a decision.
+- **Needs attention**: blockers require a decision.
 
-Warnings appear in both lists to communicate quality risk without blocking progress.
+Identity confidence and warnings are secondary signals that can appear in either list to communicate risk without blocking progress.
 
 ### Batch-first review for CSV/imports
 
@@ -80,6 +114,17 @@ clear decision trail.
   - Primary “Review” action that opens a detail drawer; drawer is the work surface for dedupe, coding edits, and processing.
   - Contextual quick actions (e.g., “Process now” only when a row is ready, “Retry” on process failures) surfaced next to each row.
 
+#### Drawer design direction (non-UI)
+- **Edit-first, zero-scroll:** core fields and donor match sit above diagnostics.
+- **Single-column flow:** avoid cramped two-column layouts inside the drawer.
+- **Assistive diagnostics:** show blockers/warnings/identity as a compact strip or collapsible section.
+- **Sticky actions:** processing/ready actions remain visible without scrolling.
+
+#### Batch review pattern (non-UI)
+- **Prepare for processing**: a batch action that opens the review drawer in sequence mode.
+- The drawer cycles through only unready rows, allowing fast donor confirmation + field edits.
+- Each row can be marked ready, and the workflow auto-advances without requiring list navigation.
+
 ### 6. Audit Trail & Reconciliation
 - Maintain an import log linking staging rows to final records.
 - Optionally retain processed staging records for a defined period (audit/troubleshooting).
@@ -98,13 +143,28 @@ clear decision trail.
 
 ### 9. Recurring Agreements (MVP alignment)
 - Staging payloads accept `recurringAgreementId`, `expectedAt`, and `providerPaymentId` so installments from Stripe, GoCardless, or manual imports map back to their plan.
-- `autoProcess` defaults flow from the agreement (`autoProcessEnabled`); admins can override per installment when edge cases arise.
+- `autoProcess` is best-effort intent; trust posture + eligibility still gate processing. Agreements may inform defaults, but do not override gating.
 - Missed payments surface by comparing `nextExpectedAt` with the latest posted Gift, keeping the staging layer reactive instead of speculative.
 
 ### 10. Near-Term Enhancements (queued)
 - Promote `giftBatch` to a first-class UI element: explicit batch cards, batch-level processing, and default coding controls.
 - Add donor context panel in manual entry and staging drawer (recent gifts, active recurring agreements) to further cut down duplicates.
 - Extend recurring insights in the staging queue (e.g., dedicated recurring view once the batch slice lands).
+
+## Open questions (keep aligned with Stage 1–2)
+
+These are product decisions still in flight and should not be encoded as backend rules without review.
+
+1) **Warnings strategy**
+   - Warnings are subjective and org-specific; we should avoid alert noise on every row.
+   - Future direction likely includes configurable postures, list-view filters, or workflow routing rather than fixed warnings.
+
+2) **Donor match clarity**
+   - We should make it obvious when the system suggested a donor vs when the admin chose to create a new donor.
+   - The donor match step is a primary interaction, especially in batch review.
+
+3) **Platform alignment**
+   - We should reuse Twenty list-view patterns for filter/sort/fields where possible, without losing the staging workstream flow.
 
 ## Outcome
 A modern staging design should:
