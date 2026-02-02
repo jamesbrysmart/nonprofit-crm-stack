@@ -17,7 +17,7 @@ _Living log of notable changes inside `services/twenty-core` that affect the fut
    - `git -C services/twenty-core fetch upstream`
    - `git -C services/twenty-core merge upstream/main` (or rebase if that’s your policy)
 3. **Scan the extensibility-relevant diff**
-   - `git -C services/twenty-core diff --name-status ORIG_HEAD..HEAD -- packages/twenty-sdk packages/create-twenty-app packages/twenty-docs/developers/extend packages/twenty-shared/src/application packages/twenty-server/src/engine/core-modules/application packages/twenty-server/src/engine/metadata-modules/serverless-function`
+   - `git -C services/twenty-core diff --name-status ORIG_HEAD..HEAD -- packages/twenty-sdk packages/create-twenty-app packages/twenty-docs/developers/extend packages/twenty-shared/src/application packages/twenty-server/src/engine/core-modules/application packages/twenty-server/src/engine/metadata-modules/logic-function`
 4. **Answer the “what changed?” questions (capture in the snapshot below)**
    - **CLI surface:** command names, auth/workspace profiles, dev/sync/logs/execute behavior.
    - **Manifest schema:** any additions/renames/breaking changes in `ApplicationManifest` / triggers / roles.
@@ -40,11 +40,11 @@ _Living log of notable changes inside `services/twenty-core` that affect the fut
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - The CLI talks to two endpoints: app install/sync/uninstall via `POST /metadata` (`syncApplication` mutation) and function log tailing via a GraphQL subscription on `POST /graphql` (`serverlessFunctionLogs`, used by `twenty function:logs`).
+  - The CLI talks to two endpoints: app install/sync/uninstall via `POST /metadata` (`syncApplication` mutation) and function log tailing via a GraphQL subscription on `POST /graphql` (`logicFunctionLogs`, used by `twenty function:logs`).
 - **create-twenty-app** (packages/create-twenty-app):
   - New scaffolder with prewired scripts (now aligned to the `twenty-sdk` namespaced commands like `auth:login`, `app:dev`, `app:sync`, `function:logs`, `app:uninstall`) to wrap the `twenty` CLI.
   - Ships with typed client generation (`yarn app:generate`) and guided entity creation (`yarn app:create-entity`).
-- **What gets packaged today:** `ApplicationManifest` is produced from your app source tree and includes application metadata, objects/fields, roles, and bundled sources (and, increasingly, build outputs/checksums and packaged UI components).
+- **What gets packaged today:** `ApplicationManifest` is produced from your app source tree and includes application metadata, objects/fields, roles, logic functions, front components, public assets, and bundled sources (with build outputs/checksums and `.twenty/output/manifest.json`).
 - **Sample apps (packages/twenty-apps):**
   - `hello-world`: provisions a `postCard` custom object, deploys a `create-new-post-card` serverless function, and wires both an HTTP route trigger and a `people.created` database trigger. Note: sample READMEs may lag behind CLI renames (`auth:login`, `app:sync`, etc.).
   - `hacktoberfest-2025/*`: showcase multi-function apps (Fireflies, Mailchimp sync, etc.) but remain hackathon quality.
@@ -55,7 +55,36 @@ _Living log of notable changes inside `services/twenty-core` that affect the fut
 
 ---
 
-## Latest Snapshot — 2026-01-23
+## Latest Snapshot — 2026-02-01
+
+**Context:** Updated `services/twenty-core` by merging `upstream/main` up to `1976ad58c4` (previous head `33bd59ef8e`).
+
+**Highlights**
+
+1. **Serverless functions → logic functions rename (SDK + metadata + GraphQL)**
+   - SDK and metadata modules are now “logic functions,” and GraphQL subscriptions use `logicFunctionLogs` (CLI still exposes `function:logs` / `function:execute`).
+   - Workflow support lands for logic-function actions (`packages/twenty-server/src/modules/workflow/workflow-executor/workflow-actions/logic-function`).
+
+2. **Front components move toward remote DOM packaging**
+   - New `twenty-shared/src/front-component` host/remote worker scaffolding plus remote DOM generators.
+   - Front components now carry built paths + checksums in the manifest, aligned with the SDK build pipeline.
+
+3. **Public assets + manifest output standardization**
+   - Apps can ship `public/` assets that upload during sync (`packages/twenty-docs/developers/extend/capabilities/apps.mdx`).
+   - Manifest output is standardized at `.twenty/output/manifest.json` and now includes `publicAssets`, `packageJson`, and `yarnLock` metadata.
+
+4. **Marketplace scaffolding appears**
+   - Server adds marketplace resolver/service that reads app manifests from GitHub and surfaces `marketplaceData` (author/category/logo/screenshots) in `ApplicationManifest`.
+
+**Actions for our stack**
+
+- Audit any references to `serverlessFunctionLogs` and update gateway rules if we rely on log streaming; the subscription name is now `logicFunctionLogs`.
+- If we want UI extensibility in the app framework, track the remote DOM/front-component pipeline as a potential packaging surface (still early/experimental).
+- Ensure any app packaging scripts account for `.twenty/output/manifest.json` and `public/` asset uploads.
+
+---
+
+## Snapshot — 2026-01-23
 
 **Context:** Updated `services/twenty-core` by merging `upstream/main` up to `c02227472e` (fetched from `06d0ac13c4`).
 
