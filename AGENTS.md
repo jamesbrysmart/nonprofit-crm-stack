@@ -25,6 +25,8 @@ Use the docs below as the canonical source of truth; avoid “plausible” comma
 ## Git + submodules (important)
 This repo is a superproject with submodules under `services/`.
 
+- **Solo project note:** assume you are the only contributor. Avoid repeated coordination warnings about others changing branches or pointers; focus on the rules below.
+
 - Always run `git status` (superproject) before and after edits; call out any submodule pointer changes explicitly.
 - Do not update submodule pointers (or run `git submodule update --remote`) unless explicitly asked.
 - If a task requires changes in a submodule:
