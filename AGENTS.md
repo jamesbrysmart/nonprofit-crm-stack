@@ -43,6 +43,7 @@ This repo is a superproject with submodules under `services/`.
 
 ## Commands, tooling, and tests (defaults)
 - Prefer `docker compose` (v2). Explain flags briefly when suggesting commands.
+- For local dev bring-up and host-accessible ports, the local override is documented in `README.md` and `docs/OPERATIONS_RUNBOOK.md` (do not duplicate commands here).
 - In `services/twenty-core`, use Yarn/Nx commands; avoid `npx` patterns that Yarn 4 blocks.
 - Testing is important:
   - Default: propose the smallest relevant lint/typecheck/unit-test commands for the area touched.

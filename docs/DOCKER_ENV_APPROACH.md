@@ -73,6 +73,22 @@ This guide provides a safe and repeatable process for upgrading the Twenty CRM v
 
 ### Step-by-Step Upgrade Process
 
+#### Quick upgrade (local/dev only)
+
+If you are upgrading a local/dev stack and accept the risk of skipping the backup and sequential-minor guidance, the minimal flow is:
+
+1. `docker compose down` (no `-v`)
+2. Update `TAG` in `.env`
+3. `docker compose up -d`
+
+If you normally use the local override for host-accessible ports, keep that consistent during the quick upgrade:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+```
+
+This is not a substitute for the safer path below in production or when data protection matters. The detailed steps remain the default for hosted/pilot environments and any irreversible data.
+
 #### Step 1: Pre-Upgrade Checks & Backup
 
 1.  **Commit Changes:** Ensure your current work is committed to Git so you have a clean state.
