@@ -41,6 +41,10 @@ This repo is a superproject with submodules under `services/`.
 - Ask for permission before any git command that is not read-only.
   - Read-only (ok by default): `git status`, `git diff`, `git log`, `git show`, `git rev-parse`, `git branch --show-current`, `git remote -v`, `git submodule status`.
   - Requires permission first: `git add`, `git commit`, `git checkout`/`git switch`/`git restore`, `git reset`, `git clean`, `git merge`/`git rebase`/`git cherry-pick`, `git pull`/`git push`/`git fetch`, `git submodule update`, and anything that moves pointers or discards work.
+- Elevated-permission commands (environment-specific). Always request escalation when needed rather than retrying silently.
+- `docker` / `docker compose` (any command that touches the Docker socket).
+- `npm run smoke:gifts:docker` (invokes Docker under the hood).
+- `git push` (requires network + credentials outside the sandbox).
 - Ask for permission before destructive or state-changing ops (e.g., `docker compose down -v`, wiping volumes, mass deletes).
 
 ## Commands, tooling, and tests (defaults)
