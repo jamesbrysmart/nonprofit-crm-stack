@@ -119,6 +119,7 @@ Temporary staging record used to validate/dedupe/review gifts before processing 
 | `donorFirstName` | Donor First Name | `TEXT` | Donor snapshot for ops review. |
 | `donorLastName` | Donor Last Name | `TEXT` | Donor snapshot for ops review. |
 | `donorEmail` | Donor Email | `TEXT` | Donor snapshot for ops review. |
+| `organizationName` | Organization Name | `TEXT` | Preferred org name hint when `companyId` is unknown (org-intent gifts). |
 | `notes` | Notes | `TEXT` | Operator/review notes. |
 | `errorDetail` | Error Detail | `RAW_JSON` | Structured error detail for failures/retries. |
 | `rawPayload` | Raw Payload | `RAW_JSON` | Original ingestion payload retained for audit/debug. |

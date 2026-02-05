@@ -89,6 +89,7 @@ clear decision trail.
 ### 1. Unified Staging Model
 - Funnel all incoming data (CSV uploads, manual entry, API integrations) into a single staging layer.
 - Apply consistent validation and deduplication rules regardless of source.
+- Accept incomplete identity at intake: missing donor/company becomes blockers (not hard rejections), and `contact` + `organizationName` can be used as identity hints.
 - Link staged donations to their originating `RecurringAgreement` when available so cadence defaults, coding, and follow-up rules stay consistent.
 
 ### 2. Flexible Data Mapping

@@ -19,6 +19,7 @@ Use the docs below as the canonical source of truth; avoid “plausible” comma
 
 ## Defaults
 - Prefer small, reversible changes. If a proposal affects architecture, wiring, or workflows, write a short plan first.
+- No workarounds or hacky fixes by default. If something fails, stop and surface the root cause. Only propose a workaround if it’s truly the least-cost path and you’ve checked with the user first. MVP status doesn’t justify accruing avoidable debt.
 - Assume docs can drift: if something looks stale, verify against code/config rather than trusting the doc.
 - Keep changes scoped to the repo/submodule you’re working in; don’t “tidy up” unrelated areas unless asked.
 
@@ -26,6 +27,7 @@ Use the docs below as the canonical source of truth; avoid “plausible” comma
 This repo is a superproject with submodules under `services/`.
 
 - **Solo project note:** assume you are the only contributor. Avoid repeated coordination warnings about others changing branches or pointers; focus on the rules below.
+- Branch naming: feel free to create your own branch names without needing to ask.
 
 - Always run `git status` (superproject) before and after edits; call out any submodule pointer changes explicitly.
 - Do not update submodule pointers (or run `git submodule update --remote`) unless explicitly asked.

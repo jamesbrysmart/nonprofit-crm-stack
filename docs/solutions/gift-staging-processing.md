@@ -23,7 +23,9 @@
 
 This is a brief reality-check so the contract stays grounded in what ships today.
 
-- Staging accepts `donorFirstName`/`donorLastName`/`donorEmail` without creating a `Person`; donor resolution happens at processing time and writes back `donorId` on success.
+- Staging accepts `donorFirstName`/`donorLastName`/`donorEmail` (or `contact` alias fields) without creating a `Person`; donor resolution happens at processing time and writes back `donorId` on success.
+- Org-intent rows can include `organizationName` as an intake hint when `companyId` is unknown (stored on the staging record).
+- Direct gift creation remains strict (identity required), while staging intake is relaxed and relies on diagnostics blockers instead of hard rejections.
 - Dedupe runs on staging create using donor/contact fields when present, sets `dedupeDiagnostics` + `dedupeStatus`, and **does not** auto-link `donorId`.
 - `processingDiagnostics` is persisted on staging rows and included in list/get/create responses (with normalized payload fallback on create).
 - Name-only identity yields weak confidence (not a blocker); missing all identity fields remains a blocker.
@@ -131,6 +133,7 @@ These signals power both explainability (“why is this unprocessed?”) and act
   - `identity_missing` → assign donor or company (or enter donor details for matching).
   - `company_missing_for_org_intent` → assign company or change intent.
   - `recurring_agreement_missing` → link agreement or update intent.
+  - `gift_date_missing` → supply the gift date before processing.
 - **Warnings** are not blockers but must be visible to inform admin confidence and batch decisions:
   - Missing appeal/fund/opportunity/payout/payment method/date should be actionable in bulk when batch context exists.
 - **Suggested donors**: when `identityConfidence` is weak, surface suggested matches with rationale so admins can confirm
