@@ -65,6 +65,42 @@ _Open design questions: batching vs single record processing, SLA expectations f
   - UI gating is a UX guardrail; the API layer remains the definitive enforcement point.
   - Avoid logging tokens; query-string tokens are only for constrained edge cases.
 
+### 3.3 Gift Batch Processing Invariants (Refactor Safety Contract)
+
+These are behavior-level guarantees for gift-batch flows that must remain true during refactors.
+
+Term definitions:
+- `candidate row`: an unresolved row in the selected batch (in-batch, not `processed`, and not already linked to donor/company).
+- `run types`: `process-batch`, `donor-match`, `create-donors`.
+- `single active run`: one active run per `batchId + runType`.
+
+Core invariants:
+1. Batch isolation is mandatory.
+   Only rows with `row.giftBatchId === selectedBatchId` are processed/updated.
+2. No silent partial corruption.
+   If post-create correlation/contract validation fails, the run fails loudly; we do not continue with ambiguous mapping.
+3. Run guards and stale recovery stay coherent.
+   Only one active run is allowed per `batchId + runType`; for `process-batch`, if batch status is `processing` but no active in-memory run exists, stale recovery marks batch as failed/recoverable.
+4. Run lifecycle semantics stay stable.
+   Run states (`queued`, `running`, terminal states) and batch status transitions remain coherent with resumability gates.
+5. Donor-match scope and outcome guarantees remain explicit.
+   Donor-match evaluates unresolved candidates by default; each processed candidate receives an explicit persisted outcome.
+6. Nullable-clear semantics are preserved.
+   `undefined` means no change; `null` means clear.
+7. Upsert write safety contract remains enforced.
+   Non-empty rows, max 60, unique/non-empty IDs, non-empty per-row updates, and strict response ID-set validation.
+8. `trustIds` fast-path remains bounded.
+   `trustIds` requires an explicit bounded allowed-ID set.
+9. Failure handling split is preserved.
+   Normal batch failures use split/isolation fallback; correlation-contract failures on create paths are non-retriable (no split/retry create).
+10. Process counters remain truthful.
+    `processed` counters increment only after successful staging writeback.
+11. Twenty query translation correctness remains intact.
+    Fundraising query params must translate to Twenty-native list params (`filter`, `order_by`, `starting_after`/`ending_before`).
+
+Current operational rule (intentionally not permanent architecture):
+- Recurring-linked rows stay on row path until explicit parity is shipped on batch path.
+
 ## 4. Open Questions & Work Items
 
 - **API throttling**: What shared backpressure strategy do we enforce across all Twenty callers?
@@ -92,6 +128,9 @@ _Update this file whenever spikes conclude or new constraints emerge so future m
   100) effectively caps every workspace/API key at ≈100 calls per minute (1.6 rps). Our stack multiplexes a single
   TWENTY_API_KEY across the fundraising proxy, staging flows, metadata helpers, and the rollup engine (services/
   fundraising-service/src/twenty/twenty-api.service.ts:18), so all those surfaces compete for the same bucket.
+- Twenty’s import guidance (2026-02-05) states batch operations are capped at **60 records per call**; local spike
+  confirms batch endpoints are **atomic** (one invalid row fails the whole batch, no partial success). That means
+  high-volume imports must pre-validate data or implement batch-splitting on failure.
 - A single gift submission already consumes multiple requests: GiftService.createGift hits /people/duplicates to
   dedupe (services/fundraising-service/src/gift/gift.service.ts:342), optionally /people to create the contact
   (services/fundraising-service/src/gift/gift.service.ts:297), and finally /gifts (services/fundraising-service/

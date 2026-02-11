@@ -25,6 +25,8 @@
 - **Recurring toggle** adds a lightweight picker filtered to the most recent Twenty `RecurringAgreement` objects so staff can attach manual installments without pasting IDs; the control disappears again once unchecked to keep the form lean.
 - **Duplicate guardrails** warn when a staged gift already exists for the same donor/amount/date, reinforcing the “don’t double enter” flow before submission. (Committed-gift lookup still todo.)
 - **Staging queue** opens with status/intake/batch summary chips, a lean table (ID · donor · amount · updated · status · source · alerts), and a drawer-first “Review → Process” workflow. Contextual quick actions (e.g., “Process now” only when ready) keep the row surface calm.
+- **Gift batches (manual entry)** can be optionally selected or created (name + expected totals). Staging queue batch chips now surface batch labels instead of raw ids.
+- **Batch process run (v1)**: when a batch filter is active, admins can start a one-click async processing run from the queue summary. The UI polls run status and shows attempted/processed/deferred/error counts plus recent outcomes.
 - **Recurring agreements tab** pivots to exception buckets (overdue, paused/canceled, delinquent) with filter chips and status pills so admins triage the riskiest plans first.
 
 ## 1. Scope & Audience
@@ -53,12 +55,13 @@ Columns (current):
 Interactions:
 - Summary chips surface status totals, intake sources, and gift batches; “Duplicates” toggle and recurring-agreement search box round out the filters.
 - Primary row action is **Review**, which opens the detail drawer; contextual buttons (“Process now”, “Retry”) only appear when appropriate.
+- With an active batch filter, the summary bar offers **Process batch** (async run) and shows run progress/outcomes while processing continues server-side.
 - Drawer owns status transitions, donor reassignment, attribution edits, and processing.
 
 Empty states:
 - Friendly “you’re caught up” guidance when filters produce zero rows.
 - Inline error panel (plus toast) when list fetch fails.
-- _Implementation status:_ summary chips + lean table + drawer-first workflow landed in the 2025-11 slice; bulk/batch processing still on the roadmap.
+- _Implementation status:_ summary chips + lean table + drawer-first workflow are live. Batch processing now supports one-click async runs with progress polling; bulk defaults/edit actions remain on the roadmap.
 
 ### 2.2 Detail Drawer (or modal)
 
@@ -105,7 +108,7 @@ Actions inside drawer:
 
 ## 4. Out of Scope (for this slice)
 
-- Full batch management (bulk approve/process).
+- Batch defaults and bulk field-edit actions (appeal/fund/date/method).
 - Advanced filtering (date range, amount ranges, search by donor) beyond basic status filters.
 - Multi-tenant theming / white-label.
 - Upload/import UI (CSV prep) – tracked separately.

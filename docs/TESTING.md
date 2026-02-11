@@ -31,7 +31,16 @@ For any code change:
 ### C) Fundraising service changes (`services/fundraising-service/*`)
 - Run the owning package’s lint and unit tests via `services/fundraising-service/package.json` scripts.
 - If you changed Twenty proxy behavior, staging flows, or ingestion/processing, run the gift smoke test(s) referenced in `docs/OPERATIONS_RUNBOOK.md`.
+- For batch-processing/rate-limit investigations, use the runbook’s `Batch smoke + retry ledger (gift-batch)` procedure so results are comparable across sessions.
 - For focused debugging, use the test runner’s built-in filters (e.g., Jest `-t "<name>"`) rather than skipping the suite.
+- For gift-batch workflow changes, prefer this focused regression pack before wider runs:
+  - `npm test -- gift-batch/gift-batch-processing.service.spec.ts`
+  - `npm test -- gift-batch/gift-batch-donor-match.service.spec.ts`
+  - `npm test -- identity-resolution/person-identity.service.spec.ts`
+  - `npm test -- gift-staging/gift-staging.service.spec.ts`
+  - `npm test -- gift-staging/gift-staging-processing.service.spec.ts`
+  - `npm run client:build`
+  - see `docs/solutions/gift-batch-processing.md` for context and rationale.
 
 ### D) Twenty core (`services/twenty-core/*`)
 Default posture: we generally do not modify `services/twenty-core` in this stack.
@@ -45,4 +54,3 @@ If you explicitly approve a change there:
 Smoke tests catch “does the main path work” failures (auth/proxy/gift creation/staging processing), but they do not replace unit tests. Treat smoke as:
 - required when you change wiring or end-to-end behavior,
 - insufficient alone for code changes in `services/fundraising-service`.
-

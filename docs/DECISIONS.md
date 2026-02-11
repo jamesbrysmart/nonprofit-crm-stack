@@ -1,7 +1,7 @@
 # DECISIONS
 
 Status: Living document  
-Last updated: 2025-09-10
+Last updated: 2026-02-11
 
 This file captures the *how*, not the *what*: boundaries, trade-offs, and defaults that keep us fast without painting us into a corner.
 
@@ -117,6 +117,41 @@ This file captures the *how*, not the *what*: boundaries, trade-offs, and defaul
 - `rollup-engine/serverlessFunctions/calculaterollups/src/index.ts`
 - `docs/PROJECT_CONTEXT.md`
 - `docs/PARTNER_MODULE_BLUEPRINT.md`
+
+---
+
+## D-0020: Gift Batch Correlation-Contract Interim Posture
+**Status**: Interim (accepted, revisit with upstream contract clarity)
+**Priority**: High
+
+**Context**
+- Gift batch create flows currently correlate request rows to response rows by position.
+- If upstream response ordering ever drifts, silent mis-correlation could cause incorrect row linkage or duplicate side effects.
+- We need immediate safety without adding per-row fallback reads/calls that materially increase API pressure.
+
+**Decision**
+- Keep current high-throughput batch mapping path for now.
+- Treat response-order stability as an explicit operational assumption.
+- Add explicit correlation-contract failure classification and stop behavior:
+  - classify mismatch as `correlation_contract_failure`,
+  - do not split/retry create on that class,
+  - fail chunk/run loudly and emit structured telemetry.
+- Raise upstream contract questions with Twenty and revisit once contract guarantees are clarified.
+
+**Why**
+- Prevents silent corruption in the worst case.
+- Preserves throughput and avoids request amplification in pre-customer phase.
+- Keeps implementation pragmatic while still making failure explicit and observable.
+
+**Consequences**
+- Residual assumption remains until upstream clarity is obtained.
+- Operators must monitor correlation-contract failure telemetry.
+- Future hardening may replace index mapping with stronger correlation once supported.
+
+**References**
+- `docs/solutions/gift-batch-processing.md`
+- `docs/OPERATIONS_RUNBOOK.md` (gift batch operational checks)
+- `docs/ARCHITECTURE.md` (invariant contract)
 
 ---
 

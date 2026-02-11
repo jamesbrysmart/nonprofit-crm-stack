@@ -112,7 +112,6 @@ Temporary staging record used to validate/dedupe/review gifts before processing 
 | `processingStatus` | Processing Status | `TEXT` | Processing lifecycle marker (see Status section). |
 | `autoProcess` | Auto Process | `BOOLEAN` | Whether rows can be auto-processed (policy-driven). |
 | `giftAidEligible` | Gift Aid Eligible | `BOOLEAN` | UK-only eligibility marker (WIP). |
-| `giftBatchId` | Gift Batch ID | `TEXT` | Batch/group marker (WIP; currently an ID string). |
 | `provider` | Provider | `TEXT` | Provider identifier (stripe/gocardless/manual/import). |
 | `providerPaymentId` | Provider Payment ID | `TEXT` | Provider payment reference. |
 | `providerContext` | Provider Context | `RAW_JSON` | Provider metadata blob (raw, provider-shaped). |
@@ -121,7 +120,7 @@ Temporary staging record used to validate/dedupe/review gifts before processing 
 | `donorEmail` | Donor Email | `TEXT` | Donor snapshot for ops review. |
 | `organizationName` | Organization Name | `TEXT` | Preferred org name hint when `companyId` is unknown (org-intent gifts). |
 | `notes` | Notes | `TEXT` | Operator/review notes. |
-| `errorDetail` | Error Detail | `RAW_JSON` | Structured error detail for failures/retries. |
+| `errorDetail` | Error Detail | `TEXT` | Failure reason text for staging/process retries and admin review. |
 | `rawPayload` | Raw Payload | `RAW_JSON` | Original ingestion payload retained for audit/debug. |
 | `giftIntent` | Gift Intent | `TEXT` | Intent classification (donor vs organisation, in-kind) (WIP). |
 | `isInKind` | Is In-Kind | `BOOLEAN` | In-kind flag. |
@@ -137,7 +136,28 @@ Temporary staging record used to validate/dedupe/review gifts before processing 
 | `appeal` | Appeal | `RELATION` | `appeal` | Attribution for appeal reporting. |
 | `recurringAgreement` | Recurring Agreement | `RELATION` | `recurringAgreement` | Installment linkage for recurring operations. |
 | `giftPayout` | Gift Payout | `RELATION` | `giftPayout` | Links staged rows to a payout/deposit for reconciliation. |
+| `giftBatch` | Gift Batch | `RELATION` | `giftBatch` | Batch/group marker for staged gifts. |
 | `gift` | Gift | `RELATION` | `gift` | Linked processed gift after processing. |
+
+---
+
+### 3) Gift Batch (`giftBatch`)
+**What it represents**
+Admin-defined grouping of staged gifts for review, defaults, and processing confidence.
+
+**Scripted fields**
+| API name | Label | Type | Purpose |
+|---|---|---|---|
+| `source` | Source | `TEXT` | Batch origin (manual, csv, webhook, import). |
+| `status` | Status | `TEXT` | Batch lifecycle marker (`open`, `reviewing`, `processed`, `closed`). |
+| `trustPosture` | Trust Posture | `TEXT` | Signal for batch risk/automation posture. |
+| `expectedCount` | Expected Count | `NUMBER` | Optional admin expectation for rows. |
+| `expectedAmount` | Expected Amount | `CURRENCY` | Optional admin expectation for totals. |
+| `totalCount` | Total Count | `NUMBER` | Rollup count of staged rows. |
+| `processedCount` | Processed Count | `NUMBER` | Rollup count of processed rows. |
+| `totalAmount` | Total Amount | `CURRENCY` | Rollup total of staged rows. |
+| `processedAmount` | Processed Amount | `CURRENCY` | Rollup total of processed rows. |
+| `notes` | Notes | `TEXT` | Internal notes or context. |
 
 > **Screenshot placeholder — Gift staging record review**
 >
@@ -359,7 +379,7 @@ Likely future/optional fundraising entities (explicitly WIP until implemented/va
 - `trackingCode`
 - `appealSegment`
 - `giftAidDeclaration` (UK-only toggleable)
-- `giftBatch` (first-class batching)
+- `giftBatch` (scripted object; batch UX/automation still WIP)
 - receipt objects (formal receipt entities vs receipt metadata fields)
 
 ---

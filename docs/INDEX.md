@@ -32,6 +32,7 @@ These describe intended behavior and workflows at the feature level.
 
 - `features/` — per-feature specs (donation intake, staging, reconciliation, receipts, recurring, households, campaigns/appeals).
 - `solutions/` — cross-feature designs / “how we solve it” docs.
+  - `solutions/gift-batch-processing.md` — canonical as-built solution notes for batch processing, donor-match/create-donors runs, invariants, and operating model.
 
 ## API / Reference notes (may drift)
 
