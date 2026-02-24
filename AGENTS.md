@@ -45,6 +45,8 @@ This repo is a superproject with submodules under `services/`.
 - `docker` / `docker compose` (any command that touches the Docker socket).
 - `npm run smoke:gifts:docker` (invokes Docker under the hood).
 - `git push` (requires network + credentials outside the sandbox).
+- API testing scripts that require Docker context or host networking (e.g., `curl` against container-only endpoints) should request escalation.
+- For escalated commands that commonly run long (image pulls, compose bring-up), use a longer timeout by default so they do not require repeated approvals.
 - Ask for permission before destructive or state-changing ops (e.g., `docker compose down -v`, wiping volumes, mass deletes).
 
 ## Commands, tooling, and tests (defaults)
@@ -59,6 +61,14 @@ This repo is a superproject with submodules under `services/`.
 ## “Definition of done” (adapt to scope)
 - Run the smallest relevant checks for the packages you touched (lint/typecheck/tests).
 - If a change alters behavior/config/ops, propose the smallest doc updates needed (see next section).
+
+## Session wrap-up prompts (Codex)
+- Before ending a coding session, proactively propose the smallest relevant check command(s) based on files changed.
+- Default for `services/fundraising-service`: propose `npm -C services/fundraising-service run check:full` for “ready to ship” confidence once it is green. If `check:full` is red due to known lint debt, propose `npm -C services/fundraising-service run check` plus `npm -C services/fundraising-service run lint:diff` / `format:diff` to prevent new debt.
+- Only suggest `npm -C services/fundraising-service run lint` / `npm -C services/fundraising-service run format` when we explicitly want auto-fixes.
+- For wiring/compose/gateway changes: propose the relevant smoke checks from `docs/OPERATIONS_RUNBOOK.md` and ask before running anything that touches Docker.
+- If a file grows materially during iteration (large services/components), it’s fine to defer refactoring while the behavior is still in flux, but before “ready to ship” propose a split/extraction pass so we don’t commit hard-to-maintain 1000-line files.
+- Prefer brief comments that explain *why* a non-obvious decision exists (trade-offs, constraints, safety checks), not what the code is doing line-by-line.
 
 ## Documentation hygiene (session wrap-up)
 When a work session changes behavior, workflow, or assumptions, propose a tiny “docs delta” at the end:
