@@ -111,7 +111,7 @@
 
 - **Self-hosted delivery add-ons:** For fully self-managed tenants, drop in an OSS MTA (Postal, Haraka) behind the SMTP adapter; extend the same contract for Twilio-style SMS when advanced channels become priority.
 
-- **PDF tooling spike:** PDF customisation is the trickiest balance between lean and flexible. Schedule a spike to trial options (e.g., [pdfme](https://pdfme.com/docs/getting-started), wkhtmltopdf/Gotenberg, Puppeteer) to test editing experience, templating constraints, file size, and performance before locking the renderer.
+- **PDF tooling spike:** PDF customisation is the trickiest balance between lean and flexible. Schedule a spike to trial options (e.g., [pdfme](https://pdfme.com/docs/getting-started), wkhtmltopdf/Gotenberg, Puppeteer, [libpdf](https://libpdf.documenso.com/)) to test editing experience, templating constraints, file size, and performance before locking the renderer.
 
 - **Why not a full suite:** OSS marketing platforms (Mautic, Listmonk, etc.) are heavier than needed and still lack gift-level idempotency, Gift Aid fields, and annual rollups. Modular OSS components keep the footprint small and mirror our Evidence-for-reporting precedent.
 

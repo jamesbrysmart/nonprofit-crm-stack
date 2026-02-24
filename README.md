@@ -57,6 +57,10 @@ These instructions will get you a copy of the project up and running on your loc
     ```
 
     The `--build` flag is necessary on the first run to build the `fundraising-service` image. The `-d` flag starts the services in detached mode.
+    If your local `.env` uses `STORAGE_TYPE=s3` with `STORAGE_S3_ENDPOINT=http://minio:9000`, include `--profile s3` so the local MinIO service is started:
+    ```bash
+    docker compose --profile s3 up --build -d
+    ```
 
 5.  **Accessing the Application:**
 
@@ -80,6 +84,7 @@ To upgrade the version of Twenty CRM, follow these steps:
     docker compose up --build -d
     ```
     *   Note: `docker compose up` will pull the new `twentycrm/twenty:${TAG}` image automatically if it’s not already present. Use `docker compose pull` first only if you prefer pulling explicitly.
+    *   If local storage is configured to use the Compose MinIO service (`STORAGE_TYPE=s3` and `STORAGE_S3_ENDPOINT=http://minio:9000`), include `--profile s3` during upgrades so Twenty's workspace upgrade/backfill commands can reach MinIO.
 
 5.  **Accessing the Application:**
 
@@ -92,6 +97,12 @@ By default, only the gateway is published on the host. If you need local access 
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+```
+
+If local storage is configured to use the Compose MinIO service (`STORAGE_TYPE=s3` and `STORAGE_S3_ENDPOINT=http://minio:9000`), include the `s3` profile as part of the same command:
+
+```bash
+docker compose --profile s3 -f docker-compose.yml -f docker-compose.local.yml up -d --build
 ```
 
 Note: for local development we keep `SERVER_URL=http://localhost:3000` so metadata scripts (e.g. `setup-schema.mjs`) can call the REST metadata wrapper without 500s. Use the gateway URL (`http://localhost:4000`) as the public entrypoint in hosted deployments.

@@ -87,6 +87,12 @@ If you normally use the local override for host-accessible ports, keep that cons
 docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
 ```
 
+If your local `.env` uses `STORAGE_TYPE=s3` with `STORAGE_S3_ENDPOINT=http://minio:9000`, also enable the `s3` profile during local upgrades so MinIO is available for Twenty workspace upgrade/backfill commands:
+
+```bash
+docker compose --profile s3 -f docker-compose.yml -f docker-compose.local.yml up -d
+```
+
 This is not a substitute for the safer path below in production or when data protection matters. The detailed steps remain the default for hosted/pilot environments and any irreversible data.
 
 #### Step 1: Pre-Upgrade Checks & Backup
@@ -219,6 +225,10 @@ For daily development work:
 *   **Optional local port exposure:** if you need host access to Postgres/Redis/MinIO or direct service ports, opt in with the local override:
     ```bash
     docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+    ```
+    If local storage is configured as `s3` against the Compose `minio` service (`STORAGE_TYPE=s3` and `STORAGE_S3_ENDPOINT=http://minio:9000`), include `--profile s3`:
+    ```bash
+    docker compose --profile s3 -f docker-compose.yml -f docker-compose.local.yml up -d
     ```
 *   **To stop the services:**
     ```bash
