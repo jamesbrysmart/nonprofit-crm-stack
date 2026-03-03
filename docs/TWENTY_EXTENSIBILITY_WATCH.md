@@ -49,7 +49,7 @@ When updating this doc in regular syncs, keep it lightweight:
 - Treat “Fundraising as an App” as the long-term packaging target, but keep implementation hybrid until Twenty Apps cover required UX + operational primitives (tracked in `docs/DECISIONS.md` D-0019).
 - In SaaS, the “edge layer” is still possible: it becomes a vendor-managed multi-tenant service integrating with each workspace via Twenty APIs/webhooks; customers don’t run code.
 
-## Current Extensibility Surface (baseline verified 2026-02-24)
+## Current Extensibility Surface (baseline verified 2026-03-03)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
@@ -94,9 +94,9 @@ When updating this doc in regular syncs, keep it lightweight:
 
 ---
 
-## Latest Snapshot — 2026-02-24
+## Latest Snapshot — 2026-03-03
 
-**Context:** Updated `services/twenty-core` from `45ed1fb90c` to `e3ab3304e2` (merge commit on 2026-02-24; upstream parent merged: `eaf9fe27b2`).
+**Context:** Updated `services/twenty-core` from `e3ab3304e2` to `792c8a3c28` (merge commit on 2026-03-03; upstream parent merged: `2f09fb8c04`).
 
 **Highlights**
 
