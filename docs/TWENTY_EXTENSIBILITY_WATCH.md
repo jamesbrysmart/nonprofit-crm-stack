@@ -55,15 +55,15 @@ When updating this doc in regular syncs, keep it lightweight:
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `0.6.0`.
-  - CLI commands exposed in README and command registry: `auth:login`, `auth:logout`, `auth:status`, `auth:list`, `auth:switch`, `app:dev`, `app:typecheck`, `app:uninstall`, `entity:add`, `function:logs`, `function:execute`.
+  - Current package version in-tree: `0.6.3`.
+  - CLI command registry includes: `auth:login`, `auth:logout`, `auth:status`, `auth:list`, `auth:switch`, `app:build`, `app:dev`, `app:typecheck`, `app:uninstall`, `entity:add`, `function:logs`, `function:execute`.
   - `app:generate` is no longer part of the CLI command surface; typed client generation is expected via `app:dev` (with `app:typecheck` added for local TS verification).
   - `entity:add` now covers a wider app surface (`object`, `field`, `function`, `front-component`, `role`, `view`, `navigation-menu-item`, `skill`, `page-layout`) with scaffolding support for related UI entities.
   - API split remains explicit in code:
     - `POST /metadata` for app lifecycle/sync operations, logic-function execution, application token operations, and multipart `uploadApplicationFile`.
     - `POST /graphql` for log streaming (`logicFunctionLogs` via SSE) and client schema access / generated client defaults.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `0.6.0`.
+  - Current package version in-tree: `0.6.3`.
   - Scaffolder now supports `--exhaustive` (default), `--minimal`, and `--interactive` example modes.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
   - Default scaffold now includes a post-install logic function (`src/logic-functions/post-install.ts`) and can generate examples for objects, fields, views, navigation menu items, and skills in addition to logic functions/front components.
@@ -100,8 +100,8 @@ When updating this doc in regular syncs, keep it lightweight:
 
 **Highlights**
 
-1. **SDK + scaffolder moved to `0.6.0` and changed the default app workflow**
-   - `twenty-sdk` and `create-twenty-app` both moved to `0.6.0`.
+1. **SDK + scaffolder moved to `0.6.3` and changed the default app workflow**
+   - `twenty-sdk` and `create-twenty-app` both moved to `0.6.3`.
    - CLI surface now uses `app:typecheck` (new) and no longer exposes `app:generate`.
    - Scaffolder guidance now converges on `yarn twenty <command>` and `app:dev` auto-generates the typed client.
 

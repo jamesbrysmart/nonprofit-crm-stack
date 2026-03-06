@@ -24,6 +24,11 @@ Read these before running operational commands or changing operational behavior.
 
 ## UX / UI
 
+- `ui/STORYBOOK.md` — canonical guide for Storybook taxonomy, workflow packs, review checklist, and coverage map.
+- `ui/BASELINE.md` — working baseline for how custom UI is built (source order, defaults, revisit triggers).
+- `ui/PATTERNS.md` — working interaction pattern log for reusable custom UI slices.
+- `ui/BRIEF_TEMPLATE.md` — UI task brief template so requests stay predictable and implementation-ready.
+- `ui/IMPLEMENTATION_PLAN.md` — working implementation plan for the shared custom UI shell and staged rollout.
 - `UX_UI.md` — UI/UX principles + working notes + “as-built” status. Consult principles before UI changes; update as-built after.
 
 ## Feature specs (what we’re building)

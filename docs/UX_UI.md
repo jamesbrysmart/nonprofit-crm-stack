@@ -1,11 +1,18 @@
 # UI / UX Notes (Working)
 
 > Central scratchpad for user experience decisions across the managed fundraising extension. Keep this as the first stop for design discussions; once sections grow too large we can graduate them into dedicated docs under `docs/ui/`.
+>
+> Working execution references now live in `docs/ui/BASELINE.md`, `docs/ui/PATTERNS.md`, and `docs/ui/BRIEF_TEMPLATE.md`. This file remains the primary scratchpad and as-built notes log.
+>
+> All `docs/ui/*` guidance is exploratory in this phase and should be treated as working hypotheses, not finalized rules.
+>
+> Scope note: the reusable baseline in `docs/ui/*` targets workflow-heavy custom apps across domains; this file captures the fundraising slice used as the first implementation anchor.
 
 ## 0. Project-Wide Principles (Placeholder)
 
 - **Visual parity with Twenty:** default to Twenty’s minimalist styling—neutral palette, generous spacing, lightweight typography—so the transition between native CRM screens and managed extension views feels seamless. Match the Twenty design tokens for spacing (`4px` base grid), typography (Inter family), and surface treatments (subtle borders, soft elevation) until branding needs diverge.
 - **Component reuse:** wherever possible, reuse (or faithfully replicate) Twenty UI patterns: table styling, badge treatments, form controls, toast behaviour. When a bespoke component is required, document why the shared Twenty UI library does not yet cover the need.
+- **Storybook reference-first:** treat Twenty Storybook (`https://storybook.twenty.com`) as the canonical visual/interaction reference for shared component behavior; implement via local wrappers where direct reuse is not yet practical.
 - **Tone & copy:** keep microcopy concise and supportive. Use sentence case, follow Twenty’s existing voice (“clear, action-oriented, never cute”), and log deviating wording in release notes for localisation.
 - **Motion & feedback:** reserve animation for reinforcing state change (e.g., drawer slide, skeleton loading). If we add new motion, note timing/curve defaults so engineering can align with Emotion keyframes.
 - **Responsiveness:** admins will mostly use desktop, but basic responsiveness should prevent layout collapse on narrower windows. Define breakpoints up front (desktop ≥ 1440px, compact desktop 1024–1439px, tablet stretch 768–1023px).
@@ -71,6 +78,10 @@ Sections:
 - **Diagnostics:** validation/dedupe messages, webhook metadata, status history (when available).
 - **Raw payload viewer:** collapsible JSON viewer for support/debugging (read-only).
 - _Implementation status:_ overview + edit controls + processing buttons are live; status history remains TODO. Duplicate reassignment leans on `dedupeDiagnostics` from Twenty; we surface controls for partial matches inside the drawer.
+- _As-built (2026-03-04):_ gift-staging drawer now uses shared `ActionDrawer` behavior with focus-on-open, `Tab` trap, focus-restore-on-close, `Escape` close, and backdrop click close. Footer actions are hidden when selected-record detail is unavailable (loading/error/not-found), donor helper text adapts to linked vs unlinked donor state, queue empty-state copy distinguishes filtered-empty vs true-empty results, and summary batch action copy stays compact on smaller widths.
+- _As-built (2026-03-04, visual pass):_ a reusable `operationsVisual` style map now defines shell/metric/table/chip/alert classes for operational queue+drawer pages, and staging queue consumes that map for consistent Twenty+ visual identity without page-specific ad hoc styling.
+- _As-built (2026-03-04, Storybook):_ `services/fundraising-service` now includes a local Storybook scaffold for UI review of shared operational primitives and shell composition, aligned to Twenty's Storybook major (`10.2.13`) with explicit addons (`@storybook/addon-docs`, `@storybook/addon-links`). Use `npm -C services/fundraising-service run storybook` for dev and `HOME=/tmp npm -C services/fundraising-service run storybook:build` in sandboxed environments.
+- _As-built (2026-03-06, Storybook workflow packs):_ Storybook coverage now includes control-driven `Operations/Summary Band` plus initial workflow packs for `Manual Gift Entry` and `Reconciliation` (`Workflows/*` stories) with composed views, key state scenarios, and playground controls to support UX review beyond static component snapshots.
 - _Future config:_ planned matching-profile toggle to adjust duplicate thresholds without code changes once the admin surface exists.
 
 Actions inside drawer:
