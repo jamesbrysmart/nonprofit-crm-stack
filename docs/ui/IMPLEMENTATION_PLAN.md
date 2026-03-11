@@ -1,6 +1,6 @@
 # Custom UI Implementation Plan (Working)
 
-Updated: 2026-03-06
+Updated: 2026-03-11
 Status: Exploratory plan (`trial`)
 Scope: UI/UX implementation approach for workflow-heavy custom app pages, starting with Gift Staging.
 
@@ -15,7 +15,7 @@ This is an implementation experiment, not final design policy. We expect to iter
 
 ## 1. Goal
 
-Establish a reusable, minimal, Twenty-aligned custom UI foundation for workflow-heavy custom apps that need more flexibility than standard list/detail interactions.
+Establish a reusable, minimal, Twenty-aligned custom UI foundation for workflow-heavy custom app pages that need more flexibility than standard list/detail interactions.
 
 Initial anchor flow:
 - Gift staging / batch / dedupe / processing.
@@ -34,15 +34,20 @@ Scope note:
 Use a common page shell:
 
 1. `Summary band` (top): key metrics, scoped controls, high-signal actions.
-2. `Queue panel` (main): triage list/table.
-3. `Action drawer` (right): record-specific operational workspace.
-4. `Feedback lane`: clear action outcomes (inline + toast).
+2. `Record surface` (main): queue/table, list, or card surface depending on workflow.
+3. `Action drawer` (right): record-specific workspace where that improves continuity.
+4. `Feedback lane`: clear action outcomes (inline + toast) where useful.
 
 Notes:
-- Drawer is task workspace for the selected row, not the full record page.
+- Drawer is usually the task workspace for the selected record, not the full record page.
 - Keep diagnostics/details progressively disclosed to avoid clutter.
-- This shell is the default baseline for consistency, not a strict boundary; extend or diverge when workflow-specific UX requires it, and record why.
+- This shell is the current baseline candidate for consistency, not a strict boundary; extend or diverge when workflow-specific UX requires it, and record why.
 - For workflow-heavy operations, optimize for single-page completion; navigating out to separate record pages should be an exception when in-page context is insufficient.
+
+Working interpretation:
+- The original `queue + drawer` shell is now better understood as one operational variant inside a broader record-browser family.
+- Gift staging remains the anchor example for the operational variant.
+- Appeals and similar views may share the same top-of-page operating model without needing to look like a literal queue.
 
 ## 3. Candidate Component Set
 
@@ -159,17 +164,19 @@ Capture and preserve existing behavior while changing UI structure:
 
 ### Phase 5: Reuse Proof On One Additional Flow (`pending`)
 
-- Apply same shell to one second custom page (reconciliation, case, or membership slice).
-- Use outcome to tune shared primitives before broader rollout.
+- Apply the broader shell model to one additional page and use the outcome to tune the shared contract before broader rollout.
+- This does not require the second page to mirror the queue-first surface exactly.
 
 ### Phase 6: Storybook Workflow Coverage Plan (`pending`)
 
-Use Storybook as a workflow review lab across all active fundraising custom UI slices, not only primitive/component snapshots.
+Use Storybook as a workflow review lab across active fundraising custom UI slices, not only primitive/component snapshots.
 
 Principles:
 - Storybook stories should render real shared components and realistic states, not disconnected mock-only UI.
 - Behavior lives in product code; Storybook is the review/testing harness for behavior and UX states.
 - Keep this exploratory: stories guide decisions, they do not lock permanent policy by default.
+- Pattern stories should be the main place where shared interaction models are shaped.
+- Workflow stories should mostly demonstrate how a workflow consumes those models.
 
 Coverage packs (first pass):
 1. Gift staging:
@@ -181,7 +188,7 @@ Coverage packs (first pass):
 4. Household creation/addition:
 - Search/select/create flow variants, relationship state transitions, conflict/error states.
 5. Appeals:
-- List/detail workflow states, status/action states, empty/error/loading variants.
+- Record-browser variants for appeal review, edit, and snapshot flows, plus empty/error/loading variants.
 6. Reconciliation:
 - Payout queue states, add/update payout drawer states, exception handling outcomes.
 
@@ -253,7 +260,8 @@ After second-flow reuse:
 1. Continue Gift Staging Storybook refinement using the control-driven summary/queue/drawer stories.
 2. Build the next two workflow packs in Storybook (`Manual gift entry`, `Reconciliation`) using the Phase 6 output format.
 3. Run a Storybook-led review pass for those packs and capture open UX questions in `docs/ui/PATTERNS.md`.
-4. After review evidence, decide whether additional shared primitives are needed before broader rollout.
+4. Re-anchor Storybook so canonical pattern stories are easier to distinguish from workflow examples.
+5. After review evidence, decide whether additional shared primitives or pattern adjustments are needed before broader rollout.
 
 ## 10. Experiment Exit Conditions
 

@@ -1,10 +1,10 @@
 # Storybook Guide (Working)
 
-Updated: 2026-03-06
+Updated: 2026-03-11
 Status: Working guide (`trial`)
 Purpose: Define how we use Storybook to improve custom UI quality and consistency across workflows.
 
-This guide is exploratory. It sets defaults for review and implementation speed, not rigid rules.
+This guide is exploratory. It sets working defaults for review and implementation speed, not rigid rules.
 
 ## 0. Core Use
 
@@ -13,6 +13,10 @@ Storybook is our UX review harness for real UI code:
 - Real behavior/components live in product code.
 - Storybook renders those components in controlled scenarios.
 - We use it to review clarity, hierarchy, and state handling before hardening full screens.
+
+Working interpretation:
+- Storybook is useful as a UI lab, a review surface for composed states, and a reference library once something is explicitly promoted to baseline.
+- A story existing does not, by itself, make a pattern or workflow “decided.”
 
 ## 1. Taxonomy
 
@@ -24,15 +28,20 @@ Use this hierarchy for all stories:
 
 2. `Patterns`
 - Reusable page/interaction structures.
-- Example: summary band, queue table, queue+drawer shell.
+- Example: summary band, record-browser shell, queue+drawer variant.
 
 3. `Workflows`
-- End-to-end user workflows.
+- End-to-end user workflows that consume the shared patterns.
 - Example: gift processing, manual gift entry, reconciliation.
 
 4. `Modules`
 - Embedded capability units that are not full workflows.
 - Example: household drawer flow.
+
+Interpretation:
+- `Foundations` should not quietly define workflow structure.
+- `Patterns` are the main place to shape and compare reusable interaction models.
+- `Workflows` should usually demonstrate how a workflow uses a pattern, not redefine the pattern from scratch.
 
 ## 2. Workflow Pack Standard
 
@@ -49,6 +58,7 @@ Every workflow pack should include:
 
 Optional:
 - `ApprovedBaseline` after product sign-off.
+- explicit status labels such as `exploratory`, `review-ready`, `baseline candidate`, `approved baseline` when useful.
 
 ## 3. Review Checklist
 
@@ -76,15 +86,16 @@ Legend: `not-started` | `in-progress` | `review-ready` | `approved-baseline` | `
 | Area | Type | Status | Storybook group |
 | --- | --- | --- | --- |
 | Shared primitives | Foundations/Patterns | `review-ready` | `Foundations/Primitives` |
-| Queue table pattern | Patterns | `review-ready` | `Patterns/Queue Table` |
-| Queue+drawer shell | Patterns | `review-ready` | `Patterns/Queue + Drawer Shell` |
-| Summary band pattern | Patterns | `review-ready` | `Patterns/Summary Band` |
+| Record browser shell | Patterns | `review-ready` | `Patterns/Record Browser Shell` |
+| Queue table example | Patterns | `review-ready` | `Patterns/Record Browser Shell/Queue Table Example` |
+| Queue+drawer variant | Patterns | `review-ready` | `Patterns/Record Browser Shell/Queue + Drawer Variant` |
+| Summary and scope pattern | Patterns | `review-ready` | `Patterns/Record Browser Shell/Summary and Scope` |
 | Manual gift entry | Workflow | `review-ready` | `Workflows/Manual Gift Entry` |
 | Reconciliation | Workflow | `review-ready` | `Workflows/Reconciliation` |
-| Household drawer | Module | `review-ready` | `Modules/Household Drawer` |
+| Household drawer | Workflow | `review-ready` | `Workflows/Household Drawer` |
 | Gift processing (full workflow pack) | Workflow | `review-ready` | `Workflows/Gift Processing` |
 | Recurring donations | Workflow | `not-started` | (to be added under `Workflows`) |
-| Appeals | Workflow | `deferred` | Separate pattern session required |
+| Appeals | Workflow | `review-ready` | `Workflows/Appeals` or equivalent review story once aligned to shared shell |
 
 ## 5. Workflow for Sessions
 
@@ -96,6 +107,32 @@ Legend: `not-started` | `in-progress` | `review-ready` | `approved-baseline` | `
 - open question.
 4. Capture open UX questions in `docs/ui/PATTERNS.md`.
 5. Promote to `ApprovedBaseline` only when product explicitly signs off.
+
+## 5.1 Record Browser Shell Baseline
+
+Use `Patterns/Record Browser Shell` as the current fundraising baseline for list-driven pages.
+
+It defines the shared contract for:
+
+- summary band + page actions,
+- search,
+- filter scope,
+- sort placement,
+- active filter/search chips,
+- pagination,
+- record review in a right-side drawer.
+
+Allowed record surfaces:
+
+- dense table,
+- card list.
+
+Expectation:
+
+- pages may choose `table` or `card list` based on workflow needs, but the control model should stay consistent.
+- richer inspection and record actions should usually happen in the drawer.
+- pagination is part of the current baseline candidate, not an optional afterthought.
+- `Patterns/Queue + Drawer Shell` should be treated as an operational variant of this broader model, not a separate competing baseline.
 
 ## 6. Commands
 
@@ -206,7 +243,7 @@ Use these as comparison baselines during Storybook review. These are guidance co
   - Which recurring actions are mandatory for MVP Storybook coverage?
   - What minimum agreement context is needed in drawer/panel to avoid navigation out?
 
-### 7.6 Appeals (`deferred`)
+### 7.6 Appeals (`working`)
 
 - Purpose:
   - Monitor and maintain appeal performance context (list + detail + snapshots).
@@ -221,8 +258,9 @@ Use these as comparison baselines during Storybook review. These are guidance co
   - no snapshots,
   - create/edit/snapshot error states.
 - Single-page expectation:
-  - mostly in-page list/detail workflow; pattern review intentionally deferred.
+  - use the shared record-browser shell with a surface that suits appeal review; detailed review and edit should stay in-context where possible.
 - Demo-quality checks:
   - metric clarity and orientation remain strong.
 - Open questions:
-  - Final pattern family for appeals (`list+detail workspace` vs adapted shell) is pending separate session.
+  - Which appeal record surface works best: denser table, card-list, or hybrid?
+  - How much summary context should stay above the Appeals list versus move into reusable shell slots?

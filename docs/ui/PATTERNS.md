@@ -1,6 +1,6 @@
 # UI Patterns (Working Draft)
 
-Updated: 2026-03-03
+Updated: 2026-03-11
 Status: Working draft (`trial`)
 Purpose: Capture reusable interaction patterns for custom UI so we do not restart from scratch each time.
 
@@ -46,7 +46,68 @@ Notes:
 - Column and status language should track Twenty style/tone.
 - Keep users in one operational surface where possible; external record-page jumps should be a fallback, not the default path.
 
-## 3. Right-Side Review Drawer
+## 3. Record Browser Shell
+
+Status: `trial`
+
+Intent:
+- Give list-driven workflow pages one stable operating model without forcing every page into the same visual surface.
+
+Anatomy:
+- Summary band with scoped metrics and page actions
+- Shared controls row for search, filter scope, and sort
+- Active chip row for applied search/filter/sort state
+- Record surface:
+  - dense table, or
+  - card list
+- Pagination footer
+- Right-side review drawer
+
+States:
+- Loading
+- Empty (no data)
+- Empty (filtered)
+- Error
+- Multi-page navigation
+
+Notes:
+- This is the current working baseline for fundraising list pages.
+- The aim is shared structure and consistency, not visual uniformity for its own sake.
+- Record surfaces may vary by workflow; the more important shared layer is the operating model.
+- Detailed review and record actions should usually move into the drawer rather than expanding page density, but this should stay a working default rather than a hard rule.
+- Current intended examples:
+  - operational queue/table for gift processing,
+  - exception table for recurring,
+  - list/detail or card-list browser for Appeals.
+
+## 4. Queue + Drawer Variant
+
+Status: `trial`
+
+Intent:
+- Apply the record-browser shell to action-heavy operational workflows where dense triage and in-context resolution matter more than richer browsing or editorial review.
+
+Anatomy:
+- Shared record-browser structure
+- Dense queue/table surface
+- Clear per-row primary action
+- Right-side review drawer that functions as the main task workspace
+- Optional feedback lane for workflow outcomes
+
+States:
+- Loading queue
+- Empty (no data)
+- Empty (filtered)
+- Error
+- Row ready / blocked / failed / complete
+- Workspace scope / parent scope
+
+Notes:
+- This is best treated as one operational variant inside the broader record-browser family, not as the only list-page pattern.
+- Gift staging is the main current example.
+- The parent-scope pattern below is primarily an extension of this variant today.
+
+## 5. Right-Side Review Drawer
 
 Status: `trial`
 
@@ -66,8 +127,11 @@ States:
 Notes:
 - Keep action semantics explicit (`Save`, `Mark ready`, `Process`) and avoid hidden side effects.
 - Prefer task-complete drawers for operational workflows so users can resolve most records without leaving the page.
+- Treat the drawer as a review-and-resolution workspace, not as a general record page.
+- Keep audit/debug detail available but secondary; healthy records should feel light rather than over-explained.
+- Show the smallest useful set of fields and guidance by default, then progressively disclose lower-signal metadata.
 
-## 4. Guided Manual Entry Form
+## 6. Guided Manual Entry Form
 
 Status: `trial`
 
@@ -89,7 +153,7 @@ States:
 Notes:
 - Keep form layouts and controls aligned with Twenty-like field behavior.
 
-## 5. Status and Feedback Language
+## 7. Status and Feedback Language
 
 Status: `open`
 
@@ -105,7 +169,7 @@ Open questions:
 - Final status vocabulary standard across all workflow-heavy custom app flows.
 - Where to centralize reusable copy constants.
 
-## 6. Dual-Scope Queue (Workspace / Parent)
+## 8. Dual-Scope Queue (Workspace / Parent)
 
 Status: `trial`
 
@@ -125,7 +189,7 @@ Notes:
 - The layout and interaction model should stay stable across scope changes.
 - This pattern should support domain variants (gift staging, case records, memberships, campaigns) without redefining page structure.
 
-## 7. Open UX Questions (Testing)
+## 9. Open UX Questions (Testing)
 
 - When switching workspace scope ↔ parent scope, should filters/sort persist or reset to scope defaults?
 - In parent scope, what should always change: summaries, primary CTA, bulk actions, or all three?
