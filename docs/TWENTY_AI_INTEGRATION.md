@@ -131,3 +131,19 @@ To work around this while your OpenAI account is still on the entry tier
 
 If you need higher TPM headroom, upgrade your OpenAI account (or add an
 Anthropic key and switch models in the same settings screen).
+
+## 8. Fundraising assistant prototype branch
+
+The custom fundraising assistant explored during the March 2026 workflow push
+was intentionally kept out of `main` while the core fundraising UI was being
+stabilized.
+
+- Prototype branch: `services/fundraising-service` -> `feat/assistant-exploration`
+- Scope preserved there: fundraising-specific assistant API, drawer UI, task
+  service support, and app-shell wiring for the prototype entry point
+- Current status: preserved for later product review; not part of the shipped
+  mainline workflow surface
+
+When this comes back into scope, review that branch alongside the current
+native Twenty AI capabilities before deciding whether to revive the custom
+assistant, replace it, or fold parts of it into a different approach.
