@@ -1,0 +1,10 @@
+name: twenty
+
+services:
+  server:
+    environment:
+      NODE_ENV: development
+
+  worker:
+    environment:
+      NODE_ENV: development
