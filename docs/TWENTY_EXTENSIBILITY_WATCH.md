@@ -49,32 +49,34 @@ When updating this doc in regular syncs, keep it lightweight:
 - Treat “Fundraising as an App” as the long-term packaging target, but keep implementation hybrid until Twenty Apps cover required UX + operational primitives (tracked in `docs/DECISIONS.md` D-0019).
 - In SaaS, the “edge layer” is still possible: it becomes a vendor-managed multi-tenant service integrating with each workspace via Twenty APIs/webhooks; customers don’t run code.
 
-## Current Extensibility Surface (baseline verified 2026-03-03)
+## Current Extensibility Surface (baseline verified 2026-03-16)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `0.6.3`.
-  - CLI command registry includes: `auth:login`, `auth:logout`, `auth:status`, `auth:list`, `auth:switch`, `app:build`, `app:dev`, `app:typecheck`, `app:uninstall`, `entity:add`, `function:logs`, `function:execute`.
+  - Current package version in-tree: `0.7.0`.
+  - CLI command registry includes: `auth:login`, `auth:logout`, `auth:status`, `auth:list`, `auth:switch`, `app:build`, `app:dev`, `app:publish`, `app:typecheck`, `app:uninstall`, `entity:add`, `function:logs`, `function:execute`.
   - `app:generate` is no longer part of the CLI command surface; typed client generation is expected via `app:dev` (with `app:typecheck` added for local TS verification).
-  - `entity:add` now covers a wider app surface (`object`, `field`, `function`, `front-component`, `role`, `view`, `navigation-menu-item`, `skill`, `page-layout`) with scaffolding support for related UI entities.
+  - `app:publish` now formalizes distribution flows for either npm publication or direct publish/install to a Twenty server.
+  - `entity:add` now covers a wider app surface (`object`, `field`, `function`, `front-component`, `role`, `view`, `navigation-menu-item`, `skill`, `agent`, `page-layout`) with scaffolding support for related UI entities.
   - API split remains explicit in code:
     - `POST /metadata` for app lifecycle/sync operations, logic-function execution, application token operations, and multipart `uploadApplicationFile`.
     - `POST /graphql` for log streaming (`logicFunctionLogs` via SSE) and client schema access / generated client defaults.
+  - Generated client imports have shifted from `twenty-sdk/generated` to `twenty-sdk/clients`, with `MetadataApiClient` now shipped by the SDK and `CoreApiClient` generated during app build/dev.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `0.6.3`.
-  - Scaffolder now supports `--exhaustive` (default), `--minimal`, and `--interactive` example modes.
+  - Current package version in-tree: `0.7.0`.
+  - Scaffolder now supports `--exhaustive` (default) and `--minimal`; `--interactive` no longer appears to be part of the primary documented workflow.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
-  - Default scaffold now includes a post-install logic function (`src/logic-functions/post-install.ts`) and can generate examples for objects, fields, views, navigation menu items, and skills in addition to logic functions/front components.
+  - Default scaffold now includes a post-install logic function (`src/logic-functions/post-install.ts`), app install test scaffolding, and example coverage for objects, fields, views, navigation menu items, skills, and agents in addition to logic functions/front components.
   - Template dependency currently uses `twenty-sdk: latest` (watch for docs/runtime drift when reproducing examples across versions).
 - **Manifest/build surface (as of current code):**
   - Manifest shape in `packages/twenty-shared/src/application/manifestType.ts` is:
-    `application`, `objects`, `fields`, `logicFunctions`, `frontComponents`, `roles`, `skills`, `publicAssets`, `views`, `navigationMenuItems`, `pageLayouts`.
+    `application`, `objects`, `fields`, `logicFunctions`, `frontComponents`, `roles`, `skills`, `agents`, `publicAssets`, `views`, `navigationMenuItems`, `pageLayouts`.
     (Notably, prior `sources` entry is no longer present in this manifest type.)
   - `ApplicationManifest` in `applicationType.ts` now includes optional `postInstallLogicFunctionUniversalIdentifier` and `apiClientChecksum` in addition to `packageJsonChecksum` / `yarnLockChecksum`.
   - Manifest output path remains `.twenty/output/manifest.json`.
-  - Build/upload path remains file-oriented (built logic/front-component files, dependencies, and public assets uploaded through `uploadApplicationFile`).
+  - Build/upload path remains file-oriented (built logic/front-component files, dependencies, and public assets uploaded through `uploadApplicationFile`), but upstream now also documents npm/tarball/server publication paths around that build output.
   - Manifest checksum generation now also computes an aggregate API client checksum when generated client artifacts are present.
 - **Front component packaging:**
   - Front-component runtime internals were reorganized into `packages/twenty-sdk/src/front-component-renderer/*` (host/remote runtime, generated registries, worker helpers, story examples).
@@ -82,6 +84,7 @@ When updating this doc in regular syncs, keep it lightweight:
   - Root SDK exports also expanded front-component action/API helpers (`navigate`, `openSidePanelPage`, `enqueueSnackbar`, etc.), indicating a richer packaged UI interaction surface.
 - **Tools/AI workflow integration:**
   - `skills` are now first-class app entities in shared manifest types and SDK exports (`defineSkill`), and upstream docs now document skill authoring in the Apps capability guide.
+  - `agents` are now also first-class app entities in shared manifest types and docs (`defineAgent`), extending the AI/app packaging surface beyond tool-exposed logic functions.
   - Logic functions marked as tools can be surfaced via workflow tools (`list_logic_function_tools`).
   - Workflow tooling now includes updating logic-function source from tool calls (`update_logic_function_source`).
   - Apps docs now also describe post-install logic functions and `function:execute --postInstall`, improving the operational story for one-time app setup tasks.
@@ -94,7 +97,47 @@ When updating this doc in regular syncs, keep it lightweight:
 
 ---
 
-## Latest Snapshot — 2026-03-03
+## Latest Snapshot — 2026-03-16
+
+**Context:** Updated `services/twenty-core` from `792c8a3c28` to merge commit `e7cd728154` (local merge on 2026-03-16; fetched upstream target: `5dfdc1d81d`).
+
+**Highlights**
+
+1. **SDK + scaffolder moved again, now to `0.7.0`**
+   - `twenty-sdk` and `create-twenty-app` both moved to `0.7.0`.
+   - The CLI now includes `app:publish` alongside `app:build`, `app:dev`, and `app:typecheck`.
+   - Generated client imports moved toward `twenty-sdk/clients`, with docs positioning `MetadataApiClient` as SDK-shipped and `CoreApiClient` as generated during app build/dev.
+
+2. **Distribution story is becoming more explicit**
+   - Upstream docs now split Apps guidance into `getting-started`, `building`, and `publishing`.
+   - `app:publish` supports npm publication or direct publish/install to a Twenty server.
+   - Server-side application development/install plumbing looks more registration-aware, which suggests app lifecycle/distribution is becoming a more formal product surface rather than just local dev sync.
+
+3. **Manifest/app surface expanded again with first-class agents**
+   - Shared manifest types and syncable entities now include `agents` in addition to `skills`, `views`, `navigationMenuItems`, and `pageLayouts`.
+   - The docs now describe both `defineSkill()` and `defineAgent()`, reinforcing the AI-assisted app surface as a packaging concern rather than only a workflow concern.
+   - This is another readiness signal, but still not evidence that our fundraising UX/runtime requirements are ready to move in-app.
+
+4. **The build/dev workflow remains a little easy to misread**
+   - Documentation and command descriptions now emphasize build/publish/distribution more strongly.
+   - However, the current `app:build` implementation still performs sync/generate/typecheck/rebuild/sync work, so it should not be treated as a purely local packaging command.
+   - We should keep treating upstream app command semantics as something to verify in code, not infer from naming alone.
+
+5. **No posture change yet, but the reasons are getting narrower**
+   - The direction is still clearly toward richer packaged apps, packaged UI, and more formal install/publish flows.
+   - The remaining blockers we care about still look like route-trigger raw-body fidelity, app-auth access to required REST/batch paths, and real UI/workflow parity for fundraising admin flows.
+   - That means D-0019 still stays in “watch and prepare,” but with growing evidence that a future proof spike will be worth scheduling when the upstream surface stabilizes further.
+
+**Actions for our stack**
+
+1. Keep the explicit “watch and prepare” posture from `D-0019`; this is still not a migration go-signal.
+2. Update internal notes that still refer to `twenty-sdk/generated`, `--interactive` scaffolding, or a pre-`app:publish` command surface.
+3. Preserve the warning that gateway/proxy routing must continue to support both `/metadata` upload/sync paths and `/graphql` SSE log streaming.
+4. Use the addition of `agents` plus the more explicit publish/install story as inputs for the next D-0019 re-review, without changing the readiness matrix status yet.
+
+---
+
+## Previous Snapshot — 2026-03-03
 
 **Context:** Updated `services/twenty-core` from `e3ab3304e2` to `792c8a3c28` (merge commit on 2026-03-03; upstream parent merged: `2f09fb8c04`).
 
@@ -138,6 +181,15 @@ When updating this doc in regular syncs, keep it lightweight:
    - `POST /metadata` multipart upload (`uploadApplicationFile`)
    - `/graphql` SSE subscriptions (`logicFunctionLogs`)
 4. Use the newly visible app entities (`views`, `navigationMenuItems`, `pageLayouts`, `skills`) as evidence inputs for the next D-0019 re-review, but require an actual UI parity spike before changing status.
+
+**Related proof artifact**
+
+- A focused cloud-app fit spike was completed on branch `spike/twenty-apps-gift-staging-process`.
+- That spike proved backend viability for the single-record `giftStaging -> process -> gift` path and captured the operational/runtime caveats discovered along the way.
+- The detailed record lives in:
+  - [`docs/spikes/twenty-cloud-app-fit-spike-2026-03-16.md`](/home/jamesbryant/workspace/dev-stack/docs/spikes/twenty-cloud-app-fit-spike-2026-03-16.md)
+  - [`docs/spikes/twenty-cloud-app-fit-working-notes-2026-03-16.md`](/home/jamesbryant/workspace/dev-stack/docs/spikes/twenty-cloud-app-fit-working-notes-2026-03-16.md)
+- Before starting a follow-on proof pass, return to that branch/docs rather than re-deriving the same baseline from scratch.
 
 ---
 
