@@ -8,6 +8,8 @@ Define a **lightweight, flexible** donation intake layer that supports three inp
 
 Focus: **small–mid nonprofits (UK-first)**, modular, low complexity, strong data hygiene. This spec complements our Receipting and Reconciliation specs.
 
+Gift Aid note: use `docs/features/gift-aid.md` as the current canonical working definition for the capability boundary, status model, recalculation posture, and lightweight audit shape. This intake spec should stay aligned with that doc rather than redefining Gift Aid semantics locally.
+
 ---
 
 ## Product Goals & Non-Goals

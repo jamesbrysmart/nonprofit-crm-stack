@@ -49,26 +49,28 @@ When updating this doc in regular syncs, keep it lightweight:
 - Treat “Fundraising as an App” as the long-term packaging target, but keep implementation hybrid until Twenty Apps cover required UX + operational primitives (tracked in `docs/DECISIONS.md` D-0019).
 - In SaaS, the “edge layer” is still possible: it becomes a vendor-managed multi-tenant service integrating with each workspace via Twenty APIs/webhooks; customers don’t run code.
 
-## Current Extensibility Surface (baseline verified 2026-03-16)
+## Current Extensibility Surface (baseline verified 2026-03-30)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `0.7.0`.
-  - CLI command registry includes: `auth:login`, `auth:logout`, `auth:status`, `auth:list`, `auth:switch`, `app:build`, `app:dev`, `app:publish`, `app:typecheck`, `app:uninstall`, `entity:add`, `function:logs`, `function:execute`.
-  - `app:generate` is no longer part of the CLI command surface; typed client generation is expected via `app:dev` (with `app:typecheck` added for local TS verification).
-  - `app:publish` now formalizes distribution flows for either npm publication or direct publish/install to a Twenty server.
-  - `entity:add` now covers a wider app surface (`object`, `field`, `function`, `front-component`, `role`, `view`, `navigation-menu-item`, `skill`, `agent`, `page-layout`) with scaffolding support for related UI entities.
+  - Current package version in-tree: `0.8.0-canary.1`.
+  - CLI command registry now includes: `remote add`, `remote list`, `remote remove`, `remote status`, `remote switch`, `build`, `deploy`, `dev`, `publish`, `install`, `typecheck`, `uninstall`, `add`, `logs`, `exec`, `catalog-sync`, plus `server start|status|logs|stop|reset`.
+  - Older `auth:*`, `app:*`, `entity:add`, and `function:*` command names were replaced by the flatter command surface above.
+  - The default local-dev story now expects a local Twenty dev server managed by the SDK plus OAuth-based remote auth, not only API-key-first login.
+  - `deploy` now carries the direct-to-server install path, while `publish` is npm publication only.
+  - `add` still covers a wide app surface (`object`, `field`, `function`, `front-component`, `role`, `view`, `navigation-menu-item`, `skill`, `agent`, `page-layout`) with scaffolding support for related UI entities.
   - API split remains explicit in code:
-    - `POST /metadata` for app lifecycle/sync operations, logic-function execution, application token operations, and multipart `uploadApplicationFile`.
-    - `POST /graphql` for log streaming (`logicFunctionLogs` via SSE) and client schema access / generated client defaults.
-  - Generated client imports have shifted from `twenty-sdk/generated` to `twenty-sdk/clients`, with `MetadataApiClient` now shipped by the SDK and `CoreApiClient` generated during app build/dev.
+    - `POST /metadata` for app lifecycle/sync operations, logic-function execution, application token operations, multipart `uploadApplicationFile`, app tarball upload/install, metadata schema introspection, and `logicFunctionLogs` subscriptions.
+    - `POST /graphql` remains the core data API / generated client target for workspace data access.
+  - Generated client imports had shifted from `twenty-sdk/generated` to `twenty-sdk/clients`, with `MetadataApiClient` shipped by the SDK and `CoreApiClient` generated during app build/dev; current upstream changes now move more of that runtime story toward separate `twenty-client-sdk` provisioning and server-provided application assets.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `0.7.0`.
+  - Current package version in-tree: `0.8.0-canary.1`.
   - Scaffolder now supports `--exhaustive` (default) and `--minimal`; `--interactive` no longer appears to be part of the primary documented workflow.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
   - Default scaffold now includes a post-install logic function (`src/logic-functions/post-install.ts`), app install test scaffolding, and example coverage for objects, fields, views, navigation menu items, skills, and agents in addition to logic functions/front components.
+  - Scaffolder guidance now offers to start a local Twenty dev server automatically, and the documented manual path uses `yarn twenty server start` plus `yarn twenty remote add --local`.
   - Template dependency currently uses `twenty-sdk: latest` (watch for docs/runtime drift when reproducing examples across versions).
 - **Manifest/build surface (as of current code):**
   - Manifest shape in `packages/twenty-shared/src/application/manifestType.ts` is:
@@ -92,8 +94,98 @@ When updating this doc in regular syncs, keep it lightweight:
   - Upstream: `packages/twenty-apps/hello-world` (minimal end-to-end app surface).
   - In this repo: `apps/core/rollup-engine` (non-trivial app logic already running in our model).
 - **Gaps / limitations:**
-  - No published marketplace installer yet; everything is still CLI-driven.
+  - Marketplace/catalog and asset support are moving forward, but the practical install story is still not something we should treat as broadly production-proven for our use case without targeted validation.
+  - Route-trigger request events still expose parsed/normalized request bodies rather than preserved raw bytes, so Stripe-style strict webhook signature verification still looks like a likely platform gap.
   - Docs/examples move quickly and can drift between releases; verify against `packages/twenty-docs` and `packages/twenty-sdk/README.md` after each upstream sync, especially around CLI/scaffolder command names.
+
+---
+
+## Latest Snapshot — 2026-03-30
+
+**Context:** Updated `services/twenty-core` from merge commit `6ae867744a` to merge commit `213d75d900` (local merge on 2026-03-30; fetched upstream head: `d246b16063`, nearest upstream tag `v1.19.11`).
+
+**Highlights**
+
+1. **Applications are no longer feature-flagged**
+   - Upstream removed `IS_APPLICATION_ENABLED`.
+   - Application registration, development, install, manifest, upgrade, marketplace, and OAuth paths no longer sit behind the feature flag guard.
+   - For our stack, any local notes that still treat Applications as opt-in via feature flag should now be treated as stale until revalidated.
+
+2. **Application assets and marketplace metadata moved forward materially**
+   - The upstream `Provide application assets` change touched the SDK, scaffolder, docs, frontend application settings screens, application registration entities/services, and marketplace/catalog utilities.
+   - Asset URL resolution and richer application detail surfaces are now more explicit in both backend and frontend code.
+   - This is a real maturity signal for the app packaging/distribution surface, even if it does not change our fundraising migration posture by itself.
+
+3. **SDK + scaffolder workflow shifted again**
+   - `twenty-sdk` now exposes additional commands such as `install` and `catalog-sync`.
+   - `create-twenty-app` continues moving toward programmatic local-server/OAuth setup rather than shelling out through wrapper scripts.
+   - The app-dev workflow is still changing quickly enough that we should continue treating docs and command names as version-sensitive rather than stable assumptions.
+
+4. **The generated client/runtime packaging story changed underneath the SDK**
+   - Generated metadata client source files were removed from `packages/twenty-sdk/src/clients/generated/*`.
+   - The runtime now leans more clearly on the separate `twenty-client-sdk` provisioning path plus server-provided assets/application package data.
+   - This matters for future fundraising-app proofs because it changes where we should look when debugging generated client or front-component runtime behavior.
+
+5. **No clear evidence yet that our two main blockers are resolved**
+   - This merge review did not show a convincing signal that route-trigger raw-body fidelity for Stripe-style signature verification has landed.
+   - It also did not provide a proof that app-authenticated logic functions now have the batch-path access guarantees we would need for full fundraising migration.
+   - So this merge is valuable fork-maintenance and evidence gathering, not a migration go-signal.
+
+**Actions for our stack**
+
+1. Keep the explicit “watch and prepare” posture from `D-0019`; this merge still does not justify a migration decision.
+2. Update local notes/runbooks that still assume Applications must be enabled via `IS_APPLICATION_ENABLED`.
+3. Reconfirm our gateway/runtime assumptions around the current app control plane after this merge:
+   - `POST /metadata` JSON GraphQL
+   - `POST /metadata` multipart upload / app asset flows
+   - `/metadata` log/app lifecycle traffic where applicable
+   - `/graphql` for generated core data clients
+4. Keep route-trigger raw-body fidelity and app-auth batch-path access as explicit blocker watch items until we run a proof that says otherwise.
+
+---
+
+## Latest Snapshot — 2026-03-23
+
+**Context:** Updated `services/twenty-core` from merge commit `e7cd728154` to merge commit `6ae867744a` (local merge on 2026-03-23; fetched upstream head: `93de331428`).
+
+**Highlights**
+
+1. **SDK + scaffolder moved again, now to `0.8.0-canary.1`**
+   - `twenty-sdk` and `create-twenty-app` both moved from `0.7.0` to `0.8.0-canary.1`.
+   - The CLI surface was flattened again: `app:*` moved to `build` / `dev` / `publish` / `deploy` / `typecheck` / `uninstall`, `entity:add` became `add`, and `function:*` became `logs` / `exec`.
+   - The old `auth:*` workspace-profile flow was replaced by `remote *` commands plus a local OAuth flow.
+
+2. **The preferred app-dev workflow is now “local server + OAuth”, not “API key + remote workspace”**
+   - Upstream docs and scaffolder output now assume a local Twenty dev server managed by the SDK.
+   - New server commands (`server start|status|logs|stop|reset`) make the all-in-one local dev instance part of the official app workflow.
+   - This matters operationally because it is a stronger signal about how the team expects app development to happen before broader hosted/app marketplace maturity.
+
+3. **The app API surface is broader and more explicitly centered on `/metadata`**
+   - SDK app operations now explicitly cover development app creation, application registration lookup/creation, tarball upload/install, application token generation, file upload, logic-function execution, and metadata schema introspection through `/metadata`.
+   - `logicFunctionLogs` also appears in the metadata schema and the updated SDK now subscribes via `/metadata`, so our prior note that log streaming stayed on `/graphql` is stale.
+   - `/graphql` still matters for generated core data clients, but the “app control plane” is now more clearly concentrated on `/metadata`.
+
+4. **Manifest/app surface changed again, but mostly at the edges**
+   - Navigation menu items now carry explicit `type`.
+   - Command menu item manifests now support `shortLabel`.
+   - These are real surface changes, but they do not materially change the fundraising-readiness posture by themselves.
+
+5. **The main blocker for Stripe-style in-app webhook ingress still appears unchanged**
+   - Route-trigger request events still normalize/parse the body into `LogicFunctionEvent.body` and do not expose preserved raw request bytes.
+   - That means strict Stripe signature verification still looks like a likely real platform gap for a pure route-trigger implementation.
+   - This upstream merge is useful for understanding Twenty’s direction, but it does not look like the missing raw-body primitive landed in this window.
+
+**Actions for our stack**
+
+1. Keep the explicit “watch and prepare” posture from `D-0019`; this is still not a migration go-signal.
+2. Update internal notes that still assume `auth:*`, `app:*`, `entity:add`, `function:*`, or API-key-first local setup as the current app workflow.
+3. Reconfirm gateway/proxy support for the effective app control-plane traffic shape:
+   - `POST /metadata` JSON GraphQL
+   - `POST /metadata` multipart upload (`uploadApplicationFile`, app tarball upload)
+   - `/metadata` subscriptions / SSE for `logicFunctionLogs`
+   - `/graphql` for generated core data clients
+4. Keep treating route-trigger raw-body fidelity as a real watch item for Stripe and similar providers; do not assume this upstream merge removed that blocker.
+5. The “related proof artifact” links in the previous snapshot are currently missing locally; either restore those spike docs or replace the links on the next cleanup pass so this watch log does not point at non-existent files.
 
 ---
 

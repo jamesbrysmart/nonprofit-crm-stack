@@ -23,13 +23,21 @@ For any non-trivial change:
 - If the change affects runtime wiring (gateway/proxy/env/compose) or user-facing end-to-end behavior, run an end-to-end smoke check.
 - Don’t “leave it red”: if checks fail and you’re not fixing it now, explicitly track it (e.g., `docs/POC-backlog.md`) and call it out in the session/PR summary.
 
+Lint/format note for `services/fundraising-service`:
+
+- Prefer `npm -C services/fundraising-service run lint:diff` and `npm -C services/fundraising-service run format:diff` during normal iteration to avoid broad repo churn.
+- Use `npm -C services/fundraising-service run lint:check` for a full non-mutating `oxlint` pass.
+- `lint:check` does not run Prettier; pair it with `npm -C services/fundraising-service run format:check`, or use `npm -C services/fundraising-service run check:full` to run both.
+- Use `npm -C services/fundraising-service run lint:diff:fix` only when you explicitly want targeted `oxlint --fix` changes.
+- Treat `npm -C services/fundraising-service run lint` and `npm -C services/fundraising-service run format` as auto-fix commands, not neutral checks.
+
 ## What to run (by change type)
 
 | Change type | Minimum checks | Notes |
 | --- | --- | --- |
 | Docs-only (`docs/*`, ADRs, runbooks) | internal consistency scan | See `AGENTS.md` “Docs consistency”. If you changed operational steps, verify against scripts/config. |
 | Wiring (`docker-compose*.yml`, `nginx/*`, `.env.example`) | bring-up + health + relevant smoke | Use `docs/OPERATIONS_RUNBOOK.md` as the canonical checklist. |
-| Fundraising service (`services/fundraising-service/*`) | package lint + tests; smoke when end-to-end changes | Use `services/fundraising-service/package.json`. If you touched proxy/ingestion/staging/batch processing, run the gift smoke checks from `docs/OPERATIONS_RUNBOOK.md`. |
+| Fundraising service (`services/fundraising-service/*`) | package lint + tests; smoke when end-to-end changes | Use `services/fundraising-service/package.json`. Prefer `lint:diff` / `format:diff` while iterating and `lint:check` for a full non-mutating `oxlint` pass. If you touched proxy/ingestion/staging/batch processing, run the gift smoke checks from `docs/OPERATIONS_RUNBOOK.md`. |
 | Vendor sync (updating `services/twenty-core` pointer) | health + smoke checks | Treat as maintenance, not feature work. Validate the stack using `docs/OPERATIONS_RUNBOOK.md`. |
 | Twenty core code change (`services/twenty-core/*`, exceptional) | Twenty Nx targets + relevant tests | Default posture: avoid edits; only do this when explicitly approved. |
 
