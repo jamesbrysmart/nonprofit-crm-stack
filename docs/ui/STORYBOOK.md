@@ -1,10 +1,10 @@
 # Storybook Guide (Working)
 
-Updated: 2026-03-11
-Status: Working guide (`trial`)
+Updated: 2026-04-02
+Status: Current guidance
 Purpose: Define how we use Storybook to improve custom UI quality and consistency across workflows.
 
-This guide is exploratory. It sets working defaults for review and implementation speed, not rigid rules.
+This guide defines the current Storybook process and review role.
 
 ## 0. Core Use
 
@@ -17,6 +17,7 @@ Storybook is our UX review harness for real UI code:
 Working interpretation:
 - Storybook is useful as a UI lab, a review surface for composed states, and a reference library once something is explicitly promoted to baseline.
 - A story existing does not, by itself, make a pattern or workflow “decided.”
+- Live product components remain the source of truth; Storybook should expose and compare them, not replace them with idealized mock compositions once the real page exists.
 
 ## 1. Taxonomy
 
@@ -105,12 +106,12 @@ Legend: `not-started` | `in-progress` | `review-ready` | `approved-baseline` | `
 - keep,
 - refine now,
 - open question.
-4. Capture open UX questions in `docs/ui/PATTERNS.md`.
+4. Capture open UI questions in `docs/ui/ARCHITECTURE.md` or the relevant feature doc.
 5. Promote to `ApprovedBaseline` only when product explicitly signs off.
 
 ## 5.1 Record Browser Shell Baseline
 
-Use `Patterns/Record Browser Shell` as the current fundraising baseline for list-driven pages.
+Use `Patterns/Record Browser Shell` as the current Storybook review harness for list-driven pages.
 
 It defines the shared contract for:
 
@@ -133,6 +134,29 @@ Expectation:
 - richer inspection and record actions should usually happen in the drawer.
 - pagination is part of the current baseline candidate, not an optional afterthought.
 - `Patterns/Queue + Drawer Shell` should be treated as an operational variant of this broader model, not a separate competing baseline.
+
+## 5.2 Storybook Role In Consolidation
+
+Use Storybook to support the current workspace-consolidation effort, but do not let it become the only representation of the pattern.
+
+Working rule:
+
+- Pattern stories should validate the shared composition contract:
+  - header,
+  - metrics,
+  - controls,
+  - applied state,
+  - results surface,
+  - pagination,
+  - drawer.
+- Workflow stories should increasingly render the real page components or very thin wrappers around them.
+- If a synthetic story diverges from the shipped implementation, update the story or remove it; do not preserve a cleaner fictional version as the baseline.
+
+Immediate guidance:
+
+- Keep `Patterns/Record Browser Shell` as the review harness for shared composition changes.
+- Add or update workflow stories for the real recurring, reconciliation, appeals, and staging surfaces as the consolidation work lands.
+- Treat Storybook as the fastest comparison surface for visual and interaction drift across workspaces, not as an independent design system.
 
 ## 6. Commands
 
