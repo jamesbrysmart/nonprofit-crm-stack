@@ -24,18 +24,27 @@ Read these before running operational commands or changing operational behavior.
 
 ## UX / UI
 
-- `ui/STORYBOOK.md` — canonical guide for Storybook taxonomy, workflow packs, review checklist, and coverage map.
-- `ui/BASELINE.md` — working baseline for how custom UI is built (source order, defaults, revisit triggers).
-- `ui/PATTERNS.md` — working interaction pattern log for reusable custom UI slices.
-- `ui/BRIEF_TEMPLATE.md` — UI task brief template so requests stay predictable and implementation-ready.
-- `ui/IMPLEMENTATION_PLAN.md` — working implementation plan for the shared custom UI shell and staged rollout.
-- `UX_UI.md` — UI/UX principles + working notes + “as-built” status. Consult principles before UI changes; update as-built after.
+- `UX_UI.md` — canonical UX and interaction principles for custom UI.
+- `ui/ARCHITECTURE.md` — canonical shared UI model, reuse criteria, current defaults, and open architecture questions.
+- `ui/STORYBOOK.md` — canonical Storybook taxonomy, workflow-pack expectations, and review process.
+- `ui/TWENTY_APPS.md` — canonical migration-aware guidance for Twenty apps/front components.
+- `ui/components/` — requirement docs for high-value repeated UI components and patterns.
+- `spikes/` — exploratory UI notes and one-off design investigations that are not canonical guidance.
+
+## Apps Migration
+
+- `apps-migration/OVERVIEW.md` — migration purpose, scope, goals, and non-goals for moving fundraising-service into Twenty apps.
+- `apps-migration/PRODUCT_REVIEW.md` — review of current fundraising workflows to decide what to preserve, simplify, redesign, or drop.
+- `apps-migration/CODE_REVIEW.md` — review of current code to decide what is portable, what needs refactor first, and what should not be migrated as-is.
+- `apps-migration/UI_MIGRATION_MAP.md` — mapping of current UI surfaces and patterns to likely Twenty-app migration paths.
+- `apps-migration/MIGRATION_SEQUENCE.md` — staged migration order, dependencies, and validation gates.
 
 ## Feature specs (what we’re building)
 
 These describe intended behavior and workflows at the feature level.
 
 - `features/` — per-feature specs (donation intake, staging, reconciliation, receipts, recurring, households, campaigns/appeals).
+- `features/gift-aid.md` — working Gift Aid capability definition: product boundary, operational model, lightweight data/audit shape, and implementation-planning guidance.
 - `solutions/` — cross-feature designs / “how we solve it” docs.
   - `solutions/gift-batch-processing.md` — canonical as-built solution notes for batch processing, donor-match/create-donors runs, invariants, and operating model.
 
