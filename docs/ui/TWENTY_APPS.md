@@ -20,6 +20,7 @@ This doc is not authoritative for:
 - local shared UI architecture,
 - Storybook process,
 - general UX principles.
+- final backend or integration-runtime boundary decisions.
 
 ## 2. Current Working Position
 
@@ -33,6 +34,7 @@ Open:
 
 - the exact limits of Twenty front components for dense operational workflows,
 - how cleanly drawer-heavy and queue-heavy fundraising flows map to Twenty-native surfaces.
+- how UI portability decisions should interact with any eventual service/runtime boundary for specialized integrations.
 
 ## 3. Portable Asset Types
 
@@ -90,5 +92,6 @@ Spike before hardening:
 ## 8. References To Fold In
 
 - `docs/TWENTY_EXTENSIBILITY_WATCH.md`
+- `docs/spikes/service-layer-integration-runtime.md` for exploratory runtime/service-layer context that sits outside this UI-focused guidance
 - current local audit conclusions from fundraising-service UI work
 - any validated Twenty app examples we rely on

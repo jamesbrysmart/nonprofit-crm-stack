@@ -28,6 +28,7 @@ This proposal covers Gift Aid fields on:
 - `GiftStaging`
 - `GiftAidDeclaration`
 - `GiftAidClaimBatch`
+- `GiftAidClaimSubmission`
 
 It does not attempt to define:
 
@@ -161,6 +162,14 @@ The schema should:
 - lightweight blocking summary should make the draft usable as a real review queue without adding a heavy lifecycle model;
 - `GiftAidClaimBatch` is the future anchor for HMRC submission integration.
 
+### Keep unchanged for lean HMRC integration
+
+Current recommendation:
+
+- do not add HMRC transport lifecycle fields to `GiftAidClaimBatch` in v1;
+- do not extend batch status beyond `draft | submitted` for HMRC integration purposes;
+- attach external submission lifecycle through a new `GiftAidClaimSubmission` object instead.
+
 ### Not recommended in v1
 
 | Field | Reason |
@@ -169,7 +178,47 @@ The schema should:
 | accepted/rejected/paid fields | Later lifecycle extension |
 | export/transmission timestamps beyond `submittedAt` | `submittedAt` is sufficient for v1 |
 
-## 7. Controlled Value Sets
+## 7. `GiftAidClaimSubmission` Field Proposal
+
+`GiftAidClaimSubmission` should be the lean external submission object for HMRC integration.
+
+It should link back to an existing `GiftAidClaimBatch` and hold:
+
+- one submission attempt;
+- the frozen handoff payload used by the adapter;
+- a compact set of transport/result fields.
+
+### Recommended fields
+
+| Field | Type | Purpose | Notes |
+| --- | --- | --- | --- |
+| `giftAidClaimBatch` | `RELATION` | Link to the submitted internal claim batch | `MANY_TO_ONE` to `GiftAidClaimBatch` |
+| `status` | `TEXT` | External submission lifecycle | Expected values: `queued`, `submitted`, `accepted`, `rejected`, `failed` |
+| `environment` | `TEXT` | Submission environment | Expected values likely `test`, `live` |
+| `submissionNumber` | `NUMBER` | Ordering of attempts for the same batch | Supports retries without extra objects |
+| `snapshotJson` | `RAW_JSON` | Frozen HMRC handoff payload | Primary v1 snapshot storage |
+| `snapshotHash` | `TEXT` | Stable hash of the frozen payload | Useful for reproducibility/debugging |
+| `submittedToHmrcAt` | `DATE_TIME` | First successful handoff to gateway | Domain-specific timestamp |
+| `lastPolledAt` | `DATE_TIME` | Most recent adapter poll timestamp | Optional but useful operationally |
+| `completedAt` | `DATE_TIME` | Terminal outcome timestamp | Set on accepted/rejected/failed |
+| `correlationId` | `TEXT` | HMRC / gateway correlation ID | For ETS/live tracking |
+| `transactionId` | `TEXT` | HMRC / gateway transaction ID | Keep first-class for support/debug |
+| `hmrcDocumentReference` | `TEXT` | HMRC document reference when returned | First-class because operators may need it |
+| `messageCodesJson` | `RAW_JSON` | HMRC message codes / structured response codes | Keep JSON-first in v1 |
+| `errorSummaryJson` | `RAW_JSON` | Adapter/gateway/HMRC error summary | Keep JSON-first in v1 |
+
+### Not recommended in first provisioning pass
+
+| Field | Reason |
+| --- | --- |
+| `createdAt` | Use standard system metadata provided by the object platform |
+| `updatedAt` | Use standard system metadata provided by the object platform |
+| `isLatest` | Derive latest from `submissionNumber` or timestamps |
+| standalone snapshot object relation | Over-models the v1 handoff |
+| event log relation | Over-models retries/status tracking for v1 |
+| `irmark` | Add only if it proves operationally useful to inspect directly |
+
+## 8. Controlled Value Sets
 
 ### `giftAidStatus`
 
@@ -187,6 +236,14 @@ The schema should:
 - `draft`
 - `submitted`
 
+### `GiftAidClaimSubmission.status`
+
+- `queued`
+- `submitted`
+- `accepted`
+- `rejected`
+- `failed`
+
 ### Initial `giftAidReasonCode` set
 
 - `valid_declaration_present`
@@ -199,7 +256,7 @@ The schema should:
 
 These should remain a small controlled set in v1.
 
-## 8. Placeholder Replacement Map
+## 9. Placeholder Replacement Map
 
 | Current placeholder | Intended replacement |
 | --- | --- |
@@ -207,13 +264,14 @@ These should remain a small controlled set in v1.
 | `GiftStaging.giftAidEligible` | `giftAidRequested`, `giftAidDeclarationCaptured`, `giftAidDeclarationDate`, `giftAidCoverageScope`, `giftAidDeclarationSource`, `giftAidTextVersion`, `giftAidDeclaration` |
 | `RecurringAgreement.giftAidDeclarationId` | De-emphasize as placeholder; do not treat as primary model |
 
-## 9. Open Decisions Kept Deliberately Out Of The Provisioning Target
+## 10. Open Decisions Kept Deliberately Out Of The Provisioning Target
 
 - whether `Gift` later needs a stored `giftAidClaimState` convenience field;
 - exact controlled values for `coverageScope`;
 - which specific Gift Aid fields are frozen on submitted gifts, beyond the general rule that Gift Aid-relevant fields should not drift.
+- whether `irmark` should later become a first-class field on `GiftAidClaimSubmission`.
 
-## 10. Practical Next Step
+## 11. Practical Next Step
 
 Use this field proposal to produce:
 
@@ -225,10 +283,11 @@ Use this field proposal to produce:
 
 To reduce churn, the likely order is:
 
-1. provision new objects and fields in `setup-schema.mjs`
-2. leave existing placeholder fields in place temporarily where needed for compatibility
-3. update DTOs/types and staging/gift mapping to the new Gift Aid field shape
-4. add Gift Aid service scaffolding and claim-batch behaviour
-5. remove or de-emphasize placeholder fields once the new path is working
+1. keep the existing `GiftAidClaimBatch` provisioning unchanged unless a concrete delta is required
+2. add `GiftAidClaimSubmission` in `setup-schema.mjs`
+3. add only the relation changes needed to link `GiftAidClaimSubmission` to `GiftAidClaimBatch`
+4. leave existing placeholder fields in place temporarily where needed for compatibility
+5. update DTOs/types and service orchestration for submission creation and adapter handoff
+6. remove or de-emphasize placeholder fields once the new path is working
 
 This sequence should be reviewed once more immediately before implementation, but it is a reasonable default path from the current codebase to the intended model.

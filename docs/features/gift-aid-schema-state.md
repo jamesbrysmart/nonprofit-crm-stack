@@ -17,6 +17,8 @@ Current locked decisions in this note:
 
 - one current open draft claim per workspace in v1;
 - `GiftAidClaimBatch` is the submission grouping unit and the future anchor for HMRC submission integration;
+- `GiftAidClaimBatch` remains the internal workflow object and should not absorb HMRC transport lifecycle;
+- `GiftAidClaimSubmission` is the lean external submission object for HMRC integration in v1;
 - gifts in a `submitted` claim batch are considered `claimed`;
 - submitted batches are immutable in composition and frozen for reproducibility.
 
@@ -138,6 +140,47 @@ Purpose:
 - make draft blocking visible without requiring every consumer to recalculate it ad hoc;
 - provide the stable grouping unit needed for review, totals, export, and later HMRC submission.
 
+Important HMRC-integration stance:
+
+- keep `GiftAidClaimBatch` materially unchanged for v1 HMRC integration;
+- do not put HMRC transport status, correlation IDs, or protocol metadata on the batch;
+- use a separate `GiftAidClaimSubmission` object for the external submission lifecycle.
+
+### `GiftAidClaimSubmission`
+
+`GiftAidClaimSubmission` is the lean external lifecycle object for one HMRC submission attempt against a submitted `GiftAidClaimBatch`.
+
+Recommended v1 fields:
+
+- `giftAidClaimBatchId`
+- `status`
+  - `queued | submitted | accepted | rejected | failed`
+- `environment`
+  - likely `test | live`
+- `submissionNumber`
+- `snapshotJson`
+- `snapshotHash`
+- `submittedToHmrcAt`
+- `lastPolledAt`
+- `completedAt`
+- `correlationId`
+- `transactionId`
+- `hmrcDocumentReference`
+- `messageCodesJson`
+- `errorSummaryJson`
+
+Optional later field if clearly operationally useful:
+
+- `irmark`
+
+Recommended v1 invariants:
+
+- one row is one submission attempt;
+- a batch may have multiple submission rows over time;
+- retries create new submission rows rather than mutating one row through many attempts;
+- the frozen HMRC handoff payload lives on `snapshotJson` in v1;
+- standard object system metadata should provide `createdAt` / `updatedAt`, so those do not need explicit custom fields.
+
 ## 3. State Ownership
 
 ### Manually recorded facts
@@ -172,6 +215,16 @@ Purpose:
 For v1, `submitted` means internally finalized, frozen, and ready for HMRC export or later submission automation. It does not mean actually transmitted to HMRC.
 
 No richer lifecycle is required in v1 unless HMRC integration later forces it.
+
+### Claim submission lifecycle
+
+- `queued`
+- `submitted`
+- `accepted`
+- `rejected`
+- `failed`
+
+For v1, this lifecycle belongs on `GiftAidClaimSubmission`, not on `GiftAidClaimBatch`.
 
 ### Gift claim state
 
@@ -240,6 +293,7 @@ The Gift Aid service layer should be responsible for:
 - do we need a stored `giftAidClaimState` convenience field later, or will derived state remain sufficient in practice;
 - should manual override be able to move a `needs_review` gift directly into the draft claim, or should that require a separate explicit action;
 - what exact fields will later be required for HMRC submission, and can we reserve room without adding them now.
+- whether `irmark` becomes operationally useful enough to warrant a first-class field early, or should remain derivable/logged only.
 
 ## 8. Related Docs
 

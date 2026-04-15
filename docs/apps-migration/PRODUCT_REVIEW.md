@@ -214,7 +214,7 @@ Scope note: this scenario reviews the handoff from Manual Gift Entry into the st
 Why it matters:
 
 - Manual entry overlaps heavily with the staging lifecycle and sets the pattern for how high-trust intake relates to review-first processing.
-- This decision affects whether manual entry feels like a fast-path gift creation flow, a mandatory staging workflow, or a hybrid.
+- This decision affects whether intake routing feels coherent across the product or drifts into hidden, trust-flag-driven branching.
 
 Current behavior:
 
@@ -222,6 +222,15 @@ Current behavior:
 - The client builds a `GiftCreatePayload` and sets `autoProcess: true`.
 - `GiftService.createGift` stages first when gift staging is enabled, then may continue to committed gift creation when trust and diagnostics allow.
 - `GiftStagingController.createGiftStaging` is a separate forced-staged path and sets `autoProcess = false`.
+
+Current target posture:
+
+- Intake routing should be channel-based rather than hidden "bypass staging" behavior.
+- Manual entry should create a committed gift directly by default.
+- A batch-context manual-entry exception remains open for review, but if it exists later it should be explicit and not weaken the standard direct-create mental model.
+- CSV / bulk import should create staged gifts by default.
+- Integration intake should create staged gifts by default.
+- Manual-entry-to-staging should not be part of the initial product shape unless later evidence shows a repeated concrete need.
 
 Key metadata / UI / logic:
 
@@ -237,17 +246,17 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Should Manual Gift Entry remain a high-trust path that can stage and auto-process eligible gifts?
-- Should Manual Gift Entry always create a staged record requiring explicit review?
-- Should this become an explicit user/admin choice rather than an endpoint-level behavior?
-- What user-facing success/outcome state should distinguish committed gifts from staged-only acknowledgements?
+- Should manual entry ever stage in the initial product model, or should it remain a direct-commit path only?
+- If manual-entry-to-staging ever exists later, what concrete operational cases justify it strongly enough to earn a place in the product?
+- Should intake routing be expressed entirely at intake-type level, or is there any early case for narrow per-integration exceptions?
+- What user-facing success/outcome state should distinguish committed gifts from staged-only acknowledgements in the channels that do stage?
 
 Migration read:
 
-- Product posture: `Open`.
-- The Twenty-app implementation should make this product rule explicit.
-- Do not preserve the current endpoint distinction by accident if the desired product model is different.
-- This decision should also inform CSV import and integration intake, because those channels may need different trust and auto-processing rules.
+- Product posture: `Redesign` with current leaning `Manual entry -> direct commit by default`.
+- The Twenty-app implementation should replace hidden trust/auto-process branching with an explicit channel-based intake-routing model.
+- Do not preserve the current endpoint distinction or `autoProcess` behavior by accident if the desired product model is channel-owned defaults.
+- This decision should align manual entry, CSV import, and integration intake under one coherent routing story.
 
 #### Scenario: Integration Intake And Staging
 
@@ -266,6 +275,11 @@ Current behavior:
 - GoCardless has a webhook endpoint, but the current service is a skeleton handler that logs summarized event data and does not yet create or update staged gifts.
 - The generic gift creation API accepts integration/source fields such as `intakeSource`, `sourceFingerprint`, `provider`, `providerPaymentId`, and `providerContext`.
 - Webhook routes are currently authentication-exempt at the fundraising-service auth layer, so provider-specific validation is part of the intake contract.
+
+Current target posture:
+
+- Integration intake should stage by default.
+- Any future direct-commit integration path should have to justify itself as a narrow, explicit channel/policy exception rather than inherit manual-entry behavior or the current generic `createGift` flow by accident.
 
 Key metadata / UI / logic:
 
@@ -303,7 +317,7 @@ Open questions:
 - Should provider webhooks be service-owned endpoints, connector/n8n-normalized events, or both depending on provider and deployment?
 - In Twenty apps, should integration intake live inside app/server actions, an external connector layer, fundraising-service-compatible endpoints, or a hybrid?
 - Which provider events should create staged gifts versus only update existing recurring agreements, installments, or audit state?
-- Should Stripe webhook gifts be allowed to auto-process when identity evidence is strong, or should integration intake default to staged review?
+- Should any integration source be allowed to direct-commit in the first product model, or should all integrations stage by default?
 - What is the intended GoCardless lifecycle: create a staged gift on payment-created, process on payment-confirmed, and fail/cancel on provider failure events, or a simpler first version?
 - Which parts of the current Stripe implementation are reusable product behavior, and which are only a convenient first implementation?
 - Should `autoProcess` be a per-record flag from integration payloads, or should integration automation be driven by channel policy and explicit org/admin settings?
@@ -312,12 +326,17 @@ Open questions:
 
 Migration read:
 
-- Product posture: `Open`.
+- Product posture: `Preserve + simplify` with current leaning `stage by default`.
 - The Twenty-app migration should not blindly preserve the current split where Stripe is partly implemented and GoCardless is a logging skeleton.
 - Integration intake needs a clear target contract before migration: source evidence, trust level, idempotency, auto-processing policy, and recurring-agreement behavior.
 - Review how Twenty apps expect integrations/connectors to be implemented before choosing whether direct fundraising-service webhook controllers remain the target shape.
 - Keep the integration intake path aligned with CSV/import and manual intake decisions so the staging lifecycle does not fork by source accidentally.
 - Resolve the documentation/code mismatch around n8n versus service-owned Stripe intake before treating the integration architecture as settled.
+- Preserve a common staged-gift intake boundary as the default integration model.
+- Do not treat the current Stripe auto-process path as product truth; it is useful implementation evidence, not a settled target model.
+- Leave room for narrow, explicit routing/bypass exceptions later where confidence and operational needs clearly justify direct commit for a specific integration path.
+- Keep any such bypass behavior as an explicit channel/policy decision, not an accidental inheritance from generic gift-create logic.
+- Keep the service/runtime-layer question in view here as a migration consideration, not a conclusion: integration intake may be one of the places where provider-specific behavior, recurring-enrichment logic, or client-specific operational preferences still justify an adapter/service boundary.
 
 #### Scenario: CSV / Import Batch Intake
 
@@ -333,6 +352,12 @@ Current behavior:
 - Current target direction is to use Twenty's CSV import functionality rather than rebuilding a separate CSV importer inside the fundraising app.
 - The migration still needs a product path for imported gift-like rows: how they map to gift staging or committed gift records, and what the user reviews after the import completes.
 
+Current target posture:
+
+- CSV / bulk import should stage by default.
+- The first product model should not treat CSV import as a direct-commit channel.
+- Supported gift CSV imports should create or attach to a `giftBatch` by default so users land in focused batch review rather than the broader staging queue.
+
 Key metadata / UI / logic:
 
 - Metadata: likely target object for imported rows: `giftStaging` or committed `gift`.
@@ -344,17 +369,20 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Should imported gift rows normally create staged gifts, committed gifts, or either depending on admin/import choice?
+- Should imported gift rows ever direct-commit in the first product model, or should CSV import remain a staged-review channel only?
 - Should each gift CSV import create or select a `giftBatch` so users can open focused batch scope afterwards?
 - What minimal gift / staging fields must be present in the first supported import template?
 - How should donor identity / dedupe review happen after Twenty import?
 
 Migration read:
 
-- Product posture: `Open`.
+- Product posture: `Preserve + simplify` with current leaning `stage by default`.
 - Use Twenty's CSV import capability; do not rebuild a separate fundraising CSV importer by default.
 - Keep CSV/import aligned with the same intake/staging/committed-gift lifecycle decisions as manual and integration intake.
 - Preserve a clear post-import next step, especially when imported rows need donor/dedupe/detail review before processing.
+- Preserve staging as the post-import boundary and batch-first review as the default operating model for imported gifts.
+- Be firmer here than the current generic runtime logic: CSV should not inherit auto-process behavior by accident.
+- Make post-import batch scope explicit by default so donor-match, batch processing, and blocker-first review happen inside a focused review container rather than the broader staging queue.
 
 #### Scenario: Editing Staged Donor Or Gift Details
 
@@ -367,7 +395,7 @@ Why it matters:
 Current behavior:
 
 - The staging drawer allows users to edit donor-related details and core gift details before processing.
-- Current implementation updates surfaced staging fields and also maintains raw-payload-oriented behavior behind the scenes.
+- Current implementation now treats surfaced staging fields as the authoritative editable truth for processing.
 - Donor correction and gift-detail correction currently sit in the same overall review workflow, but are exposed in separate drawer sections.
 - The review workflow distinguishes incoming donor evidence from confirmed CRM donor linkage.
 - Users can review likely matches, search donors, assign or change the linked donor, or leave the donor unresolved for further review.
@@ -384,24 +412,31 @@ Key metadata / UI / logic:
   - lower-frequency gift fields currently sit behind a `More fields` disclosure
   - the drawer keeps primary review separate from lower-level audit/raw-payload evidence
 - Logic:
-  - `GiftStagingService.updateGiftStagingPayload` updates staging fields and rewrites the stored raw payload
-  - `mergePayloadForUpdate` is the current merge layer between staged entity fields, raw payload, and user edits
+  - `GiftStagingService.updateGiftStagingPayload` updates staged fields directly and no longer rewrites `rawPayload`
+  - `GiftStagingProcessingService.processGift` now rebuilds the processing payload from staged fields rather than reparsing editable `rawPayload`
+  - `rawPayload` remains available as audit/reference evidence rather than the editable processing source of truth
   - `buildTwentyGiftPayload` strips staging-only fields before committed gift creation
-  - `GiftService.resolveDonorFromStagingPayload` can resolve or create a donor at the processing boundary when needed
+  - `GiftService.resolveDonorFromStagingPayload` now respects staged-review intent:
+    - if `donorId` is already linked, processing uses that donor
+    - if no donor is linked, processing creates a new donor rather than silently re-matching to an existing one
 
 Open questions:
 
-- Is the current raw-payload-oriented update behavior more implementation complexity than the product actually needs?
 - Should donor correction and gift-detail correction keep the same overall review flow but use simpler underlying update rules?
 - Which edits should be treated as truly review-critical versus secondary coding/categorisation changes?
-- Should the processing-boundary donor creation path remain, or should donor creation be more explicit in the review UI before processing?
+- Should donor creation remain a processing-boundary fallback for unresolved rows, or should the review UI become the clearer primary place where the user decides "link existing donor" versus "create new donor" before processing?
 
 Migration read:
 
 - Product posture: `Simplify`.
 - Preserve the correction step before commit, especially around donor identity and duplicate prevention.
-- Review whether the current raw payload, merge, and related update mechanics are more complex than a lean migration needs.
-- Keep donor correction prominent; treat fund/appeal/opportunity and similar coding edits as important but secondary during high-volume review.
+- The earlier raw-payload merge complexity has already been simplified toward the target model:
+  - staged fields are the editable truth,
+  - processing rebuilds from staged fields,
+  - raw payload remains secondary audit/reference evidence.
+- Keep donor correction prominent and explicit; processing should respect review-time donor linkage decisions rather than silently rematching to an existing donor.
+- Treat fund/appeal/opportunity and similar coding edits as important but secondary during high-volume review.
+- Keep staging review and manual entry distinct in purpose, but prefer shared relational-entry patterns/components where the user need overlaps unless a workflow-specific reason justifies divergence.
 
 #### Scenario: Queue / Drawer Active-Work Review
 
@@ -410,6 +445,9 @@ Why it matters:
 - Gift processing is a workspace for moving through active staged gifts, not just a record detail form.
 - Users need to scan, prioritize, filter, select, review in context, act, and then continue through the active queue.
 - This scenario is one of the main product inputs for reusable record-list / review-drawer patterns.
+- The queue and drawer need a strong division of labor:
+  - the queue is primarily a triage / work-selection surface,
+  - the drawer is the main diagnosis / resolution surface.
 
 Current behavior:
 
@@ -418,31 +456,57 @@ Current behavior:
 - Users can search, filter by intake/source or attention-oriented state, sort, paginate, switch between workspace and batch scope, open rows in the drawer, and trigger row actions.
 - Queue rows combine donor state, amount/date, eligibility, next-step/review summary, context, and available actions.
 - The drawer has review/detail/audit sections and keeps raw payload / diagnostics secondary to primary review.
+- The current implementation is already more blocker/review-driven than older solution docs implied:
+  - row meaning is heavily derived from diagnostics, donor linkage, and current record facts,
+  - raw payload is already secondary audit/reference context rather than the main review surface.
+- The remaining noise appears to come mainly from mixed state models and weak signal hierarchy rather than from raw payload complexity alone.
 - Caveat: the current client exposes `giftDate` sort options, while the backend DTO review previously showed only `createdAt`, `updatedAt`, and `amount.amountMicros` as allowed sort fields; verify before migrating sort behavior.
 
 Key metadata / UI / logic:
 
-- Metadata: `giftStaging.processingStatus`.
+- Metadata: `giftStaging.processingStatus`, `dedupeStatus`, `validationStatus`, and diagnostics/evidence fields currently combine runtime truth with review interpretation.
 - Metadata: intake/source fields.
 - Metadata: batch, donor, gift, appeal/fund/opportunity/recurring relations used for context.
 - UI: `StagingQueue`, `StagingQueueSummary`, `StagingQueueTable`, `GiftStagingDrawer`.
-- UI: `stagingQueueUtils.ts` converts statuses/diagnostics/linkage into row-level review summaries.
+- UI: `stagingQueueUtils.ts` converts statuses/diagnostics/linkage into row-level review summaries, donor-state labels, and alert flags.
+- UI: the queue summary currently privileges top-level buckets like `Needs attention`, `Ready`, and `Failed`, while the table rows already carry richer derived review meaning.
+- UI: the drawer already keeps primary review ahead of audit/raw payload, with donor review first and detail/audit secondary.
 - Logic: `GiftStagingListQueryDto` query options.
 - Logic: `GiftStagingService.listGiftStaging`.
 - Logic: `useStagingQueueController` active-work model.
+- Logic: current noise is partly structural:
+  - stored workflow states still shape the top-level queue more strongly than the derived row-level review model,
+  - secondary/contextual signals can still compete too directly with primary blockers in the table.
 
 Open questions:
 
 - What list/review/drawer behavior is shared with appeals, reconciliation, recurring, Gift Aid, and future Twenty-native record views?
 - What queue behavior is staging-specific and should not leak into a generic record-list primitive?
+- Which active-work slices should be first-class in the migrated queue, with the current strongest candidates being:
+  - needs donor review,
+  - has blockers,
+  - failed processing,
+  - ready now as a derived operational slice rather than durable workflow truth?
 - Should active-work inclusion be driven only by lifecycle state, or also by derived blocker / duplicate / missing-donor state?
 - Which sorts/filters are actually supported and product-important for the migrated queue?
+- Which queue-level signals should be configurable per workspace/module in line with the shared list-view direction, especially where signals like receipts or Gift Aid may be organisation-specific rather than universally default-visible?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve the active-work queue-to-drawer operating model.
+- Preserve the queue primarily as a triage / work-selection surface and the drawer as the main diagnosis / resolution surface.
+- Preserve the stronger parts of the current implementation:
+  - blocker/review-driven row meaning,
+  - raw payload and audit information kept secondary,
+  - drawer-first resolution in context.
+- Simplify the remaining mixed model:
+  - reduce reliance on overlapping stored review states where possible,
+  - avoid letting secondary/contextual signals compete with blockers at queue level,
+  - avoid reintroducing `ready` as durable workflow truth through migration wording or design drift.
+- Keep first-class active-work buckets few and distinct.
 - Migrate this through the shared list/review/drawer direction where possible, but keep staging-specific status/action/processing behavior explicit.
+- Keep queue-level visible data/signals configurable and consistent with the reusable list-view direction rather than assuming one hardcoded signal set is right for every organisation/workspace.
 - Verify client/backend sort and filter parity before treating the current controls as migration requirements.
 
 #### Scenario: Working In Batch Scope
@@ -452,6 +516,7 @@ Why it matters:
 - Users need to switch from broad gift-processing workspace review to focused work on one related import/intake batch.
 - Batch scope changes orientation, available actions, diagnostics, progress, and "what is left to do".
 - This should remain visible product behavior, not disappear into an invisible filter.
+- Batch scope is one of the clearest ways the product supports high-volume review without flattening everything into one generic staging queue.
 
 Current behavior:
 
@@ -460,7 +525,18 @@ Current behavior:
 - Batch scope filters the staging queue to the selected batch.
 - Batch scope exposes batch-relevant diagnostics and actions such as donor match and processing.
 - The UI gives the user a way back from batch scope to workspace scope.
-- Current summary / control UI owns a lot of this scope-switching behavior and should be reviewed before porting directly.
+- The current implementation makes batch scope more than a hidden filter:
+  - the header switches between workspace scope and batch scope,
+  - batch scope exposes explicit donor-match and process/resume actions,
+  - batch scope shows aggregate blocker/warning diagnostics and active async run status,
+  - the workspace can surface a "new batches" inbox to enter focused batch work.
+- Batch behavior has also been shaped by operational/runtime constraints from earlier batch-processing work:
+  - API limits and write pressure,
+  - retry / resume behavior,
+  - chunking / batching strategy,
+  - correlation safety,
+  - and avoiding unnecessary per-row status churn in bulk flows.
+- The current summary / control UI owns a lot of this scope-switching behavior and should be reviewed before porting directly.
 
 Key metadata / UI / logic:
 
@@ -469,9 +545,16 @@ Key metadata / UI / logic:
 - Metadata: gift batch source/status/trust/expected/actual fields.
 - UI: `StagingQueueSummary` workspace / batch scope.
 - UI: batch inbox / batch cards where present.
+- UI: batch diagnostics summary and run-status summaries currently sit in the same high-level summary area as workspace metrics and filters.
 - Logic: `useStagingQueueController` active batch state.
 - Logic: `GiftStagingService.listGiftStaging` batch filter.
 - Logic: `GiftBatchService` list/create/get/update behavior.
+- Logic:
+  - `GiftBatchDonorMatchService` owns async donor-match runs per batch and writes identity-resolution outcomes back to staging rows
+  - `GiftBatchProcessingService` owns async process/resume runs per batch, batch preflight/readiness summaries, and batch status updates
+  - the client polls active donor-match/process runs in batch scope and refreshes the queue when runs complete
+- Logic: current batch scope is already helping reduce row-level noise by surfacing some operational meaning in aggregate batch diagnostics rather than only as per-row clutter.
+- Logic: current batch processing/donor-match behavior already reflects a lower-write, retry-aware, bulk-safe runtime shape rather than a naive per-row action model.
 
 Open questions:
 
@@ -479,20 +562,36 @@ Open questions:
 - Which batch diagnostics belong in the header/summary versus the list rows versus a batch review drawer/page?
 - How should users navigate back to the imported/created batch after leaving the workspace?
 - Which batch fields are real operational state versus one-shot summary metadata?
+- How much of the current batch summary/header should become reusable workspace structure versus staging-specific batch controls?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve batch scope as a clear working mode within gift processing.
+- Preserve the strongest current product behaviors:
+  - batch scope is an explicit mode, not just a hidden filter,
+  - users can clearly enter and leave focused batch work,
+  - donor match and process/resume actions are available in the batch context they operate on,
+  - aggregate batch diagnostics help users understand the shape of the work before opening rows one by one.
+- Keep batch scope aligned with the wider migration direction:
+  - CSV/import review should naturally land users in batch-first work where possible,
+  - queue-level triage remains useful, but batch scope should remain the focused operational container for related staged gifts.
+- Keep runtime constraints explicit during migration:
+  - preserve or consciously revalidate the current bulk-processing safeguards around API efficiency, retry/resume, chunking, correlation safety, and low write-churn,
+  - do not redesign batch behavior only around cleaner workspace/UI ideas if that would weaken the proven high-volume processing shape.
+- Simplify the current implementation shape:
+  - do not migrate one oversized summary/header component as the target architecture,
+  - separate reusable workspace/list-shell concerns from staging-specific batch controls and run summaries,
+  - review which batch metadata truly drives operator decisions versus acting as one-shot summary detail.
 - Rebuild the scope/orientation deliberately; do not migrate a large all-purpose summary/header component as the target architecture.
 
 #### Scenario: Marking A Gift Ready
 
 Why it matters:
 
-- Marking a gift ready is the explicit handoff from review work to processable work.
-- It is the point where reviewer intent becomes operational state.
-- This step matters because the product should make it clear when a record is still under review versus when it is safe to process.
+- "Ready" is useful operational language for admins working through a staging queue.
+- The product still needs to make it clear when a record appears processable now versus when it still needs attention.
+- This matters because the migrated workflow should preserve review confidence without forcing a second stored truth underneath actual processability.
 
 Current behavior:
 
@@ -500,6 +599,17 @@ Current behavior:
 - Current implementation writes `processingStatus = ready_for_process`.
 - Current implementation also writes `validationStatus = passed`.
 - Later processing checks primarily whether the staged gift is in a processable status rather than running through a richer separate validation-state model.
+
+Current target posture:
+
+- "Ready" should remain available as a useful queue/review concept if it helps operators.
+- In the lean target model, processability should be derived from current lifecycle state plus current record facts and diagnostics rather than stored as a separate backend truth.
+- If the UI continues to expose "ready now", it should ideally be a derived slice/label rather than a persisted workflow gate unless a later concrete workflow proves a stored approval state is necessary.
+- The useful value of `Mark ready` appears to be operator-facing:
+  - a row no longer needs active review,
+  - it belongs in the processable set,
+  - and the queue can treat it differently.
+- That value does not currently justify preserving a separate stored approval truth by default.
 
 Key metadata / UI / logic:
 
@@ -515,16 +625,17 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Should mark-ready remain an explicit reviewer action in the migrated workflow?
-- Is `validationStatus = passed` adding product value, or is it redundant with `processingStatus = ready_for_process`?
-- Should certain edits reset readiness after a record has been marked ready?
+- Does the migrated workflow need an explicit stored mark-ready action at all, or only a clear derived "ready now" slice in the UI?
+- Is there any later concrete human-signoff / handoff / freeze workflow that would genuinely justify reintroducing a stored approval gate distinct from derived processability?
 
 Migration read:
 
-- Product posture: `Preserve + simplify`.
-- Preserve the explicit reviewer gate between review and processing.
-- Review whether the current dual-state write (`ready_for_process` plus `validationStatus = passed`) is more complexity than the product needs.
-- Keep the user-facing distinction between under review and ready to process even if the underlying state model is simplified.
+- Product posture: `Redesign`.
+- Preserve the useful operator-facing distinction between "ready now" and "needs attention".
+- Do not preserve `ready_for_process` as durable backend workflow truth by default in the target model.
+- Treat `validationStatus` as especially weak and outside the lean target model unless a later concrete workflow proves it is needed.
+- Replace the current dual-state write (`ready_for_process` plus `validationStatus = passed`) with derived processability unless a later explicit approval workflow genuinely requires stored review state.
+- Do not preserve a stored reviewer gate by default unless a later concrete workflow proves it is necessary.
 
 #### Scenario: Processing A Single Staged Gift
 
@@ -538,15 +649,26 @@ Current behavior:
 
 - Users can trigger `Process now` from the staging drawer.
 - The backend first checks whether the staged record is processable; if not, processing is deferred.
-- When processing proceeds, the service resolves donor identity if needed, enriches the payload, creates the committed gift in Twenty, and then writes the outcome back to the staging record.
+- When processing proceeds, the service builds the payload from the current staged fields, creates the committed gift in Twenty, and then writes the outcome back to the staging record.
+- If a donor is already linked on staging, processing uses that donor.
+- If no donor is linked, processing creates a new donor.
+- Processing no longer silently rematches an unresolved staged row to an existing donor at processing time.
 - If processing fails, the staging record stays in the queue with failure detail for later retry/review.
+
+Current target posture:
+
+- This scenario is largely settled and should be treated as a documentation-alignment point rather than a fresh design question.
+- Processing should use the current staged fields as the source of truth for committed gift creation.
+- Processing should not behave like a second review layer or broad hidden cleanup pass.
+- If blockers still exist, processing should defer/fail clearly rather than improvising or silently fixing review-time ambiguity.
 
 Key metadata / UI / logic:
 
 - Metadata:
   - `giftStaging.processingStatus`
-  - `giftStaging.rawPayload`
   - `giftStaging.errorDetail`
+  - current staged donor/gift fields as the processing truth
+  - `giftStaging.rawPayload` as audit/reference context rather than editable truth
   - relation from staged gift to committed `gift`
   - recurring-agreement and Gift Aid linkage fields that may be updated at processing time
 - UI:
@@ -556,20 +678,34 @@ Key metadata / UI / logic:
 - Logic:
   - `GiftStagingProcessingService.processGift` is the main record-level processing boundary
   - `GiftStagingProcessingService.canProcess` gates processing based on processable status
-  - processing currently parses `rawPayload`, may resolve donor identity, applies receipt/Gift Aid enrichment, creates the gift in Twenty, and then calls `markProcessedById`
+  - processing now rebuilds its payload from staged fields rather than reparsing editable `rawPayload`
+  - donor behavior is now explicit:
+    - linked donor -> use that donor
+    - no linked donor -> create a new donor
+    - no silent late-stage rematch to an existing donor
+  - processing may still apply bounded runtime enrichment such as receipt / Gift Aid handling, but it should not reinterpret ambiguous review-time decisions
+  - `markProcessedById` writes the processing outcome back to staging after committed gift creation
   - processing can return `processed`, `deferred`, or `error`
 
 Open questions:
 
-- Should single-record processing continue to carry this amount of enrichment and writeback logic at the processing boundary?
 - Which deferred or failed outcomes should be treated as user-facing review issues versus lower-level system errors?
-- How much of the current processing-boundary logic should remain in the migrated implementation versus move elsewhere?
+- Does any remaining processing-boundary enrichment still belong here, or should more of it be made explicit earlier in review/intake over time?
 
 Migration read:
 
-- Product posture: `Preserve + simplify`.
+- Product posture: `Preserve + align`.
 - Preserve the explicit single-record processing action and clear outcome feedback.
-- Review whether the current processing boundary is carrying too much responsibility for a lean migration, especially where donor resolution, enrichment, and writeback all happen together.
+- Preserve the settled processing contract:
+  - staged fields are the source of truth,
+  - linked donor means use that donor,
+  - unresolved donor means create a new donor,
+  - no silent rematch to an existing donor at processing time.
+- Do not let processing become a second hidden review layer:
+  - do not quietly match to an existing donor after review left the row unresolved,
+  - do not fill in missing appeal/fund/opportunity meaning by guesswork,
+  - do not reinterpret ambiguous data and push it through anyway,
+  - do not clear blockers/warnings behind the scenes.
 - Keep success, deferred, and failed outcomes understandable to users without exposing unnecessary implementation detail.
 
 #### Scenario: Batch Donor Match
@@ -585,7 +721,26 @@ Current behavior:
 - Donor match can be run for the active batch from the staging workspace.
 - The backend creates an async donor-match run for that batch and processes candidate staging rows.
 - Outcomes include auto-linked rows, rows requiring review, rows with no match, insufficient-identity rows, and errors.
-- Current implementation also supports a separate `create-donors` run for selected rows, but that path appears richer in backend capability than in current client exposure.
+- The current runtime has now been tightened so exact email matches do not auto-link when duplicate lookup returns multiple existing donor candidates; those rows stay review-required.
+- Donor match no longer owns a separate donor-creation run; unmatched rows remain unresolved until later processing.
+
+Current target posture:
+
+- This scenario should be treated as genuinely open product design rather than a straight preserve/simplify pass.
+- Batch donor match should survive as a first-class high-volume identity-resolution tool, but its exact product shape should be redesigned deliberately.
+- The conservative first migrated boundary is:
+  - auto-link only when first name + last name + email produce one clear existing donor match,
+  - route anything weaker, or anything with multiple plausible candidates, to review,
+  - leave insufficient identity or no suitable candidate unresolved.
+- Batch auto-link should remain stricter than manual-entry matching by default.
+- Batch donor match should deliberately review and align with useful existing manual-entry match patterns/language where that improves consistency, without inheriting manual-entry looseness for auto-link decisions.
+- Duplicate existing donor records should block safe auto-link and route to review rather than being silently resolved.
+- A major part of the product value is not only auto-linking clear cases, but accelerating review-required cases through a guided batch matching surface rather than forcing pure row-by-row donor review.
+- Donor match should not create donors:
+  - it should link an existing donor where safe,
+  - otherwise leave the row unresolved,
+  - with donor creation left to the separate processing contract.
+- Batch donor match may surface useful duplicate-cleanup opportunities in the donor database, but donor merge / duplicate cleanup should remain adjacent capability rather than being silently collapsed into donor match.
 
 Key metadata / UI / logic:
 
@@ -596,23 +751,43 @@ Key metadata / UI / logic:
   - `StagingQueueSummary` exposes `Run donor match` in batch scope
   - `useStagingQueueController` starts the batch donor-match run and polls run status
   - batch scope surfaces the number of rows still needing donor match
+  - the migrated workflow should likely include a focused guided review surface for review-required matches at batch scope, even if the exact UI shape remains open
 - Logic:
   - `GiftBatchDonorMatchService.startRun` creates an async donor-match run per batch
   - donor-match runs track status, progress, and row-level outcomes such as `auto_linked`, `partial_match_review`, `no_match`, and `insufficient_identity`
-  - `GiftBatchDonorMatchService` persists identity-resolution outcomes back to staging rows and has a separate `create-donors` run path
+  - `GiftBatchDonorMatchService` persists identity-resolution outcomes back to staging rows
+  - current implementation is useful evidence for redesign, not product truth on its own
 
 Open questions:
 
-- Should batch donor match remain a distinct explicit batch action in the migrated workflow?
-- How much of the current donor-match outcome model needs to remain first-class in metadata versus being simplified?
-- Should `create-donors` remain part of the same batch-review workflow, and if so how visible should it be to users?
+- What exact outcome categories should the migrated product keep first-class: auto-linked, review required, unresolved, no suitable match, insufficient identity, error?
+- How should the conservative auto-link boundary be expressed to users, and how closely should it align with manual-entry match language without inheriting manual-entry looseness?
+- What is the best guided review surface for review-required matches at batch scope: queue-to-drawer, dedicated batch review drawer, or another focused review flow?
+- How should likely duplicate existing donors be surfaced so they help future cleanup work without turning donor match into an implicit donor-merge workflow?
 
 Migration read:
 
-- Product posture: `Preserve + simplify`.
+- Product posture: `Redesign`.
 - Preserve batch donor match as a first-class high-volume review action.
-- Review whether the current backend run model and outcome complexity are more elaborate than the lean migration needs.
-- Keep the main user value clear: resolving donor identity safely and efficiently before gifts are processed.
+- Use the current implementation as evidence, but do not treat its exact outcome model as settled product truth.
+- Stage 1 runtime alignment is already worth carrying forward:
+  - ambiguous duplicate-candidate sets no longer auto-link,
+  - tighter auto-linking reduces bad-link risk before the broader redesign is done.
+- Preserve the core product purpose:
+  - resolve donor identity safely at volume,
+  - reduce row-by-row review where confidence is genuinely high,
+  - avoid silent bad links in batch.
+- Keep the first migrated auto-link rule conservative by default:
+  - exact first name + exact last name + exact email,
+  - one clear existing donor candidate,
+  - otherwise route to review or unresolved.
+- Keep batch donor match stricter than manual-entry review suggestions unless later evidence justifies loosening it.
+- Deliberately align useful match language/patterns with manual-entry matching where that improves consistency, while keeping batch auto-link more conservative.
+- Preserve the product need for a guided batch review surface for ambiguous matches; batch donor match should speed up review-required cases as well as clear auto-link cases.
+- Do not let donor match drift into hidden donor creation or donor finalization:
+  - unmatched rows remain unresolved,
+  - donor creation belongs to the later processing contract, not donor match itself.
+- Treat donor merge / duplicate cleanup as relevant adjacent migration concern, but do not silently absorb it into batch donor match without explicit product design.
 
 #### Scenario: Batch Processing
 
@@ -630,6 +805,18 @@ Current behavior:
 - The run can finish as `completed`, `completed_with_errors`, or `failed`, and batch status is updated accordingly.
 - Rows that are not ready or cannot be processed cleanly can be deferred or fall back to row-level handling instead of blocking the whole batch.
 
+Current target posture:
+
+- Batch processing should remain an explicit batch action rather than a hidden background side effect.
+- It should remain async/run-based in product terms.
+- It should preserve partial progress:
+  - safely process what can be processed,
+  - defer what is not safely processable,
+  - and avoid collapsing the whole batch because some rows are not ready.
+- It should report outcomes clearly enough that operators can trust what happened.
+- It should support retry/resume.
+- The current executor shape under the hood is useful implementation evidence, but not itself the product contract.
+
 Key metadata / UI / logic:
 
 - Metadata:
@@ -645,20 +832,35 @@ Key metadata / UI / logic:
   - `GiftBatchProcessingService` computes candidate rows, identity readiness, execution metrics, and run outcomes
   - current execution supports `row` and `hybrid` modes, including chunked batch creation and row fallback for parity gaps
   - batch completion can end in `processed`, `processed_with_issues`, or `process_failed`
+  - runtime mechanics such as hybrid execution, row fallback, chunking, and correlation handling are important migration constraints, but should not be treated as product requirements by name unless they leak into visible operator behavior
 
 Open questions:
 
-- Should batch processing remain an explicit async run model in the migrated workflow?
-- How much of the current hybrid executor, split/retry behavior, and row fallback is product value versus implementation complexity?
 - What level of progress and outcome detail do users actually need during a batch run?
 - What run state must persist reliably in the migrated runtime?
+- How visible should in-progress / deferred / completed-with-issues state be in the main batch workspace versus a secondary run detail surface?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
-- Preserve batch processing as a first-class operational action with clear outcomes.
-- Review whether the current async run model, hybrid executor, and in-memory runtime state are the right fit for a lean Twenty-app migration.
-- Keep the product behavior focused on safe high-volume processing, partial success visibility, and recoverable failure handling.
+- Preserve batch processing as a first-class bulk action.
+- Preserve the visible operator contract:
+  - explicit process/resume action,
+  - async batch run,
+  - partial progress,
+  - deferred rows do not collapse the whole batch,
+  - clear enough outcomes to trust what happened.
+- Keep batch processing aligned with the single-record processing contract:
+  - no hidden donor rematch,
+  - no broad hidden cleanup,
+  - no silent reinterpretation of review-time ambiguity.
+- Keep operational/runtime constraints explicit during migration:
+  - API efficiency,
+  - retry/resume reliability,
+  - chunking/batching strategy,
+  - correlation safety,
+  - and low write-churn at volume.
+- Preserve the safety/reliability characteristics at batch scale without locking the product review to the exact current executor implementation.
 
 #### Scenario: Failed Or Deferred Processing
 
@@ -674,6 +876,17 @@ Current behavior:
 - Record-level processing failures write `processingStatus = process_failed` and populate `errorDetail`.
 - Batch processing records deferred and error outcomes at row level and can leave the overall batch in `completed_with_errors` or `process_failed`.
 - The UI surfaces failed rows as `Process failed`, keeps them in the active queue, and exposes retry or further review.
+
+Current target posture:
+
+- `Deferred` and `Failed` should remain distinct operator-facing outcomes.
+- The user-facing meaning should stay simple:
+  - `Deferred` = processing did not proceed because the row was not ready yet,
+  - `Failed` = processing was attempted, but the attempt itself failed.
+- The expected next action should also stay distinct:
+  - deferred -> return to review, fix/complete what is needed, then try again,
+  - failed -> inspect the error, retry if appropriate, or escalate/investigate if it looks systemic.
+- Detailed runtime/system reasons still matter, but mainly as supporting explanation and "what next?" guidance rather than as many equal first-class workflow states.
 
 Key metadata / UI / logic:
 
@@ -691,18 +904,23 @@ Key metadata / UI / logic:
   - `GiftStagingProcessingService.processGift` returns `deferred` for `not_ready`, `locked`, and `missing_payload`
   - `setProcessingError` writes `processingStatus = process_failed` and `errorDetail`
   - `GiftBatchProcessingService` accumulates deferred/error row outcomes and can move the batch to `completed_with_errors` or `process_failed`
+  - some low-level reasons may reflect current runtime history more than target-model product language and should be reviewed before being preserved in migration wording
 
 Open questions:
 
-- Which deferred or failed outcomes should remain visible as primary user-facing review states?
 - How much runtime/system failure detail should be surfaced directly to users versus kept as secondary audit/support information?
 - Should retry remain a simple user action, or should some failure states require more explicit re-review before retrying?
+- Do legacy/internal reason labels such as `missing_payload` still belong in the target model now that staged fields are the processing truth?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve failed and deferred processing as explicit, recoverable product states.
+- Preserve the clear operator distinction:
+  - deferred = review/fix first,
+  - failed = inspect/retry/escalate.
 - Keep the user-facing workflow focused on “what should I do next?” rather than exposing raw implementation detail.
+- Simplify the explanation model so detailed reasons support the next action rather than becoming a broad first-class state machine.
 - Review whether the current mix of `processingStatus`, `errorDetail`, diagnostics, and batch-run outcome reporting can be simplified while preserving clear recovery paths.
 
 #### Scenario: Already-Processed Gift
@@ -718,6 +936,16 @@ Current behavior:
 - Record-level processing short-circuits when a staging record is already marked `processed` and has a linked `giftId`.
 - Successful writeback marks the staging record as processed and stores the committed gift relation.
 - Processed records are treated as terminal from the staging perspective and are not part of the default active-work queue.
+
+Current target posture:
+
+- This scenario is largely settled and should be treated as a clarification/alignment pass rather than a fresh product design question.
+- The meaningful terminal product truth is:
+  - this staged row has already produced a committed gift,
+  - it should not be processed again,
+  - it should link back to the created gift where possible,
+  - and it should no longer appear in active work by default.
+- `processed + giftId` should be treated as the primary terminal contract rather than broad status normalization baggage.
 
 Key metadata / UI / logic:
 
@@ -739,11 +967,14 @@ Open questions:
 - How much of the current processed writeback shape is real product state versus cleanup of the current state model?
 - How explicitly should the migrated UI link users from the processed staging record to the committed gift?
 - Are there any scenarios where a processed staging record should re-enter review, or should corrections always happen on the committed gift instead?
+- Are `validationStatus = passed` and `dedupeStatus = passed` still serving a real runtime purpose after successful processing, or are they now mainly residual normalization?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve processed as a clear terminal staging state with duplicate-processing protection.
+- Preserve committed-gift linkage where possible.
+- Treat `processed + giftId` as the meaningful terminal truth in the lean target model.
 - Review whether the current writeback of multiple “passed” fields is more complexity than the product needs once the state model is simplified.
 - Keep correction of post-processing mistakes on the committed gift side rather than reprocessing the staging record.
 
@@ -762,7 +993,36 @@ Current behavior:
 - `dedupeStatus` supports donor/duplicate review states, but its boundary overlaps with donor linkage and diagnostics.
 - `processingDiagnostics` carries structured blockers, warnings, identity confidence, and batch donor-match evidence.
 - `errorDetail` carries failure explanations for failed processing or donor-match errors.
-- `autoProcess` carries intake automation intent, but depends on the unresolved manual/intake trust decision above.
+- `autoProcess` carries intake automation intent, but becomes less central if intake routing is owned primarily at channel level.
+
+Current target posture:
+
+- This scenario should now be read as the synthesis of the decisions above it rather than as a standalone abstract state-model exercise.
+- Staging should become a simpler review/process workspace, mainly for imports and integrations rather than a universal intake model.
+- Intake routing should stay channel-based:
+  - manual entry -> direct commit by default,
+  - CSV/import -> stage by default,
+  - integrations -> stage by default unless a later narrow explicit exception is justified.
+- The backend should store actual lifecycle/runtime truth plus the facts/evidence needed to derive queue meaning.
+- Processability should be derived from current lifecycle state plus current record facts and diagnostics, not stored as a separate backend truth such as `ready_for_process`.
+- "Ready now" can still exist as a useful operational concept in the UI, but as a derived slice/label rather than a persisted workflow state.
+- The main durable lifecycle meaning should stay concentrated in `processingStatus`, while review meaning should come mostly from diagnostics, donor linkage, duplicate evidence, and current record facts.
+- `validationStatus` now looks outside the lean target model unless a later concrete workflow proves otherwise.
+- `errorDetail` should stay focused on failure explanation rather than broader workflow meaning.
+- `autoProcess` becomes much weaker if routing is owned at intake-channel level rather than hidden per-record automation.
+- This simplification is also intended to protect operational efficiency: avoid reintroducing per-row writes, re-computation, or workflow-state churn that would increase API pressure in high-volume queue and batch-processing flows.
+
+Runtime-truth caution:
+
+- This is a target posture, not a full description of current behavior.
+- Current runtime truth is already partly simplified:
+  - async donor-match and batch-processing flows already try to minimize write churn and API pressure,
+  - diagnostics already carry much of the meaningful review evidence.
+- Stage 1 runtime alignment has already moved meaningfully toward the target model:
+  - staged fields are now the editable truth for processing,
+  - processing no longer silently rematches unresolved donor rows to an existing donor,
+  - ambiguous duplicate-candidate sets no longer auto-link in batch donor match.
+- But current runtime still depends more heavily on stored `processingStatus` gates than this target posture implies, and manual/integration create-time paths are still relatively chatty compared with the batch-path simplification direction.
 
 Key metadata / UI / logic:
 
@@ -776,24 +1036,38 @@ Key metadata / UI / logic:
   - `GiftStagingProcessingService.canProcess` only allows `ready_for_process` and `process_failed` records to process.
   - `GiftService.buildProcessingDiagnostics` derives eligibility, blockers, warnings, and identity confidence from the normalized payload.
   - `GiftBatchDonorMatchService` writes identity-resolution outcomes into `processingDiagnostics` and may update `dedupeStatus`.
-  - The current review focus is the interaction between staging creation defaults, donor/dedupe matching runs, mark-ready behavior, record-level processing gates, batch processing candidate selection, failure/deferred writeback, and auto-processing decision logic.
+  - The current review focus is now the interaction between:
+    - channel-based intake routing,
+    - donor/dedupe matching runs,
+    - derived queue slices,
+    - record-level and batch processing contracts,
+    - failure/deferred handling,
+    - terminal processed writeback,
+    - and any remaining create-time automation/state churn.
 
 Open questions:
 
-- Should `processingStatus` become the single primary lifecycle state for staged gifts?
-- Is `validationStatus` still needed, or is it redundant with `processingStatus = ready_for_process`?
-- Should `dedupeStatus` remain a first-class metadata field, or should donor/duplicate review state be derived from donor linkage and diagnostics?
-- Should `processingDiagnostics` be treated as evidence only, not lifecycle state?
-- Should `errorDetail` be limited to failure explanations rather than general review state?
-- Should `autoProcess` remain a per-record field, or should automation be driven by intake-channel policy and explicit user/admin choices?
+- What is the minimum durable lifecycle state the migrated model actually needs under `processingStatus`?
+- Does `dedupeStatus` still earn a first-class field, or should donor/duplicate review meaning move further toward donor linkage + diagnostics + derived queue slices?
+- How stable/structured does `processingDiagnostics` need to be to support queue meaning, batch review, and failure guidance without turning back into a second hidden state model?
+- Does `autoProcess` survive at all beyond transitional/runtime compatibility, or should channel-based routing remove the need for it?
+- Is there any remaining concrete workflow that truly requires a stored human-review outcome distinct from derived processability?
 
 Migration read:
 
-- Product posture: `Open` with current leaning `Preserve + simplify`.
-- The Twenty-app migration should not recreate the current state model without review.
+- Product posture: `Redesign` with current leaning `derived processability + simpler lifecycle state`.
+- The Twenty-app migration should not recreate the current overlapping state model without review.
+- The target model should stay aligned with the decisions already made above:
+  - channel-based intake routing,
+  - queue meaning derived from facts/evidence,
+  - `ready now` as workspace language rather than durable truth,
+  - conservative donor-match behavior,
+  - explicit processing contracts,
+  - clear failed/deferred/processed operator outcomes.
 - The target model should be lean enough for CSV/import and integration flows that may create or update many records under API limits.
 - Avoid requiring multiple per-row writes at creation time for state that can be derived or written by explicit batch actions.
-- Preserve user-visible clarity around pending, ready, processing, failed, and processed states even if supporting fields are simplified.
+- Keep the simplified state model compatible with current queue and batch-processing efficiency goals rather than reintroducing expensive logic in a cleaner-looking form.
+- Preserve user-visible clarity around ready-now, needs-attention, processing, failed, and processed queue slices even if only lifecycle/runtime truth is stored durably.
 
 ### 2.4 Gift Intake / Manual Gift Entry Workflow Summary
 
@@ -806,6 +1080,20 @@ Scope note: this workflow reviews the staff-facing form experience. The `Manual 
 The migration goal is to preserve the useful guided-entry behavior while deciding explicitly whether each intake channel creates a committed gift immediately, creates a staged gift for review, or uses a high-trust auto-processing path.
 
 This workflow also needs to stay lean. Manual entry should help users record a gift accurately, avoid obvious duplicate donors/gifts, and connect the gift to the right fundraising context without becoming a second gift-processing workspace.
+
+Current leaning:
+
+- Standard manual entry remains a direct-create workflow by default.
+- A batch-aware manual-entry context remains an explicit open exception under review, but should not blur the default direct-create model unless it is deliberately designed as a distinct context.
+
+Section synthesis:
+
+- Standard manual entry is a direct-create workflow by default.
+- Duplicate-donor checking should interrupt submit and force an explicit donor choice when likely matches exist.
+- Duplicate-gift protection is a real user need, but the implementation remains open/redesign-heavy.
+- Richer fundraising context during entry remains open and should be reviewed through workflow speed and standard-path simplicity rather than assumed from the current all-in-one form.
+- A batch-aware manual-entry context remains open, but should be treated as an explicit contextual variation rather than something that blurs the default direct-create model.
+- Success/outcome language should stay explicit and should not hide routing differences behind ambiguous create/stage/process wording.
 
 ### 2.5 Gift Intake / Manual Gift Entry Use Cases
 
@@ -849,7 +1137,15 @@ Current behavior:
 - Amount is required; currency defaults to `GBP`; gift date defaults to today's date.
 - Form submit builds a `GiftCreatePayload` and posts to `/api/fundraising/gifts`.
 - The client sets `autoProcess: true`.
-- The backend may stage first, then auto-process into a committed gift depending on feature flag, trust, diagnostics, and donor evidence.
+- The current backend/runtime may still stage first internally before committed gift creation depending on feature flag, trust, diagnostics, and donor evidence, but that is not the intended standard product model for users.
+
+Current target posture:
+
+- This scenario is now effectively settled as a direct-create workflow rather than an open routing question.
+- Standard manual entry should remain a fast, high-trust path for creating a committed gift now.
+- It should feel like "create gift", not "submit into a staging/review pipeline".
+- Duplicate donor prevention remains part of this flow, but as a guardrail inside direct entry rather than a shift into a different workflow model.
+- The remaining product work here is mainly about field scope and clear success/outcome language, not manual-entry routing design.
 
 Key metadata / UI / logic:
 
@@ -865,15 +1161,19 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Should manual entry normally be a direct gift-creation experience, a staged-gift creation experience, or an explicitly configurable high-trust intake path?
-- Should the success state distinguish "gift created" from "gift staged for review"?
 - Which fields belong in the fast default manual-entry path versus secondary detail / drawer review?
+- How minimal should the standard default path be before users move into more contextual/coded/manual variants?
+- Does the current API/implementation need further cleanup so the form no longer depends on hidden stage/process branching under the hood?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve the ability to enter a standard manual gift quickly.
+- Preserve the direct-create mental model for standard manual entry.
+- Preserve minimal required donor + amount/date fields in the default path.
+- Keep duplicate donor prevention inside this workflow as a quality guardrail rather than a reason to blur it back into staging.
 - Simplify the create/stage/process outcome so users and future implementers do not have to infer what happened from endpoint behavior.
+- Keep success/outcome language clearly in "gift created" territory for the standard path.
 
 #### Scenario: Choosing An Existing Donor Versus Creating A New Donor
 
@@ -891,6 +1191,19 @@ Current behavior:
 - Selecting an existing donor sends `contactId`.
 - Creating a new donor sends an embedded `contact` object.
 
+Current target posture:
+
+- The core product contract here should be preserved firmly:
+  - when likely duplicate donors are found, submit pauses,
+  - and the user must make an explicit donor decision before the gift is created.
+- This should not be reduced to a passive warning or hint that is easy to ignore.
+- Manual entry is the right place for this interruption because the user is present and able to resolve donor identity in the moment.
+- What remains open is the migrated interaction shape:
+  - what threshold counts as a likely duplicate,
+  - what evidence is shown,
+  - how the decision surface should look in Twenty apps,
+  - and how explicit the "create new donor" path should feel.
+
 Key metadata / UI / logic:
 
 - Metadata: `contactId` / donor relation on committed or staged gift payload.
@@ -906,15 +1219,18 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- What is the minimum duplicate-warning behavior manual entry must preserve inside Twenty apps?
-- Should duplicate donor review happen inline in the manual entry form, through Twenty's native record selection patterns, through staging review, or some combination?
-- When a user deliberately chooses "create new", what evidence or confirmation should be retained?
+- What threshold should count as a likely duplicate strongly enough to interrupt submit?
+- What evidence/candidate detail should be shown to support the donor decision?
+- Should duplicate donor review happen inline in the manual entry form, through Twenty's native record selection patterns, or through another explicit decision surface?
+- When a user deliberately chooses "create new", what confirmation or retained evidence should make that choice feel explicit enough?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve explicit existing-donor versus new-donor choice.
-- Review whether the current duplicate-panel/search-modal implementation should migrate, or whether Twenty-native record selection plus staging review covers the same product need more cleanly.
+- Preserve the interrupt-and-choose quality-control boundary when likely duplicate donors are found.
+- Review whether the current duplicate-panel/search-modal implementation should migrate, or whether Twenty-native record selection covers the same product need more cleanly.
+- Do not weaken this into a passive warning-only pattern in the migrated manual-entry flow.
 
 #### Scenario: Detecting Possible Duplicate Staged Gifts
 
@@ -930,6 +1246,22 @@ Current behavior:
 - If it finds a close match, it shows a warning that a staged gift with the same donor, amount, and date already exists.
 - Lookup failures are ignored in the manual-entry form.
 
+Current target posture:
+
+- The user need here should be preserved strongly:
+  - protect manual-entry users from accidentally creating a duplicate gift that may already exist through another intake path.
+- The current implementation should not be treated as product truth:
+  - it is a lightweight client-side heuristic,
+  - it only checks staged gifts,
+  - it ignores lookup failures,
+  - and it is not an authoritative duplicate-detection model.
+- Manual entry should likely keep a meaningful duplicate-gift guardrail because this is one of the last moments before a duplicate is created.
+- But the migrated implementation should deliberately review:
+  - what record set is checked,
+  - how strong the warning/confirmation should be,
+  - and how actionable the duplicate signal needs to be for the user.
+- This should not automatically become a hard block unless the duplicate signal is genuinely strong.
+
 Key metadata / UI / logic:
 
 - Metadata: staged gift donor, amount, and gift date.
@@ -939,14 +1271,21 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Should duplicate-gift detection remain an intake-form warning, move into the staging-review checks, or both?
-- Should committed gifts be checked as well as staged gifts?
-- Should this be implemented as product logic rather than a local client-side lookup of the first 50 staged gifts?
+- What record set should duplicate-gift checking cover in the migrated model: staged gifts, committed gifts, or both?
+- Should manual entry surface a soft warning, a stronger confirmation step, or a hard block only for the clearest duplicate cases?
+- How actionable should the duplicate warning be: just an alert, or a route into the likely matching record(s)?
+- Should this become explicit product/backend logic rather than a local client-side lookup heuristic?
 
 Migration read:
 
-- Product posture: `Simplify`.
-- Preserve the user need to avoid duplicate gift entry, but review the current implementation before migrating it.
+- Product posture: `Redesign`.
+- Preserve the user need to avoid accidental duplicate gift entry across the intake system.
+- Do not preserve the current client-side staged-only heuristic as product truth.
+- Treat manual entry as an important place to surface duplicate-gift risk, because the user is actively about to create a new gift.
+- Redesign the implementation around the real open questions:
+  - what record set to check,
+  - how strong the intervention should be,
+  - and how actionable the result should be.
 
 #### Scenario: Entering Organisation, Grant, Legacy, Corporate, Or In-Kind Gift Context
 
@@ -964,6 +1303,25 @@ Current behavior:
 - Opportunity search filters by selected donor, selected company, search term, and gift intent.
 - Corporate in-kind and explicit in-kind toggle can send in-kind description and estimated value.
 
+Current target posture:
+
+- The need to capture richer fundraising contexts here should clearly survive migration:
+  - organisation-linked gifts,
+  - grants,
+  - legacies,
+  - corporate/in-kind context,
+  - and related opportunity/company linkage.
+- But the exact manual-entry shape should remain genuinely open for product review.
+- The main design question is not simply "one surface or separate flows".
+- The more useful product tradeoff is:
+  - how to keep manual entry fast for mixed real-world gift entry,
+  - without making the standard case feel bloated or confusing.
+- Viable product shapes may include:
+  - one unified surface with better progressive disclosure,
+  - one surface with a strong context switch that reconfigures efficiently,
+  - a lean default path plus quick context pivots,
+  - or separate flows only if the added navigation cost is clearly worth it.
+
 Key metadata / UI / logic:
 
 - Metadata: `giftIntent`.
@@ -980,15 +1338,18 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Should one manual-entry surface continue to cover all these gift intents?
-- Which intent-specific fields are essential during first entry versus better handled in the review drawer or on related records?
-- How should Twenty-native record pickers replace the current local search/cards?
+- What product shape best balances workflow speed for mixed manual entry against simplicity of the standard path?
+- Which intent-specific fields are essential during first entry versus better handled in secondary detail, later editing, or related records?
+- How much click-cost/navigation overhead is acceptable before a "cleaner" split-flow model becomes worse than a denser unified surface?
+- How should Twenty-native record pickers replace the current local search/cards without slowing down repetitive manual entry work?
 
 Migration read:
 
 - Product posture: `Open`.
 - Preserve the underlying need to capture different fundraising contexts.
-- Review the current all-in-one form shape before recreating it.
+- Do not treat the current all-in-one form shape as settled product truth.
+- Do not prematurely assume the answer is aggressive flow-splitting either.
+- Review this area through the lens of workflow speed, density, click-cost, and standard-path clarity before choosing the migrated shape.
 
 #### Scenario: Coding The Gift To Fund, Appeal, Opportunity, Recurring Agreement, Or Batch
 
@@ -996,6 +1357,7 @@ Why it matters:
 
 - Users often need gifts coded to the right fundraising context at entry time.
 - But overloading the intake form can slow down the simple case.
+- Manual entry and staging review are different workflows, but they have overlapping relational-entry requirements that should not drift into two parallel bespoke solutions during migration.
 
 Current behavior:
 
@@ -1004,6 +1366,20 @@ Current behavior:
 - The user can toggle recurring gift association and select a recurring agreement.
 - The user can select an existing gift batch.
 - The payload can include `fundId`, `appealId`, `opportunityId`, `recurringAgreementId`, and `giftBatchId`.
+
+Current target posture:
+
+- The underlying need to code gifts to the right fundraising objects should survive migration.
+- This scenario is mainly about field scope and default visibility, not whether coding matters at all.
+- Manual entry should stay lean enough for fast direct-create use.
+- It remains open whether any of these coding relationships are universally default-visible across orgs, or whether they all belong in one optional/contextual layer surfaced efficiently when needed.
+- But migration should also explicitly look for shared patterns/components between manual entry and staging review where they solve similar relational-entry problems:
+  - donor/company matching language,
+  - related-record selection,
+  - progressive disclosure for extra context,
+  - and efficient low-click relational entry.
+- The goal is not to collapse the two workflows together.
+- The goal is to avoid inventing two separate bespoke interaction models for very similar relational-entry requirements unless there is a strong workflow-specific reason to diverge.
 
 Key metadata / UI / logic:
 
@@ -1026,12 +1402,16 @@ Open questions:
 - Which coding fields should be visible by default for manual entry?
 - Which coding fields should be optional detail, drawer content, or editable after creation?
 - Should recurring agreement selection live in manual gift entry, a recurring-agreement workflow, or both?
+- Which relational-entry interactions should be shared between manual entry and staging review rather than solved twice?
+- Are fund/appeal/opportunity/recurring/batch all better treated as the same optional/contextual layer unless a later org-specific/product-specific reason justifies promoting one by default?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve coding to the major fundraising objects.
 - Review the form layout and default visibility before porting.
+- Keep manual entry and staging review distinct in purpose, but deliberately look for shared relational-entry patterns/components where the user need overlaps.
+- Do not force a universal default-field hierarchy here before migration evidence justifies it.
 
 #### Scenario: Creating Or Selecting A Batch During Entry
 
@@ -1047,6 +1427,19 @@ Current behavior:
 - Creating a new manual batch collects batch name, optional expected count, and optional expected amount.
 - The client calls `createGiftBatch` before creating the gift and then includes `giftBatchId` in the gift payload.
 
+Current target posture:
+
+- Batch association should remain available as a concept in manual entry.
+- But inline batch creation inside the default manual-entry form is not currently settled as the right product shape.
+- Creating a batch may be a relatively low-frequency setup action, while entering multiple gifts within an existing batch context is a different usage pattern where speed and grouping matter more.
+- The key open direction is not necessarily "separate workflow or not?".
+- The more useful question is whether manual entry should support a batch-aware context where the same core entry experience behaves differently:
+  - batch already selected,
+  - repeated entry within that context,
+  - possible shared/defaulted/locked coding,
+  - and different expectations around speed, grouping, or later review.
+- This should stay open without implying that batch-aware manual entry must become a completely separate surface or component.
+
 Key metadata / UI / logic:
 
 - Metadata: `giftBatch` relation / `giftBatchId`.
@@ -1059,15 +1452,17 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Does manual entry need inline batch creation, or only batch selection?
-- Is batch still the right concept for high-trust manual gifts if they may auto-process immediately?
+- Does manual entry need inline batch creation, or is batch selection/context enough?
+- Should batch in manual entry be modeled primarily as a per-gift field, or as a higher-level batch-aware entry context for moderate-volume offline entry?
+- What, if anything, should change about the same core entry experience when the user is working within a batch context?
 - How should this interact with Twenty CSV import and batch-level staging/review?
 
 Migration read:
 
 - Product posture: `Open`.
 - Preserve batch association as a concept.
-- Review inline batch creation before recreating it in Twenty apps.
+- Do not treat inline batch creation in the default manual-entry form as settled.
+- Keep open the idea that manual entry may support a batch-aware context without implying that this must become a completely separate workflow/component.
 
 #### Scenario: Understanding Create / Stage / Process Outcome
 
@@ -1083,6 +1478,15 @@ Current behavior:
 - Client status only distinguishes idle, submitting, error, and success with `giftId`.
 - The client does not model a separate "staged for review" success state.
 
+Current target posture:
+
+- Manual entry should be a direct-commit workflow by default.
+- In the initial standard product shape, manual entry should not present staging as a second normal outcome.
+- The user should understand the standard manual-entry path as "create gift", not "submit into an intake router".
+- The key principle is no hidden ambiguity:
+  - standard manual entry should have a clear direct-create outcome model,
+  - and any later batch-context exception should have its own explicit outcome language rather than silently sharing the standard success model.
+
 Key metadata / UI / logic:
 
 - Metadata: response `createGift.id`.
@@ -1094,14 +1498,16 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Should manual-entry response include an explicit created/staged/processed outcome?
-- Should the UI link to a committed gift, a staged gift, a review drawer, or a batch depending on outcome?
-- If high-trust auto-processing fails or defers, should the user stay in manual entry or move to staging review?
+- Should manual-entry success simply confirm committed gift creation and link to the created record?
+- If batch-context manual entry later stages rather than commits, how should that be expressed without weakening the default direct-commit model?
+- Does the current API/response model need to be simplified so manual entry no longer depends on hidden stage/process branching?
 
 Migration read:
 
 - Product posture: `Redesign`.
-- Preserve clear success/error feedback, but make the intake outcome explicit before migration.
+- Preserve clear success/error feedback, but redesign manual entry around direct gift creation as the primary standard outcome.
+- Do not carry forward the current ambiguous "create / stage / process" interpretation into the migrated standard manual-entry flow.
+- If batch-context manual entry later proves to need a staged outcome, make that an explicit contextual exception with its own clear success language rather than a hidden variation inside the default path.
 
 ### 2.7 Recurring Workflow Summary
 
@@ -1110,6 +1516,19 @@ Recurring is the workflow for representing an ongoing donor commitment, monitori
 Unlike gift processing / staging, this workflow has had limited product iteration so far. Much of the current shape comes from the one-shot object/schema pass and from lightweight operational UI added around recurring agreements.
 
 The migration goal is to preserve the core concept of a recurring agreement and its relationship to gifts, while treating many details as open for review: lifecycle states, provider linkage, expected-payment tracking, agreement creation/editing, annual receipt metadata, default coding, and whether the current agreement-exception workspace is the right long-term surface.
+
+This review has now established a stronger recurring posture than the earlier summary implied:
+
+- the recurring agreement is primarily the CRM's commitment / expectation record, not just provider metadata;
+- recurring health/status review is likely the main operator-facing surface in this version;
+- provider-backed recurring intake should be handled mainly by certainty class:
+  - confident existing agreement match -> lighter fulfillment path,
+  - recurring-related but unmatched -> controlled staging/promotion path,
+  - weak-signal recurrence -> user-judgment-led review path;
+- creation of a new tracked recurring agreement from staging should require explicit reviewer intent, after which processing can complete canonical record creation/linking automatically;
+- `nextExpectedAt` remains a real operator-facing expectation field, with fulfillment as the primary advancement moment and provider updates as a secondary reconciliation/correction path.
+
+What remains more open is the exact lifecycle/control shape around agreement creation/editing, the final treatment of one-shot metadata/defaults, and how much of the current recurring workspace should survive as custom app UI versus ordinary Twenty record detail.
 
 ### 2.8 Recurring Use Cases
 
@@ -1131,11 +1550,12 @@ Use the same scenario-review shape for recurring. Treat these as a first migrati
 Work through the recurring scenario reviews in this order unless there is a clear reason to deviate:
 
 1. Representing a recurring agreement
-2. Reviewing recurring agreement health and exceptions
-3. Linking a manually entered gift to a recurring agreement
-4. Linking an integration-created gift to a recurring agreement
-5. Advancing next expected date after processing
-6. Reviewing one-shot recurring metadata
+2. Creating / recognizing / promoting a recurring agreement
+3. Reviewing recurring agreement health and exceptions
+4. Linking a manually entered gift to a recurring agreement
+5. Linking an integration-created gift to a recurring agreement
+6. Advancing next expected date after processing
+7. Reviewing one-shot recurring metadata
 
 #### Scenario: Representing A Recurring Agreement
 
@@ -1151,6 +1571,25 @@ Current behavior:
 - Gifts and gift-staging records can relate to a recurring agreement.
 - Recurring agreement records can relate to a donor/person.
 - There is not currently a fully guided agreement creation/editing workflow in the fundraising-service UI.
+
+Current target posture:
+
+- The recurring agreement should currently be treated as the CRM's operational commitment / expectation layer, not primarily as provider metadata or a full billing-control surface.
+- Its main product meaning is:
+  - this donor has an ongoing recurring commitment,
+  - the CRM expects future fulfillment over time,
+  - and related gifts/payments should link back to that commitment.
+- The agreement should help operators answer practical questions such as:
+  - is this commitment still live / expected?
+  - what should have happened most recently, and what should happen next?
+  - what evidence do we have that it is being fulfilled?
+  - does anything look wrong, late, paused, broken, or unclear?
+  - what context explains the current state?
+  - does someone need to do anything now?
+  - how easily can a real incoming gift be associated back to this agreement?
+  - if an expected payment has not arrived, how is that surfaced clearly without a speculative installment model?
+- Provider linkage is important operational evidence, and may drive updates, but it is secondary to the agreement's CRM meaning as commitment + expectation.
+- The current leaning is to keep the lean core free of pre-created expected installment rows; missed/late fulfillment should be inferred from agreement expectation plus actual gift/payment history.
 
 Key metadata / UI / logic:
 
@@ -1171,12 +1610,81 @@ Open questions:
 - Should agreement creation/editing be handled mostly through Twenty record pages, a custom app workflow, provider sync, or a combination?
 - Are current status and cadence values sufficient and product-approved?
 - Which provider fields are user-facing evidence versus background integration detail?
+- How much of recurring agreement management should be understanding/exception handling in CRM versus direct billing-control actions owned by providers?
 
 Migration read:
 
 - Product posture: `Open`.
 - Preserve the recurring agreement concept and gift/agreement relationship.
-- Review the current field set and lifecycle before treating the one-shot object as the final product model.
+- Treat the recurring agreement primarily as a commitment / expectation record in CRM terms.
+- Keep provider linkage as supporting operational evidence rather than the primary product meaning of the record.
+- Do not let the one-shot schema or provider-driven implementation details define the product role prematurely.
+- Current leaning: avoid a speculative expected-installment model in the lean core; use agreement expectation plus actual fulfillment history instead.
+
+#### Scenario: Creating / Recognizing / Promoting A Recurring Agreement
+
+Why it matters:
+
+- The system may encounter recurring-related evidence before it is actually safe to instantiate the final CRM recurring agreement record.
+- Without a clear product stance here, later scenarios about linkage, health, and expectation updates can accidentally smuggle in conflicting agreement-creation assumptions.
+- This is especially important for integration-led recurring flows, new-donor/staging-first intake, and lower-signal recurring types such as standing orders.
+
+Current target posture:
+
+- "Creation" should not be treated as a single universal moment.
+- The product should distinguish between:
+  - recognition / carriage of recurring-related evidence,
+  - and promotion into a recurring agreement record in CRM.
+- Recognition / carriage may happen earlier:
+  - the system may know incoming data looks like a new recurring setup,
+  - an existing recurring commitment,
+  - or recurring-related fulfillment with unclear status.
+- Promotion should happen only when the CRM has enough confidence that:
+  - a real ongoing commitment exists,
+  - and that commitment can be anchored safely in CRM terms.
+- New-donor / staging-first flows should not be bypassed just because recurring evidence arrives early.
+- Different recurring types may reach promotable confidence in different ways, so the product should avoid one universal creation rule.
+
+Key metadata / UI / logic:
+
+- Metadata:
+  - recurring-related evidence may arrive through staged/committed gift links, provider fields, `expectedAt`, and provider context before final agreement creation/linking is safe.
+- UI:
+  - no fully worked recurring-agreement creation workflow is currently established in the fundraising-service UI.
+- Logic:
+  - provider/webhook flows, staging-first review, manual/admin creation, and later agreement-linking behavior all contribute evidence but do not yet define one settled recurring-agreement creation model.
+
+Open questions:
+
+- What are the legitimate ways a recurring agreement can come into existence in CRM terms:
+  - explicit admin/manual creation,
+  - provider-confirmed setup promotion,
+  - or promotion from recurring evidence in staging after review?
+- When is recurring evidence strong enough to be carried forward, but not yet strong enough to justify creating/linking the final CRM agreement?
+- Which recurring types justify earlier agreement promotion, and which should remain more cautious?
+- When should the system refuse promotion and surface an explicit exception/confirmation path instead?
+- What exact review-time mechanism should carry the explicit reviewer signal that a staged recurring-related gift should become a new tracked recurring commitment?
+
+Migration read:
+
+- Product posture: `Open`.
+- Capture the distinction between recognition/carriage of recurring evidence and promotion into a recurring agreement record.
+- Do not force a single universal agreement-creation rule across all recurring types and intake paths.
+- Keep recurring evidence visible through intake/staging where needed, but only promote once the CRM can represent the commitment safely and meaningfully.
+- Current use-case pressure test suggests:
+  - provider-backed recurring fulfillment with a confident existing agreement match is becoming relatively well understood as a lighter-path case,
+  - recurring-related intake with no existing agreement match is becoming the main staged promotion/creation case,
+  - and weak-signal cases such as standing-order-style recurrence should remain much more user-judgment-led.
+- Keep intentionally open the case where direct-debit setup may be known before first fulfillment; the right creation/promotion moment there may depend on integration shape rather than one universal product rule.
+- Settle the boundary that new recurring-agreement creation from staging should require explicit reviewer intent.
+- Once that explicit review-time signal exists, processing should be allowed to complete the canonical record work in one go:
+  - donor/contact creation or resolution in the normal staging way,
+  - gift creation,
+  - recurring agreement creation,
+  - gift/agreement linking,
+  - attachment of stable external recurring identifiers where present,
+  - and carry-through of core provider/context evidence needed for future matching.
+- Keep the exact UX/control shape for that explicit signal open; the settled product point is that review decides the recurring meaning, and processing completes the canonical record creation.
 
 #### Scenario: Reviewing Recurring Agreement Health And Exceptions
 
@@ -1194,6 +1702,18 @@ Current behavior:
 - Users can filter all / overdue / paused-canceled / delinquent, search, sort, paginate the local list, refresh, review in a drawer, open the donor record, and open the agreement record.
 - The review drawer shows health message, amount, status, next expected, auto-process, donor, provider, provider agreement, and payment method.
 
+Current target posture:
+
+- Recurring agreement remains the core product object.
+- The main operator-facing recurring surface in this version is likely best understood as a health/status workspace with exception-focused value, not a pure exception queue.
+- That workspace should help operators understand states such as:
+  - expected payment appears missed / overdue,
+  - agreement is no longer currently expected to fulfill because it is paused / canceled / completed,
+  - agreement appears at risk / delinquent because fulfillment is repeatedly not happening as expected,
+  - or the current state is unclear enough that an operator may need to investigate.
+- Supporting reasons/evidence such as unclear provider state, missing next expected date, or weak fulfillment linkage matter because they explain why the agreement state is unclear or concerning.
+- The workspace should not flatten all of those into one generic "exception" concept.
+
 Key metadata / UI / logic:
 
 - Metadata: `status`.
@@ -1210,7 +1730,7 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Is "agreement exceptions" the right primary workspace, or should recurring be a broader agreement-management surface?
+- Is a health/status workspace with exception-focused value the right primary operator-facing surface for this version?
 - Should overdue / delinquent / paused be computed client-side, stored as status, generated by provider sync, or surfaced through tasks/alerts?
 - What actions should a user take from this workspace beyond open donor / open agreement / review context?
 - Does recurring need the same reusable record-list and review-drawer patterns as gift staging, reconciliation, Gift Aid, and appeals?
@@ -1219,6 +1739,7 @@ Migration read:
 
 - Product posture: `Open`.
 - Preserve the need to monitor recurring agreement health.
+- Treat health/status review as the likely main operator-facing recurring surface in this version without reducing recurring itself to only an exceptions queue.
 - Review the current exception-dashboard shape before recreating it in Twenty apps.
 
 #### Scenario: Linking A Manually Entered Gift To A Recurring Agreement
@@ -1236,6 +1757,18 @@ Current behavior:
 - Submit includes `recurringAgreementId` in the gift payload.
 - The manual-entry UI does not currently create a new recurring agreement.
 
+Current target posture:
+
+- The ability to associate a manually entered gift with an existing recurring agreement should survive.
+- But generic manual gift entry should be treated as a supporting/fallback path for this, not automatically as the primary recurring-fulfillment workflow.
+- For repetitive manually administered recurring payments, the more natural operator job may be agreement-led fulfillment capture:
+  - start from an existing recurring commitment / expectation context,
+  - carry agreement/default context through,
+  - record real fulfillment efficiently,
+  - without requiring speculative installment rows.
+- This should stay distinct from saying that recurring requires pre-created expected installment records.
+- The open product question is therefore not only where users can link a gift to an agreement, but what the primary manual recurring-fulfillment workflow should be.
+
 Key metadata / UI / logic:
 
 - Metadata: gift / staged gift relation to `recurringAgreement`.
@@ -1248,7 +1781,8 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Should users link to recurring agreements during manual gift entry, during staging review, on the committed gift, or all three?
+- Should users be able to link gifts to recurring agreements during manual entry, staging review, on the committed gift, or all three?
+- Is generic manual entry only a fallback/supporting path, with agreement-led fulfillment capture the better primary workflow for repetitive manual recurring payments?
 - Should a new recurring agreement be creatable from manual entry?
 - What should happen to agreement totals, paid installment count, last paid date, next expected date, or status when a manually linked gift is processed?
 
@@ -1256,6 +1790,10 @@ Migration read:
 
 - Product posture: `Open`.
 - Preserve the ability to link gifts and recurring agreements.
+- Treat the current manual-entry selector as useful supporting behavior, not necessarily the primary recurring-fulfillment workflow.
+- Keep open a more agreement-led fulfillment capture model for repetitive manual recurring payments.
+- Repeated non-integrated recurring fulfillment is one of the strongest current motivations for that lighter agreement-led workflow, because repeated generic manual entry plus per-gift association may be too clunky in practice.
+- Keep lightweight duplicate-prevention / double-processing protection in view for manual recurring-fulfillment paths, even if the product avoids a heavy review workflow there.
 - Review the current manual-entry selector and the post-processing agreement updates before migration.
 
 #### Scenario: Linking An Integration-Created Gift To A Recurring Agreement
@@ -1287,7 +1825,10 @@ Key metadata / UI / logic:
 Open questions:
 
 - What is the target Twenty-app / connector pattern for recurring provider events?
-- Should provider metadata identify an existing recurring agreement, create one, or queue an exception when unmatched?
+- Should recurring-related intake be handled differently depending on certainty class:
+  - confident existing recurring-agreement match,
+  - recurring-related but no existing agreement match,
+  - or ambiguous / low-confidence recurring evidence?
 - Which events create staged gifts, which update agreement state, and which are audit-only?
 - How much provider context should be visible to users?
 
@@ -1295,6 +1836,17 @@ Migration read:
 
 - Product posture: `Redesign`.
 - Preserve provider-backed recurring linkage, but do not migrate the current Stripe-specific metadata contract as the final integration architecture.
+- Drive intake behavior primarily from certainty in recurring-agreement match and other material processing uncertainties, not from abstract assumptions about "first" versus "later" recurring gifts.
+- Lean working posture:
+  - confident existing recurring-agreement match should usually take a lighter fulfillment path and bypass gift staging by default;
+  - recurring-related intake with no confident existing agreement match should go through the controlled gift-staging path, with recurring evidence carried forward and safe agreement creation/linking happening later during processing once explicit reviewer intent exists if appropriate;
+  - ambiguous or low-confidence recurring evidence should follow the normal review path, with weak hints preserved if useful but recurring treatment driven mainly by user/admin judgment rather than system automation.
+- In the confident-match case, reserve gift staging for narrow hard-stop conditions such as:
+  - unsafe agreement-linkage conflict,
+  - inability to create a valid canonical gift,
+  - or a hard duplicate/payment-level conflict.
+- Treat softer recurring anomalies such as expectation mismatch, date drift, paused/canceled agreement with payment still arriving, or changed provider metadata primarily as recurring health/status signals rather than default staging triggers.
+- When no confident agreement match exists, the purpose of staging is to resolve the remaining uncertainty and safely create/link the right canonical records; it should not force the user to repeat a weaker version of the same agreement-ID lookup the system has already attempted.
 
 #### Scenario: Advancing Next Expected Date After Processing
 
@@ -1322,16 +1874,24 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- When exactly should `nextExpectedAt` advance: provider event, staged-gift creation, mark-ready, processing success, committed-gift creation, or user review?
-- Should next expected date be calculated by CRM rules, trusted from provider metadata, or reconciled from both?
-- Should agreement-update failure be visible to users if gift processing succeeded?
+- Which provider-driven changes should be allowed to update `nextExpectedAt` directly, and which should update only agreement health/status?
+- How should the CRM reconcile provider schedule updates with its own fulfillment history when they disagree?
+- How should recurring-integrity issues surface when gift fulfillment succeeds but agreement expectation update fails?
 - Should totals/counts/last paid be updated in the same lifecycle step?
 
 Migration read:
 
-- Product posture: `Open`.
+- Product posture: `Preserve + redesign lifecycle`.
 - Preserve the user-facing expectation model.
-- Current leaning: redesign or substantially simplify the lifecycle before migrating the current update side effects.
+- Treat `nextExpectedAt` as a real operator-facing field whose meaning must stay consistent with the recurring agreement as the CRM's commitment / expectation layer.
+- The primary advancement moment should be safely recorded fulfillment against the agreement, not provider schedule updates on their own.
+- Advancement should usually follow the agreement's schedule logic rather than the raw payment date; late fulfillment should not silently redefine the recurring schedule.
+- Provider-driven updates should be a secondary path:
+  - they may update expectation when they genuinely change what is now expected next, such as pause / cancel / completion or a provider-confirmed schedule change;
+  - they should otherwise update health/status or reconciliation context rather than silently becoming the primary expectation driver.
+- If CRM fulfillment history and provider schedule/state disagree, treat that as a reconciliation / health issue rather than silent background behavior.
+- If gift fulfillment succeeds but agreement expectation update fails, treat that as a real recurring-integrity problem, not just harmless logging noise.
+- Current leaning: redesign or substantially simplify the lifecycle before migrating the current update side effects, while preserving fulfillment as the primary expectation-advance trigger.
 
 #### Scenario: Reviewing One-Shot Recurring Metadata
 
@@ -1359,17 +1919,27 @@ Key metadata / UI / logic:
 
 Open questions:
 
-- Which metadata fields are required for the migrated recurring product?
-- Which should remain ordinary record fields available in Twenty but not become custom-app UI yet?
-- Which should be removed, renamed, converted to relations, or moved into provider/audit/integration records?
+- Which current recurring-agreement metadata belongs in the lean recurring-core product, and which should remain ordinary record detail?
+- Which fields are conceptually owned elsewhere (for example receipting, Gift Aid, broader coding/defaulting, provider/audit records) even if they currently sit on the recurring agreement object?
+- Which fields look like one-shot or premature baggage because they do not clearly support commitment/expectation, fulfillment linkage, health/status, or explanation of state?
 - Should annual receipt policy belong to recurring agreements, Gift Aid / receipting, donor preferences, or elsewhere?
 
 Migration read:
 
-- Product posture: `Open`.
-- Do not blindly migrate the full one-shot recurring schema into app-specific UI.
-- Current leaning: simplify the app-specific surface and keep only metadata that supports agreed recurring use cases.
-- Keep the product concept, then review the metadata against actual use cases and provider workflows.
+- Product posture: `Simplify`.
+- Do not blindly migrate the full one-shot recurring schema into app-specific UI or treat the current object shape as product truth.
+- Classify current metadata into four buckets:
+  - lean recurring-core metadata that directly supports commitment / expectation, fulfillment linkage, health/status, and enough provider evidence to explain state;
+  - ordinary record detail that can remain on the agreement without shaping recurring workflow/UI by default;
+  - metadata that conceptually belongs elsewhere;
+  - and suspect / premature baggage that should not survive without stronger justification.
+- Current leaning:
+  - provider identifiers/context needed for matching and explaining state remain clearly relevant;
+  - core lifecycle timestamps mostly remain valid where they explain agreement state;
+  - a small number of fulfillment summary fields such as `lastPaidAt` are easier to justify than broader rollups;
+  - annual receipt / Gift Aid fields do not currently look like recurring-core metadata;
+  - default coding fields may remain as ordinary record defaults, but should not automatically become first-class recurring-product concepts.
+- The recurring agreement record may remain broader than the lean recurring product, but only metadata that clearly supports the agreement's actual recurring role should be elevated into migrated recurring workflow/UI.
 
 ### 2.10 Reconciliation Workflow Summary
 

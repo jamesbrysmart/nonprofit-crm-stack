@@ -47,56 +47,141 @@ When updating this doc in regular syncs, keep it lightweight:
 ## Provisional architecture notes (don’t lock in)
 
 - Treat “Fundraising as an App” as the long-term packaging target, but keep implementation hybrid until Twenty Apps cover required UX + operational primitives (tracked in `docs/DECISIONS.md` D-0019).
-- In SaaS, the “edge layer” is still possible: it becomes a vendor-managed multi-tenant service integrating with each workspace via Twenty APIs/webhooks; customers don’t run code.
+- In SaaS, an “edge layer” or vendor-managed runtime is still possible, but should be treated as a hedge or possible complement rather than a target shape. It may prove useful for some specialized integrations, or it may turn out to be compensating for app/runtime gaps that narrow over time.
+- Do not use service/runtime thinking here as a reason to slow the app-first migration posture. The main open question is boundary placement once the released Twenty apps framework can be tested properly.
 
-## Current Extensibility Surface (baseline verified 2026-03-30)
+## Current Extensibility Surface (baseline verified 2026-04-15)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `0.8.0-canary.1`.
+  - Current package version in-tree: `1.22.0-canary.6` (in a repo tagged `v1.22.0`).
   - CLI command registry now includes: `remote add`, `remote list`, `remote remove`, `remote status`, `remote switch`, `build`, `deploy`, `dev`, `publish`, `install`, `typecheck`, `uninstall`, `add`, `logs`, `exec`, `catalog-sync`, plus `server start|status|logs|stop|reset`.
+  - `dev` now explicitly supports `--once` for one-shot build/sync/typed-client generation without a long-running watcher.
+  - Local server management now also supports a separate `--test` instance, which gives the app workflow a cleaner isolated integration-test story.
   - Older `auth:*`, `app:*`, `entity:add`, and `function:*` command names were replaced by the flatter command surface above.
   - The default local-dev story now expects a local Twenty dev server managed by the SDK plus OAuth-based remote auth, not only API-key-first login.
+  - The CLI/auth flow is getting more explicit about separating Twenty CLI auth from app-registration auth: config now distinguishes `twentyCLI*` tokens from app access tokens, and registration setup can recover a claimed app by locating the registration and rotating its client secret.
   - `deploy` now carries the direct-to-server install path, while `publish` is npm publication only.
   - `add` still covers a wide app surface (`object`, `field`, `function`, `front-component`, `role`, `view`, `navigation-menu-item`, `skill`, `agent`, `page-layout`) with scaffolding support for related UI entities.
   - API split remains explicit in code:
     - `POST /metadata` for app lifecycle/sync operations, logic-function execution, application token operations, multipart `uploadApplicationFile`, app tarball upload/install, metadata schema introspection, and `logicFunctionLogs` subscriptions.
     - `POST /graphql` remains the core data API / generated client target for workspace data access.
-  - Generated client imports had shifted from `twenty-sdk/generated` to `twenty-sdk/clients`, with `MetadataApiClient` shipped by the SDK and `CoreApiClient` generated during app build/dev; current upstream changes now move more of that runtime story toward separate `twenty-client-sdk` provisioning and server-provided application assets.
+  - The package now depends directly on `twenty-client-sdk` and exposes a narrower `front-component-renderer` surface plus `front-component-renderer/build`, reinforcing the separation between app authoring APIs and front-component build/runtime internals.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `0.8.0-canary.1`.
-  - Scaffolder now supports `--exhaustive` (default) and `--minimal`; `--interactive` no longer appears to be part of the primary documented workflow.
+  - Current package version in-tree: `1.22.0-canary.6`.
+  - Scaffolder now defaults to a minimal app plus test scaffold; richer starting points are example-based (`--example hello-world`, `--example postcard`) rather than `--exhaustive` / `--minimal` mode selection.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
-  - Default scaffold now includes a post-install logic function (`src/logic-functions/post-install.ts`), app install test scaffolding, and example coverage for objects, fields, views, navigation menu items, skills, and agents in addition to logic functions/front components.
+  - Default scaffold now includes application config, a default role, schema/integration test scaffolding with dedicated test-instance setup, and local CI/CD workflow templates; examples cover richer objects, fields, views, navigation menu items, skills, agents, and front components.
   - Scaffolder guidance now offers to start a local Twenty dev server automatically, and the documented manual path uses `yarn twenty server start` plus `yarn twenty remote add --local`.
   - Template dependency currently uses `twenty-sdk: latest` (watch for docs/runtime drift when reproducing examples across versions).
 - **Manifest/build surface (as of current code):**
   - Manifest shape in `packages/twenty-shared/src/application/manifestType.ts` is:
     `application`, `objects`, `fields`, `logicFunctions`, `frontComponents`, `roles`, `skills`, `agents`, `publicAssets`, `views`, `navigationMenuItems`, `pageLayouts`.
     (Notably, prior `sources` entry is no longer present in this manifest type.)
-  - `ApplicationManifest` in `applicationType.ts` now includes optional `postInstallLogicFunctionUniversalIdentifier` and `apiClientChecksum` in addition to `packageJsonChecksum` / `yarnLockChecksum`.
+  - `ApplicationManifest` in `applicationType.ts` now includes optional embedded `postInstallLogicFunction` and `preInstallLogicFunction` manifests alongside `packageJsonChecksum` / `yarnLockChecksum`; install hooks are auto-detected rather than referenced by universal identifier in `defineApplication()`.
+  - Field manifests now support `isUnique`, which matters for representing app-owned schema constraints without falling back to post-sync/manual metadata edits.
+  - Role manifests now support object permissions, field permissions, and permission flags, which gives apps a richer least-privilege packaging surface than the prior coarse role shape.
   - Manifest output path remains `.twenty/output/manifest.json`.
   - Build/upload path remains file-oriented (built logic/front-component files, dependencies, and public assets uploaded through `uploadApplicationFile`), but upstream now also documents npm/tarball/server publication paths around that build output.
-  - Manifest checksum generation now also computes an aggregate API client checksum when generated client artifacts are present.
+  - Build/publish docs now treat `build`, `deploy`, `publish`, `install`, and `catalog-sync` as a coherent distribution lifecycle with explicit semver rules for deploy/install/upgrade.
 - **Front component packaging:**
-  - Front-component runtime internals were reorganized into `packages/twenty-sdk/src/front-component-renderer/*` (host/remote runtime, generated registries, worker helpers, story examples).
-  - `twenty-sdk` now exports `./front-component-renderer` (with `./ui`) rather than the older `./front-component` package entrypoint.
-  - Root SDK exports also expanded front-component action/API helpers (`navigate`, `openSidePanelPage`, `enqueueSnackbar`, etc.), indicating a richer packaged UI interaction surface.
+  - `twenty-sdk` now exports `./front-component-renderer/build` in addition to `./front-component-renderer` and `./ui`, while more renderer internals have moved out of the root SDK surface.
+  - Root SDK exports still provide the higher-level front-component action/API helpers (`navigate`, `openSidePanelPage`, `enqueueSnackbar`, etc.), indicating a richer packaged UI interaction surface while runtime plumbing gets separated.
+  - Front-component command manifests now include `GLOBAL_OBJECT_CONTEXT`, and navigation menu items can target a specific `pageLayoutUniversalIdentifier`, which is a meaningful UI/navigation signal for app-driven record surfaces.
 - **Tools/AI workflow integration:**
   - `skills` are now first-class app entities in shared manifest types and SDK exports (`defineSkill`), and upstream docs now document skill authoring in the Apps capability guide.
   - `agents` are now also first-class app entities in shared manifest types and docs (`defineAgent`), extending the AI/app packaging surface beyond tool-exposed logic functions.
   - Logic functions marked as tools can be surfaced via workflow tools (`list_logic_function_tools`).
   - Workflow tooling now includes updating logic-function source from tool calls (`update_logic_function_source`).
-  - Apps docs now also describe post-install logic functions and `function:execute --postInstall`, improving the operational story for one-time app setup tasks.
+  - Apps docs now also describe pre-install and post-install logic functions plus `exec --preInstall` / `exec --postInstall`, improving the operational story for one-time setup and upgrade tasks.
 - **Reference implementations to track:**
-  - Upstream: `packages/twenty-apps/hello-world` (minimal end-to-end app surface).
+  - Upstream: `packages/twenty-apps/examples/hello-world` (minimal end-to-end app surface).
   - In this repo: `apps/core/rollup-engine` (non-trivial app logic already running in our model).
 - **Gaps / limitations:**
   - Marketplace/catalog and asset support are moving forward, but the practical install story is still not something we should treat as broadly production-proven for our use case without targeted validation.
   - Route-trigger request events still expose parsed/normalized request bodies rather than preserved raw bytes, so Stripe-style strict webhook signature verification still looks like a likely platform gap.
+  - REST permission resolution now explicitly accepts application auth context and uses the app default role, which is a positive signal for app-auth batch-path access, but we still need an end-to-end proof against the concrete batch routes we care about.
   - Docs/examples move quickly and can drift between releases; verify against `packages/twenty-docs` and `packages/twenty-sdk/README.md` after each upstream sync, especially around CLI/scaffolder command names.
+
+---
+
+## Latest Snapshot — 2026-04-15
+
+**Context:** Updated `services/twenty-core` from merge commit `0d680c1d2d` to merge commit `afeb9dbf16` (local merge on 2026-04-15; fetched upstream head: `0c4a194c7a`, nearest upstream tag `v1.22.0`).
+
+**Highlights**
+
+1. **The app toolchain moved into the `v1.22.0` era, but the change is mostly developer ergonomics rather than platform posture**
+   - `twenty-sdk` and `create-twenty-app` now report `1.22.0-canary.6` in-tree alongside the repo’s `v1.22.0` tag.
+   - This window is not another broad reshaping of the app model; it is a tightening pass on auth, testability, and entity surface details.
+   - That means it matters more for our first migration proof workflow than for the high-level “is apps the long-term direction?” question.
+
+2. **The local dev and test story improved in a directly useful way for migration proofs**
+   - Docs and CLI now support a separate `yarn twenty server ... --test` instance on port `2021`, with isolated container and volumes.
+   - The scaffolded app test shape also moved toward dedicated test setup and schema/integration checks rather than only the older install-test framing.
+   - Upstream publishing docs now document scaffolded CI/CD workflows more explicitly, including ephemeral test-instance usage in CI.
+
+3. **App registration/auth flow looks more resilient for repeated local sync and proof work**
+   - The SDK now distinguishes CLI OAuth credentials from app-registration credentials in config naming.
+   - `ensureAppRegistration` can recover when a universal identifier is already claimed by locating the existing registration and rotating the client secret rather than failing hard.
+   - That does not change production capability, but it reduces friction for repeated app-dev iterations, which matters now that we are close to a real migration proof.
+
+4. **There are a few real app-surface additions, especially around schema and UI wiring**
+   - Field manifests now support `isUnique`.
+   - Front-component command manifests now include `GLOBAL_OBJECT_CONTEXT`, which slightly broadens where commands can appear.
+   - Navigation menu items can now point at a specific `pageLayoutUniversalIdentifier`, which is a meaningful signal that app-owned navigation and record-surface wiring are getting more explicit.
+
+5. **The core blockers still look materially unchanged**
+   - This merge window did not touch the route-trigger raw-body path or the REST auth handler areas we track as blockers/watch items.
+   - So the high-level posture remains the same: the app surface looks increasingly usable, but our real migration questions are still proof questions, not “docs say it exists” questions.
+
+**Actions for our stack**
+
+1. Keep the explicit “watch and prepare” posture from `D-0019`, but treat the proof environment as materially more ready than it was in early March.
+2. Update local notes that still assume `0.9.0` era package versions or the older scaffolded test-file names.
+3. Use the new `--test` server support and scaffolded CI/test patterns as the default environment shape for the first migration proof.
+4. Keep route-trigger raw-body fidelity as the clearest unresolved platform blocker, and keep batch-path validation in the “must prove, don’t assume” bucket.
+
+---
+
+## Latest Snapshot — 2026-04-10
+
+**Context:** Updated `services/twenty-core` from merge commit `213d75d900` to merge commit `0d680c1d2d` (local merge on 2026-04-10; fetched upstream head: `217957f2a1`, nearest upstream tag `v1.21.1`).
+
+**Highlights**
+
+1. **SDK + scaffolder moved to `0.9.0` and hardened the non-interactive workflow**
+   - `twenty-sdk` and `create-twenty-app` both moved from `0.8.0-canary.1` to `0.9.0`.
+   - `yarn twenty dev --once` is now a first-class one-shot sync path for CI, hooks, and scripted workflows instead of “watch mode only” semantics.
+   - The docs and CLI read more like a stable app authoring workflow now: scaffold, local server/OAuth auth, `dev`, `build`, `deploy` / `publish`, `install`.
+
+2. **Scaffolding shifted from mode-based templates to minimal-by-default plus examples**
+   - `create-twenty-app` now documents a minimal default app with test scaffolding and local CI/CD workflow templates.
+   - Richer starting points moved to named examples (`hello-world`, `postcard`) under `packages/twenty-apps/examples/*`.
+   - This is useful for us because the canonical “small proof app” story is clearer and easier to copy for targeted fundraising spikes.
+
+3. **Manifest and permission surface expanded in ways that matter operationally**
+   - Install hooks are now modeled as `preInstallLogicFunction` / `postInstallLogicFunction` manifests rather than only identifier references, and docs say they are auto-detected from source.
+   - Role manifests now include object permissions, field permissions, and permission flags, which gives app packaging a more realistic least-privilege shape for future fundraising proofs.
+   - Publish/install docs now spell out semver-enforced deploy/install/upgrade behavior, `catalog-sync`, and marketplace metadata more concretely than the March baseline.
+
+4. **One previous blocker got weaker: REST auth now explicitly handles application context**
+   - `rest-api-base.handler.ts` now branches for application auth context and uses `authContext.application.defaultRoleId` when present.
+   - That is a meaningful positive signal for app-authenticated access to core REST endpoints, including the batch-path question we care about.
+   - It is still not a migration go-signal because we have not proven our actual fundraising batch flows end-to-end under app auth, but it should no longer be described as a likely gap based only on missing application-context support in that handler.
+
+5. **The route-trigger raw-body blocker still looks unchanged**
+   - This merge window did not touch the route-trigger event builder or `LogicFunctionEvent` shape that our Stripe-style webhook concern depends on.
+   - So raw-body fidelity remains the cleaner “likely actual platform gap” in the watch posture.
+
+**Actions for our stack**
+
+1. Keep the explicit “watch and prepare” posture from `D-0019`; this merge improves app maturity but is still not a migration decision.
+2. Update local notes that still refer to `0.8.0-canary.1`, `--exhaustive` / `--minimal` scaffolder modes, or install-hook identifiers in `defineApplication()`.
+3. Downgrade the app-auth REST batch-path concern from “likely current gap” to “needs proof,” and plan any future fundraising spike accordingly.
+4. Keep route-trigger raw-body fidelity as the clearest unresolved platform blocker for Stripe-style ingress.
 
 ---
 
@@ -300,11 +385,11 @@ Interpretation key:
 | Area | Existing code asset (today) | Likely lift path into Apps | True unknown/blocker to validate | End-of-Feb watch signal | Status | Evidence pointers |
 | --- | --- | --- | --- | --- | --- | --- |
 | Metadata lifecycle | We already provision full fundraising objects/fields/relations via `setup-schema.mjs`. | Move schema ownership from script to app manifests (`objects`, `fields`, `roles`, relation fields), keep IDs stable. | Full parity test for install/update/uninstall across the complete fundraising schema. | Manifest coverage expanded again (views/navigation/page layouts now modeled), but full fundraising schema lifecycle parity is still unproven. | `amber` | `services/fundraising-service/scripts/setup-schema.mjs`, `docs/METADATA_RUNBOOK.md`, `services/twenty-core/packages/twenty-shared/src/application/manifestType.ts`, `services/twenty-core/packages/twenty-shared/src/application/fieldManifestType.ts` |
-| Core API logic (gift/staging/batch) | Large existing domain code already in service classes (`gift.service.ts`, `gift-staging.service.ts`, batch services) plus pure logic modules. | Lift service methods into app logic-function handlers with thin adapters; keep most business logic files near-identical. | Throughput behavior under heavy concurrency when run as logic functions vs service processes; plus confirm app-auth can use core REST batch endpoints end-to-end. | REST batch endpoints exist, but current REST permission resolution appears to handle only user/api-key auth contexts (not app auth) in `rest-api-base.handler`; treat as a likely current gap until proven otherwise. | `amber` | `services/fundraising-service/src/gift/gift.service.ts`, `services/fundraising-service/src/gift-staging/gift-staging.service.ts`, `services/fundraising-service/src/gift-batch/gift-batch-processing.service.ts`, `services/fundraising-service/src/gift-batch/gift-batch-donor-match.service.ts`, `services/twenty-core/packages/twenty-server/src/engine/api/rest/core/controllers/rest-api-core.controller.ts`, `services/twenty-core/packages/twenty-server/src/engine/api/rest/core/handlers/rest-api-base.handler.ts`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/auth/strategies/jwt.auth.strategy.ts` |
+| Core API logic (gift/staging/batch) | Large existing domain code already in service classes (`gift.service.ts`, `gift-staging.service.ts`, batch services) plus pure logic modules. | Lift service methods into app logic-function handlers with thin adapters; keep most business logic files near-identical. | Throughput behavior under heavy concurrency when run as logic functions vs service processes; plus confirm app-auth can use core REST batch endpoints end-to-end. | REST permission resolution now explicitly handles application auth context via the app default role in `rest-api-base.handler`, so the remaining question is end-to-end behavior on the batch routes we actually need rather than obvious missing handler support. | `amber` | `services/fundraising-service/src/gift/gift.service.ts`, `services/fundraising-service/src/gift-staging/gift-staging.service.ts`, `services/fundraising-service/src/gift-batch/gift-batch-processing.service.ts`, `services/fundraising-service/src/gift-batch/gift-batch-donor-match.service.ts`, `services/twenty-core/packages/twenty-server/src/engine/api/rest/core/controllers/rest-api-core.controller.ts`, `services/twenty-core/packages/twenty-server/src/engine/api/rest/core/handlers/rest-api-base.handler.ts`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/auth/strategies/jwt.auth.strategy.ts` |
 | Webhook & route ingress | Existing Stripe/GoCardless handlers already isolate ingestion logic and mapping. | Re-host webhook endpoints as route-triggered logic functions, forwarding only needed signature headers. | Raw-body fidelity for strict signature validation (Stripe-style) needs an explicit spike in route-trigger payload handling. | Current route-trigger event builder normalizes/parses body and does not expose preserved raw bytes in `LogicFunctionEvent`; treat strict signature verification as a likely real gap until route payload support changes. | `amber` | `services/fundraising-service/src/stripe/stripe-webhook.controller.ts`, `services/fundraising-service/src/stripe/stripe-webhook.service.ts`, `services/twenty-core/packages/twenty-shared/src/types/LogicFunctionEvent.ts`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-trigger/triggers/route/utils/build-logic-function-event.util.ts` |
 | Runtime/dependencies | Existing app precedent already ships non-trivial code (`apps/core/rollup-engine`); platform supports dependency layers and configurable function timeouts. | Mirror rollup-engine pattern for fundraising domains; package shared domain modules and runtime config as app variables. | Need empirical limits profile for longest batch paths and worst-case retries. | Function timeout or dependency packaging limits force major logic redesign. | `green` | `apps/core/rollup-engine/serverlessFunctions/calculaterollups/src/index.ts`, `services/twenty-core/packages/twenty-server/src/engine/metadata-modules/logic-function/logic-function.entity.ts`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/lambda.driver.ts` |
-| UI surface | Existing UI is a service-hosted Vite admin app; Twenty front components and page-layout widgets are actively evolving. | Phase migration: API/runtime first; migrate UI slices to front components where ergonomics are proven. | Multi-screen fundraising admin UX parity (navigation/layout patterns) needs a concrete spike, not assumption. | Signal improved: app manifests/SDK now include views + navigation items + page layouts, but workflow-level UX parity is still unproven. | `amber` | `services/fundraising-service/src/main.ts`, `services/twenty-core/packages/twenty-docs/developers/extend/capabilities/apps.mdx`, `services/twenty-core/packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/front-component-configuration.dto.ts` |
-| Auth/security/compliance | Current service auth is middleware-based; app runtime issues scoped short-lived app tokens with role permissions and supports secret app variables. | Use app-role least-privilege model for logic functions; keep webhook auth/signature validation explicit per route. | Operational pattern for secret rotation + webhook auth hardening must be codified in runbooks. | App token generation/renewal surface is more explicit in SDK/server code, but our operational hardening model is still not codified. | `amber` | `services/fundraising-service/src/auth/auth.utils.ts`, `services/fundraising-service/src/auth/fundraising-auth.middleware.ts`, `services/twenty-core/packages/twenty-docs/developers/extend/capabilities/apps.mdx`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-executor/logic-function-executor.service.ts` |
+| UI surface | Existing UI is a service-hosted Vite admin app; Twenty front components and page-layout widgets are actively evolving. | Phase migration: API/runtime first; migrate UI slices to front components where ergonomics are proven. | Multi-screen fundraising admin UX parity (navigation/layout patterns) needs a concrete spike, not assumption. | Signal improved: app manifests/SDK now include views + navigation items + page layouts, but workflow-level UX parity is still unproven. | `amber` | `services/fundraising-service/src/main.ts`, `services/twenty-core/packages/twenty-docs/developers/extend/apps/building.mdx`, `services/twenty-core/packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/front-component-configuration.dto.ts` |
+| Auth/security/compliance | Current service auth is middleware-based; app runtime issues scoped short-lived app tokens with role permissions and supports secret app variables. | Use app-role least-privilege model for logic functions; keep webhook auth/signature validation explicit per route. | Operational pattern for secret rotation + webhook auth hardening must be codified in runbooks. | App token generation/renewal surface is more explicit in SDK/server code, and REST permission resolution now recognizes application auth context, but our operational hardening model is still not codified. | `amber` | `services/fundraising-service/src/auth/auth.utils.ts`, `services/fundraising-service/src/auth/fundraising-auth.middleware.ts`, `services/twenty-core/packages/twenty-docs/developers/extend/apps/building.mdx`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-executor/logic-function-executor.service.ts` |
 | Ops/observability/cutover | Strong current structured logs + runbooks; no phased cutover doc yet. | Define phased strangler plan (endpoint-by-endpoint), with reversible gates and parity checks. | Need a minimal phase plan + measurable cutover criteria before any migration start. | No agreed cutover gates by end-Feb. | `amber` | `docs/OPERATIONS_RUNBOOK.md`, `services/fundraising-service/src/logging/structured-logger.service.ts`, `docs/DECISIONS.md` (D-0017, D-0019) |
 
 Notes for next reviews:
@@ -318,10 +403,9 @@ Use this classification to avoid mixing platform gaps with our own migration wor
 
 - **Likely actual platform gaps (current code evidence)**
   - **Route-trigger raw-body fidelity** for Stripe-style signature verification appears unavailable in current `LogicFunctionEvent` construction (parsed/normalized body, no raw bytes exposed).
-  - **App-auth access to core REST batch endpoints** may be incomplete today: app tokens are recognized by auth, but REST base handler permission resolution currently branches on user/api-key auth contexts only.
 - **Needs proof (not proven platform gaps yet)**
   - Full fundraising metadata lifecycle parity (install/update/uninstall) across our complete schema.
-  - Batch throughput/retry parity under our production-style workloads, once app-auth path is confirmed.
+  - Batch throughput/retry parity under our production-style workloads, including end-to-end proof that app-authenticated logic functions can use the concrete core REST batch paths we need.
   - UI/navigation/page-layout ergonomics for selected fundraising workflows (if/when we choose to test UX migration slices).
 - **Primarily our migration/ops work (not Twenty platform blockers)**
   - Secret rotation and webhook hardening runbooks.
@@ -330,9 +414,9 @@ Use this classification to avoid mixing platform gaps with our own migration wor
 
 ### Validation timing (intentional deferral)
 
-- We are **not** running these validation spikes yet.
-- Defer app-migration proof work until the Twenty team indicates the Apps surface is ready for external testing.
-- Until then, keep collecting code-level evidence in this doc and maintain the hybrid delivery path for beta.
+- We are moving out of pure deferral mode and toward a first focused migration proof.
+- Keep proof work narrow and evidence-driven: validate one bounded functionality slice rather than treating an early spike as a platform-wide green light.
+- Continue collecting code-level evidence in this doc while maintaining the hybrid delivery path until that first proof is convincing.
 
 ### What would count as truly missing (not just “not migrated yet”)?
 

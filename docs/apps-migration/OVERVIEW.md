@@ -19,6 +19,10 @@ This migration is intended to:
 
 We are reviewing the current product and code before migrating because this should not be a blind port. The goal is to migrate the right product behavior and the right implementation assets, not simply recreate everything that exists today.
 
+This remains an app-first migration conversation.
+
+That does not automatically mean every execution/runtime concern will ultimately live fully inside Twenty app code. The current Gift Aid / HMRC work suggests there may be cases where a specialized external adapter or service layer remains a useful hedge, especially while the Twenty apps/runtime model is still early. That question is still unresolved and should be tested against the released framework rather than assumed in either direction.
+
 ## 2. Goals
 
 Product goals:
@@ -62,6 +66,16 @@ This migration does not yet imply:
 - immediate parity for every current surface,
 - that every current fundraising-service capability should survive unchanged.
 
+Current planning context:
+
+- After initial pilot scoping, the first pilot customer is expected to prioritize:
+  - donation intake,
+  - Gift Aid,
+  - recurring donations,
+  - and finance-system integration.
+- This should be treated as migration context, not as a claim that other areas are unimportant or will not migrate.
+- The practical implication is that upcoming migration decisions and sequencing should keep first-pilot fit in view, while still documenting broader product understanding where that helps later sessions.
+
 ## 5. Migration Principles
 
 Use these principles to guide migration decisions:
@@ -74,6 +88,7 @@ Use these principles to guide migration decisions:
 - Use Twenty as a reference and target environment, not as a template to copy blindly.
 - Validate risky assumptions before committing to large migration steps.
 - Keep the end goal in view: this work should support the real migration of the product, not just local cleanup.
+- Treat any service/edge/runtime pattern as a possible complement to app migration, not as an excuse to weaken or defer app-first product movement.
 
 ## 6. Related Docs
 
@@ -89,3 +104,5 @@ Use these principles to guide migration decisions:
   - defines shared UI evaluation rules and current defaults.
 - [`TWENTY_APPS.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/TWENTY_APPS.md)
   - defines migration-aware UI guidance and current portability assumptions.
+- [`service-layer-integration-runtime.md`](/home/jamesbryant/workspace/dev-stack/docs/spikes/service-layer-integration-runtime.md)
+  - exploratory note on where a service/runtime layer may act as a hedge or complement while Twenty apps remain early.

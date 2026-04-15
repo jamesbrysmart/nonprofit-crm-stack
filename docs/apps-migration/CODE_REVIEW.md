@@ -112,17 +112,52 @@ Current behavior:
 - `GiftService.buildProcessingDiagnostics` computes eligibility, blockers, warnings, and identity confidence.
 - `GiftStagingService.stageGift` creates the staging record, stores the raw payload, and sets initial processing/dedupe status.
 - `GiftStagingService.listGiftStaging` exposes cursor-based list access with status, intake source, search, sort, recurring agreement, and batch filters.
-- `GiftStagingService.updateGiftStagingPayload` merges user edits back into both staging fields and the stored raw payload.
+- `GiftStagingService.updateGiftStagingPayload` now treats surfaced staging fields as the editable source of truth and patches those fields directly without rewriting `rawPayload`.
 - `GiftStagingProcessingService.processGift` is the record-level processing boundary.
+- `GiftStagingProcessingService.processGift` now builds the processing payload from staged fields rather than reparsing editable `rawPayload`.
 - `GiftStagingProcessingService.canProcess` currently treats `ready_for_process` and `process_failed` as the only processable states; reviewer intent is the main gate.
 - `GiftBatchProcessingService` supports async batch processing runs with progress, outcomes, batch status updates, hybrid batch create, row fallback, retry/resume semantics, and explicit row fallback for recurring-linked rows until batch parity exists.
-- `GiftBatchDonorMatchService` supports async donor-match runs and backend create-donor runs for selected staging rows.
+- `GiftBatchDonorMatchService` supports async donor-match runs and persists identity-resolution outcomes back to staging rows.
+
+Runtime truth clarification from current review:
+
+- The current runtime is already leaner than some older solution docs imply.
+- Batch processing and donor-match flows already reflect the low-write / low-churn simplification direction:
+  - donor-match skips no-op writes,
+  - batch processing prefers chunked batch writeback where possible,
+  - row fallback is used selectively for parity gaps rather than as the default path.
+- `processingStatus` is the real processing gate today for:
+  - single-record processing,
+  - batch fast-path selection,
+  - retry eligibility.
+- `validationStatus` currently looks much weaker in runtime terms; it is still written and surfaced, but does not appear to drive processing decisions.
+- `dedupeStatus` is not a processing gate, but it still has operator/UI footprint and is still persisted by donor-match flows as a compact review signal.
+- Processing-time donor behavior now matches review intent more closely:
+  - linked `donorId` is respected as-is,
+  - unresolved staged rows create a new donor,
+  - processing no longer silently searches for a plausible existing donor match and reuses it.
+- Batch donor-match auto-linking has also been tightened toward the migration target:
+  - exact email matches no longer auto-link when duplicate lookup returns multiple candidate donors,
+  - ambiguous duplicate-candidate sets now stay in review rather than being silently linked.
+- The documented migration/post-simplification posture should therefore be read as a target direction, not as a full description of current runtime behavior.
+
+Intake-path timing clarification:
+
+- Manual entry is comparatively chatty on create:
+  - diagnostics are computed on create,
+  - staging is created,
+  - dedupe status may be patched,
+  - gift creation may happen immediately,
+  - staging is then marked processed on success.
+- Integration-created rows such as Stripe currently follow a similar create-time path, but auto-process is downgraded by trust/identity rules.
+- CSV/import-oriented workflows are materially lighter at create time and push more work into explicit batch actions (`donor-match`, `process-batch`).
 
 Important migration observation:
 
 - the backend is already split between product-level staging concepts and current runtime mechanics,
 - the product concepts are likely worth carrying forward,
 - the in-memory run tracking and polling model should be reviewed before recreating it in Twenty apps.
+- the main place where current behavior still looks relatively chatty is create-time manual/integration intake, not the async batch/donor-match paths.
 
 ### 3.4 UI Inventory
 
@@ -154,6 +189,17 @@ Current behavior:
 - `useStagingQueueController` keeps the active-work model: default excludes processed rows, supports batch scope, high-value and duplicate filters, active-work metrics, pagination, donor-match run polling, and batch process run polling.
 - `useGiftStagingDrawerController` handles save, mark-ready, process-now, and donor assignment actions.
 
+Runtime truth clarification:
+
+- The queue model is already broadly blocker-first in its eligibility lens:
+  - `eligibilityMeta` collapses rows toward `Needs attention` vs `Eligible now` based primarily on blockers and diagnostics.
+- The main risk is not absence of a blocker-first model, but secondary-flag clutter:
+  - duplicate cues,
+  - donor unresolved,
+  - low identity confidence,
+  - recurring/high-value/receipt cues.
+- Migration review should therefore focus more on signal hierarchy and visual priority than on inventing a new queue model from scratch.
+
 Important migration observation:
 
 - the queue and drawer already encode the intended user workflow clearly,
@@ -168,12 +214,23 @@ Important migration observation:
 | Identify what prevents safe processing | `processingDiagnostics`, `errorDetail`, status fields, queue review summaries, drawer audit/review summaries. | Preserve user-actionable blockers/warnings; simplify how diagnostics are grouped and displayed if needed. |
 | Confirm, change, or create the correct donor | Donor snapshot fields, donor/company links, dedupe diagnostics, drawer donor review/search/assignment, batch donor-match and create-donor backend runs. | Preserve donor resolution as first-class. Validate whether create-donor run needs UI exposure in migration. |
 | Detect duplicates or conflicts before commit | `dedupeStatus`, dedupe diagnostics in raw payload, donor-match logic, source fingerprint/external id fields, duplicate indicators in queue/drawer. | Preserve duplicate visibility. Review whether dedupe evidence should remain embedded in raw payload or become a clearer diagnostics contract. |
-| Review and correct core gift details | Drawer details form updates amount/date/fund/appeal/opportunity/intent/in-kind/notes and merges edits back into raw payload. | Preserve pre-commit correction. Review field grouping and the future shared `GiftDetailsForm` boundary. |
+| Review and correct core gift details | Drawer details form updates amount/date/fund/appeal/opportunity/intent/in-kind/notes on the staged record, and processing now reads those staged fields directly. | Preserve pre-commit correction. Review field grouping and the future shared `GiftDetailsForm` boundary. |
 | Decide whether a single gift is ready | `ready_for_process` status, mark-ready action, process-now action, processing guard in backend. | Preserve explicit reviewer decisioning. Review whether status naming and validation semantics should be tightened. |
 | Work through staged gifts as a queue | Active-work statuses, filters, search, sort, pagination, queue table, drawer selection, processed exclusion by default. | Preserve queue operating model. Align with the shared record-list/view requirements before rebuilding in Twenty apps. |
 | Switch from workspace review to batch-level work | `giftBatch` object/relation, batch inbox, batch scope filter, batch diagnostics, back-to-workspace action. | Preserve batch scope as a first-class mode. Avoid treating it as only a hidden filter. |
 | Trigger record-level or batch-level processing actions | Record-level process/retry, batch process/resume, async runs, progress/outcomes, batch status updates. | Preserve deliberate actions and outcome visibility. Review runtime model for Twenty apps before recreating in-memory runs. |
 | Investigate failed or blocked records | `process_failed`, `errorDetail`, diagnostics, raw payload audit tab, retry path, batch fallback error persistence. | Preserve investigation path but keep raw/debug detail secondary. Tighten user-actionable next steps during migration. |
+
+Mapping clarification:
+
+- The product review's simpler blocker-first posture is directionally right, but it should not be mistaken for a faithful description of current runtime truth.
+- Current runtime truth is:
+  - leaner than older drafts,
+  - already optimized in async batch/donor-match flows,
+  - still more status-gated and create-time-chatty than the target posture suggests.
+- Keep the migration read split clearly between:
+  - what the current code actually depends on,
+  - what we want the migrated model to simplify toward.
 
 ### 3.6 Refactor / Redesign Candidates
 
@@ -181,9 +238,11 @@ Refactor first:
 
 - `StagingQueueSummary` is carrying many product concerns in one component: metrics, scope, batch inbox, filters, fields, diagnostics, and run status.
 - Donor-match/create-donor backend behavior is richer than the current UI exposure; clarify intended user flow before porting.
-- Dedupe diagnostics are partly in raw payload and partly in processing diagnostics / status fields; define the migration diagnostics contract.
+- Dedupe diagnostics are still partly in raw payload and partly in processing diagnostics / status fields; define the migration diagnostics contract now that editable truth has moved to staged fields.
 - Status naming and semantics should be reviewed before migration: `pending`, `processing`, `ready_for_process`, `process_failed`, `processed`, `validationStatus`, and `dedupeStatus` overlap in user-facing meaning.
 - Batch run state is currently in-memory; this may not be acceptable for a Twenty-app migration if run state must survive restarts or be shared across workers.
+- Create-time manual/integration intake is still relatively chatty compared with the low-write direction already achieved in batch and donor-match flows; review whether any create-time writes are redundant before migrating the pattern.
+- Secondary alert/flag density in the queue should be reviewed so blockers remain the primary review signal.
 
 Likely preserve:
 

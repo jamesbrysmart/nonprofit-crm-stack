@@ -26,7 +26,6 @@ touch many rows and trigger external side effects. We need:
 
 - Async process-batch run model (`start` + `poll`).
 - Async donor-match run model (`start` + `poll`).
-- Async create-donors run model (`start` + `poll`).
 - Hybrid executors with split/isolation fallback where appropriate.
 - Correlation-contract failure classification and explicit run failure behavior.
 - Batch patch/upsert hardening on staging write paths, including ID safety checks.
@@ -44,7 +43,6 @@ touch many rows and trigger external side effects. We need:
 
 - `process-batch`
 - `donor-match`
-- `create-donors`
 
 ### Run statuses
 
@@ -80,7 +78,6 @@ touch many rows and trigger external side effects. We need:
 - `no_match`
 - `insufficient_identity`
 - `error`
-- `created_donor` (create-donors run)
 
 Each processed candidate row gets an explicit persisted outcome payload in
 `processingDiagnostics.identityResolution`.
@@ -133,12 +130,10 @@ Open upstream asks:
 - `FUNDRAISING_BATCH_PROCESS_BATCH_DELAY_MS`
 - `FUNDRAISING_BATCH_PROCESS_ROW_DELAY_MS`
 
-### Donor-match / create-donors
+### Donor-match
 
 - `FUNDRAISING_DONOR_MATCH_LOOKUP_DELAY_MS`
 - `FUNDRAISING_DONOR_MATCH_LOOKUP_BATCH_SIZE` (clamped `<=60`)
-- `FUNDRAISING_DONOR_MATCH_CREATE_CHUNK_SIZE` (clamped `<=60`)
-- `FUNDRAISING_DONOR_MATCH_CREATE_DELAY_MS`
 
 ## 8) Observability Contract
 
@@ -210,7 +205,7 @@ Use this phased approach for 60+/100+ scale hardening:
    - reduce avoidable staging read/write chatter in bulk paths,
    - minimize GET-before-PATCH patterns when run context already has needed data.
 2. Realistic-load validation:
-   - run donor-match -> short pause -> create-donors -> short pause -> process batch,
+   - run donor-match -> short pause -> process batch,
    - validate at 30, 60, 100 row sizes to separate architecture limits from smoke compression.
 3. Production guardrails:
    - add shared backpressure/throttling safety net for shared-key contention.
