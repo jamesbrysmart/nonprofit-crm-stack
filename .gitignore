@@ -12,3 +12,4 @@ node_modules/
 
 # Yarn artifacts
 .yarn/package-lock.json
+.codex
