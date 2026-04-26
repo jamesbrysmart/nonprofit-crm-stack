@@ -23,6 +23,12 @@ Use the docs below as the canonical source of truth; avoid “plausible” comma
 - Assume docs can drift: if something looks stale, verify against code/config rather than trusting the doc.
 - Keep changes scoped to the repo/submodule you’re working in; don’t “tidy up” unrelated areas unless asked.
 
+## Operating model
+- Codex remains the primary agent for higher-level reasoning, architecture, product/workflow framing, cross-app reasoning, and larger implementation sessions.
+- Mistral Vibe may be used inside specific app repos for narrower execution work once the frame is already clear.
+- App-local guidance for Mistral should live in each app repo’s `AGENTS.md`.
+- Treat this as an evolving working pattern. Refine it based on real usage rather than trying to overdefine it in advance.
+
 ## Git + submodules (important)
 This repo is a superproject with submodules under `services/`.
 

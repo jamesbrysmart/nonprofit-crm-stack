@@ -89,6 +89,37 @@ Use these principles to guide migration decisions:
 - Validate risky assumptions before committing to large migration steps.
 - Keep the end goal in view: this work should support the real migration of the product, not just local cleanup.
 - Treat any service/edge/runtime pattern as a possible complement to app migration, not as an excuse to weaken or defer app-first product movement.
+- For Twenty app setup/build/dev flow, use Twenty's official docs as the canonical source of truth rather than copying local setup steps into this repo. Record only repo-specific constraints, observed deviations, and migration implications here.
+
+For the first pilot-app implementation pass, the practical posture should be:
+
+- architecture first,
+- high-quality code from the start,
+- careful metadata decisions alongside both,
+- and feature polish only after the core workflow model and boundaries are sound.
+
+### 5.1 Twenty App Workflow Source Of Truth
+
+For app scaffolding, setup, build, and dev workflow, treat the official Twenty docs as canonical:
+
+- `https://docs.twenty.com/developers/extend/apps/getting-started`
+- `https://docs.twenty.com/developers/extend/apps/building`
+
+Why this matters:
+
+- the Twenty app SDK and scaffolding flow are still moving quickly;
+- local hand-rolled scaffolds can create false negatives that look like platform/runtime limits;
+- migration spikes should only be interpreted as platform evidence once they are running through Twenty's current documented app workflow.
+- the Twenty CRM/runtime version and the Twenty app SDK version are separate version lines and should not be conflated when planning or diagnosing spikes.
+
+Versioning note:
+
+- The Docker/runtime version of Twenty CRM and the app-tooling version (`twenty-sdk`, `create-twenty-app`, `twenty` CLI) are different things.
+- They may move on different version lines and should be checked independently.
+
+When evaluating spikes, first identify which runtime/UI version is actually under test, then choose the corresponding app-tooling line for that release family. Do not assume the checked-out local Twenty source version is the same thing as the runtime version currently running in Docker.
+
+This doc should not duplicate step-by-step app setup instructions unless we intentionally need to document a repo-specific deviation from Twenty's process.
 
 ## 6. Related Docs
 
@@ -100,6 +131,10 @@ Use these principles to guide migration decisions:
   - connects current workflows and patterns to likely Twenty-app migration targets.
 - [`MIGRATION_SEQUENCE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/MIGRATION_SEQUENCE.md)
   - defines migration order, dependencies, and validation gates.
+- [`PILOT_APP_IMPLEMENTATION_PLAN.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
+  - defines the phased production-quality implementation plan for the first fundraising pilot app.
+- [`TWENTY_APP_DEV_WORKFLOW.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
+  - captures the current repo-local workflow split between Twenty app development and the integrated `dev-stack` environment.
 - [`ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/ARCHITECTURE.md)
   - defines shared UI evaluation rules and current defaults.
 - [`TWENTY_APPS.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/TWENTY_APPS.md)

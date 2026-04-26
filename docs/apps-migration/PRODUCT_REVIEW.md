@@ -116,6 +116,26 @@ This migration review is the point where we assess:
 - which should be tightened or simplified,
 - which were useful scaffolding but should not be carried forward as part of the longer-term Twenty-app implementation.
 
+## 1.5 Migration Default
+
+For this migration review, `fundraising-service` should be treated as the main source of truth for:
+
+- current product contracts,
+- current workflow behavior,
+- and the parts worth preserving, refining, or simplifying.
+
+It should **not** be treated as the default implementation target for migration spikes.
+
+The default migration question is:
+
+- how do we re-express this product need inside Twenty apps as cleanly as possible?
+
+not:
+
+- how do we call back into the existing service from a Twenty app?
+
+Hybrid/service boundaries may still be the right answer for some areas, but they should be treated as explicit architectural conclusions reached after review, not as the silent default just because the current service already does the job.
+
 ## 2. Current Workflows
 
 - Gift processing / staging.

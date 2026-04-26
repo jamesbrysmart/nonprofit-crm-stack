@@ -34,10 +34,18 @@ Read these before running operational commands or changing operational behavior.
 ## Apps Migration
 
 - `apps-migration/OVERVIEW.md` — migration purpose, scope, goals, and non-goals for moving fundraising-service into Twenty apps.
+- `apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md` — phased production-quality implementation plan for the first fundraising pilot app on Twenty.
+- `apps-migration/STRIPE_IMPLEMENTATION_STAGES.md` — staged implementation note for Stripe inside the fundraising Twenty app, including one-off intake, recurring expansion, and capability-validation posture.
+- `apps-migration/STRIPE_WORKLOG.md` — active implementation notes, discoveries, validation evidence, and open questions for the Stripe app work.
+- `apps-migration/TWENTY_APP_DEV_WORKFLOW.md` — repo-local note on the current environment split for Twenty app development vs the integrated `dev-stack` environment.
+- `apps-migration/TWENTY_NATIVE_REFERENCE.md` — code-first reference map for native Twenty UI, host affordances, commands, variables, triggers, and scaffolding surfaces to check before building custom equivalents.
 - `apps-migration/PRODUCT_REVIEW.md` — review of current fundraising workflows to decide what to preserve, simplify, redesign, or drop.
 - `apps-migration/CODE_REVIEW.md` — review of current code to decide what is portable, what needs refactor first, and what should not be migrated as-is.
 - `apps-migration/UI_MIGRATION_MAP.md` — mapping of current UI surfaces and patterns to likely Twenty-app migration paths.
 - `apps-migration/MIGRATION_SEQUENCE.md` — staged migration order, dependencies, and validation gates.
+- Official Twenty app setup/build docs remain canonical for app workflow steps; our migration docs should link to them rather than duplicate them:
+  - `https://docs.twenty.com/developers/extend/apps/getting-started`
+  - `https://docs.twenty.com/developers/extend/apps/building`
 
 ## Feature specs (what we’re building)
 
@@ -47,6 +55,7 @@ These describe intended behavior and workflows at the feature level.
 - `features/gift-aid.md` — working Gift Aid capability definition: product boundary, operational model, lightweight data/audit shape, and implementation-planning guidance.
 - `solutions/` — cross-feature designs / “how we solve it” docs.
   - `solutions/gift-batch-processing.md` — canonical as-built solution notes for batch processing, donor-match/create-donors runs, invariants, and operating model.
+- `spikes/twenty-app-batch-processing-design.md` — working design note for the best current Twenty-native batch-processing executor shape and its platform constraints.
 
 ## API / Reference notes (may drift)
 
