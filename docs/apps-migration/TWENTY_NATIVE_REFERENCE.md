@@ -97,6 +97,58 @@ Practical read:
 - Prefer these helpers over app-specific toasts/modals/progress wrappers unless Twenty is missing a required behavior.
 - Use them for workflow shell behavior, not domain logic.
 - In `v2.0.0`, these should be treated as part of the intended front-component model, not as incidental internal helpers.
+- For fundraising migration work, these helpers are also the main surface to test when evaluating whether a workflow can stay close to native record/list/page behavior rather than becoming a custom workspace.
+- Current example worth testing deliberately: launching users from a batch context into batch-filtered staged-gift review, including whether `navigate(...)`, record pages, side panels, or a standalone page give the cleanest operator flow.
+- Current validated read from the fundraising app:
+  - batch-to-filtered-record-list navigation is a viable native pattern,
+  - it is worth preferring this before building a custom review workspace,
+  - and later refinements should stay lightweight unless native navigation/worklist flow proves insufficient
+- Current native layout experiment worth testing next on `giftStaging`:
+  - record-page tabs as the main secondary-information splitter rather than custom tabs inside one review widget,
+  - a lighter `Review` tab used for summary, state, actions, and signposting,
+  - separate native tabs for `Details` and `Audit`,
+  - and selective testing of richer host features such as `GRID` layouts, multiple widgets in one tab, and built-in widgets like `FIELDS`, `FIELD`, `VIEW`, or `RECORD_TABLE` where they can replace custom UI cleanly
+
+## 4a. Record Page Layouts And Widgets
+
+Use for:
+
+- structuring record-detail UX with native Twenty tabs
+- separating custom workflow UI from standard field presentation
+- testing whether native widgets can replace some custom surfaces
+
+Current confidence:
+
+- `proven` for custom record-page tabs with front-components
+- `source-visible` for broader widget and layout options
+
+Look here first:
+
+- [services/twenty-core/packages/twenty-docs/developers/extend/apps/layout.mdx](/home/jamesbryant/workspace/dev-stack/services/twenty-core/packages/twenty-docs/developers/extend/apps/layout.mdx)
+- [apps/fundraising/nonprofit-fundraising/src/page-layouts/gift-staging-record.page-layout.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/page-layouts/gift-staging-record.page-layout.ts)
+- [services/twenty-core/packages/twenty-apps/internal/call-recording/src/page-layouts/call-recording-record-page-layout.ts](/home/jamesbryant/workspace/dev-stack/services/twenty-core/packages/twenty-apps/internal/call-recording/src/page-layouts/call-recording-record-page-layout.ts)
+- [services/twenty-core/packages/twenty-shared/src/types/page-layout/page-layout-widget-configuration.type.ts](/home/jamesbryant/workspace/dev-stack/services/twenty-core/packages/twenty-shared/src/types/page-layout/page-layout-widget-configuration.type.ts)
+
+Practical read:
+
+- `Review` / `Fields` on the current `giftStaging` page are native Twenty record-page tabs defined by the app, not a custom tab system.
+- Native layout options worth testing before building custom UI include:
+  - tab layout modes: `CANVAS`, `VERTICAL_LIST`, `GRID`
+  - multiple widgets inside one tab
+  - built-in widgets such as `FIELDS`, `FIELD`, `VIEW`, `RECORD_TABLE`, `TIMELINE`, `TASKS`, `NOTES`, and `FILES`
+- For fundraising migration work, the most interesting question is not just "more tabs", but how far a mixed native/custom record page can go:
+  - `Review` as a light custom operational tab,
+  - `Details` using more native field presentation where possible,
+  - `Audit` combining custom summaries with native widgets if useful
+- Product principle validated by the `giftStaging` experiments:
+  - native widget composition is valuable not only as a technical shortcut, but because it gives organisations meaningful control over the review surface
+  - smaller native widgets/sections can be reordered or hidden in workspace layout tooling
+  - one large custom review component gives the app more control, but gives the organisation less control
+- This makes native `FIELDS` / `FIELD` widgets worth preferring as an early product path where they are good enough, especially for secondary review/edit surfaces
+- Separate runtime lesson:
+  - persisted page-layout/tab state may survive app iterations in ways that make an older tab behave differently from a freshly introduced tab
+  - in the `giftStaging` experiments, adding a fresh `Review v2` tab produced the expected multi-widget behavior where the older `Review` tab did not
+  - when native layout behavior appears contradictory, test with a fresh tab/widget identity before concluding that the underlying primitive is unsupported
 
 ## 5. Commands And Command Contexts
 

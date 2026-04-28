@@ -258,6 +258,7 @@ What we learned:
 - `RoutePayload` is backed by `LogicFunctionEvent` and includes:
   - `headers`
   - `body`
+
   - `isBase64Encoded`
   - request context metadata
 - route manifests support `forwardedRequestHeaders`, which means forwarding `stripe-signature` into a Twenty app route is part of the supported manifest shape
@@ -546,7 +547,7 @@ Lean recurring evidence to carry forward from Stripe intake:
   - carry the `recurringAgreement` relation
 - when there is recurring-related but unmatched evidence:
   - keep the outcome review-led rather than auto-creating an agreement
-  - write a staged gift only when the event is strong enough to represent real fulfillment and carries the minimum evidence needed for later reviewer promotion/linking
+  - write a staged gift only when the event is strong enough to represent real fulfillment and carries the minimum evidence needed for later reviewer-led processing
   - keep the staged row not ready by default until explicit reviewer intent exists
 - when the signal is weak:
   - keep normal staging treatment
@@ -565,7 +566,7 @@ Current interpretation:
 
 - confident-match recurring fulfillment can direct-commit because the existing agreement anchors the CRM meaning
 - unmatched Stripe subscription-backed fulfillment should create reviewable staging evidence because it is strong enough to indicate a likely new recurring donation
-- we should still avoid broad recurring metadata on `giftStaging`; the only new durable staging field needed now is the provider-side agreement/subscription id
+- we should still avoid broad recurring metadata on `giftStaging`; only provider-backed agreement and interval evidence should be carried when needed for later processing
 
 ### 2026-04-26 provider casing alignment and recurring path correction
 
@@ -662,9 +663,9 @@ What changed:
 
 Why:
 
-- the product review supports carrying recurring-related evidence through staging when promotion into a CRM recurring agreement needs reviewer intent
+- the product review supports carrying recurring-related evidence through staging when creation of a CRM recurring agreement needs reviewer intent
 - a Stripe `checkout.session.completed` event with a subscription id is stronger than weak recurrence evidence: it is fulfilled provider-backed payment evidence for a likely recurring donation
-- `providerAgreementId` is the minimum durable fact needed so later review/promotion can create or link a `recurringAgreement` and preserve the provider-side subscription reference
+- `providerAgreementId` is the minimum durable reference needed so later processing can create or link a `recurringAgreement` and preserve the provider-side subscription reference
 
 Validation:
 
@@ -745,6 +746,102 @@ Validation:
   - matched recurring event created committed `gift` and advanced `nextExpectedAt` to `2026-05-21`
   - unmatched recurring event created `giftStaging` for review with `providerAgreementId`
   - unsupported event returned `IGNORED`
+
+### 2026-04-27 unmatched recurring processing design note
+
+Current state:
+
+- unmatched Stripe subscription-backed fulfillment now creates a `giftStaging` row for review
+- that staged row carries the minimum provider evidence needed for later recurring processing:
+  - `provider = STRIPE`
+  - `providerPaymentId`
+  - `providerAgreementId`
+  - `externalId`
+  - `sourceFingerprint`
+- no recurring agreement is created automatically
+
+Corrected product action:
+
+- do not add a separate "promote recurring agreement" click for the first version
+- keep the user flow aligned with staging: review donor/blockers, then process the row or batch
+- processing should create the recurring agreement, committed gift, and links in one canonical operation when the staged evidence is sufficient
+- failed/deferred processing is acceptable if required recurring facts are missing or ambiguous
+- do not use generic ready-for-processing alone as recurring meaning, because `isReadyForProcessing` is already under refinement and may be removed or reshaped before live use
+- keep donor resolution in the existing staging review flow
+- keep the number of clicks low; users should not need to separately create the recurring agreement before processing
+
+Proposed first implementation shape:
+
+- extend the existing staging processing path to detect Stripe recurring staged rows
+- load each staged row and validate:
+  - `provider = STRIPE`
+  - non-empty `providerAgreementId`
+  - donor is linked or can be created under the normal staging processing rules
+  - amount is valid
+  - gift date exists
+  - no existing `recurringAgreement` is already linked, unless the row has been explicitly linked during review
+- create a `recurringAgreement` linked to the resolved donor when no agreement is linked
+- copy only durable facts:
+  - provider `STRIPE`
+  - provider agreement/subscription id
+  - cadence/interval from provider evidence
+  - amount/currency
+  - start date / expectation anchor from the staged gift date
+- create the committed gift linked to that recurring agreement
+- write back processed state and committed gift linkage to the staged row
+
+Cadence posture:
+
+- derive cadence confidently from provider evidence, not from our current test setup
+- for Stripe, use subscription/price interval evidence when available
+- if cadence evidence is missing or not trustworthy, defer/fail processing with a clear reason and leave the row in review
+- expect further refinement here as we see more real provider payloads
+
+Extensibility posture:
+
+- this is being built through the Stripe path first, but the process must support future provider-backed recurring intake patterns
+- direct debit mandates are a likely future case where provider evidence may arrive before or around first fulfillment
+- avoid making the staging/process contract so Stripe-specific that direct debit or other recurring providers would need a separate workflow fork
+- provider-specific evidence extraction can vary, but the product flow should remain: carry evidence in staging, review blockers, process once to create the canonical recurring agreement/gift records when confidence is sufficient
+
+### 2026-04-27 unmatched recurring processing implementation
+
+What changed:
+
+- added generic provider interval evidence fields to `giftStaging`:
+  - `providerIntervalUnit`
+  - `providerIntervalCount`
+- extracted Stripe subscription price interval evidence when the subscription object is available on `checkout.session.completed`
+- extended batch processing so provider-backed recurring staged rows use the existing row fallback path while normal staged gifts stay on the batched REST create path
+- when processing an unmatched provider-backed recurring row:
+  - validate the normal staging gates first: confirmed donor, ready flag, no core issue, valid amount and gift date
+  - find an existing `recurringAgreement` by `provider` and `providerAgreementId` before creating a new one
+  - create a new active `recurringAgreement` only when no existing provider-backed agreement is found
+  - create the committed gift linked to the recurring agreement
+  - advance `nextExpectedAt` after the committed gift is created
+  - write back both `committedGiftId` and `recurringAgreementId` to the staged row in the existing batched staging writeback pass
+- copied source evidence from staged row to committed gift where supported:
+  - `externalId`
+  - `sourceFingerprint`
+  - `provider`
+  - `providerPaymentId`
+
+Quality posture:
+
+- the implementation avoids adding per-row staging writebacks during processing; successful and failed row outcomes are still persisted through the existing chunked staging writeback
+- the provider agreement lookup is an intentional extra read for recurring rows to reduce duplicate agreement creation on retries
+- cadence mapping is deliberately conservative:
+  - Stripe/provider `week` + `1` maps to `WEEKLY`
+  - `month` + `1` maps to `MONTHLY`
+  - `month` + `3` maps to `QUARTERLY`
+  - `year` + `1` maps to `ANNUAL`
+  - missing or unsupported interval evidence fails processing with a clear row error rather than silently inventing a schedule
+- this remains provider-backed rather than Stripe-only: Stripe is the first extractor, but the processor depends on generic provider evidence fields
+
+Validation:
+
+- `yarn lint` passed
+- `yarn test:unit` passed
 
 ## 5. Decisions Log
 

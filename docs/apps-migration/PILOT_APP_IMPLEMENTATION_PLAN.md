@@ -246,12 +246,64 @@ Guardrail:
 - use Twenty objects, views, record pages, and host affordances for the workflow shell,
 - but keep review-state derivation and product-specific policy in app-local TypeScript rather than encoding it ad hoc across UI and metadata.
 
+Implementation note:
+
+- staging review is difficult not because it needs "more fields", but because it needs to carry many different kinds of important information in a constrained space
+- the hierarchy of what matters is real, but varies by organisation and by gift type:
+  - donor ambiguity,
+  - failed processing or blockers,
+  - Gift Aid evidence such as declaration/address context,
+  - likely new recurring donations,
+  - fund/appeal coding,
+  - organisational/grant context,
+  - provider/source evidence
+- this means the target review surface should not try to present "everything important" at once in one flat summary area
+- instead, it should use a stable shell with adaptive emphasis:
+  - immediate row identity/context,
+  - dominant current review issue,
+  - dominant next action,
+  - then secondary contextual sections such as donor review, gift detail correction, and audit/support evidence
+- list views are too configurable to be the main contract for this meaning; the `giftStaging` review surface itself should carry the important hierarchy
+- the current working direction is to break this refinement into smaller passes rather than trying to solve the whole review surface in one UI iteration
+
+Current experiment direction:
+
+- the next iteration should use native Twenty record-page tabs rather than building a custom tab or drawer system inside one front-component
+- `Review` should become a lighter operational landing tab:
+  - donor, amount, date,
+  - current state / next action,
+  - main record actions,
+  - batch context and an explicit `Go to batch` action
+- secondary concerns should move out of one overloaded review surface so we can learn what deserves dedicated space
+- the first native-tab experiment should likely test:
+  - `Review`,
+  - `Details`,
+  - `Audit`
+- dedicated domain tabs such as `Recurring` or `Gift Aid` should be treated as experiments, not assumptions:
+  - `Recurring` is a good candidate when provider recurring evidence is present,
+  - `Gift Aid` must respect the workspace feature toggle and should not be assumed to exist everywhere
+- the immediate goal is learning:
+  - whether native tabs reduce scrolling and crowding,
+  - whether `Review` works better as a signpost and action surface,
+  - and whether some concerns are better served by native widgets than by custom UI
+- A product-level principle emerged from this experiment:
+  - prefer Twenty-native widgets and smaller record-page sections where they give organisations meaningful control over their own review surface,
+  - even if that means giving up some app-level custom control compared with one large bespoke review component
+- Why this matters:
+  - organisations may care about different review signals,
+  - they may want to reorder sections, hide low-value widgets, or keep only the parts that support their operating model,
+  - and native Twenty widgets/tabs make that possible in a way a single custom review component does not
+- Current implication for `giftStaging`:
+  - treat native `FIELDS` / `FIELD` widgets and smaller focused front-components as the first delivery path,
+  - use custom UI where the workflow is genuinely product-specific, such as review-state derivation or donor-match behavior,
+  - and avoid collapsing the whole review surface back into one opaque custom widget unless native composition proves insufficient
+
 ### Slice 4: Batch review and bounded processing
 
 Build:
 
 - `giftBatch`
-- batch review record surface
+- batch review entry and context surface
 - native `Process batch` command
 - bounded hybrid executor:
   - chunked batch create
@@ -268,6 +320,25 @@ Carry over from spike:
 Guardrail:
 
 - preserve the real executor decisions rather than collapsing back to a simple row loop
+- do not assume the `giftBatch` record page must become the primary review workspace for larger batches
+- treat `giftStaging` as the primary work unit and the filtered native `giftStaging` list as the default batch-review path
+- use the batch surface to provide entry, scope, summary, and processing controls
+- only build a richer custom batch workspace if native list/record flow proves operationally insufficient in practice
+
+Implementation note:
+
+- the current batch UX problem is structural, not merely visual; a stacked card or drawer-heavy batch page is unlikely to scale well as the main review surface
+- Twenty already gives us a credible baseline through native list and record pages filtered by `giftBatch`
+- the near-term goal should be to make batch-scoped entry into staged-gift review coherent before investing in a bespoke in-batch workspace
+
+Validated baseline:
+
+- the current app now proves a workable first operator loop:
+  - `giftBatch` record as control surface,
+  - native filtered `giftStaging` list as the main work surface for larger batches,
+  - native `giftStaging` record review as the detailed correction/process surface
+- this baseline appears strong enough to continue with, without inventing a custom batch workspace or custom back-navigation model first
+- further refinement should focus on clarity, copy, and explicit relationship actions such as opening the linked batch, rather than replacing the native list/record flow
 
 ### Slice 5: Gift Aid bounded capability
 

@@ -187,7 +187,8 @@ Add the first real recurring Stripe fulfillment path without pretending that all
 - agreement lookup/linking rules for confident existing agreement matches
 - direct committed-gift creation for confident existing recurring fulfillment
 - update of `RecurringAgreement.nextExpectedAt` and related recurring-core state where appropriate
-- review-led staged handling for unmatched Stripe subscription-backed fulfillment, without auto-promoting to a recurring agreement
+- review-led staged handling for unmatched Stripe subscription-backed fulfillment, without auto-creating a recurring agreement before review
+- normal staged-row processing that can create the recurring agreement, committed gift, and links in one action after review
 - continued caution around weaker or ambiguous recurring evidence until the reviewer action is designed
 
 ### Expected object writes
@@ -195,6 +196,36 @@ Add the first real recurring Stripe fulfillment path without pretending that all
 - create `gift` for confident existing agreement matches
 - update `recurringAgreement` after fulfilled gift creation
 - create or update `giftStaging` only for unmatched, ambiguous, or hard-stop review cases
+- create `recurringAgreement` during staged-row processing when provider-backed recurring evidence is sufficient and no existing provider-backed agreement is found
+
+### Unmatched-recurring processing path
+
+When Stripe subscription-backed fulfillment creates a staged row because no confident agreement match exists, the main user flow should remain the normal staging review/process flow.
+
+The first implementation avoids a separate "promote recurring agreement" click. The recurring agreement is created as part of processing once the staged row is sufficiently reviewed:
+
+- precondition: the staged row has `provider = STRIPE` and a non-empty `providerAgreementId`,
+- precondition: donor ambiguity has been handled through the normal staging review path, either one-by-one or via bulk donor match,
+- precondition: amount and gift date are valid enough for later gift processing,
+- user action: process the staged row or batch,
+- processing creates the `recurringAgreement` linked to the reviewed/created donor,
+- processing copies only stable recurring facts from the staged evidence:
+  - provider `STRIPE`,
+  - `providerAgreementId` from the Stripe subscription id,
+  - amount/currency,
+  - cadence/interval from provider evidence,
+  - gift date as the first known fulfillment date / expectation anchor,
+- processing creates the committed gift linked to the new recurring agreement,
+- processing links the staged row to both the committed gift and recurring agreement where supported,
+- processing advances `nextExpectedAt` after the committed gift is created.
+
+This keeps review efficient: the user reviews only what is blocking or uncertain, then one process action performs the canonical record creation. Failed/deferred processing is acceptable when required facts are missing or ambiguous.
+
+Cadence should be derived confidently from provider evidence. For Stripe, that likely means using subscription/price interval evidence rather than assuming a hardcoded cadence from the current test setup. If cadence evidence is missing or cannot be trusted, processing should defer/fail with a clear reason rather than silently inventing a general recurring rule.
+
+Current implementation note: the staged-row processor uses generic provider evidence fields (`providerIntervalUnit` and `providerIntervalCount`) rather than Stripe-only processing fields. Supported mappings are intentionally conservative: weekly, monthly, quarterly, and annual. Unsupported or missing interval evidence fails the row clearly so the model can be refined rather than silently creating a misleading schedule.
+
+Although Stripe frames this stage, the processing pattern must not become Stripe-only product logic. The target shape is provider-backed recurring intake: Stripe subscriptions are the first concrete implementation, but later recurring sources such as direct debit mandates should be able to reuse the same review/process model with their own provider evidence and confidence rules.
 
 ### Important guardrail
 
@@ -212,6 +243,7 @@ Staging is reserved for uncertainty and review, not as the default path for recu
 - cancellations and schedule amendments
 - refunds/disputes
 - complete recurring provider-sync surface
+
 
 ## 7. Stage 4: Stripe Recurring Lifecycle And Exception Handling
 
