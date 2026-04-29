@@ -63,14 +63,15 @@ These are core fundraising-product workflows that support the above and reduce o
 - Staging review and processing
 - Processing / commit boundary
 
-### Later / adjacent
+### Important but not necessarily live-pilot-verifiable
 
-These should not be ignored, but they are not the first fundraising walkthrough gate:
+These should remain important product/workflow areas, but should not be implied as live-tested with Crossroads unless separately validated:
 
+- HMRC submission / direct Charities Online integration
+- HMRC acceptance/rejection/payment lifecycle
+- Full accounting integration beyond CSV/export-style handoff
 - Referrals workflow
 - Volunteer workflow
-- Full accounting integration
-- HMRC submission / direct Charities Online integration
 
 ## 1. Manual gift entry
 
@@ -633,12 +634,19 @@ User needs to record or review donations and Gift Aid without becoming a fundrai
 - User cannot distinguish draft/staged/final gift states.
 - Claim batch process feels disconnected from gift entry.
 
-## 10. Out of scope / not yet validated
+## 10. Not yet live-pilot validated / later hardening
 
-These items may matter later, but they should not be implied as ready unless specifically tested.
+These items may be important product areas, but should not be implied as live-tested with Crossroads unless specifically validated.
 
-- Direct HMRC / Charities Online submission
-- Full HMRC acceptance/rejection/payment lifecycle
+For this pilot, the key distinction is:
+
+- **Gift Aid claim batch workflow is in scope and critical.**
+- **HMRC / Charities Online submission remains important to build and test, but is unlikely to be live-tested with Crossroads during the pilot.** We can still validate it separately using HMRC-provided test services and fixtures.
+
+Items in this category:
+
+- Direct HMRC / Charities Online submission using HMRC test services rather than live pilot submission
+- HMRC acceptance/rejection/payment lifecycle using test fixtures or sandbox-style validation rather than live client claims
 - Full accounting-system integration beyond CSV/export-style handoff
 - Advanced retrospective Gift Aid re-evaluation across all donor/declaration/gift changes
 - Full recurring payment provider lifecycle and dunning-style exception handling
