@@ -1,4 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { broadcastGiftStagingRecordInvalidated } from './gift-staging-record-sync';
 
 const updateGiftStaging = async (
   recordId: string,
@@ -15,11 +16,35 @@ const updateGiftStaging = async (
       id: true,
     },
   } as any);
+
+  broadcastGiftStagingRecordInvalidated(recordId);
 };
 
 export const saveGiftDate = async (recordId: string, giftDate: string) => {
   return updateGiftStaging(recordId, {
     giftDate: giftDate === '' ? null : giftDate,
+    isReadyForProcessing: false,
+    processingStatus: 'NOT_READY',
+  });
+};
+
+export const saveDonorEvidence = async (
+  recordId: string,
+  donorEvidence: {
+    donorFirstName: string;
+    donorLastName: string;
+    donorEmail: string;
+  },
+) => {
+  return updateGiftStaging(recordId, {
+    donorFirstName: donorEvidence.donorFirstName.trim(),
+    donorLastName: donorEvidence.donorLastName.trim(),
+    donorEmail:
+      donorEvidence.donorEmail.trim() === ''
+        ? null
+        : donorEvidence.donorEmail.trim(),
+    donorId: null,
+    donorResolutionState: 'UNRESOLVED',
     isReadyForProcessing: false,
     processingStatus: 'NOT_READY',
   });
@@ -68,7 +93,7 @@ export const flagCoreGiftIssue = async (recordId: string) => {
 export const markReady = async (recordId: string) => {
   return updateGiftStaging(recordId, {
     isReadyForProcessing: true,
-    processingStatus: 'READY',
+    processingStatus: 'NOT_READY',
     errorDetail: null,
   });
 };

@@ -1,4 +1,7 @@
-import type { SubmitGiftAidClaimBatchResponse } from 'src/gift-aid-claims/gift-aid-claim.types';
+import type {
+  FinalizeGiftAidClaimBatchResponse,
+  QueueGiftAidClaimSubmissionResponse,
+} from 'src/gift-aid-claims/gift-aid-claim.types';
 
 const getAppApiConfig = () => {
   const apiBaseUrl = process.env.TWENTY_API_URL;
@@ -15,12 +18,12 @@ const getAppApiConfig = () => {
   };
 };
 
-export const submitGiftAidClaimBatch = async (payload: {
+export const finalizeGiftAidClaimBatch = async (payload: {
   batchId: string;
-}): Promise<SubmitGiftAidClaimBatchResponse> => {
+}): Promise<FinalizeGiftAidClaimBatchResponse> => {
   const { apiBaseUrl, token } = getAppApiConfig();
   const response = await fetch(
-    `${apiBaseUrl}/s/gift-aid-claims/submit-claim-batch`,
+    `${apiBaseUrl}/s/gift-aid-claims/finalize-claim-batch`,
     {
       method: 'POST',
       headers: {
@@ -39,5 +42,32 @@ export const submitGiftAidClaimBatch = async (payload: {
     );
   }
 
-  return JSON.parse(rawBody) as SubmitGiftAidClaimBatchResponse;
+  return JSON.parse(rawBody) as FinalizeGiftAidClaimBatchResponse;
+};
+
+export const queueGiftAidClaimSubmission = async (payload: {
+  batchId: string;
+}): Promise<QueueGiftAidClaimSubmissionResponse> => {
+  const { apiBaseUrl, token } = getAppApiConfig();
+  const response = await fetch(
+    `${apiBaseUrl}/s/gift-aid-claims/queue-claim-submission`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  const rawBody = await response.text();
+
+  if (!response.ok) {
+    throw new Error(
+      rawBody || `Gift Aid claim submission failed with status ${response.status}`,
+    );
+  }
+
+  return JSON.parse(rawBody) as QueueGiftAidClaimSubmissionResponse;
 };

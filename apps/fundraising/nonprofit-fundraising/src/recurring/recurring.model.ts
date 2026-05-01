@@ -163,6 +163,7 @@ export const buildRecurringAgreementReviewRecord = (
     mandateReference: normalizeString(record.mandateReference) || null,
     donorName: buildRecurringPersonDisplayName(record.person),
     donorId: normalizeString(record.person?.id) || null,
+    donorEmail: normalizeString(record.person?.emails?.primaryEmail) || null,
     health: deriveRecurringHealth(record),
     recentGifts: record.gifts,
     recentGiftStagings: record.giftStagings,

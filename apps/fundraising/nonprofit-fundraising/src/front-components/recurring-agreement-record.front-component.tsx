@@ -1,11 +1,6 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { type CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
-import { CoreApiClient } from 'twenty-client-sdk/core';
-import {
-  buildRecurringAgreementReviewRecord,
-} from 'src/recurring/recurring.model';
-import { loadRecurringAgreementById } from 'src/recurring/recurring.service';
+import { useRecurringAgreementReviewRecord } from 'src/recurring/use-recurring-agreement-review-record';
 import type { RecurringAgreementReviewRecord } from 'src/recurring/recurring.types';
 
 export const RECURRING_AGREEMENT_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
@@ -61,56 +56,8 @@ const getHealthStyle = (state: RecurringAgreementReviewRecord['health']['state']
   }
 };
 
-const loadRecurringAgreementReview = async (recordId: string) => {
-  const client = new CoreApiClient();
-  const record = await loadRecurringAgreementById(client, recordId);
-
-  return record ? buildRecurringAgreementReviewRecord(record) : null;
-};
-
 const RecurringAgreementRecord = () => {
-  const recordId = useRecordId();
-  const [record, setRecord] = useState<RecurringAgreementReviewRecord | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const run = async () => {
-      if (!recordId) {
-        setError('No recurring agreement selected');
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const loaded = await loadRecurringAgreementReview(recordId);
-
-        if (!loaded) {
-          setRecord(null);
-          setError('Recurring agreement not found');
-          return;
-        }
-
-        setRecord(loaded);
-      } catch (loadError) {
-        setRecord(null);
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'Unable to load recurring agreement',
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void run();
-  }, [recordId]);
+  const { record, loading, error } = useRecurringAgreementReviewRecord();
 
   if (loading) {
     return <div style={secondaryTextStyle}>Loading recurring review...</div>;

@@ -6,6 +6,7 @@ import type {
   StoredGiftStagingRecord,
 } from './gift-staging-review.types';
 import type { PersonSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
+import { isGiftStagingProcessable } from './gift-staging-processability';
 
 const coalesceString = (
   value: string | null | undefined,
@@ -96,8 +97,6 @@ const mapProcessingStatus = (
   storedValue: string | null | undefined,
 ): ProcessingStatus => {
   switch (storedValue) {
-    case 'READY':
-      return 'READY';
     case 'PROCESSED':
       return 'PROCESSED';
     case 'PROCESS_FAILED':
@@ -124,9 +123,26 @@ export const buildGiftStagingReviewRecord = (
     intakeSource: coalesceString(stored.intakeSource, 'Unknown source'),
     amountDisplay: formatAmountDisplay(stored.amount),
     giftDate: coalesceString(stored.giftDate),
+    donationType: coalesceString(stored.donationType),
     donorFirstName,
     donorLastName,
     donorEmail,
+    donorPhone: coalesceString(stored.donorPhone),
+    externalId: coalesceString(stored.externalId),
+    sourceFingerprint: coalesceString(stored.sourceFingerprint),
+    providerEventId: coalesceString(stored.providerEventId),
+    provider: coalesceString(stored.provider),
+    providerPaymentId: coalesceString(stored.providerPaymentId),
+    paymentProviderCustomerId: coalesceString(
+      stored.paymentProviderCustomerId,
+    ),
+    providerAgreementId: coalesceString(stored.providerAgreementId),
+    providerIntervalUnit: coalesceString(stored.providerIntervalUnit),
+    providerIntervalCount:
+      typeof stored.providerIntervalCount === 'number'
+        ? stored.providerIntervalCount
+        : null,
+    rawProviderEvidence: stored.rawProviderEvidence ?? null,
     donorEvidenceName: buildEvidenceName(
       donorFirstName,
       donorLastName,
@@ -149,7 +165,9 @@ export const buildGiftStagingReviewRecord = (
     giftAidDeclarationSource: coalesceString(stored.giftAidDeclarationSource),
     giftAidTextVersion: coalesceString(stored.giftAidTextVersion),
     giftAidDeclarationId: coalesceString(stored.giftAidDeclaration?.id),
+    giftBatchId: coalesceString(stored.giftBatch?.id),
     giftBatchName: coalesceString(stored.giftBatch?.name, 'No batch'),
+    committedGiftId: coalesceString(stored.committedGift?.id),
     committedGiftName: coalesceString(
       stored.committedGift?.name,
       stored.committedGift?.id ? 'Committed gift linked' : 'Not processed',
@@ -161,21 +179,42 @@ export const deriveReviewState = (
   record: GiftStagingReviewRecord,
 ): DerivedReviewState => {
   const hasLinkedDonor = Boolean(record.linkedDonor?.id);
+  const isProcessable = isGiftStagingProcessable({
+    processingStatus: record.processingStatus,
+    hasCoreGiftIssue: record.hasCoreGiftIssue,
+    donorResolutionState: record.donorResolution,
+    donorFirstName: record.donorFirstName,
+    donorLastName: record.donorLastName,
+    linkedDonorId: record.linkedDonor?.id,
+  });
 
-  if (
-    record.isReadyForProcessing &&
-    hasLinkedDonor &&
-    !record.hasCoreGiftIssue &&
-    record.processingStatus !== 'PROCESS_FAILED'
-  ) {
+  if (record.processingStatus === 'PROCESSED') {
     return {
-      title: 'Ready now',
+      title: 'Processed',
       accent: '#1a7f37',
       background: '#eef9f0',
       reason:
-        'This row has explicit ready intent, no core gift issue, and a confirmed donor relation.',
+        'This staging row has already been processed into a committed gift.',
       nextAction:
-        'Return to the queue or batch scope and process when you are satisfied with this row.',
+        record.committedGiftId !== ''
+          ? 'Use the committed gift link for any further gift-level review.'
+          : 'This row no longer needs staging review.',
+      hasBlocker: false,
+    };
+  }
+
+  if (isProcessable) {
+    return {
+      title: record.isReadyForProcessing ? 'Ready' : 'Eligible now',
+      accent: '#1a7f37',
+      background: '#eef9f0',
+      reason: record.isReadyForProcessing
+        ? 'This row has been reviewed and marked ready, and it has no active blockers.'
+        : 'This row has no active blockers and enough donor context to process safely.',
+      nextAction:
+        record.isReadyForProcessing
+          ? 'Process now, or return to the queue or batch scope and keep using ready as your reviewed marker.'
+          : 'Process now, or mark the row ready if you want to record that review is complete.',
       hasBlocker: false,
     };
   }
@@ -225,22 +264,22 @@ export const deriveReviewState = (
       accent: '#7c5d00',
       background: '#fff8e1',
       reason:
-        'Incoming donor evidence exists, but no donor record has been explicitly linked yet.',
+        'No donor decision has been made yet. Review possible matches or confirm this should process as a new donor.',
       nextAction:
-        'Check exact donor matches and link the right donor, or leave the row unresolved.',
+        'Check exact donor matches and link the right donor, or leave the row unresolved once you are satisfied.',
       hasBlocker: false,
     };
   }
 
   if (!hasLinkedDonor && record.donorResolution === 'UNRESOLVED') {
     return {
-      title: 'Active review / unresolved donor',
+      title: 'Donor reviewed, not linked',
       accent: '#57606a',
       background: '#f6f8fa',
       reason:
-        'The donor was reviewed and intentionally left unresolved, so the row remains in active review.',
+        'The donor was reviewed and left without an existing donor link. This row can still process by creating a new donor when you are satisfied.',
       nextAction:
-        'Return later when the donor can be linked, or move on to other actionable rows.',
+        'Mark the row ready when you are satisfied, or return later if more donor review is needed.',
       hasBlocker: false,
     };
   }

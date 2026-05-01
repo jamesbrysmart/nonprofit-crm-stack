@@ -84,6 +84,9 @@ export const searchRecurringAgreements = async (
               firstName: true,
               lastName: true,
             },
+            emails: {
+              primaryEmail: true,
+            },
           },
         },
       },
@@ -158,6 +161,9 @@ export const loadRecurringAgreementById = async (
         name: {
           firstName: true,
           lastName: true,
+        },
+        emails: {
+          primaryEmail: true,
         },
       },
     },

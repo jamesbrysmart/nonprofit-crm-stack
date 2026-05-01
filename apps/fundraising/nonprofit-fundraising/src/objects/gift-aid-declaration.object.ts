@@ -124,7 +124,7 @@ export default defineObject({
       type: FieldType.TEXT,
       name: 'source',
       label: 'Source',
-      description: 'How the declaration was captured',
+      description: 'Capture route or source label recorded for the declaration',
       icon: 'IconWebhook',
       isNullable: true,
       defaultValue: null,

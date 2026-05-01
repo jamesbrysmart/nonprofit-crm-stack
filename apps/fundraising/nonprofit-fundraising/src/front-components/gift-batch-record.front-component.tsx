@@ -1,11 +1,17 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
+import {
+  AppPath,
+  enqueueSnackbar,
+  navigate,
+  useRecordId,
+} from 'twenty-sdk/front-component';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { Button } from 'twenty-sdk/ui';
 import { processBatch } from 'src/batch-processing/batch-processing.api';
 import type { ProcessBatchResponse } from 'src/batch-processing/batch-processing.types';
 import { buildGiftBatchReviewRecord } from 'src/gift-batch-review/gift-batch-review.model';
+import { processGiftStagingRow } from 'src/gift-staging-review/gift-staging-processing.api';
 import type {
   BatchSummaryRecord,
   BatchReviewRow,
@@ -52,6 +58,12 @@ const rowCardStyle: CSSProperties = {
   background: '#ffffff',
 };
 
+const actionGridStyle: CSSProperties = {
+  display: 'grid',
+  gap: '10px',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+};
+
 const statusPillBaseStyle: CSSProperties = {
   borderRadius: '999px',
   padding: '4px 8px',
@@ -89,6 +101,44 @@ const getStatusPillStyle = (status: string): CSSProperties => {
   }
 };
 
+type GiftStagingQueueScope =
+  | 'all'
+  | 'failed'
+  | 'not-ready'
+  | 'needs-donor-review'
+  | 'ready';
+
+const buildGiftStagingQueryParams = (
+  batchId: string,
+  scope: GiftStagingQueueScope,
+): Record<string, string | string[]> => {
+  const queryParams: Record<string, string | string[]> = {
+    'filter[giftBatch][IS]': [batchId],
+  };
+
+  switch (scope) {
+    case 'failed':
+      queryParams['filter[processingStatus][IS]'] = ['PROCESS_FAILED'];
+      break;
+    case 'not-ready':
+      queryParams['filter[isReadyForProcessing][IS]'] = 'false';
+      queryParams['filter[processingStatus][IS_NOT]'] = ['PROCESSED'];
+      break;
+    case 'needs-donor-review':
+      queryParams['filter[donorResolutionState][IS_NOT]'] = ['CONFIRMED'];
+      break;
+    case 'ready':
+      queryParams['filter[isReadyForProcessing][IS]'] = 'true';
+      queryParams['filter[processingStatus][IS_NOT]'] = ['PROCESSED'];
+      break;
+    case 'all':
+    default:
+      break;
+  }
+
+  return queryParams;
+};
+
 const loadGiftBatchReview = async (
   recordId: string,
 ): Promise<GiftBatchReviewRecord | null> => {
@@ -124,7 +174,17 @@ const loadGiftBatchReview = async (
           donorFirstName: true,
           donorLastName: true,
           donorEmail: true,
+          amount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
+          giftDate: true,
+          provider: true,
+          providerAgreementId: true,
           donorResolutionState: true,
+          donor: {
+            id: true,
+          },
           hasCoreGiftIssue: true,
           isReadyForProcessing: true,
           processingStatus: true,
@@ -159,6 +219,7 @@ const GiftBatchRecord = () => {
   const [lastRun, setLastRun] = useState<ProcessBatchResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [processingRowId, setProcessingRowId] = useState<string | null>(null);
 
   const refresh = async () => {
     if (!recordId) {
@@ -226,6 +287,59 @@ const GiftBatchRecord = () => {
     }
   };
 
+  const handleProcessRow = async (rowId: string, rowName: string) => {
+    setProcessingRowId(rowId);
+
+    try {
+      const result = await processGiftStagingRow({
+        giftStagingId: rowId,
+      });
+
+      await enqueueSnackbar({
+        message:
+          result.processingStatus === 'PROCESSED'
+            ? `${rowName} processed successfully.`
+            : result.processingStatus === 'PROCESS_FAILED'
+              ? result.errorDetail ?? `${rowName} failed during processing.`
+              : `${rowName} is not ready for processing.`,
+        variant:
+          result.processingStatus === 'PROCESSED'
+            ? 'success'
+            : result.processingStatus === 'PROCESS_FAILED'
+              ? 'error'
+              : 'info',
+      });
+
+      await refresh();
+    } catch (processError) {
+      await enqueueSnackbar({
+        message:
+          processError instanceof Error
+            ? processError.message
+            : 'Unable to process row.',
+        variant: 'error',
+      });
+    } finally {
+      setProcessingRowId(null);
+    }
+  };
+
+  const handleOpenGiftStagingQueue = async (
+    scope: GiftStagingQueueScope,
+  ) => {
+    if (!recordId) {
+      return;
+    }
+
+    await navigate(
+      AppPath.RecordIndexPage,
+      {
+        objectNamePlural: 'giftStagings',
+      },
+      buildGiftStagingQueryParams(recordId, scope),
+    );
+  };
+
   if (loading) {
     return <div style={secondaryTextStyle}>Loading batch review...</div>;
   }
@@ -237,6 +351,10 @@ const GiftBatchRecord = () => {
   if (!record) {
     return <div style={secondaryTextStyle}>Batch not found.</div>;
   }
+
+  const notReadyItems = record.rows.filter(
+    (row) => row.processingStatus !== 'PROCESSED' && !row.isReadyForProcessing,
+  ).length;
 
   return (
     <div
@@ -275,7 +393,15 @@ const GiftBatchRecord = () => {
           <div style={metricValueStyle}>{record.totalItems}</div>
         </div>
         <div style={cardStyle}>
-          <div style={labelStyle}>Ready now</div>
+          <div style={labelStyle}>Total value</div>
+          <div style={metricValueStyle}>{record.totalValueDisplay}</div>
+        </div>
+        <div style={cardStyle}>
+          <div style={labelStyle}>Eligible now</div>
+          <div style={metricValueStyle}>{record.eligibleItems}</div>
+        </div>
+        <div style={cardStyle}>
+          <div style={labelStyle}>Ready</div>
           <div style={metricValueStyle}>{record.readyItems}</div>
         </div>
         <div style={cardStyle}>
@@ -285,6 +411,14 @@ const GiftBatchRecord = () => {
         <div style={cardStyle}>
           <div style={labelStyle}>Blocked by core issue</div>
           <div style={metricValueStyle}>{record.blockedItems}</div>
+        </div>
+        <div style={cardStyle}>
+          <div style={labelStyle}>Failed</div>
+          <div style={metricValueStyle}>{record.failedItems}</div>
+        </div>
+        <div style={cardStyle}>
+          <div style={labelStyle}>Processed</div>
+          <div style={metricValueStyle}>{record.processedItems}</div>
         </div>
       </div>
 
@@ -329,11 +463,58 @@ const GiftBatchRecord = () => {
 
       <div style={cardStyle}>
         <div style={{ display: 'grid', gap: '6px' }}>
-          <div style={labelStyle}>Batch rows</div>
+          <div style={labelStyle}>Open staged-gift worklists</div>
           <div style={secondaryTextStyle}>
-            Review these rows in batch scope, then open the individual staged
-            gift record when a row needs detailed correction or donor
-            resolution.
+            Use native staged-gift views for larger-batch review. Each entry
+            keeps the batch filter and adds the specific work scope you want to
+            inspect next.
+          </div>
+        </div>
+        <div style={actionGridStyle}>
+          <Button
+            title={`Open all ${record.totalItems} staged rows`}
+            variant="secondary"
+            onClick={() => {
+              void handleOpenGiftStagingQueue('all');
+            }}
+          />
+          <Button
+            title={`Open ${record.failedItems} failed rows`}
+            variant="secondary"
+            onClick={() => {
+              void handleOpenGiftStagingQueue('failed');
+            }}
+          />
+          <Button
+            title={`Open ${record.unresolvedItems} rows needing donor review`}
+            variant="secondary"
+            onClick={() => {
+              void handleOpenGiftStagingQueue('needs-donor-review');
+            }}
+          />
+          <Button
+            title={`Open ${record.readyItems} ready rows`}
+            variant="secondary"
+            onClick={() => {
+              void handleOpenGiftStagingQueue('ready');
+            }}
+          />
+          <Button
+            title={`Open ${notReadyItems} rows not ready`}
+            variant="secondary"
+            onClick={() => {
+              void handleOpenGiftStagingQueue('not-ready');
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ display: 'grid', gap: '6px' }}>
+          <div style={labelStyle}>Quick row scan</div>
+          <div style={secondaryTextStyle}>
+            Keep this as a compact batch summary. For real exception work, open
+            the targeted staged-gift queue above and review the records there.
           </div>
         </div>
 
@@ -355,12 +536,34 @@ const GiftBatchRecord = () => {
                   }}
                 >
                   <strong>{row.name}</strong>
-                  <div style={getStatusPillStyle(row.processingStatus)}>
-                    {row.processingStatus}
+                  <div
+                    style={getStatusPillStyle(
+                      row.processingStatus === 'PROCESSED'
+                        ? 'PROCESSED'
+                        : row.processingStatus === 'PROCESS_FAILED'
+                          ? 'PROCESS_FAILED'
+                          : row.isReadyForProcessing
+                            ? 'READY'
+                            : 'NOT_READY',
+                    )}
+                  >
+                    {row.processingStatus === 'PROCESSED'
+                      ? 'PROCESSED'
+                      : row.processingStatus === 'PROCESS_FAILED'
+                        ? 'PROCESS_FAILED'
+                        : row.isReadyForProcessing
+                          ? 'READY'
+                          : 'NOT_PROCESSED'}
                   </div>
                 </div>
                 <div style={secondaryTextStyle}>
                   Donor evidence: {row.donorEvidenceName}
+                </div>
+                <div style={secondaryTextStyle}>Amount: {row.amountDisplay}</div>
+                <div style={secondaryTextStyle}>Gift date: {row.giftDate}</div>
+                <div style={secondaryTextStyle}>Provider: {row.provider}</div>
+                <div style={secondaryTextStyle}>
+                  Provider agreement: {row.providerAgreementId}
                 </div>
                 <div style={secondaryTextStyle}>Email: {row.donorEmail}</div>
                 <div style={secondaryTextStyle}>
@@ -369,9 +572,15 @@ const GiftBatchRecord = () => {
                 <div style={secondaryTextStyle}>
                   {row.hasCoreGiftIssue
                     ? 'Core gift issue still blocks this row.'
-                    : row.isReadyForProcessing
-                      ? 'Row is currently marked ready for processing.'
-                      : 'Row is not yet marked ready for processing.'}
+                    : row.processingStatus === 'PROCESSED'
+                      ? 'Row has already been processed.'
+                      : row.donorResolutionState === 'AMBIGUOUS'
+                        ? 'Donor ambiguity still blocks this row.'
+                        : row.isReadyForProcessing
+                          ? 'Row can process now and is also marked ready.'
+                        : row.isProcessable
+                            ? 'Row can process now but has not been explicitly marked ready.'
+                            : 'Row still needs more review before it can process.'}
                 </div>
                 {row.errorDetail !== '' ? (
                   <div style={secondaryTextStyle}>
@@ -382,8 +591,25 @@ const GiftBatchRecord = () => {
                   Committed gift: {row.committedGiftName}
                 </div>
                 <div style={secondaryTextStyle}>
-                  Open the staged gift record from the batch row or staging
-                  list while batch navigation wiring is still being finalized.
+                  Use this row card for quick inspection now; richer navigation
+                  to the full staged record can follow once the baseline review
+                  loop is stable.
+                </div>
+                <div>
+                  <Button
+                    title={
+                      processingRowId === row.id ? 'Processing...' : 'Process row'
+                    }
+                    variant="secondary"
+                    onClick={() => {
+                      void handleProcessRow(row.id, row.name);
+                    }}
+                    disabled={
+                      processing ||
+                      processingRowId !== null ||
+                      row.processingStatus === 'PROCESSED'
+                    }
+                  />
                 </div>
               </div>
             ))

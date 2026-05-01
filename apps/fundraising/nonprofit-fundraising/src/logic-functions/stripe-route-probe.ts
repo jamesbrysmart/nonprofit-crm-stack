@@ -1,10 +1,12 @@
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { verifyStripeWebhookEvent } from 'src/stripe/stripe-webhook-verification';
 
 type StripeRouteProbeResponse = {
   headerKeys: string[];
   hasStripeSignatureHeader: boolean;
   stripeSignaturePreview: string | null;
+  hasRawBody: boolean;
+  rawBodyPreview: string | null;
   bodyType: 'null' | 'string' | 'object' | 'other';
   bodyPreview: string | null;
   bodyKeys: string[];
@@ -13,7 +15,7 @@ type StripeRouteProbeResponse = {
   stripeObjectType: string | null;
   stripeSignatureTimestamp: number | null;
   verificationAttempted: boolean;
-  verificationMethod: 'none' | 'raw-string' | 'json-stringify';
+  verificationMethod: 'none' | 'event-raw-body' | 'raw-string' | 'json-stringify';
   verificationMatched: boolean | null;
   verificationError: string | null;
   isBase64Encoded: boolean;
@@ -107,63 +109,8 @@ const getStripeObjectType = (body: unknown): string | null => {
     : null;
 };
 
-const parseStripeSignatureHeader = (
-  headerValue: string | null,
-): { timestamp: number | null; signatures: string[] } => {
-  if (!headerValue) {
-    return { timestamp: null, signatures: [] };
-  }
-
-  const segments = headerValue
-    .split(',')
-    .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
-
-  let timestamp: number | null = null;
-  const signatures: string[] = [];
-
-  for (const segment of segments) {
-    const [key, value] = segment.split('=', 2);
-
-    if (!key || !value) {
-      continue;
-    }
-
-    if (key === 't') {
-      const parsed = Number.parseInt(value, 10);
-      timestamp = Number.isFinite(parsed) ? parsed : null;
-      continue;
-    }
-
-    if (key === 'v1') {
-      signatures.push(value);
-    }
-  }
-
-  return { timestamp, signatures };
-};
-
-const getVerificationPayload = (
-  body: unknown,
-): { payload: string | null; method: StripeRouteProbeResponse['verificationMethod'] } => {
-  if (typeof body === 'string') {
-    return { payload: body, method: 'raw-string' };
-  }
-
-  if (body !== null && body !== undefined) {
-    try {
-      return { payload: JSON.stringify(body), method: 'json-stringify' };
-    } catch {
-      return { payload: null, method: 'none' };
-    }
-  }
-
-  return { payload: null, method: 'none' };
-};
-
 const verifyStripeSignature = (
-  body: unknown,
-  stripeSignatureHeader: string | null,
+  event: RoutePayload<unknown>,
 ): Pick<
   StripeRouteProbeResponse,
   | 'stripeSignatureTimestamp'
@@ -172,96 +119,50 @@ const verifyStripeSignature = (
   | 'verificationMatched'
   | 'verificationError'
 > => {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? '';
-
-  if (webhookSecret.length === 0) {
-    return {
-      stripeSignatureTimestamp: null,
-      verificationAttempted: false,
-      verificationMethod: 'none',
-      verificationMatched: null,
-      verificationError: 'missing STRIPE_WEBHOOK_SECRET',
-    };
-  }
-
-  const { timestamp, signatures } =
-    parseStripeSignatureHeader(stripeSignatureHeader);
-  const { payload, method } = getVerificationPayload(body);
-
-  if (timestamp === null) {
-    return {
-      stripeSignatureTimestamp: null,
-      verificationAttempted: true,
-      verificationMethod: method,
-      verificationMatched: false,
-      verificationError: 'missing timestamp in stripe-signature header',
-    };
-  }
-
-  if (signatures.length === 0) {
-    return {
-      stripeSignatureTimestamp: timestamp,
-      verificationAttempted: true,
-      verificationMethod: method,
-      verificationMatched: false,
-      verificationError: 'missing v1 signature in stripe-signature header',
-    };
-  }
-
-  if (payload === null) {
-    return {
-      stripeSignatureTimestamp: timestamp,
-      verificationAttempted: true,
-      verificationMethod: method,
-      verificationMatched: false,
-      verificationError: 'unable to serialize request body for verification',
-    };
-  }
-
-  const signedPayload = `${timestamp}.${payload}`;
-  const expectedSignature = createHmac('sha256', webhookSecret)
-    .update(signedPayload, 'utf8')
-    .digest('hex');
-  const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
-
-  const matched = signatures.some((signature) => {
-    const candidateBuffer = Buffer.from(signature, 'utf8');
-
-    if (candidateBuffer.length !== expectedBuffer.length) {
-      return false;
-    }
-
-    return timingSafeEqual(candidateBuffer, expectedBuffer);
-  });
+  const verification = verifyStripeWebhookEvent(event);
+  const verificationAttempted =
+    verification.ok || verification.reason !== 'missing_webhook_secret';
 
   return {
-    stripeSignatureTimestamp: timestamp,
-    verificationAttempted: true,
-    verificationMethod: method,
-    verificationMatched: matched,
-    verificationError: matched
-      ? null
-      : 'signature mismatch against runtime-visible payload',
+    stripeSignatureTimestamp: verification.stripeSignatureTimestamp,
+    verificationAttempted,
+    verificationMethod:
+      typeof event.rawBody === 'string'
+        ? 'event-raw-body'
+        : typeof event.body === 'string'
+          ? 'raw-string'
+          : event.body !== null && event.body !== undefined
+            ? 'json-stringify'
+            : 'none',
+    verificationMatched: verification.ok ? true : false,
+    verificationError: verification.ok ? null : verification.reason,
   };
 };
 
-const handler = async (
+export const stripeRouteProbeHandler = async (
   event: RoutePayload<unknown>,
 ): Promise<StripeRouteProbeResponse> => {
   const headerKeys = Object.keys(event.headers ?? {}).sort();
-  const stripeSignature =
+  const stripeSignatureHeader =
     event.headers?.['stripe-signature'] ??
     event.headers?.['Stripe-Signature'] ??
     null;
-  const verification = verifyStripeSignature(event.body, stripeSignature);
+  const verification = verifyStripeSignature(event);
 
   const response: StripeRouteProbeResponse = {
     headerKeys,
     hasStripeSignatureHeader:
-      typeof stripeSignature === 'string' && stripeSignature.length > 0,
+      typeof stripeSignatureHeader === 'string' &&
+      stripeSignatureHeader.length > 0,
     stripeSignaturePreview:
-      typeof stripeSignature === 'string' && stripeSignature.length > 0
-        ? truncatePreview(stripeSignature)
+      typeof stripeSignatureHeader === 'string' &&
+      stripeSignatureHeader.length > 0
+        ? truncatePreview(stripeSignatureHeader)
+        : null,
+    hasRawBody: typeof event.rawBody === 'string',
+    rawBodyPreview:
+      typeof event.rawBody === 'string'
+        ? truncatePreview(event.rawBody)
         : null,
     bodyType: getBodyType(event.body),
     bodyPreview: buildBodyPreview(event.body),
@@ -285,6 +186,7 @@ const handler = async (
       event: 'stripe_route_probe_received',
       headerKeys: response.headerKeys,
       hasStripeSignatureHeader: response.hasStripeSignatureHeader,
+      hasRawBody: response.hasRawBody,
       bodyType: response.bodyType,
       bodyKeys: response.bodyKeys,
       stripeEventId: response.stripeEventId,
@@ -310,7 +212,7 @@ export default defineLogicFunction({
   description:
     'Temporary probe route for validating Stripe header forwarding and body shape inside Twenty apps.',
   timeoutSeconds: 10,
-  handler,
+  handler: stripeRouteProbeHandler,
   httpRouteTriggerSettings: {
     path: '/stripe/route-probe',
     httpMethod: 'POST',

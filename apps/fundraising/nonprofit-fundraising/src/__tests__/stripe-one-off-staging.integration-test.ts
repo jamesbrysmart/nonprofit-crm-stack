@@ -18,9 +18,17 @@ const buildEvent = (suffix: string): StripeCheckoutSessionCompletedEvent => ({
       amount_total: 2500,
       currency: 'gbp',
       created: 1777198410,
+      customer: `cus_stage_${suffix}`,
       customer_details: {
         email: `ada.${suffix}@example.org`,
         name: 'Ada Lovelace',
+        phone: '+44 20 7946 0958',
+        address: {
+          line1: '12 Analytical Engine Row',
+          city: 'London',
+          postal_code: 'SW1A 1AA',
+          country: 'gb',
+        },
       },
       payment_intent: `pi_stage_${suffix}`,
     },
@@ -44,13 +52,43 @@ describe('Stripe one-off staging intake', () => {
     expect(createdRecord?.name).toBe('Stripe donation from Ada Lovelace');
     expect(createdRecord?.intakeSource).toBe('stripe_webhook');
     expect(createdRecord?.giftDate).toBe('2026-04-26');
+    expect(createdRecord?.donationType).toBe('ONE_OFF');
     expect(createdRecord?.donorFirstName).toBe('Ada');
     expect(createdRecord?.donorLastName).toBe('Lovelace');
     expect(createdRecord?.donorEmail).toBe(`ada.${suffix}@example.org`);
+    expect(createdRecord?.donorPhone).toBe('+44 20 7946 0958');
+    expect(createdRecord?.donorMailingAddress).toEqual({
+      addressStreet1: '12 Analytical Engine Row',
+      addressCity: 'London',
+      addressPostcode: 'SW1A 1AA',
+      addressCountry: 'GB',
+    });
     expect(createdRecord?.externalId).toBe(`cs_stage_${suffix}`);
     expect(createdRecord?.sourceFingerprint).toBe(`evt_stage_${suffix}`);
+    expect(createdRecord?.providerEventId).toBe(`evt_stage_${suffix}`);
     expect(createdRecord?.provider).toBe('STRIPE');
     expect(createdRecord?.providerPaymentId).toBe(`pi_stage_${suffix}`);
+    expect(createdRecord?.paymentProviderCustomerId).toBe(
+      `cus_stage_${suffix}`,
+    );
+    expect(createdRecord?.rawProviderEvidence).toEqual({
+      provider: 'STRIPE',
+      eventType: 'checkout.session.completed',
+      checkoutSessionId: `cs_stage_${suffix}`,
+      customerId: `cus_stage_${suffix}`,
+      paymentIntentId: `pi_stage_${suffix}`,
+      customerDetails: {
+        name: 'Ada Lovelace',
+        email: `ada.${suffix}@example.org`,
+        phone: '+44 20 7946 0958',
+        address: {
+          addressStreet1: '12 Analytical Engine Row',
+          addressCity: 'London',
+          addressPostcode: 'SW1A 1AA',
+          addressCountry: 'GB',
+        },
+      },
+    });
     expect(createdRecord?.donorResolutionState).toBe('UNREVIEWED');
     expect(createdRecord?.hasCoreGiftIssue).toBe(false);
     expect(createdRecord?.isReadyForProcessing).toBe(false);

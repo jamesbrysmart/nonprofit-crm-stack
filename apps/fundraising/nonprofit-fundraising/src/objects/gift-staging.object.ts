@@ -15,11 +15,17 @@ export const GIFT_STAGING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER =
   '4e3f98f2-8197-428c-9c48-1ce57cf73ddd';
 
+export const GIFT_STAGING_DONATION_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
+  '6441af6a-eafd-44df-b824-0b347c8e36fd';
+
 export const GIFT_STAGING_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER =
   '0f4cf644-e073-42eb-8df1-f776d4b5c3dc';
 
 export const GIFT_STAGING_SOURCE_FINGERPRINT_FIELD_UNIVERSAL_IDENTIFIER =
   '0b5d44b4-917b-4fa4-80b4-bf9b8dcbafaf';
+
+export const GIFT_STAGING_PROVIDER_EVENT_ID_FIELD_UNIVERSAL_IDENTIFIER =
+  '20de7cca-c11d-4c65-a362-602d702cad18';
 
 export const GIFT_STAGING_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER =
   'f9d4bbd2-95fc-41c1-92f3-c5cb83a00ca8';
@@ -27,8 +33,17 @@ export const GIFT_STAGING_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER =
   'a3e18807-c5e7-46d2-b76f-c70ecb3c8866';
 
+export const GIFT_STAGING_PAYMENT_PROVIDER_CUSTOMER_ID_FIELD_UNIVERSAL_IDENTIFIER =
+  'a8ca5ce4-a49b-4825-b8c1-4a4f50e41f5e';
+
 export const GIFT_STAGING_PROVIDER_AGREEMENT_ID_FIELD_UNIVERSAL_IDENTIFIER =
   '1abeaa48-c16a-4e31-8cd5-7fdd1c95dcc0';
+
+export const GIFT_STAGING_PROVIDER_INTERVAL_UNIT_FIELD_UNIVERSAL_IDENTIFIER =
+  '19d14dc3-6319-4646-8264-c579ec810476';
+
+export const GIFT_STAGING_PROVIDER_INTERVAL_COUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  'eae19a0c-5bb4-409f-a5be-43a0e78d1a3a';
 
 export const GIFT_STAGING_DONOR_FIRST_NAME_FIELD_UNIVERSAL_IDENTIFIER =
   'fc87ed4a-fd88-4769-aa0e-5ad2e8b7c8cd';
@@ -38,6 +53,12 @@ export const GIFT_STAGING_DONOR_LAST_NAME_FIELD_UNIVERSAL_IDENTIFIER =
 
 export const GIFT_STAGING_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER =
   '88dbdeaa-6eaf-4d18-a599-c1e4e75f8a94';
+
+export const GIFT_STAGING_DONOR_PHONE_FIELD_UNIVERSAL_IDENTIFIER =
+  '544aa21c-7ae0-4a7d-a62a-041fb261418d';
+
+export const GIFT_STAGING_DONOR_MAILING_ADDRESS_FIELD_UNIVERSAL_IDENTIFIER =
+  '7e92406a-8a2f-48d0-91d3-64db0b0be2d2';
 
 export const GIFT_STAGING_DONOR_RESOLUTION_STATE_FIELD_UNIVERSAL_IDENTIFIER =
   '0d638f6a-901f-4974-85f6-bfda935c17f9';
@@ -71,6 +92,9 @@ export const GIFT_STAGING_GIFT_AID_DECLARATION_SOURCE_FIELD_UNIVERSAL_IDENTIFIER
 
 export const GIFT_STAGING_GIFT_AID_TEXT_VERSION_FIELD_UNIVERSAL_IDENTIFIER =
   '44188431-92b9-43a1-8504-a2c608c70c78';
+
+export const GIFT_STAGING_RAW_PROVIDER_EVIDENCE_FIELD_UNIVERSAL_IDENTIFIER =
+  '6af7e0fd-147d-4082-a1cb-79f0ffdf2227';
 
 export default defineObject({
   universalIdentifier: GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
@@ -119,6 +143,32 @@ export default defineObject({
       defaultValue: null,
     },
     {
+      universalIdentifier: GIFT_STAGING_DONATION_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'donationType',
+      label: 'Donation type',
+      description: 'Normalized donation intent captured from intake evidence',
+      icon: 'IconArrowsSplit2',
+      isNullable: true,
+      defaultValue: null,
+      options: [
+        {
+          id: '6962d5ce-fd3a-445f-914a-18c748bb88fd',
+          value: 'ONE_OFF',
+          label: 'One-off',
+          position: 0,
+          color: 'blue',
+        },
+        {
+          id: '54c997c4-6cb8-442a-898c-3c58b19013a3',
+          value: 'RECURRING',
+          label: 'Recurring',
+          position: 1,
+          color: 'green',
+        },
+      ],
+    },
+    {
       universalIdentifier: GIFT_STAGING_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.TEXT,
       name: 'externalId',
@@ -136,6 +186,17 @@ export default defineObject({
       label: 'Source fingerprint',
       description: 'Replay-safe source fingerprint used for intake idempotency',
       icon: 'IconFingerprint',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_PROVIDER_EVENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'providerEventId',
+      label: 'Provider event ID',
+      description: 'Provider-side event identifier when available',
+      icon: 'IconBolt',
       isNullable: true,
       defaultValue: null,
     },
@@ -162,6 +223,18 @@ export default defineObject({
     },
     {
       universalIdentifier:
+        GIFT_STAGING_PAYMENT_PROVIDER_CUSTOMER_ID_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'paymentProviderCustomerId',
+      label: 'Provider customer ID',
+      description:
+        'Provider-side donor or customer identifier when available',
+      icon: 'IconUserDollar',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
         GIFT_STAGING_PROVIDER_AGREEMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.TEXT,
       name: 'providerAgreementId',
@@ -169,6 +242,30 @@ export default defineObject({
       description:
         'Provider-side recurring agreement or subscription reference when available',
       icon: 'IconRepeat',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_PROVIDER_INTERVAL_UNIT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'providerIntervalUnit',
+      label: 'Provider interval unit',
+      description:
+        'Provider-side recurring interval unit captured as evidence for processing',
+      icon: 'IconCalendarRepeat',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_PROVIDER_INTERVAL_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.NUMBER,
+      name: 'providerIntervalCount',
+      label: 'Provider interval count',
+      description:
+        'Provider-side recurring interval count captured as evidence for processing',
+      icon: 'IconHash',
       isNullable: true,
       defaultValue: null,
     },
@@ -195,6 +292,27 @@ export default defineObject({
       label: 'Donor email',
       description: 'Incoming donor evidence email',
       icon: 'IconAt',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_STAGING_DONOR_PHONE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'donorPhone',
+      label: 'Donor phone',
+      description: 'Incoming donor phone evidence from intake when available',
+      icon: 'IconPhone',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_DONOR_MAILING_ADDRESS_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.ADDRESS,
+      name: 'donorMailingAddress',
+      label: 'Donor mailing address',
+      description: 'Incoming donor mailing address evidence from intake',
+      icon: 'IconMapPin',
       isNullable: true,
       defaultValue: null,
     },
@@ -268,29 +386,22 @@ export default defineObject({
         {
           id: 'd4d6b764-d8d2-44b4-bd50-cdb28b9a7fe0',
           value: 'NOT_READY',
-          label: 'Not ready',
+          label: 'Not processed',
           position: 0,
           color: 'gray',
-        },
-        {
-          id: '55a4df4c-8d0a-4695-9518-cc3fd3b36da1',
-          value: 'READY',
-          label: 'Ready',
-          position: 1,
-          color: 'yellow',
         },
         {
           id: 'af7ba0bb-447c-44a6-8ad0-a06d11e30c8f',
           value: 'PROCESSED',
           label: 'Processed',
-          position: 2,
+          position: 1,
           color: 'green',
         },
         {
           id: '8ce0c8de-43b5-4f32-a1d0-4f53e274d5d4',
           value: 'PROCESS_FAILED',
           label: 'Process failed',
-          position: 3,
+          position: 2,
           color: 'red',
         },
       ],
@@ -367,6 +478,18 @@ export default defineObject({
       label: 'Gift Aid text version',
       description: 'Declaration wording or version captured during intake',
       icon: 'IconTextCaption',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_RAW_PROVIDER_EVIDENCE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.RAW_JSON,
+      name: 'rawProviderEvidence',
+      label: 'Raw provider evidence',
+      description:
+        'Bounded provider-specific evidence snapshot preserved for audit and debugging',
+      icon: 'IconBraces',
       isNullable: true,
       defaultValue: null,
     },

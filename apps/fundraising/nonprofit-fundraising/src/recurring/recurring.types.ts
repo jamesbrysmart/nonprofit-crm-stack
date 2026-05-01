@@ -32,6 +32,9 @@ export type RecurringAgreementSummary = {
       firstName?: string | null;
       lastName?: string | null;
     } | null;
+    emails?: {
+      primaryEmail?: string | null;
+    } | null;
   } | null;
 };
 
@@ -104,6 +107,7 @@ export type RecurringAgreementReviewRecord = {
   mandateReference: string | null;
   donorName: string;
   donorId: string | null;
+  donorEmail: string | null;
   health: RecurringAgreementHealth;
   recentGifts: StoredRecurringAgreementRecord['gifts'];
   recentGiftStagings: StoredRecurringAgreementRecord['giftStagings'];

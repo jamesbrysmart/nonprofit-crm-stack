@@ -29,9 +29,17 @@ const buildCheckoutSessionEvent = ({
       amount_total: 4200,
       currency: 'gbp',
       created: 1777198410,
+      customer: `cus_router_${suffix}`,
       customer_details: {
         email: `router.${suffix}@example.org`,
         name: 'Grace Hopper',
+        phone: '+44 20 7000 1234',
+        address: {
+          line1: '44 Compiler Street',
+          city: 'London',
+          postal_code: 'EC1A 1BB',
+          country: 'gb',
+        },
       },
       payment_intent: `pi_router_${suffix}`,
       ...(subscriptionId ? { subscription: subscriptionId } : {}),
@@ -55,10 +63,40 @@ describe('Stripe event router intake', () => {
     expect(response.result.created).toBe(true);
 
     const createdRecord = await loadGiftStagingById(response.result.giftStagingId);
+    expect(createdRecord?.donationType).toBe('ONE_OFF');
+    expect(createdRecord?.donorPhone).toBe('+44 20 7000 1234');
     expect(createdRecord?.externalId).toBe(`cs_router_${suffix}`);
     expect(createdRecord?.sourceFingerprint).toBe(`evt_router_${suffix}`);
+    expect(createdRecord?.providerEventId).toBe(`evt_router_${suffix}`);
     expect(createdRecord?.provider).toBe('STRIPE');
     expect(createdRecord?.providerPaymentId).toBe(`pi_router_${suffix}`);
+    expect(createdRecord?.paymentProviderCustomerId).toBe(
+      `cus_router_${suffix}`,
+    );
+    expect(createdRecord?.donorMailingAddress).toEqual({
+      addressStreet1: '44 Compiler Street',
+      addressCity: 'London',
+      addressPostcode: 'EC1A 1BB',
+      addressCountry: 'GB',
+    });
+    expect(createdRecord?.rawProviderEvidence).toEqual({
+      provider: 'STRIPE',
+      eventType: 'checkout.session.completed',
+      checkoutSessionId: `cs_router_${suffix}`,
+      customerId: `cus_router_${suffix}`,
+      paymentIntentId: `pi_router_${suffix}`,
+      customerDetails: {
+        name: 'Grace Hopper',
+        email: `router.${suffix}@example.org`,
+        phone: '+44 20 7000 1234',
+        address: {
+          addressStreet1: '44 Compiler Street',
+          addressCity: 'London',
+          addressPostcode: 'EC1A 1BB',
+          addressCountry: 'GB',
+        },
+      },
+    });
     expect(createdRecord?.providerAgreementId).toBeNull();
     expect(createdRecord?.processingStatus).toBe('NOT_READY');
   });
@@ -128,6 +166,7 @@ describe('Stripe event router intake', () => {
 
     const staging = await loadGiftStagingById(response.result.giftStagingId);
     expect(staging?.name).toBe('Stripe recurring donation from Grace Hopper');
+    expect(staging?.donationType).toBe('RECURRING');
     expect(staging?.provider).toBe('STRIPE');
     expect(staging?.providerPaymentId).toBe(`pi_router_${suffix}`);
     expect(staging?.providerAgreementId).toBe(subscriptionId);

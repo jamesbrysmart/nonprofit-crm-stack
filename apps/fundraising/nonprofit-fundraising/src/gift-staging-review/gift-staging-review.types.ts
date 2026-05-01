@@ -11,7 +11,6 @@ export type DonorResolution =
 
 export type ProcessingStatus =
   | 'NOT_READY'
-  | 'READY'
   | 'PROCESSED'
   | 'PROCESS_FAILED';
 
@@ -27,9 +26,31 @@ export type StoredGiftStagingRecord = {
     | string
     | null;
   giftDate: string | null;
+  donationType: string | null;
   donorFirstName: string | null;
   donorLastName: string | null;
   donorEmail: string | null;
+  donorPhone: string | null;
+  donorMailingAddress:
+    | {
+        addressStreet1?: string | null;
+        addressStreet2?: string | null;
+        addressCity?: string | null;
+        addressState?: string | null;
+        addressPostcode?: string | null;
+        addressCountry?: string | null;
+      }
+    | null;
+  externalId: string | null;
+  sourceFingerprint: string | null;
+  providerEventId: string | null;
+  provider: string | null;
+  providerPaymentId: string | null;
+  paymentProviderCustomerId: string | null;
+  providerAgreementId: string | null;
+  providerIntervalUnit: string | null;
+  providerIntervalCount: number | null;
+  rawProviderEvidence: unknown;
   donorResolutionState: string | null;
   donor: PersonSummary | null;
   hasCoreGiftIssue: boolean | null;
@@ -67,9 +88,21 @@ export type GiftStagingReviewRecord = {
   intakeSource: string;
   amountDisplay: string;
   giftDate: string;
+  donationType: string;
   donorFirstName: string;
   donorLastName: string;
   donorEmail: string;
+  donorPhone: string;
+  externalId: string;
+  sourceFingerprint: string;
+  providerEventId: string;
+  provider: string;
+  providerPaymentId: string;
+  paymentProviderCustomerId: string;
+  providerAgreementId: string;
+  providerIntervalUnit: string;
+  providerIntervalCount: number | null;
+  rawProviderEvidence: unknown;
   donorEvidenceName: string;
   donorResolution: DonorResolution;
   linkedDonor: PersonSummary | null;
@@ -85,7 +118,9 @@ export type GiftStagingReviewRecord = {
   giftAidDeclarationSource: string;
   giftAidTextVersion: string;
   giftAidDeclarationId: string;
+  giftBatchId: string;
   giftBatchName: string;
+  committedGiftId: string;
   committedGiftName: string;
 };
 

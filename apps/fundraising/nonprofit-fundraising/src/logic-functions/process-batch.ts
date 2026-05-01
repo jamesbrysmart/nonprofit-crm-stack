@@ -5,7 +5,6 @@ import {
 } from 'twenty-sdk/define';
 import {
   buildNotReadyWritebacks,
-  buildPendingWritebacks,
   canProcessBatchRow,
   executeBatchGiftProcessing,
   persistBatchRowWritebacks,
@@ -54,8 +53,31 @@ const loadBatchAndRows = async (
           donorFirstName: true,
           donorLastName: true,
           donorEmail: true,
-          amount: true,
+          donorMailingAddress: {
+            addressStreet1: true,
+            addressStreet2: true,
+            addressCity: true,
+            addressState: true,
+            addressPostcode: true,
+            addressCountry: true,
+          },
+          amount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
           giftDate: true,
+          donationType: true,
+          externalId: true,
+          sourceFingerprint: true,
+          providerEventId: true,
+          provider: true,
+          providerPaymentId: true,
+          paymentProviderCustomerId: true,
+          providerAgreementId: true,
+          providerIntervalUnit: true,
+          providerIntervalCount: true,
+          donorPhone: true,
+          rawProviderEvidence: true,
           donorResolutionState: true,
           donor: {
             id: true,
@@ -136,7 +158,6 @@ const handler = async (
   // Keep write pressure low by doing one routing writeback pass before any
   // create calls rather than churning row state throughout the core loop.
   await persistBatchRowWritebacks(buildNotReadyWritebacks(notReadyRows));
-  await persistBatchRowWritebacks(buildPendingWritebacks(processableRows));
 
   let executionMetrics = {
     chunkCount: 0,

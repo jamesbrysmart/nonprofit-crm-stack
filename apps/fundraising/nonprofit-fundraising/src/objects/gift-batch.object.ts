@@ -46,7 +46,7 @@ export default defineObject({
       type: FieldType.TEXT,
       name: 'source',
       label: 'Source',
-      description: 'Primary intake source for the batch',
+      description: 'Primary or intended intake source label for the batch',
       icon: 'IconArrowDown',
     },
     {

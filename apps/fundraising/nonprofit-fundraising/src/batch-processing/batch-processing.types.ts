@@ -6,7 +6,6 @@ export type BatchStatus =
 
 export type GiftStagingProcessingStatus =
   | 'NOT_READY'
-  | 'PENDING'
   | 'PROCESSED'
   | 'PROCESS_FAILED';
 
@@ -25,6 +24,16 @@ export type BatchProcessingRow = {
   donorFirstName: string | null;
   donorLastName: string | null;
   donorEmail: string | null;
+  donorMailingAddress:
+    | {
+        addressStreet1?: string | null;
+        addressStreet2?: string | null;
+        addressCity?: string | null;
+        addressState?: string | null;
+        addressPostcode?: string | null;
+        addressCountry?: string | null;
+      }
+    | null;
   amount:
     | {
         amountMicros?: number | null;
@@ -32,6 +41,18 @@ export type BatchProcessingRow = {
       }
     | null;
   giftDate: string | null;
+  donationType: string | null;
+  externalId: string | null;
+  sourceFingerprint: string | null;
+  providerEventId: string | null;
+  provider: string | null;
+  providerPaymentId: string | null;
+  paymentProviderCustomerId: string | null;
+  providerAgreementId: string | null;
+  providerIntervalUnit: string | null;
+  providerIntervalCount: number | null;
+  donorPhone: string | null;
+  rawProviderEvidence: unknown;
   donorResolutionState: string | null;
   donor: {
     id: string;

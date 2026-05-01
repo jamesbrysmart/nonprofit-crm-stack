@@ -157,7 +157,12 @@ const createMatchedRecurringAgreement = async ({ suffix, subscriptionId }) => {
   };
 };
 
-const checkoutSessionCompleted = ({ suffix, subscriptionId }) => ({
+const checkoutSessionCompleted = ({
+  suffix,
+  subscriptionId,
+  giftAidRequested = false,
+  omitAddress = false,
+}) => ({
   id: `evt_fixture_${suffix}`,
   type: 'checkout.session.completed',
   created: 1777198422,
@@ -167,12 +172,48 @@ const checkoutSessionCompleted = ({ suffix, subscriptionId }) => ({
       amount_total: 4200,
       currency: 'gbp',
       created: 1777198410,
+      customer: `cus_fixture_${suffix}`,
       customer_details: {
         email: `stripe.fixture.${suffix}@example.org`,
         name: 'Stripe Fixture',
+        ...(omitAddress
+          ? {}
+          : {
+              address: {
+                line1: '99 Charity Street',
+                city: 'London',
+                postal_code: 'EC1A 4AA',
+                country: 'gb',
+              },
+            }),
       },
+      ...(giftAidRequested
+        ? {
+            metadata: {
+              gift_aid_requested: 'true',
+            },
+          }
+        : {}),
       payment_intent: `pi_fixture_${suffix}`,
-      ...(subscriptionId ? { subscription: subscriptionId } : {}),
+      ...(subscriptionId
+        ? {
+            subscription: {
+              id: subscriptionId,
+              items: {
+                data: [
+                  {
+                    price: {
+                      recurring: {
+                        interval: 'month',
+                        interval_count: 1,
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          }
+        : {}),
     },
   },
 });
@@ -213,6 +254,29 @@ const main = async () => {
       label: 'one-off checkout.session.completed',
       apiConfig,
       event: checkoutSessionCompleted({ suffix: `one_off_${suffix}` }),
+    }),
+  );
+
+  results.push(
+    await runFixture({
+      label: 'one-off checkout.session.completed with Gift Aid requested but incomplete declaration evidence',
+      apiConfig,
+      event: checkoutSessionCompleted({
+        suffix: `one_off_giftaid_requested_only_${suffix}`,
+        giftAidRequested: true,
+        omitAddress: true,
+      }),
+    }),
+  );
+
+  results.push(
+    await runFixture({
+      label: 'one-off checkout.session.completed with Gift Aid requested and captured declaration evidence',
+      apiConfig,
+      event: checkoutSessionCompleted({
+        suffix: `one_off_giftaid_captured_${suffix}`,
+        giftAidRequested: true,
+      }),
     }),
   );
 

@@ -4,11 +4,25 @@ export type BatchReviewRow = {
   donorFirstName: string | null;
   donorLastName: string | null;
   donorEmail: string | null;
+  amount:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
+  giftDate: string | null;
+  provider: string | null;
+  providerAgreementId: string | null;
   donorResolutionState: string | null;
   hasCoreGiftIssue: boolean | null;
   isReadyForProcessing: boolean | null;
   processingStatus: string | null;
   errorDetail: string | null;
+  donor:
+    | {
+        id: string;
+      }
+    | null;
   committedGift:
     | {
         id: string;
@@ -33,6 +47,8 @@ export type GiftBatchReviewRecord = {
   source: string;
   status: string;
   totalItems: number;
+  totalValueDisplay: string;
+  eligibleItems: number;
   processedItems: number;
   failedItems: number;
   readyItems: number;
@@ -46,10 +62,15 @@ export type GiftBatchReviewRow = {
   name: string;
   donorEvidenceName: string;
   donorEmail: string;
+  amountDisplay: string;
+  giftDate: string;
+  provider: string;
+  providerAgreementId: string;
   donorResolutionState: string;
   processingStatus: string;
   hasCoreGiftIssue: boolean;
   isReadyForProcessing: boolean;
+  isProcessable: boolean;
   isProcessed: boolean;
   errorDetail: string;
   committedGiftName: string;

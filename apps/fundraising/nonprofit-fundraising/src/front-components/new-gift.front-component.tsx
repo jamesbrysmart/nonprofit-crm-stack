@@ -7,6 +7,7 @@ import {
   createManualGift,
   searchRecurringAgreements,
 } from 'src/manual-gift-entry/manual-gift-entry.api';
+import { ManualGiftEntryGiftAidCapture } from 'src/manual-gift-entry/manual-gift-entry-gift-aid-capture';
 import type {
   DuplicateCheckResponse,
   ManualGiftDonorChoice,
@@ -592,122 +593,20 @@ const NewGift = () => {
       </div>
 
       {isGiftAidEnabled ? (
-        <div style={cardStyle}>
-          <div style={sectionTitleStyle}>Gift Aid</div>
-          <p style={bodyTextStyle}>
-            Capture Gift Aid request and declaration facts here. The final
-            claimability outcome is still derived on the committed gift.
-          </p>
-
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              fontSize: '14px',
-              color: '#1f2328',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={giftAidRequested}
-              onChange={(event) => setGiftAidRequested(getInputEventChecked(event))}
-            />
-            <span>Gift Aid requested for this gift</span>
-          </label>
-
-          {giftAidRequested ? (
-            <>
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  fontSize: '14px',
-                  color: '#1f2328',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={giftAidDeclarationCaptured}
-                  onChange={(event) =>
-                    setGiftAidDeclarationCaptured(getInputEventChecked(event))
-                  }
-                />
-                <span>Declaration captured in this entry flow</span>
-              </label>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gap: '12px',
-                  gridTemplateColumns: '1fr 1fr',
-                }}
-              >
-                <label style={{ display: 'grid', gap: '6px' }}>
-                  <span style={labelStyle}>Declaration date</span>
-                  <input
-                    style={inputStyle}
-                    type="date"
-                    value={giftAidDeclarationDate}
-                    onChange={(event) =>
-                      setGiftAidDeclarationDate(getInputEventValue(event))
-                    }
-                  />
-                </label>
-
-                <label style={{ display: 'grid', gap: '6px' }}>
-                  <span style={labelStyle}>Coverage scope</span>
-                  <input
-                    style={inputStyle}
-                    value={giftAidCoverageScope}
-                    placeholder="past_and_future"
-                    onChange={(event) =>
-                      setGiftAidCoverageScope(getInputEventValue(event))
-                    }
-                  />
-                </label>
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gap: '12px',
-                  gridTemplateColumns: '1fr 1fr',
-                }}
-              >
-                <label style={{ display: 'grid', gap: '6px' }}>
-                  <span style={labelStyle}>Declaration source</span>
-                  <input
-                    style={inputStyle}
-                    value={giftAidDeclarationSource}
-                    placeholder="manual_entry"
-                    onChange={(event) =>
-                      setGiftAidDeclarationSource(getInputEventValue(event))
-                    }
-                  />
-                </label>
-
-                <label style={{ display: 'grid', gap: '6px' }}>
-                  <span style={labelStyle}>Text version</span>
-                  <input
-                    style={inputStyle}
-                    value={giftAidTextVersion}
-                    placeholder="v1"
-                    onChange={(event) =>
-                      setGiftAidTextVersion(getInputEventValue(event))
-                    }
-                  />
-                </label>
-              </div>
-            </>
-          ) : (
-            <div style={secondaryTextStyle}>
-              Leave Gift Aid off when no request or declaration facts were
-              captured during entry.
-            </div>
-          )}
-        </div>
+        <ManualGiftEntryGiftAidCapture
+          giftAidRequested={giftAidRequested}
+          giftAidDeclarationCaptured={giftAidDeclarationCaptured}
+          giftAidDeclarationDate={giftAidDeclarationDate}
+          giftAidCoverageScope={giftAidCoverageScope}
+          giftAidDeclarationSource={giftAidDeclarationSource}
+          giftAidTextVersion={giftAidTextVersion}
+          onGiftAidRequestedChange={setGiftAidRequested}
+          onGiftAidDeclarationCapturedChange={setGiftAidDeclarationCaptured}
+          onGiftAidDeclarationDateChange={setGiftAidDeclarationDate}
+          onGiftAidCoverageScopeChange={setGiftAidCoverageScope}
+          onGiftAidDeclarationSourceChange={setGiftAidDeclarationSource}
+          onGiftAidTextVersionChange={setGiftAidTextVersion}
+        />
       ) : null}
 
       {duplicateInterruptionVisible && duplicateResult ? (

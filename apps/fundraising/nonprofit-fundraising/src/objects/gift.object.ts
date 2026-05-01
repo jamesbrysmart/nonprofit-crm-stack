@@ -132,7 +132,7 @@ export default defineObject({
       type: FieldType.TEXT,
       name: 'provider',
       label: 'Provider',
-      description: 'Provider or channel system that originated the gift',
+      description: 'Source provider or channel label carried onto the committed gift',
       icon: 'IconPlugConnected',
       isNullable: true,
       defaultValue: null,
