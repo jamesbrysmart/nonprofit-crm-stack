@@ -7,6 +7,12 @@ type SeedPerson = {
   firstName: string;
   lastName: string;
   email: string;
+  mailingAddress: {
+    addressStreet1: string;
+    addressCity: string;
+    addressPostcode: string;
+    addressCountry: string;
+  };
 };
 
 type SeedBatch = {
@@ -47,26 +53,56 @@ const SEED_PEOPLE: SeedPerson[] = [
     firstName: 'Ada',
     lastName: 'Lovelace',
     email: 'ada.lovelace@example.org',
+    mailingAddress: {
+      addressStreet1: '12 Analytical Engine Row',
+      addressCity: 'London',
+      addressPostcode: 'SW1A 1AA',
+      addressCountry: 'GB',
+    },
   },
   {
     firstName: 'Chris',
     lastName: 'Bennett',
     email: 'chris.bennett@example.org',
+    mailingAddress: {
+      addressStreet1: '44 Chapel Street',
+      addressCity: 'Oxford',
+      addressPostcode: 'OX1 2JD',
+      addressCountry: 'GB',
+    },
   },
   {
     firstName: 'Jamie',
     lastName: 'Taylor',
     email: 'jamie.taylor.one@example.org',
+    mailingAddress: {
+      addressStreet1: '3 River View',
+      addressCity: 'Bristol',
+      addressPostcode: 'BS1 5TR',
+      addressCountry: 'GB',
+    },
   },
   {
     firstName: 'Jamie',
     lastName: 'Taylor',
     email: 'jamie.taylor.two@example.org',
+    mailingAddress: {
+      addressStreet1: '8 Kingsway',
+      addressCity: 'Bristol',
+      addressPostcode: 'BS6 2AB',
+      addressCountry: 'GB',
+    },
   },
   {
     firstName: 'Elliot',
     lastName: 'Meyer',
     email: 'elliot.meyer@example.org',
+    mailingAddress: {
+      addressStreet1: '27 Market Lane',
+      addressCity: 'Manchester',
+      addressPostcode: 'M1 4HT',
+      addressCountry: 'GB',
+    },
   },
 ];
 
@@ -281,6 +317,17 @@ const ensureSeedPeople = async (client: CoreApiClient) => {
     const existing = findExistingPerson(existingPeople, seed);
 
     if (existing) {
+      await client.mutation({
+        updatePerson: {
+          __args: {
+            id: existing.id,
+            data: {
+              mailingAddress: seed.mailingAddress,
+            },
+          },
+          id: true,
+        },
+      } as any);
       peopleByEmail.set(seed.email, existing);
       continue;
     }
@@ -297,6 +344,7 @@ const ensureSeedPeople = async (client: CoreApiClient) => {
               emails: {
                 primaryEmail: seed.email,
               },
+              mailingAddress: seed.mailingAddress,
             },
           },
           id: true,

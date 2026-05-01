@@ -5,6 +5,28 @@ import type {
   GiftAidClaimWorkspaceRecord,
 } from './gift-aid-claim.types';
 
+export const computeClaimBatchRollups = (gifts: GiftAidClaimGiftRecord[]) => {
+  const claimableGifts = gifts.filter((gift) => gift.giftAidStatus === 'CLAIMABLE');
+  const blockingIssueCount = gifts.filter(
+    (gift) => gift.giftAidStatus !== 'CLAIMABLE',
+  ).length;
+
+  return {
+    giftCount: claimableGifts.length,
+    totalAmount: {
+      amountMicros: claimableGifts.reduce(
+        (sum, gift) => sum + (gift.amount?.amountMicros ?? 0),
+        0,
+      ),
+      currencyCode:
+        claimableGifts.find((gift) => gift.amount?.currencyCode)?.amount
+          ?.currencyCode ?? 'GBP',
+    },
+    hasBlockingIssues: blockingIssueCount > 0,
+    blockingIssueCount,
+  };
+};
+
 const getNowIsoDate = () => new Date().toISOString();
 
 const buildDraftBatchName = () => {
@@ -123,26 +145,17 @@ export const refreshClaimBatchSummary = async (
   batchId: string,
 ) => {
   const gifts = await listGiftsForClaimBatch(client, batchId);
-  const claimableGifts = gifts.filter((gift) => gift.giftAidStatus === 'CLAIMABLE');
-  const blockingIssueCount = gifts.filter(
-    (gift) => gift.giftAidStatus !== 'CLAIMABLE',
-  ).length;
-  const totalAmountMicros = claimableGifts.reduce((sum, gift) => {
-    return sum + (gift.amount?.amountMicros ?? 0);
-  }, 0);
+  const rollups = computeClaimBatchRollups(gifts);
 
   await client.mutation({
     updateGiftAidClaimBatch: {
       __args: {
         id: batchId,
         data: {
-          giftCount: claimableGifts.length,
-          totalAmount: {
-            amountMicros: totalAmountMicros,
-            currencyCode: 'GBP',
-          },
-          hasBlockingIssues: blockingIssueCount > 0,
-          blockingIssueCount,
+          giftCount: rollups.giftCount,
+          totalAmount: rollups.totalAmount,
+          hasBlockingIssues: rollups.hasBlockingIssues,
+          blockingIssueCount: rollups.blockingIssueCount,
         },
       },
       id: true,
@@ -168,8 +181,25 @@ export const listGiftsForClaimBatch = async (
         node: {
           id: true,
           name: true,
+          giftDate: true,
           giftAidStatus: true,
           giftAidReasonCode: true,
+          giftAidDecisionSource: true,
+          giftAidDeclarationId: true,
+          donorFirstName: true,
+          donorLastName: true,
+          donorEmail: true,
+          donor: {
+            id: true,
+            mailingAddress: {
+              addressStreet1: true,
+              addressStreet2: true,
+              addressCity: true,
+              addressState: true,
+              addressPostcode: true,
+              addressCountry: true,
+            },
+          },
           amount: true,
         },
       },
@@ -216,8 +246,25 @@ export const loadGiftAidClaimWorkspace = async (
         node: {
           id: true,
           name: true,
+          giftDate: true,
           giftAidStatus: true,
           giftAidReasonCode: true,
+          giftAidDecisionSource: true,
+          giftAidDeclarationId: true,
+          donorFirstName: true,
+          donorLastName: true,
+          donorEmail: true,
+          donor: {
+            id: true,
+            mailingAddress: {
+              addressStreet1: true,
+              addressStreet2: true,
+              addressCity: true,
+              addressState: true,
+              addressPostcode: true,
+              addressCountry: true,
+            },
+          },
           amount: true,
         },
       },
@@ -238,27 +285,126 @@ export const loadGiftAidClaimWorkspace = async (
           status: true,
           environment: true,
           submittedAt: true,
+          submittedToHmrcAt: true,
+          lastPolledAt: true,
           completedAt: true,
           externalSubmissionId: true,
           correlationId: true,
+          transactionId: true,
           failureCode: true,
           failureMessage: true,
           snapshotJson: true,
+          snapshotHash: true,
           responseJson: true,
+          errorSummaryJson: true,
         },
       },
     },
   } as any);
 
+  const batch = (result?.giftAidClaimBatch as GiftAidClaimBatchRecord | null) ?? null;
+  const gifts =
+    result?.gifts?.edges?.map(
+      (edge: { node: GiftAidClaimGiftRecord }) => edge.node,
+    ) ?? [];
+  const submissions =
+    result?.giftAidClaimSubmissions?.edges?.map((edge: { node: any }) => edge.node) ??
+    [];
+
+  if (!batch) {
+    return {
+      batch: null,
+      gifts,
+      submissions,
+    };
+  }
+
   return {
-    batch: (result?.giftAidClaimBatch as GiftAidClaimBatchRecord | null) ?? null,
-    gifts:
-      result?.gifts?.edges?.map(
-        (edge: { node: GiftAidClaimGiftRecord }) => edge.node,
-      ) ?? [],
-    submissions:
-      result?.giftAidClaimSubmissions?.edges?.map(
-        (edge: { node: any }) => edge.node,
-      ) ?? [],
+    batch: {
+      ...batch,
+      ...computeClaimBatchRollups(gifts),
+    },
+    gifts,
+    submissions,
+  };
+};
+
+const loadClaimBatch = async (
+  client: CoreApiClient,
+  batchId: string,
+): Promise<GiftAidClaimBatchRecord | null> => {
+  const result = await client.query({
+    giftAidClaimBatch: {
+      __args: {
+        filter: {
+          id: { eq: batchId },
+        },
+      },
+      id: true,
+      name: true,
+      status: true,
+      submittedAt: true,
+      giftCount: true,
+      totalAmount: true,
+      hasBlockingIssues: true,
+      blockingIssueCount: true,
+    },
+  } as any);
+
+  return result?.giftAidClaimBatch as GiftAidClaimBatchRecord | null;
+};
+
+export const finalizeGiftAidClaimBatch = async (
+  client: CoreApiClient,
+  batchId: string,
+) => {
+  const claimBatch = await loadClaimBatch(client, batchId);
+  if (!claimBatch?.id) {
+    throw new Error('Gift Aid claim batch not found');
+  }
+
+  if (claimBatch.status !== 'DRAFT') {
+    throw new Error('Only draft Gift Aid claim batches can be finalized');
+  }
+
+  await refreshClaimBatchSummary(client, batchId);
+  const refreshed = await loadGiftAidClaimWorkspace(client, batchId);
+  const batch = refreshed.batch;
+
+  if (!batch?.id) {
+    throw new Error('Gift Aid claim batch not found after refresh');
+  }
+
+  if ((batch.giftCount ?? 0) === 0) {
+    throw new Error('Gift Aid claim batch has no claimable gifts');
+  }
+
+  if (batch.hasBlockingIssues) {
+    throw new Error('Gift Aid claim batch still has blocking issues');
+  }
+
+  const submittedAt = new Date().toISOString();
+  await client.mutation({
+    updateGiftAidClaimBatch: {
+      __args: {
+        id: batch.id,
+        data: {
+          status: 'SUBMITTED',
+          submittedAt,
+        },
+      },
+      id: true,
+      status: true,
+      submittedAt: true,
+    },
+  } as any);
+
+  const nextDraftBatch = await getOrCreateCurrentDraftClaimBatch(client);
+
+  return {
+    claimBatchId: batch.id,
+    status: 'SUBMITTED' as const,
+    submittedAt,
+    nextDraftBatchId: nextDraftBatch.id,
   };
 };

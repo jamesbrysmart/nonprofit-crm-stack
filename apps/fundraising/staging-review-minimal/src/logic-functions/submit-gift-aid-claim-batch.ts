@@ -1,8 +1,8 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk';
-import { submitGiftAidClaimBatch } from 'src/gift-aid-claims/gift-aid-claim-submission';
+import { queueGiftAidClaimSubmission } from 'src/gift-aid-claims/gift-aid-claim-submission';
 
-const handler = async (event: RoutePayload<{ batchId?: string }>) => {
+const queueHandler = async (event: RoutePayload<{ batchId?: string }>) => {
   const batchId = event.body?.batchId?.trim();
 
   if (!batchId) {
@@ -10,18 +10,18 @@ const handler = async (event: RoutePayload<{ batchId?: string }>) => {
   }
 
   const client = new CoreApiClient();
-  return await submitGiftAidClaimBatch(client, batchId);
+  return await queueGiftAidClaimSubmission(client, batchId);
 };
 
 export default defineLogicFunction({
   universalIdentifier: '6d7fb9a1-eaf8-45c0-85bf-2c17a2d8f685',
-  name: 'submit-gift-aid-claim-batch',
+  name: 'queue-gift-aid-claim-submission',
   description:
-    'Submits a Gift Aid claim batch through the bounded submission probe and writes durable submission state back.',
+    'Queues a finalized Gift Aid claim batch for the bounded HMRC submission probe and writes durable submission state back.',
   timeoutSeconds: 30,
-  handler,
+  handler: queueHandler,
   httpRouteTriggerSettings: {
-    path: '/gift-aid-claims/submit-claim-batch',
+    path: '/gift-aid-claims/queue-claim-submission',
     httpMethod: 'POST',
     isAuthRequired: true,
   },

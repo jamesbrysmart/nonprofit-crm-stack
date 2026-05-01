@@ -41,8 +41,14 @@ export default defineApplication({
     },
     HMRC_SUBMISSION_MODE: {
       description:
-        'Submission adapter mode for the current spike (mock_success or mock_failure).',
+        'Submission runner mode for the current spike (mock_success, mock_failure, build_only, or submit_test).',
       isSecret: false,
+      isRequired: false,
+    },
+    HMRC_CHARITIES_CONFIG_JSON: {
+      description:
+        'JSON configuration for HMRC charities claim building and test submission credentials.',
+      isSecret: true,
       isRequired: false,
     },
   },

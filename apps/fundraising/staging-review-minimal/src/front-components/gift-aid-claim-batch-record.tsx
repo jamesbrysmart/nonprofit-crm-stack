@@ -8,7 +8,10 @@ import {
 import {
   loadGiftAidClaimWorkspace,
 } from 'src/gift-aid-claims/gift-aid-claim-batch';
-import { submitGiftAidClaimBatch } from 'src/gift-aid-claims/gift-aid-claim.api';
+import {
+  finalizeGiftAidClaimBatch,
+  queueGiftAidClaimSubmission,
+} from 'src/gift-aid-claims/gift-aid-claim.api';
 import type { GiftAidClaimWorkspaceRecord } from 'src/gift-aid-claims/gift-aid-claim.types';
 
 export const GIFT_AID_CLAIM_BATCH_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
@@ -49,7 +52,8 @@ const GiftAidClaimBatchRecord = () => {
   const [workspace, setWorkspace] = useState<GiftAidClaimWorkspaceRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
+  const [queueingSubmission, setQueueingSubmission] = useState(false);
 
   const refresh = async () => {
     if (!recordId) {
@@ -75,26 +79,61 @@ const GiftAidClaimBatchRecord = () => {
     void refresh();
   }, [recordId]);
 
-  const handleSubmit = async () => {
+  const handleFinalize = async () => {
     if (!recordId) {
       return;
     }
 
-    setSubmitting(true);
+    setFinalizing(true);
     try {
-      const result = await submitGiftAidClaimBatch({ batchId: recordId });
+      const result = await finalizeGiftAidClaimBatch({ batchId: recordId });
       await enqueueSnackbar({
-        message: `Gift Aid claim submission ${result.status === 'SENT' ? 'sent' : 'failed'}.`,
-        variant: result.status === 'SENT' ? 'success' : 'error',
+        message: `Gift Aid claim batch finalized at ${result.submittedAt}.`,
+        variant: 'success',
       });
       await refresh();
-    } catch (submitError) {
+    } catch (finalizeError) {
       await enqueueSnackbar({
-        message: submitError instanceof Error ? submitError.message : 'Unable to submit claim batch.',
+        message:
+          finalizeError instanceof Error
+            ? finalizeError.message
+            : 'Unable to finalize claim batch.',
         variant: 'error',
       });
     } finally {
-      setSubmitting(false);
+      setFinalizing(false);
+    }
+  };
+
+  const handleQueueSubmission = async () => {
+    if (!recordId) {
+      return;
+    }
+
+    setQueueingSubmission(true);
+    try {
+      const result = await queueGiftAidClaimSubmission({ batchId: recordId });
+      const message =
+        result.status === 'BUILT'
+          ? 'Gift Aid claim payload built and recorded.'
+          : result.status === 'SENT'
+            ? 'Gift Aid claim submission sent.'
+            : 'Gift Aid claim submission failed.';
+      await enqueueSnackbar({
+        message,
+        variant: result.status === 'FAILED' ? 'error' : 'success',
+      });
+      await refresh();
+    } catch (queueError) {
+      await enqueueSnackbar({
+        message:
+          queueError instanceof Error
+            ? queueError.message
+            : 'Unable to queue claim submission.',
+        variant: 'error',
+      });
+    } finally {
+      setQueueingSubmission(false);
     }
   };
 
@@ -112,6 +151,9 @@ const GiftAidClaimBatchRecord = () => {
 
   const batch = workspace.batch;
 
+  const canFinalize = batch.status === 'DRAFT';
+  const canQueueSubmission = batch.status === 'SUBMITTED';
+
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif', display: 'grid', gap: '16px' }}>
       <div style={cardStyle}>
@@ -125,13 +167,22 @@ const GiftAidClaimBatchRecord = () => {
           <div>Blocking issues: {batch.blockingIssueCount ?? 0}</div>
           <div>Submitted at: {batch.submittedAt ?? 'Not submitted'}</div>
         </div>
-        <button
-          style={buttonStyle}
-          onClick={() => void handleSubmit()}
-          disabled={submitting || batch.status === 'SUBMITTED'}
-        >
-          {submitting ? 'Submitting...' : 'Submit claim batch'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            style={buttonStyle}
+            onClick={() => void handleFinalize()}
+            disabled={finalizing || queueingSubmission || !canFinalize}
+          >
+            {finalizing ? 'Finalizing...' : 'Finalize claim'}
+          </button>
+          <button
+            style={buttonStyle}
+            onClick={() => void handleQueueSubmission()}
+            disabled={queueingSubmission || finalizing || !canQueueSubmission}
+          >
+            {queueingSubmission ? 'Queueing...' : 'Queue HMRC test submission'}
+          </button>
+        </div>
       </div>
 
       <div style={cardStyle}>
@@ -161,6 +212,12 @@ const GiftAidClaimBatchRecord = () => {
               <div style={textStyle}>
                 {submission.status} · {submission.environment} · {submission.completedAt ?? submission.submittedAt ?? 'Pending'}
               </div>
+              {submission.transactionId ? (
+                <div style={textStyle}>Transaction: {submission.transactionId}</div>
+              ) : null}
+              {submission.snapshotHash ? (
+                <div style={textStyle}>Snapshot hash: {submission.snapshotHash}</div>
+              ) : null}
               {submission.failureMessage ? <div style={textStyle}>Failure: {submission.failureMessage}</div> : null}
             </div>
           ))
