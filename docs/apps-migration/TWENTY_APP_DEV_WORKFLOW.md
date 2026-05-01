@@ -1,6 +1,6 @@
 # Twenty App Development Workflow
 
-Updated: 2026-04-26
+Updated: 2026-05-01
 Status: Working note
 Purpose: Capture the current repo-local understanding of how Twenty app development should be approached alongside our existing `dev-stack` environment.
 
@@ -22,7 +22,7 @@ This doc records only the repo-local workflow split and the implications for our
 
 Current local reference point:
 
-- `services/twenty-core` is now on `twenty-sdk` / `create-twenty-app` `2.1.0`
+- treat the checked-out `services/twenty-core` package versions as the local source of truth for the current SDK/tooling line under review, rather than hardcoding a version in this note
 - split imports (`twenty-sdk/define`, `twenty-sdk/front-component`, `twenty-sdk/ui`) should be treated as the current native app surface in source
 - `services/fundraising-service/scripts/setup-schema.mjs` should still be treated as a useful reference for fundraising metadata intent and field naming, but not as the source of truth for Twenty app metadata shape or current app-scaffold conventions
 
@@ -63,7 +63,47 @@ Use this for:
 
 This environment should not be assumed to be a valid target for Twenty app dev sync.
 
-## 3. Working Default
+## 3. Upgrade Posture
+
+Treat app upgrades as three separate concerns, because they do not move together automatically:
+
+- app package upgrade
+  - the app's `twenty-sdk` / `twenty-client-sdk` dependency versions and lockfile
+- app-dev runtime upgrade
+  - the local `twenty-app-dev` server image/container version managed by the Twenty CLI
+- workspace app sync / upgrade
+  - the actual installed app in the `localhost:2020` workspace and the behavior it exposes after sync
+
+Why this matters:
+
+- updating `package.json` alone does not prove the local app-dev server is running the intended version
+- pulling a Docker image alone does not prove the existing container was recreated from that image
+- a recreated server alone does not prove the app was re-synced successfully or that the target runtime behavior changed in practice
+
+Repo-local rule:
+
+- prefer Twenty's documented CLI/server flow for app-dev upgrades rather than hand-rolling Docker steps
+- avoid treating `docker pull twentycrm/twenty-app-dev:latest` as a sufficient upgrade procedure by itself
+- prefer explicit target versions over `latest` when validating behavior or preparing repeatable client-facing guidance
+
+Practical implication:
+
+- use the official Twenty docs/CLI as canonical for the exact commands
+- in repo-local notes and session summaries, record separately:
+  - the app package version line under test,
+  - the app-dev server version reported by the CLI/runtime,
+  - and whether the app successfully re-synced and exposed the behavior we were testing
+
+Current caution:
+
+- this upgrade posture should currently be treated as a working process, not yet a fully proven clean-baseline runbook
+- in local environments where Docker images or containers may already have been manipulated outside the Twenty CLI flow, treat results as potentially mixed-state until the package state, running server state, and app sync state have each been checked explicitly
+- until we have repeated this flow successfully from a clearly known baseline, document upgrade sessions as:
+  - docs-aligned,
+  - preferred,
+  - but not yet fully confirmed as the final repeatable client-environment process
+
+## 4. Working Default
 
 Current working default:
 
@@ -82,7 +122,7 @@ For migration spikes whose purpose is to test **what Twenty apps itself can supp
 
 If a proposed implementation would cross out of the Twenty app runtime into an existing repo service, that should be surfaced and agreed explicitly before building it.
 
-## 4. Why This Split Matters
+## 5. Why This Split Matters
 
 We hit a real boundary while testing app sync:
 
@@ -91,21 +131,26 @@ We hit a real boundary while testing app sync:
 
 That means "local Twenty is running" is not enough. The relevant question is whether it is the right kind of local environment for the app-dev flow.
 
-## 5. Current Practical Reading
+## 6. Current Practical Reading
 
 - The existing `dev-stack` Docker setup remains the right default for integrated local work.
 - The official Twenty app-dev flow should be treated as the right default for Twenty app development.
 - Full contributor/source setup is likely only needed when we have to inspect or debug Twenty itself, rather than just build against the supported app workflow.
+- For upgrades, the smallest durable repo-local proof should usually include:
+  - package version state,
+  - app-dev server version state,
+  - a successful app sync,
+  - and one targeted behavior check for the thing the upgrade was meant to unlock.
 
-## 6. Open Questions
+## 7. Open Questions
 
 These still need practical verification:
 
 - how cleanly the official app-dev server flow works in our day-to-day environment,
 - how much app work can remain isolated before it needs integration back into `dev-stack`,
-- and what the smallest durable repo-local guidance should be once this workflow settles.
+- and what the smallest durable repo-local upgrade checklist should be once this workflow settles.
 
-## 7. Current Observations
+## 8. Current Observations
 
 These are early working observations, not fixed rules.
 
@@ -127,7 +172,7 @@ These are early working observations, not fixed rules.
   - real app-server integration,
   - `global-setup.ts` running `appDevOnce`,
   - and assertions through `MetadataApiClient`, `CoreApiClient`, and app routes.
-- Current cost/risk: even focused `yarn vitest run <single-file>` executions can perform a full app uninstall/dev-sync/uninstall cycle. During the Stripe SDK 2.1 upgrade check, this path exited once with code `137` and then crashed the terminal/session on retry, so treat it as a heavier integration validation step rather than a cheap default check.
+- Current cost/risk: even focused `yarn vitest run <single-file>` executions can perform a full app uninstall/dev-sync/uninstall cycle. During the earlier Stripe SDK upgrade check, this path exited once with code `137` and then crashed the terminal/session on retry, so treat it as a heavier integration validation step rather than a cheap default check.
 - The scaffold/example guidance is shallow by default, so product apps should expect to add stronger route/workflow integration tests rather than relying only on install/schema checks.
 - Application/server variables look useful for:
   - feature visibility,

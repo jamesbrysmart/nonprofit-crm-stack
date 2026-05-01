@@ -54,13 +54,13 @@ When updating this doc in regular syncs, keep it lightweight:
 - In SaaS, an “edge layer” or vendor-managed runtime is still possible, but should be treated as a hedge or possible complement rather than a target shape. It may prove useful for some specialized integrations, or it may turn out to be compensating for app/runtime gaps that narrow over time.
 - Do not use service/runtime thinking here as a reason to slow the app-first migration posture. The main open question is boundary placement once the released Twenty apps framework can be tested properly.
 
-## Current Extensibility Surface (baseline verified 2026-04-26)
+## Current Extensibility Surface (baseline verified 2026-04-30)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `2.1.0` (current merged repo head is tagged `v2.1.0`).
+  - Current package version in-tree: `2.2.0` (current merged repo includes release tag `v2.2.0` and later `upstream/main` commits).
   - CLI command registry now includes: `remote add`, `remote list`, `remote remove`, `remote status`, `remote switch`, `build`, `deploy`, `dev`, `publish`, `install`, `typecheck`, `uninstall`, `add`, `logs`, `exec`, `catalog-sync`, plus `server start|status|logs|stop|reset`.
   - `dev` now explicitly supports `--once` for one-shot build/sync/typed-client generation without a long-running watcher.
   - Local server management now also supports a separate `--test` instance, which gives the app workflow a cleaner isolated integration-test story.
@@ -87,7 +87,7 @@ When updating this doc in regular syncs, keep it lightweight:
     - the front-component renderer explicitly aliases `twenty-sdk/ui` to Twenty UI for example builds, and the built-in front-component story set includes `twenty-ui-example.front-component`.
   - Practical read for app work: treat `twenty-sdk/ui` as the intended native UI surface for front components when the active app-tooling version supports it, but keep the current published app scaffold/version as the compatibility baseline until the version gap closes.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `2.1.0`.
+  - Current package version in-tree: `2.2.0`.
   - Scaffolder now defaults to a minimal app plus test scaffold; richer starting points are example-based (`--example hello-world`, `--example postcard`) rather than `--exhaustive` / `--minimal` mode selection.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
   - Default scaffold now includes application config, a default role, schema/integration test scaffolding with dedicated test-instance setup, and local CI/CD workflow templates; scaffolded source now uses the split SDK import paths (`twenty-sdk/define`, `twenty-sdk/front-component`) consistently.
@@ -123,10 +123,47 @@ When updating this doc in regular syncs, keep it lightweight:
 - **Gaps / limitations:**
   - The in-repo docs posture has moved forward materially: the app docs are now split into dedicated pages (`cli-and-testing`, `data-model`, `front-components`, `layout`, `logic-functions`), and the old top-level “apps are currently in alpha” warning is no longer present in `developers/extend/apps/getting-started.mdx`.
   - Marketplace/catalog and asset support are moving forward, but the practical install story is still not something we should treat as broadly production-proven for our use case without targeted validation.
-  - Route-trigger request events still expose parsed/normalized request bodies rather than preserved raw bytes, so Stripe-style strict webhook signature verification still looks like a likely platform gap.
+  - Route-trigger request events now include optional `rawBody` on `LogicFunctionEvent`, forwarded from Nest's preserved request body when available; this removes the previous likely platform gap for Stripe-style strict webhook signature verification.
   - REST permission resolution now explicitly accepts application auth context and uses the app default role, which is a positive signal for app-auth batch-path access, but we still need an end-to-end proof against the concrete batch routes we care about.
   - Recent SDK changes are now more about package shape, import boundaries, OAuth/registration plumbing, and install/validation ergonomics than about obvious new fundraising-specific platform primitives.
   - Docs/examples move quickly and can drift between releases; verify against `packages/twenty-docs` and `packages/twenty-sdk/README.md` after each upstream sync, especially around CLI/scaffolder command names.
+
+---
+
+## Latest Snapshot — 2026-04-30
+
+**Context:** Updated `services/twenty-core` from merge commit `09abddba2b` to merge commit `e813ed295d` (local merge on 2026-04-30; fetched upstream head: `85752f8a61`, includes release tag `v2.2.0`).
+
+**Highlights**
+
+1. **The Stripe-style raw-body blocker moved from "likely platform gap" to "available, now prove it in our flow"**
+   - Upstream commit `3db1af9a17` added optional `rawBody?: string` to `LogicFunctionEvent`.
+   - The route-trigger event builder now reads Nest's preserved `request.rawBody` and forwards it into the logic-function event.
+   - Upstream also updated the community GitHub webhook verifier to prefer `event.rawBody` and added tests that cover the end-to-end signature-verification path.
+   - This is the concrete platform primitive we were missing for strict HMAC verification; the old blanket warning in this doc is now stale.
+
+2. **This landed in the `v2.2.0` line, not only in an unreleased branch**
+   - `twenty-sdk` now reports `2.2.0`.
+   - `create-twenty-app` now reports `2.2.0`.
+   - The raw-body forwarding commit is contained by `v2.2.0`, and our local merge brought that release line plus a small number of later `upstream/main` commits into the fork.
+
+3. **The implementation shape is the one we actually need**
+   - `packages/twenty-server/src/engine/core-modules/logic-function/logic-function-trigger/triggers/route/utils/build-logic-function-event.util.ts` now forwards both parsed `body` and exact `rawBody`.
+   - `packages/twenty-shared/src/types/LogicFunctionEvent.ts` now models `rawBody?: string`.
+   - `packages/twenty-apps/community/github-connector/src/modules/github/connector/webhook-signature.ts` now prefers `event.rawBody`, while retaining fallback behavior for older runtimes.
+   - Practical read: Twenty route triggers now have the right payload shape for Stripe/GitHub-style signature verification, assuming the route declaration forwards the required signature headers.
+
+4. **Our posture should narrow from platform skepticism to app-level proof work**
+   - This does not by itself prove our exact Stripe intake flow works end-to-end inside the fundraising app.
+   - It does remove the strongest code-level reason to assume route-trigger webhook ingress was blocked.
+   - The next useful proof is now narrower: confirm our app route receives the signature header we need and verify Stripe signatures against `event.rawBody` in a real fundraising logic function.
+
+**Actions for our stack**
+
+1. Stop describing strict webhook signature verification as a likely missing Twenty capability.
+2. Keep webhook ingress in the readiness matrix as `amber`, but for app-proof reasons rather than missing raw-body support.
+3. Prioritize a focused Stripe route-trigger proof in `apps/fundraising/nonprofit-fundraising` using `event.rawBody` plus the forwarded Stripe signature header.
+4. Keep the batch/auth proof as the more important remaining platform-validation item after this fix.
 
 ---
 
@@ -577,7 +614,7 @@ Interpretation key:
 | --- | --- | --- | --- | --- | --- | --- |
 | Metadata lifecycle | We already provision full fundraising objects/fields/relations via `setup-schema.mjs`. | Move schema ownership from script to app manifests (`objects`, `fields`, `roles`, relation fields), keep IDs stable. | Full parity test for install/update/uninstall across the complete fundraising schema. | Manifest coverage expanded again (views/navigation/page layouts now modeled), but full fundraising schema lifecycle parity is still unproven. | `amber` | `services/fundraising-service/scripts/setup-schema.mjs`, `docs/METADATA_RUNBOOK.md`, `services/twenty-core/packages/twenty-shared/src/application/manifestType.ts`, `services/twenty-core/packages/twenty-shared/src/application/fieldManifestType.ts` |
 | Core API logic (gift/staging/batch) | Large existing domain code already in service classes (`gift.service.ts`, `gift-staging.service.ts`, batch services) plus pure logic modules. | Lift service methods into app logic-function handlers with thin adapters; keep most business logic files near-identical. | Throughput behavior under heavy concurrency when run as logic functions vs service processes; plus confirm app-auth can use core REST batch endpoints end-to-end. | REST permission resolution now explicitly handles application auth context via the app default role in `rest-api-base.handler`, so the remaining question is end-to-end behavior on the batch routes we actually need rather than obvious missing handler support. | `amber` | `services/fundraising-service/src/gift/gift.service.ts`, `services/fundraising-service/src/gift-staging/gift-staging.service.ts`, `services/fundraising-service/src/gift-batch/gift-batch-processing.service.ts`, `services/fundraising-service/src/gift-batch/gift-batch-donor-match.service.ts`, `services/twenty-core/packages/twenty-server/src/engine/api/rest/core/controllers/rest-api-core.controller.ts`, `services/twenty-core/packages/twenty-server/src/engine/api/rest/core/handlers/rest-api-base.handler.ts`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/auth/strategies/jwt.auth.strategy.ts` |
-| Webhook & route ingress | Existing Stripe/GoCardless handlers already isolate ingestion logic and mapping. | Re-host webhook endpoints as route-triggered logic functions, forwarding only needed signature headers. | Raw-body fidelity for strict signature validation (Stripe-style) needs an explicit spike in route-trigger payload handling. | Current route-trigger event builder normalizes/parses body and does not expose preserved raw bytes in `LogicFunctionEvent`; treat strict signature verification as a likely real gap until route payload support changes. | `amber` | `services/fundraising-service/src/stripe/stripe-webhook.controller.ts`, `services/fundraising-service/src/stripe/stripe-webhook.service.ts`, `services/twenty-core/packages/twenty-shared/src/types/LogicFunctionEvent.ts`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-trigger/triggers/route/utils/build-logic-function-event.util.ts` |
+| Webhook & route ingress | Existing Stripe/GoCardless handlers already isolate ingestion logic and mapping. | Re-host webhook endpoints as route-triggered logic functions, forwarding only needed signature headers. | End-to-end proof for our exact Stripe route flow, including required forwarded signature headers and verification against `event.rawBody`. | Route-trigger events now expose optional `rawBody` in `LogicFunctionEvent`, so the previous likely raw-body platform gap has been removed; the remaining question is app-level proof and route/header wiring. | `amber` | `services/fundraising-service/src/stripe/stripe-webhook.controller.ts`, `services/fundraising-service/src/stripe/stripe-webhook.service.ts`, `services/twenty-core/packages/twenty-shared/src/types/LogicFunctionEvent.ts`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-trigger/triggers/route/utils/build-logic-function-event.util.ts`, `services/twenty-core/packages/twenty-apps/community/github-connector/src/modules/github/connector/webhook-signature.ts` |
 | Runtime/dependencies | Existing app precedent already ships non-trivial code (`apps/core/rollup-engine`); platform supports dependency layers and configurable function timeouts. | Mirror rollup-engine pattern for fundraising domains; package shared domain modules and runtime config as app variables. | Need empirical limits profile for longest batch paths and worst-case retries. | Function timeout or dependency packaging limits force major logic redesign. | `green` | `apps/core/rollup-engine/serverlessFunctions/calculaterollups/src/index.ts`, `services/twenty-core/packages/twenty-server/src/engine/metadata-modules/logic-function/logic-function.entity.ts`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/lambda.driver.ts` |
 | UI surface | Existing UI is a service-hosted Vite admin app; Twenty front components and page-layout widgets are actively evolving. | Phase migration: API/runtime first; migrate UI slices to front components where ergonomics are proven. | Multi-screen fundraising admin UX parity (navigation/layout patterns) needs a concrete spike, not assumption. | Signal improved: app manifests/SDK now include views + navigation items + page layouts, but workflow-level UX parity is still unproven. | `amber` | `services/fundraising-service/src/main.ts`, `services/twenty-core/packages/twenty-docs/developers/extend/apps/building.mdx`, `services/twenty-core/packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/front-component-configuration.dto.ts` |
 | Auth/security/compliance | Current service auth is middleware-based; app runtime issues scoped short-lived app tokens with role permissions and supports secret app variables. | Use app-role least-privilege model for logic functions; keep webhook auth/signature validation explicit per route. | Operational pattern for secret rotation + webhook auth hardening must be codified in runbooks. | App token generation/renewal surface is more explicit in SDK/server code, and REST permission resolution now recognizes application auth context, but our operational hardening model is still not codified. | `amber` | `services/fundraising-service/src/auth/auth.utils.ts`, `services/fundraising-service/src/auth/fundraising-auth.middleware.ts`, `services/twenty-core/packages/twenty-docs/developers/extend/apps/building.mdx`, `services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-executor/logic-function-executor.service.ts` |
@@ -592,9 +629,8 @@ Notes for next reviews:
 
 Use this classification to avoid mixing platform gaps with our own migration work.
 
-- **Likely actual platform gaps (current code evidence)**
-  - **Route-trigger raw-body fidelity** for Stripe-style signature verification appears unavailable in current `LogicFunctionEvent` construction (parsed/normalized body, no raw bytes exposed).
 - **Needs proof (not proven platform gaps yet)**
+  - Route-trigger webhook ingress for our exact Stripe flow, including forwarded signature headers and verification against `event.rawBody`.
   - Full fundraising metadata lifecycle parity (install/update/uninstall) across our complete schema.
   - Batch throughput/retry parity under our production-style workloads, including end-to-end proof that app-authenticated logic functions can use the concrete core REST batch paths we need.
   - UI/navigation/page-layout ergonomics for selected fundraising workflows (if/when we choose to test UX migration slices).
@@ -611,7 +647,6 @@ Use this classification to avoid mixing platform gaps with our own migration wor
 
 ### What would count as truly missing (not just “not migrated yet”)?
 
-- Inability to verify webhook signatures safely with route-trigger payload shape.
 - Inability for app-authenticated logic functions to use required high-throughput core APIs (for example `/rest/batch/*`) with app-role permissions.
 - Inability to represent critical fundraising UI workflows in supported front-component/page-layout surfaces.
 - Runtime/dependency limits that force a fundamental redesign of existing batch/ingestion logic.

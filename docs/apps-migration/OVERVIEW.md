@@ -98,6 +98,37 @@ For the first pilot-app implementation pass, the practical posture should be:
 - careful metadata decisions alongside both,
 - and feature polish only after the core workflow model and boundaries are sound.
 
+One cross-cutting metadata question needs to stay visible during migration:
+
+- when should a concept become stored metadata,
+- when should it remain derived from other facts,
+- and how do we keep that answer consistent across features rather than letting similar concepts drift into different patterns by accident?
+
+Current leaning:
+
+- prefer to minimize metadata fields unless they are clearly justified by real operational need,
+- especially where a field would otherwise become a second stored truth for something that may be better derived from existing facts.
+
+This is not yet a locked rule. It is a migration-wide design question we should keep revisiting as more slices are implemented and tested.
+
+Related runtime question:
+
+- how much operational meaning can remain derived at read time,
+- when should app logic materialize or coordinate that meaning,
+- and how should app-owned interpretations stay current when records can also be updated through native Twenty surfaces or other integration paths?
+
+This is not just a metadata-shape issue.
+
+It is also an app-runtime architecture question about:
+
+- where responsibility sits between front components, logic functions, and native Twenty record editing,
+- what guarantees we expect from pilot behavior versus broader production rollout,
+- and how much API pressure or reconciliation work a leaner model actually creates in practice.
+
+The current working note for that topic is:
+
+- [`APP_RUNTIME_ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
+
 ### 5.1 Twenty App Workflow Source Of Truth
 
 For app scaffolding, setup, build, and dev workflow, treat the official Twenty docs as canonical:
@@ -133,8 +164,14 @@ This doc should not duplicate step-by-step app setup instructions unless we inte
   - defines migration order, dependencies, and validation gates.
 - [`PILOT_APP_IMPLEMENTATION_PLAN.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
   - defines the phased production-quality implementation plan for the first fundraising pilot app.
+- [`MIGRATION_WORKING_PATTERNS.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
+  - captures provisional working patterns from implementation sessions and should be updated as we learn more or find better approaches.
+- [`UI_COMPONENTS_CATALOG.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/UI_COMPONENTS_CATALOG.md)
+  - catalogs current UI components, blocks, and reuse candidates so similar functionality is easier to spot before we build it twice.
 - [`TWENTY_APP_DEV_WORKFLOW.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
   - captures the current repo-local workflow split between Twenty app development and the integrated `dev-stack` environment.
+- [`APP_RUNTIME_ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
+  - exploratory runtime-boundary note for stored-vs-derived decisions, app-to-Twenty handover, and pilot-vs-production architecture questions.
 - [`ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/ARCHITECTURE.md)
   - defines shared UI evaluation rules and current defaults.
 - [`TWENTY_APPS.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/TWENTY_APPS.md)

@@ -95,6 +95,15 @@ Reference:
 - treat Twenty metadata as durable fact storage:
   - store the facts the platform and operators need to persist,
   - but derive operator-facing meaning in TypeScript unless that meaning genuinely needs to become first-class metadata.
+- keep stored-metadata vs derived-state as an explicit cross-cutting question:
+  - we do not want similar concepts handled differently across features without justification.
+  - current leaning is to minimize metadata fields unless they are clearly justified by durable operational need.
+  - this especially matters where a candidate field might become a second stored truth for something that could instead be derived from existing facts, lifecycle state, or evidence.
+  - examples now under review include:
+    - `ready now` / processability style concepts,
+    - Gift Aid operational outcome on final gifts,
+    - health / exception signals in recurring and reconciliation.
+  - revisit this question deliberately as slices mature rather than letting one-off implementation convenience decide it feature by feature.
 - treat app-local action modules as application services:
   - let them coordinate route calls, persistence, and workflow transitions,
   - rather than scattering business rules across mutation payloads in multiple components.
@@ -156,7 +165,7 @@ These are not blockers, but they still need deliberate handling.
 
 - batch execution lifecycle still needs disciplined implementation even though the bounded executor shape is credible,
 - outbound integration/submission boundaries still need careful treatment,
-- and route raw-body fidelity remains a specific concern for some webhook classes.
+- and provider-route/runtime validation should still be checked in the active toolchain when a workflow depends on specific webhook semantics such as signature verification.
 
 ### 5.5 Native UI adoption
 
@@ -297,6 +306,31 @@ Current experiment direction:
   - treat native `FIELDS` / `FIELD` widgets and smaller focused front-components as the first delivery path,
   - use custom UI where the workflow is genuinely product-specific, such as review-state derivation or donor-match behavior,
   - and avoid collapsing the whole review surface back into one opaque custom widget unless native composition proves insufficient
+- Further refinement from runtime testing:
+  - the first tab on the record page behaves more like a `Home` / landing surface than a neutral full-width working tab,
+  - so it should stay lean and signposting-led rather than carrying the densest review/edit surface by default
+  - in practice this means:
+    - concise review state,
+    - donor-match summary / entry point,
+    - key actions,
+    - light batch/context cues,
+    - and signposts to richer sections
+- `GRID` is still useful, but its value is context-sensitive:
+  - in the drawer, stacked narrow widgets can feel like components-inside-components and use space poorly,
+  - in the full record page, extra width makes `GRID` more valuable for side-by-side blocks
+  - this makes `GRID` a better fit for wider secondary tabs or full-record contexts than for a dense drawer-first landing tab
+- Product direction sharpened by this:
+  - think in terms of configurable review building blocks rather than a single universal review surface
+  - examples include:
+    - `Review state`
+    - `Donor match`
+    - `Core gift fields`
+    - `Processing`
+    - `Gift Aid`
+    - `Recurring donation`
+    - `Provider evidence`
+    - `Failure / diagnostics`
+  - the main design question becomes the default assembly of those blocks, not a one-size-fits-all layout for every organisation
 
 ### Slice 4: Batch review and bounded processing
 

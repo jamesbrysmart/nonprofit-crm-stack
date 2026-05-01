@@ -17,6 +17,15 @@ Use the docs below as the canonical source of truth; avoid “plausible” comma
 - Integrations (inbound/outbound flows): `docs/INTEGRATIONS.md`
 - Broader product context/specs: `docs/PROJECT_CONTEXT.md` and relevant `docs/features/*`
 
+When working on fundraising-to-Twenty migration questions, also check:
+
+- `docs/apps-migration/INDEX.md`
+- `docs/apps-migration/OVERVIEW.md`
+- `docs/apps-migration/MIGRATION_WORKING_PATTERNS.md`
+- `docs/apps-migration/UI_COMPONENTS_CATALOG.md`
+
+Treat those migration notes as evolving working references, not locked rules.
+
 ## Defaults
 - Prefer small, reversible changes. If a proposal affects architecture, wiring, or workflows, write a short plan first.
 - No workarounds or hacky fixes by default. If something fails, stop and surface the root cause. Only propose a workaround if it’s truly the least-cost path and you’ve checked with the user first. MVP status doesn’t justify accruing avoidable debt.

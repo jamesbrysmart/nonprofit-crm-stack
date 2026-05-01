@@ -346,6 +346,11 @@ Implication for Stage 1:
 - if we require standard Stripe webhook signature verification, we should not yet treat a pure in-app route handler as production-ready without an additional raw-body-capable path or other validated platform support
 - the app-first experiment remains valuable, but the security boundary is now the main decision point rather than transport or staging-model fit
 
+Status note:
+
+- this conclusion was correct for the `v2.1.x` app-dev/runtime path under test at that time
+- it was later superseded by the `2026-05-01` `v2.2.0` validation recorded below
+
 ### 2026-04-26 local runtime/codebase verification
 
 What we did:
@@ -368,6 +373,11 @@ Current interpretation:
   - generic app-owned route triggers, which currently expose parsed bodies
   - Twenty's internal Stripe billing webhook path, which has raw-body access
 - unless there is an undocumented or newly-added app-route mode, the current released app trigger surface does not appear to offer the raw-body semantics Stripe expects for normal webhook verification
+
+Status note:
+
+- this interpretation matched the `v2.1.x` runtime and route-trigger code path we inspected at the time
+- it should not be treated as the current final conclusion after the `v2.2.0` runtime validation recorded below
 
 ### 2026-04-26 Stage 1 one-off shape definition
 
@@ -843,6 +853,105 @@ Validation:
 - `yarn lint` passed
 - `yarn test:unit` passed
 
+### 2026-05-01 Twenty app-dev v2.2.0 raw-body validation
+
+What we did:
+
+- treated the local environment as potentially mixed because `docker pull twentycrm/twenty-app-dev:latest` had previously been run outside the Twenty CLI flow
+- confirmed the running app-dev server was still `v2.1.0` via `yarn twenty server status`
+- attempted `yarn twenty server upgrade 2.2.0`
+- observed that the CLI maps that directly to `twentycrm/twenty-app-dev:2.2.0`, and the registry did not publish that image tag
+- ran the docs-aligned CLI upgrade path `yarn twenty server upgrade`, which recreated the `twenty-app-dev` container from `twentycrm/twenty-app-dev:latest`
+- confirmed the recreated app-dev server reported `Version: v2.2.0` via `yarn twenty server status`
+- re-synced the fundraising app cleanly with `yarn twenty dev --once`
+- ran a real Stripe CLI forwarding session against `http://localhost:2020/s/stripe/route-probe`
+- set `STRIPE_WEBHOOK_SECRET` to the active signing secret from that live `stripe listen` session
+- watched structured route logs with `yarn twenty logs`
+
+What we observed:
+
+- the app-dev runtime on `localhost:2020` was definitively upgraded to `v2.2.0`
+- the synced app continued to expose the probe route successfully after upgrade
+- real forwarded Stripe events now arrived with:
+  - `hasRawBody: true`
+  - `verificationMethod: event-raw-body`
+  - `verificationMatched: true`
+  - `verificationError: null`
+- parsed event access still worked at the same time:
+  - `bodyType: object`
+  - `bodyKeys` included top-level Stripe event fields
+  - `stripeEventId`, `stripeEventType`, and `stripeObjectType` were populated
+- this was observed across multiple Stripe events, including:
+  - `product.created`
+  - `price.created`
+  - `charge.succeeded`
+  - `checkout.session.completed`
+  - `payment_intent.succeeded`
+  - `payment_intent.created`
+  - `charge.updated`
+
+Representative result for the event type we care about most:
+
+- `stripeEventType: checkout.session.completed`
+- `stripeObjectType: checkout.session`
+- `verificationMatched: true`
+- `verificationError: null`
+
+What we learned:
+
+- the `v2.2.0` app-dev runtime clears the earlier raw-body/signature-verification platform boundary for this route-trigger path
+- a Twenty app route can now:
+  - receive real Stripe webhooks,
+  - preserve `rawBody`,
+  - validate the standard Stripe signature with the live signing secret,
+  - and still expose parsed event data to the handler
+- the old `v2.1.x` conclusion should now be treated as historical rather than current
+
+Upgrade-process learning:
+
+- `docker pull twentycrm/twenty-app-dev:latest` alone is not a sufficient upgrade signal
+- `twenty-sdk` / `twenty-client-sdk` package versions do not imply a matching published `twenty-app-dev:<same-version>` image tag
+- the docs-aligned CLI path that actually worked here was:
+  - `yarn twenty server upgrade`
+  - `yarn twenty server status`
+  - `yarn twenty dev --once`
+- this should still be treated as a working, docs-aligned process rather than a fully proven clean-baseline runbook, because the starting local state was not guaranteed to be clean
+
+### 2026-05-01 Promoted public Stripe webhook route validation
+
+What we changed:
+
+- added a new production-shaped public Stripe webhook route at `/stripe/webhook`
+- kept `/stripe/route-probe` as a diagnostic/dev route only
+- moved Stripe signature verification and parsed-event handoff into the public route itself
+- kept routing on the existing `routeTrustedStripeEvent(...)` path so existing idempotency and staging behavior remained unchanged
+
+What we validated:
+
+- ran a real Stripe test checkout / Payment Link flow rather than relying only on `stripe trigger`
+- forwarded Stripe to `http://localhost:2020/s/stripe/webhook`
+- set `STRIPE_WEBHOOK_SECRET` from the active `stripe listen` session
+- watched the promoted route with `yarn twenty logs`
+
+What we observed:
+
+- Stripe delivered multiple events successfully to `/s/stripe/webhook` with `201` responses
+- non-target Stripe events still flowed through safely and were logged as:
+  - `charge.succeeded` -> `IGNORED`
+  - `payment_intent.created` -> `IGNORED`
+  - `payment_intent.succeeded` -> `IGNORED`
+  - `charge.updated` -> `IGNORED`
+- the real checkout completion event was received and processed as:
+  - `eventType: checkout.session.completed`
+  - `action: CREATE_ONE_OFF_GIFT_STAGING`
+
+What we learned:
+
+- the promoted public route is now the validated path, not just the probe
+- real Stripe webhook delivery, signature verification, parsed event access, and staging handoff all worked together on the `v2.2.0` app-dev runtime
+- the production-shaped route now closes the earlier split where verification was proven in a probe route but processing happened through a separately trusted parsed-body route
+- unsupported Stripe events are safely ignored by the existing router after verification, while the supported checkout completion event reaches the expected one-off staging path
+
 ## 5. Decisions Log
 
 Capture only concrete working decisions here.
@@ -859,7 +968,6 @@ Capture only concrete working decisions here.
 
 ## 6. Open Questions
 
-- Does the released Twenty app/runtime surface support the required Stripe signature-validation shape cleanly?
 - Do we need a first-class intake-event record in Stage 1 or Stage 2, or is staged-row evidence enough initially?
 - Which provider/source fields belong on `giftStaging` as durable fact versus later derived or audit-only context?
 - What is the right earliest point to test Stripe payout representation through `giftPayout` without derailing Stage 1?
