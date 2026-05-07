@@ -5,7 +5,7 @@ export type BatchStatus =
   | 'PROCESSED_WITH_ISSUES';
 
 export type GiftStagingProcessingStatus =
-  | 'NOT_READY'
+  | 'NOT_PROCESSED'
   | 'PROCESSED'
   | 'PROCESS_FAILED';
 
@@ -56,8 +56,11 @@ export type BatchProcessingRow = {
   donorResolutionState: string | null;
   donor: {
     id: string;
+    emails?: {
+      primaryEmail?: string | null;
+      additionalEmails?: string[] | null;
+    } | null;
   } | null;
-  hasCoreGiftIssue: boolean | null;
   isReadyForProcessing: boolean | null;
   processingStatus: string | null;
   errorDetail: string | null;

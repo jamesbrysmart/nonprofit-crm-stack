@@ -63,9 +63,6 @@ export const GIFT_STAGING_DONOR_MAILING_ADDRESS_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_DONOR_RESOLUTION_STATE_FIELD_UNIVERSAL_IDENTIFIER =
   '0d638f6a-901f-4974-85f6-bfda935c17f9';
 
-export const GIFT_STAGING_HAS_CORE_GIFT_ISSUE_FIELD_UNIVERSAL_IDENTIFIER =
-  '51744ec6-df52-42b5-8534-b29e6882c4d3';
-
 export const GIFT_STAGING_IS_READY_FOR_PROCESSING_FIELD_UNIVERSAL_IDENTIFIER =
   'cb3d34bd-6b3d-4b33-85c0-db4db0be35a4';
 
@@ -357,16 +354,6 @@ export default defineObject({
     },
     {
       universalIdentifier:
-        GIFT_STAGING_HAS_CORE_GIFT_ISSUE_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.BOOLEAN,
-      name: 'hasCoreGiftIssue',
-      label: 'Has core gift issue',
-      description: 'Whether core gift facts still block this row',
-      icon: 'IconAlertCircle',
-      defaultValue: false,
-    },
-    {
-      universalIdentifier:
         GIFT_STAGING_IS_READY_FOR_PROCESSING_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.BOOLEAN,
       name: 'isReadyForProcessing',
@@ -381,11 +368,11 @@ export default defineObject({
       name: 'processingStatus',
       label: 'Processing status',
       icon: 'IconArrowsShuffle',
-      defaultValue: "'NOT_READY'",
+      defaultValue: "'NOT_PROCESSED'",
       options: [
         {
           id: 'd4d6b764-d8d2-44b4-bd50-cdb28b9a7fe0',
-          value: 'NOT_READY',
+          value: 'NOT_PROCESSED',
           label: 'Not processed',
           position: 0,
           color: 'gray',

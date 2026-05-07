@@ -1,107 +1,87 @@
-import type { CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useRecurringAgreementReviewRecord } from 'src/recurring/use-recurring-agreement-review-record';
+import {
+  badgeStyle,
+  compactMetaGridStyle,
+  compactMetaItemStyle,
+  compactValueStyle,
+  compactWidgetRootStyle,
+  labelStyle,
+  secondaryTextStyle,
+  sectionHeaderStyle,
+} from 'src/front-components/gift-staging-review-ui';
 
 export const RECURRING_AGREEMENT_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '57794d35-c598-44fc-a3dd-d80591d077cb';
 
-const cardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
-  borderRadius: '10px',
-  padding: '16px',
-  display: 'grid',
-  gap: '10px',
-  background: '#ffffff',
-};
-
-const labelStyle: CSSProperties = {
-  fontSize: '12px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: '#57606a',
-};
-
-const valueStyle: CSSProperties = {
-  fontSize: '20px',
-  fontWeight: 600,
-  color: '#1f2328',
-};
-
-const textStyle: CSSProperties = {
-  fontSize: '13px',
-  color: '#57606a',
-  lineHeight: 1.5,
-};
-
-const getHealthStyle = (state: string): CSSProperties => {
+const getHealthTone = (state: string) => {
   switch (state) {
     case 'ON_TRACK':
-      return { background: '#eef9f0', color: '#1a7f37' };
+      return 'success' as const;
     case 'OVERDUE':
-      return { background: '#fff8c5', color: '#7c5d00' };
     case 'DELINQUENT':
-      return { background: '#fff5f5', color: '#8a2d2d' };
+      return 'warning' as const;
     default:
-      return { background: '#f6f8fa', color: '#57606a' };
+      return 'neutral' as const;
   }
+};
+
+const formatEnumLabel = (value: string) => {
+  return value
+    .toLowerCase()
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 };
 
 const RecurringAgreementState = () => {
   const { record, loading, error } = useRecurringAgreementReviewRecord();
 
   if (loading) {
-    return <div style={textStyle}>Loading recurring state...</div>;
+    return <div style={secondaryTextStyle}>Loading recurring state...</div>;
   }
 
   if (error) {
-    return <div style={textStyle}>{error}</div>;
+    return <div style={secondaryTextStyle}>{error}</div>;
   }
 
   if (!record) {
-    return <div style={textStyle}>Recurring agreement not found.</div>;
+    return <div style={secondaryTextStyle}>Recurring agreement not found.</div>;
   }
 
   return (
-    <div style={cardStyle}>
-      <div style={labelStyle}>Recurring state</div>
-      <div style={valueStyle}>{record.name}</div>
-      <div
-        style={{
-          borderRadius: '999px',
-          padding: '4px 10px',
-          fontSize: '12px',
-          fontWeight: 600,
-          width: 'fit-content',
-          ...getHealthStyle(record.health.state),
-        }}
-      >
-        {record.health.label}
+    <div style={compactWidgetRootStyle}>
+      <div style={sectionHeaderStyle}>
+        <div style={{ minWidth: 0 }}>
+          <span style={badgeStyle(getHealthTone(record.health.state))}>
+            {record.health.label}
+          </span>
+        </div>
       </div>
-      <div style={textStyle}>{record.health.message}</div>
-      <div
-        style={{
-          display: 'grid',
-          gap: '10px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        }}
-      >
-        <div>
+
+      <div style={compactValueStyle}>{record.name}</div>
+      <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+        {record.health.message}
+      </div>
+
+      <div style={compactMetaGridStyle}>
+        <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Status</div>
-          <div style={textStyle}>{record.status}</div>
+          <div style={secondaryTextStyle}>{formatEnumLabel(record.status)}</div>
         </div>
-        <div>
-          <div style={labelStyle}>Next expected</div>
-          <div style={textStyle}>{record.nextExpectedAt ?? 'Not set'}</div>
+        <div style={compactMetaItemStyle}>
+          <div style={labelStyle}>Next due</div>
+          <div style={secondaryTextStyle}>{record.nextExpectedAt ?? 'Not set'}</div>
         </div>
-        <div>
+        <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Cadence</div>
-          <div style={textStyle}>
-            {record.intervalCount} x {record.cadence}
+          <div style={secondaryTextStyle}>
+            {record.intervalCount} x {formatEnumLabel(record.cadence)}
           </div>
         </div>
-        <div>
+        <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Amount</div>
-          <div style={textStyle}>{record.amountLabel}</div>
+          <div style={secondaryTextStyle}>{record.amountLabel}</div>
         </div>
       </div>
     </div>

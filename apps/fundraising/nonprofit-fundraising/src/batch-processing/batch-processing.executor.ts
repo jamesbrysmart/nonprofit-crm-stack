@@ -37,7 +37,7 @@ type FailedWriteback = {
 
 type NotReadyWriteback = {
   id: string;
-  processingStatus: 'NOT_READY';
+  processingStatus: 'NOT_PROCESSED';
   errorDetail: null;
 };
 
@@ -126,6 +126,9 @@ const requestTwentyRest = async <T>({
 
 const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
+
+const normalizeEmail = (value: string | null | undefined) =>
+  normalizeString(value).toLowerCase();
 
 const normalizeProviderForRecurringAgreement = (
   value: string | null | undefined,
@@ -271,6 +274,87 @@ const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
         }
       : {}),
   };
+};
+
+type DonorEmailsUpdate = {
+  donorId: string;
+  emails: {
+    primaryEmail: string | null;
+    additionalEmails: string[] | null;
+  };
+};
+
+export const deriveLinkedDonorEmailUpdate = (
+  row: BatchProcessingRow,
+): DonorEmailsUpdate | null => {
+  const donorId = normalizeString(row.donor?.id);
+  const stagedEmail = normalizeString(row.donorEmail);
+  const normalizedStagedEmail = normalizeEmail(row.donorEmail);
+
+  if (donorId === '' || stagedEmail === '' || normalizedStagedEmail === '') {
+    return null;
+  }
+
+  const primaryEmail = normalizeString(row.donor?.emails?.primaryEmail);
+  const additionalEmails = Array.isArray(row.donor?.emails?.additionalEmails)
+    ? row.donor.emails.additionalEmails
+        .map((email) => normalizeString(email))
+        .filter((email) => email !== '')
+    : [];
+
+  const knownEmails = new Set(
+    [primaryEmail, ...additionalEmails]
+      .map((email) => normalizeEmail(email))
+      .filter((email) => email !== ''),
+  );
+
+  if (knownEmails.has(normalizedStagedEmail)) {
+    return null;
+  }
+
+  return {
+    donorId,
+    emails: {
+      primaryEmail: primaryEmail === '' ? null : primaryEmail,
+      additionalEmails:
+        additionalEmails.length > 0
+          ? [...additionalEmails, stagedEmail]
+          : [stagedEmail],
+    },
+  };
+};
+
+const applyLinkedDonorEmailUpdates = async (
+  client: CoreApiClient,
+  rows: BatchProcessingRow[],
+) => {
+  for (const row of rows) {
+    const update = deriveLinkedDonorEmailUpdate(row);
+
+    if (!update) {
+      continue;
+    }
+
+    try {
+      await client.mutation({
+        updatePerson: {
+          __args: {
+            id: update.donorId,
+            data: {
+              emails: update.emails,
+            },
+          },
+          id: true,
+        },
+      } as any);
+    } catch (error) {
+      console.warn(
+        'Non-blocking donor email enrichment failed',
+        row.id,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
 };
 
 const ensurePersonForRowFallback = async (
@@ -551,6 +635,8 @@ const createGiftViaRowFallback = async (
     );
   }
 
+  await applyLinkedDonorEmailUpdates(client, [row]);
+
   return {
     id: row.id,
     committedGiftId: giftId,
@@ -603,6 +689,12 @@ const createBatchGiftChunk = async (
     body: entries.map((entry) => entry.payload),
   });
   const giftIds = parseCreatedGiftIds(response, entries.length);
+
+  const client = new CoreApiClient();
+  await applyLinkedDonorEmailUpdates(
+    client,
+    entries.map((entry) => entry.row),
+  );
 
   return entries.map((entry, index) => ({
     id: entry.row.id,
@@ -947,7 +1039,7 @@ export const buildNotReadyWritebacks = (
     .filter((row) => row.processingStatus !== 'PROCESS_FAILED')
     .map((row) => ({
       id: row.id,
-      processingStatus: 'NOT_READY',
+      processingStatus: 'NOT_PROCESSED',
       errorDetail: null,
     }));
 };
@@ -965,7 +1057,6 @@ export const persistBatchRowWritebacks = async (
 export const canProcessBatchRow = (row: BatchProcessingRow) => {
   return isGiftStagingProcessable({
     processingStatus: row.processingStatus,
-    hasCoreGiftIssue: row.hasCoreGiftIssue,
     donorResolutionState: row.donorResolutionState,
     donorFirstName: row.donorFirstName,
     donorLastName: row.donorLastName,

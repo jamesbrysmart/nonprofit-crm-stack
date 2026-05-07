@@ -7,11 +7,8 @@ import { GIFT_STAGING_DONOR_REVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '
 import { GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-staging-processing.front-component';
 import { GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-staging-record.front-component';
 import {
-  GIFT_STAGING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_ERROR_DETAIL_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_STAGING_GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_STAGING_INTAKE_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROCESSING_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROVIDER_AGREEMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
@@ -35,17 +32,16 @@ export default definePageLayout({
   objectUniversalIdentifier: GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
   tabs: [
     {
-      universalIdentifier: 'ce4206be-b253-4026-8a48-6cbdf0d4c0b8',
+      universalIdentifier: '3c663d20-3dfd-4679-abe4-30eaa09d804e',
       title: 'Review',
       position: 0,
       icon: 'IconChecklist',
-      layoutMode: PageLayoutTabLayoutMode.GRID,
+      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
-          universalIdentifier: 'ce9f5c9f-6922-4385-9e2f-7c0b4ed5fa6c',
+          universalIdentifier: 'a9d5a841-da99-4b89-90f3-e6365896b555',
           title: 'Gift staging review',
           type: 'FRONT_COMPONENT',
-          gridPosition: { row: 0, ...FULL_WIDTH, rowSpan: 4 },
           configuration: {
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
@@ -53,10 +49,9 @@ export default definePageLayout({
           },
         },
         {
-          universalIdentifier: '7d2bc20b-c2f6-473e-8a31-7d0523f9c351',
+          universalIdentifier: 'c5a25f61-3881-4d15-919e-1046259683db',
           title: 'Donor review',
           type: 'FRONT_COMPONENT',
-          gridPosition: { row: 4, ...LEFT, rowSpan: 7 },
           configuration: {
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
@@ -64,99 +59,13 @@ export default definePageLayout({
           },
         },
         {
-          universalIdentifier: 'e8ff9d2a-e87a-4e06-a8eb-8d71fb8dcbf8',
+          universalIdentifier: '2922e7de-d1fb-4f9e-96cc-491042ba0151',
           title: 'Processing',
           type: 'FRONT_COMPONENT',
-          gridPosition: { row: 4, ...RIGHT, rowSpan: 7 },
           configuration: {
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
               GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '71e65cc1-8a2d-4ed0-a7ab-62c8fbd8df7c',
-          title: 'Amount',
-          type: 'FIELD',
-          gridPosition: { row: 11, ...THIRD_LEFT, rowSpan: 2 },
-          configuration: {
-            configurationType: 'FIELD',
-            fieldMetadataId: GIFT_STAGING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
-            fieldDisplayMode: 'FIELD',
-          },
-        },
-        {
-          universalIdentifier: '2851b9a9-e53f-4972-9060-acf8974fbdaa',
-          title: 'Gift date',
-          type: 'FIELD',
-          gridPosition: { row: 11, ...THIRD_MIDDLE, rowSpan: 2 },
-          configuration: {
-            configurationType: 'FIELD',
-            fieldMetadataId: GIFT_STAGING_GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
-            fieldDisplayMode: 'FIELD',
-          },
-        },
-        {
-          universalIdentifier: '79f882b2-98e3-46da-bc28-f8685fc956bb',
-          title: 'Intake source',
-          type: 'FIELD',
-          gridPosition: { row: 11, ...THIRD_RIGHT, rowSpan: 2 },
-          configuration: {
-            configurationType: 'FIELD',
-            fieldMetadataId: GIFT_STAGING_INTAKE_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
-            fieldDisplayMode: 'FIELD',
-          },
-        },
-      ],
-    },
-    {
-      universalIdentifier: '2d95f6f3-1125-4515-b1a9-6dfcc5b1ec97',
-      title: 'Review v2',
-      position: 10,
-      icon: 'IconChecklist',
-      layoutMode: PageLayoutTabLayoutMode.GRID,
-      widgets: [
-        {
-          universalIdentifier: 'd8cb2cef-8406-4aa6-bb09-63c45d95f19d',
-          title: 'Gift staging review',
-          type: 'FRONT_COMPONENT',
-          gridPosition: { row: 0, ...FULL_WIDTH, rowSpan: 4 },
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: 'd1c12c60-eeef-48ac-a120-a0387a07e097',
-          title: 'Donor review',
-          type: 'FRONT_COMPONENT',
-          gridPosition: { row: 4, ...LEFT, rowSpan: 7 },
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_STAGING_DONOR_REVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '4f3149cc-a22c-4fbb-892e-1dc5df13ec2a',
-          title: 'Processing',
-          type: 'FRONT_COMPONENT',
-          gridPosition: { row: 4, ...RIGHT, rowSpan: 7 },
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: 'ec4c2f13-af8f-4554-afeb-536d95fa97c2',
-          title: 'Core gift fields',
-          type: 'FIELDS',
-          gridPosition: { row: 11, ...FULL_WIDTH, rowSpan: 6 },
-          configuration: {
-            configurationType: 'FIELDS',
-            viewId: GIFT_STAGING_REVIEW_CORE_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],
@@ -239,12 +148,13 @@ export default definePageLayout({
           },
         },
         {
-          universalIdentifier: '6dfbf8ce-b859-4e35-a8d2-a98f1a664d38',
-          title: 'All staged gift fields',
+          universalIdentifier: '96739b81-2feb-4ab6-8fa5-edb1cafc2418',
+          title: 'Core gift fields',
           type: 'FIELDS',
-          gridPosition: { row: 4, ...FULL_WIDTH, rowSpan: 8 },
+          gridPosition: { row: 4, ...FULL_WIDTH, rowSpan: 6 },
           configuration: {
             configurationType: 'FIELDS',
+            viewId: GIFT_STAGING_REVIEW_CORE_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

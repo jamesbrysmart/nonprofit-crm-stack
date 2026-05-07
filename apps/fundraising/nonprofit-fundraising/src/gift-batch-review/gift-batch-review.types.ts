@@ -14,7 +14,6 @@ export type BatchReviewRow = {
   provider: string | null;
   providerAgreementId: string | null;
   donorResolutionState: string | null;
-  hasCoreGiftIssue: boolean | null;
   isReadyForProcessing: boolean | null;
   processingStatus: string | null;
   errorDetail: string | null;
@@ -52,7 +51,6 @@ export type GiftBatchReviewRecord = {
   processedItems: number;
   failedItems: number;
   readyItems: number;
-  blockedItems: number;
   unresolvedItems: number;
   rows: GiftBatchReviewRow[];
 };
@@ -68,7 +66,6 @@ export type GiftBatchReviewRow = {
   providerAgreementId: string;
   donorResolutionState: string;
   processingStatus: string;
-  hasCoreGiftIssue: boolean;
   isReadyForProcessing: boolean;
   isProcessable: boolean;
   isProcessed: boolean;

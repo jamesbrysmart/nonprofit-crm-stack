@@ -102,7 +102,7 @@ const mapProcessingStatus = (
     case 'PROCESS_FAILED':
       return 'PROCESS_FAILED';
     default:
-      return 'NOT_READY';
+      return 'NOT_PROCESSED';
   }
 };
 
@@ -154,7 +154,6 @@ export const buildGiftStagingReviewRecord = (
     ),
     linkedDonor,
     linkedDonorName: buildPersonDisplayName(linkedDonor),
-    hasCoreGiftIssue: stored.hasCoreGiftIssue ?? false,
     isReadyForProcessing: stored.isReadyForProcessing ?? false,
     processingStatus: mapProcessingStatus(stored.processingStatus),
     errorDetail: coalesceString(stored.errorDetail),
@@ -181,7 +180,6 @@ export const deriveReviewState = (
   const hasLinkedDonor = Boolean(record.linkedDonor?.id);
   const isProcessable = isGiftStagingProcessable({
     processingStatus: record.processingStatus,
-    hasCoreGiftIssue: record.hasCoreGiftIssue,
     donorResolutionState: record.donorResolution,
     donorFirstName: record.donorFirstName,
     donorLastName: record.donorLastName,
@@ -193,67 +191,53 @@ export const deriveReviewState = (
       title: 'Processed',
       accent: '#1a7f37',
       background: '#eef9f0',
-      reason:
-        'This staging row has already been processed into a committed gift.',
+      reason: 'This gift has already been processed into a gift record.',
       nextAction:
         record.committedGiftId !== ''
-          ? 'Use the committed gift link for any further gift-level review.'
-          : 'This row no longer needs staging review.',
+          ? 'Open the gift record if you need to review the completed gift.'
+          : 'This gift no longer needs review here.',
       hasBlocker: false,
     };
   }
 
   if (isProcessable) {
     return {
-      title: record.isReadyForProcessing ? 'Ready' : 'Eligible now',
+      title: record.isReadyForProcessing ? 'Ready' : 'Can be processed',
       accent: '#1a7f37',
       background: '#eef9f0',
       reason: record.isReadyForProcessing
-        ? 'This row has been reviewed and marked ready, and it has no active blockers.'
-        : 'This row has no active blockers and enough donor context to process safely.',
+        ? 'This gift has been reviewed and marked ready.'
+        : 'This gift now has the details needed to be processed.',
       nextAction:
         record.isReadyForProcessing
-          ? 'Process now, or return to the queue or batch scope and keep using ready as your reviewed marker.'
-          : 'Process now, or mark the row ready if you want to record that review is complete.',
+          ? 'Process it now, or come back to it later from the queue or batch.'
+          : 'You can process it now, or mark it reviewed first if you want to record that review is complete.',
       hasBlocker: false,
     };
   }
 
   if (record.processingStatus === 'PROCESS_FAILED') {
     return {
-      title: 'Failed follow-up',
+      title: 'Processing failed',
       accent: '#8a2d2d',
       background: '#fff5f5',
       reason:
-        'A previous processing attempt failed, so this row needs follow-up review before it can be made ready again.',
+        'A previous processing attempt failed, so this gift needs attention before you try again.',
       nextAction:
-        'Resolve the error detail or core issue, then mark the row ready again when follow-up is complete.',
-      hasBlocker: true,
-    };
-  }
-
-  if (record.hasCoreGiftIssue) {
-    return {
-      title: 'Blocked by core gift issue',
-      accent: '#7c5700',
-      background: '#fff8e1',
-      reason:
-        'A core gift fact still needs correction, so this row should not be readied yet.',
-      nextAction:
-        'Fix the core issue first, then decide whether the row is ready for processing.',
+        'Fix the problem, then mark it reviewed again if needed before processing.',
       hasBlocker: true,
     };
   }
 
   if (!hasLinkedDonor && record.donorResolution === 'AMBIGUOUS') {
     return {
-      title: 'Blocked by donor ambiguity',
+      title: 'Donor needs review',
       accent: '#9a6700',
       background: '#fff8c5',
       reason:
-        'Incoming donor evidence maps to more than one plausible donor, so the row is blocked until someone chooses explicitly.',
+        'More than one donor could match this gift. Choose the right donor before processing.',
       nextAction:
-        'Choose an existing donor or leave the row unresolved for later review.',
+        'Choose a donor now, or leave this for later review.',
       hasBlocker: true,
     };
   }
@@ -264,9 +248,9 @@ export const deriveReviewState = (
       accent: '#7c5d00',
       background: '#fff8e1',
       reason:
-        'No donor decision has been made yet. Review possible matches or confirm this should process as a new donor.',
+        'No donor has been confirmed yet. Review possible matches or confirm this as a new donor.',
       nextAction:
-        'Check exact donor matches and link the right donor, or leave the row unresolved once you are satisfied.',
+        'Find possible matches and choose the right donor, or leave this for later review.',
       hasBlocker: false,
     };
   }
@@ -277,9 +261,9 @@ export const deriveReviewState = (
       accent: '#57606a',
       background: '#f6f8fa',
       reason:
-        'The donor was reviewed and left without an existing donor link. This row can still process by creating a new donor when you are satisfied.',
+        'No existing donor was chosen. This gift can still be processed by creating a new donor.',
       nextAction:
-        'Mark the row ready when you are satisfied, or return later if more donor review is needed.',
+        'Mark it reviewed when you are satisfied, or come back later if more donor review is needed.',
       hasBlocker: false,
     };
   }
@@ -289,9 +273,9 @@ export const deriveReviewState = (
     accent: '#57606a',
     background: '#f6f8fa',
     reason:
-      'The donor relation is set, but the reviewer has not yet expressed explicit readiness for processing.',
+      'The donor has been set, but this gift has not been marked as reviewed yet.',
     nextAction:
-      'Make any final corrections, then mark the row ready when you are satisfied.',
+      'Make any final changes, then mark it reviewed when you are satisfied.',
     hasBlocker: false,
   };
 };

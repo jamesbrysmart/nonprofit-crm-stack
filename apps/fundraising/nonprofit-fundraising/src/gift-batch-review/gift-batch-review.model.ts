@@ -77,10 +77,9 @@ const formatTotalValueDisplay = (rows: BatchReviewRow[]): string => {
 };
 
 const buildReviewRow = (row: BatchReviewRow): GiftBatchReviewRow => {
-  const processingStatus = coalesceString(row.processingStatus, 'NOT_READY');
+  const processingStatus = coalesceString(row.processingStatus, 'NOT_PROCESSED');
   const isProcessable = isGiftStagingProcessable({
     processingStatus,
-    hasCoreGiftIssue: row.hasCoreGiftIssue,
     donorResolutionState: row.donorResolutionState,
     donorFirstName: row.donorFirstName,
     donorLastName: row.donorLastName,
@@ -104,7 +103,6 @@ const buildReviewRow = (row: BatchReviewRow): GiftBatchReviewRow => {
       'UNREVIEWED',
     ),
     processingStatus,
-    hasCoreGiftIssue: row.hasCoreGiftIssue ?? false,
     isReadyForProcessing: row.isReadyForProcessing ?? false,
     isProcessable,
     isProcessed: processingStatus === 'PROCESSED',
@@ -141,7 +139,6 @@ export const buildGiftBatchReviewRecord = (
     readyItems: reviewRows.filter(
       (row) => row.isProcessable && row.isReadyForProcessing,
     ).length,
-    blockedItems: reviewRows.filter((row) => row.hasCoreGiftIssue).length,
     unresolvedItems: reviewRows.filter(
       (row) =>
         row.donorResolutionState === 'UNREVIEWED' ||

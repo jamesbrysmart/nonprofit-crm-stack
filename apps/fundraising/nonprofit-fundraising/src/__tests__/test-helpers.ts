@@ -263,7 +263,6 @@ export const loadGiftStagingById = async (giftStagingId: string) => {
       providerIntervalCount: true,
       rawProviderEvidence: true,
       donorResolutionState: true,
-      hasCoreGiftIssue: true,
       isReadyForProcessing: true,
       processingStatus: true,
     },

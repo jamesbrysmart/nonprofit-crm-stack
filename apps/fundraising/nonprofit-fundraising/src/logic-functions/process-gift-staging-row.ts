@@ -15,7 +15,7 @@ type ProcessGiftStagingRowRequest = {
 
 type ProcessGiftStagingRowResponse = {
   giftStagingId: string;
-  processingStatus: 'NOT_READY' | 'PROCESSED' | 'PROCESS_FAILED';
+  processingStatus: 'NOT_PROCESSED' | 'PROCESSED' | 'PROCESS_FAILED';
   committedGiftId: string | null;
   recurringAgreementId: string | null;
   errorDetail: string | null;
@@ -65,8 +65,11 @@ const loadGiftStagingRow = async (
       donorResolutionState: true,
       donor: {
         id: true,
+        emails: {
+          primaryEmail: true,
+          additionalEmails: true,
+        },
       },
-      hasCoreGiftIssue: true,
       isReadyForProcessing: true,
       processingStatus: true,
       errorDetail: true,
@@ -111,7 +114,7 @@ const handler = async (
   if (!canProcessBatchRow(row)) {
     return {
       giftStagingId,
-      processingStatus: 'NOT_READY',
+      processingStatus: 'NOT_PROCESSED',
       committedGiftId: row.committedGift?.id ?? null,
       recurringAgreementId: row.recurringAgreement?.id ?? null,
       errorDetail: row.errorDetail,

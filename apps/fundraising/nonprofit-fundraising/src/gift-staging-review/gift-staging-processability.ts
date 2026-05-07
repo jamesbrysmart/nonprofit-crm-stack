@@ -1,6 +1,5 @@
 type ProcessabilityInput = {
   processingStatus: string | null | undefined;
-  hasCoreGiftIssue: boolean | null | undefined;
   donorResolutionState: string | null | undefined;
   donorFirstName?: string | null | undefined;
   donorLastName?: string | null | undefined;
@@ -23,7 +22,6 @@ export const hasLinkedDonorForProcessing = (
 export const isGiftStagingProcessable = (input: ProcessabilityInput) => {
   return Boolean(
     input.processingStatus !== 'PROCESSED' &&
-      input.hasCoreGiftIssue !== true &&
       input.donorResolutionState !== 'AMBIGUOUS' &&
       (hasLinkedDonorForProcessing(input) ||
         hasSufficientDonorEvidenceForNewDonor(input)),

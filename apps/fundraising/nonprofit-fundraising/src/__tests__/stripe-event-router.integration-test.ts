@@ -98,7 +98,7 @@ describe('Stripe event router intake', () => {
       },
     });
     expect(createdRecord?.providerAgreementId).toBeNull();
-    expect(createdRecord?.processingStatus).toBe('NOT_READY');
+    expect(createdRecord?.processingStatus).toBe('NOT_PROCESSED');
   });
 
   it('should create a committed gift for a confident recurring agreement match', async () => {
@@ -170,7 +170,7 @@ describe('Stripe event router intake', () => {
     expect(staging?.provider).toBe('STRIPE');
     expect(staging?.providerPaymentId).toBe(`pi_router_${suffix}`);
     expect(staging?.providerAgreementId).toBe(subscriptionId);
-    expect(staging?.processingStatus).toBe('NOT_READY');
+    expect(staging?.processingStatus).toBe('NOT_PROCESSED');
     expect(staging?.isReadyForProcessing).toBe(false);
   });
 

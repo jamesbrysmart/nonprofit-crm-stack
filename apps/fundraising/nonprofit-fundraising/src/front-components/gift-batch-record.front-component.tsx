@@ -185,7 +185,6 @@ const loadGiftBatchReview = async (
           donor: {
             id: true,
           },
-          hasCoreGiftIssue: true,
           isReadyForProcessing: true,
           processingStatus: true,
           errorDetail: true,
@@ -409,10 +408,6 @@ const GiftBatchRecord = () => {
           <div style={metricValueStyle}>{record.unresolvedItems}</div>
         </div>
         <div style={cardStyle}>
-          <div style={labelStyle}>Blocked by core issue</div>
-          <div style={metricValueStyle}>{record.blockedItems}</div>
-        </div>
-        <div style={cardStyle}>
           <div style={labelStyle}>Failed</div>
           <div style={metricValueStyle}>{record.failedItems}</div>
         </div>
@@ -544,7 +539,7 @@ const GiftBatchRecord = () => {
                           ? 'PROCESS_FAILED'
                           : row.isReadyForProcessing
                             ? 'READY'
-                            : 'NOT_READY',
+                            : 'NOT_PROCESSED',
                     )}
                   >
                     {row.processingStatus === 'PROCESSED'
@@ -570,17 +565,15 @@ const GiftBatchRecord = () => {
                   Donor resolution: {row.donorResolutionState}
                 </div>
                 <div style={secondaryTextStyle}>
-                  {row.hasCoreGiftIssue
-                    ? 'Core gift issue still blocks this row.'
-                    : row.processingStatus === 'PROCESSED'
-                      ? 'Row has already been processed.'
-                      : row.donorResolutionState === 'AMBIGUOUS'
-                        ? 'Donor ambiguity still blocks this row.'
-                        : row.isReadyForProcessing
-                          ? 'Row can process now and is also marked ready.'
+                  {row.processingStatus === 'PROCESSED'
+                    ? 'Row has already been processed.'
+                    : row.donorResolutionState === 'AMBIGUOUS'
+                      ? 'Donor ambiguity still blocks this row.'
+                      : row.isReadyForProcessing
+                        ? 'Row can process now and is also marked ready.'
                         : row.isProcessable
-                            ? 'Row can process now but has not been explicitly marked ready.'
-                            : 'Row still needs more review before it can process.'}
+                          ? 'Row can process now but has not been explicitly marked ready.'
+                          : 'Row still needs more review before it can process.'}
                 </div>
                 {row.errorDetail !== '' ? (
                   <div style={secondaryTextStyle}>

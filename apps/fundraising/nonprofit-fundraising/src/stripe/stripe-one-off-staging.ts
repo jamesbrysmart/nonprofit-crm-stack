@@ -124,9 +124,8 @@ export type StripeOneOffGiftStagingInput = {
   donorMailingAddress?: MailingAddressEvidence;
   rawProviderEvidence?: RawProviderEvidence;
   donorResolutionState: 'UNREVIEWED';
-  hasCoreGiftIssue: false;
   isReadyForProcessing: false;
-  processingStatus: 'NOT_READY';
+  processingStatus: 'NOT_PROCESSED';
 };
 
 export type StripeOneOffGiftStagingResult =
@@ -594,9 +593,8 @@ export const buildStripeOneOffGiftStagingInput = (
     ...giftAidEvidence,
     rawProviderEvidence,
     donorResolutionState: 'UNREVIEWED',
-    hasCoreGiftIssue: false,
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
   };
 };
 

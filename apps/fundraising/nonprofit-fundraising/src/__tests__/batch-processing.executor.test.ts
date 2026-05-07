@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canProcessBatchRow,
+  deriveLinkedDonorEmailUpdate,
   deriveRecurringCadenceFromProviderEvidence,
 } from 'src/batch-processing/batch-processing.executor';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
@@ -81,9 +82,8 @@ const buildProcessingRow = (
   rawProviderEvidence: null,
   donorResolutionState: 'UNREVIEWED',
   donor: null,
-  hasCoreGiftIssue: false,
   isReadyForProcessing: true,
-  processingStatus: 'NOT_READY',
+  processingStatus: 'NOT_PROCESSED',
   errorDetail: null,
   giftAidRequested: false,
   giftAidDeclarationCaptured: false,
@@ -95,6 +95,73 @@ const buildProcessingRow = (
   recurringAgreement: null,
   committedGift: null,
   ...overrides,
+});
+
+describe('deriveLinkedDonorEmailUpdate', () => {
+  it('returns an additive update for a linked donor with a new staged email', () => {
+    expect(
+      deriveLinkedDonorEmailUpdate(
+        buildProcessingRow({
+          donorEmail: 'new@example.com',
+          donor: {
+            id: 'person_1',
+            emails: {
+              primaryEmail: 'existing@example.com',
+              additionalEmails: ['other@example.com'],
+            },
+          },
+        }),
+      ),
+    ).toEqual({
+      donorId: 'person_1',
+      emails: {
+        primaryEmail: 'existing@example.com',
+        additionalEmails: ['other@example.com', 'new@example.com'],
+      },
+    });
+  });
+
+  it('does nothing when the staged email already exists on the linked donor', () => {
+    expect(
+      deriveLinkedDonorEmailUpdate(
+        buildProcessingRow({
+          donorEmail: 'EXISTING@example.com',
+          donor: {
+            id: 'person_1',
+            emails: {
+              primaryEmail: 'existing@example.com',
+              additionalEmails: ['other@example.com'],
+            },
+          },
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it('does nothing when there is no linked donor or no staged email', () => {
+    expect(
+      deriveLinkedDonorEmailUpdate(
+        buildProcessingRow({
+          donor: null,
+        }),
+      ),
+    ).toBeNull();
+
+    expect(
+      deriveLinkedDonorEmailUpdate(
+        buildProcessingRow({
+          donorEmail: '',
+          donor: {
+            id: 'person_1',
+            emails: {
+              primaryEmail: 'existing@example.com',
+              additionalEmails: [],
+            },
+          },
+        }),
+      ),
+    ).toBeNull();
+  });
 });
 
 describe('canProcessBatchRow', () => {

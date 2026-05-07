@@ -90,9 +90,8 @@ describe('Stripe one-off staging intake', () => {
       },
     });
     expect(createdRecord?.donorResolutionState).toBe('UNREVIEWED');
-    expect(createdRecord?.hasCoreGiftIssue).toBe(false);
     expect(createdRecord?.isReadyForProcessing).toBe(false);
-    expect(createdRecord?.processingStatus).toBe('NOT_READY');
+    expect(createdRecord?.processingStatus).toBe('NOT_PROCESSED');
     expect(createdRecord?.amount?.currencyCode).toBe('GBP');
     expect(createdRecord?.amount?.amountMicros).toBe(25_000_000);
 

@@ -24,7 +24,7 @@ export const saveGiftDate = async (recordId: string, giftDate: string) => {
   return updateGiftStaging(recordId, {
     giftDate: giftDate === '' ? null : giftDate,
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
   });
 };
 
@@ -46,7 +46,7 @@ export const saveDonorEvidence = async (
     donorId: null,
     donorResolutionState: 'UNRESOLVED',
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
   });
 };
 
@@ -61,7 +61,7 @@ export const linkDonor = async (recordId: string, donorId: string) => {
     },
     donorResolutionState: 'CONFIRMED',
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
   });
 };
 
@@ -70,30 +70,14 @@ export const leaveUnresolved = async (recordId: string) => {
     donorId: null,
     donorResolutionState: 'UNRESOLVED',
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
-  });
-};
-
-export const clearCoreGiftIssue = async (recordId: string) => {
-  return updateGiftStaging(recordId, {
-    hasCoreGiftIssue: false,
-    isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
-  });
-};
-
-export const flagCoreGiftIssue = async (recordId: string) => {
-  return updateGiftStaging(recordId, {
-    hasCoreGiftIssue: true,
-    isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
   });
 };
 
 export const markReady = async (recordId: string) => {
   return updateGiftStaging(recordId, {
     isReadyForProcessing: true,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
   });
 };

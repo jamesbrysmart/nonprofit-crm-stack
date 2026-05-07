@@ -32,9 +32,8 @@ type SeedStagingRow = {
   donorEmail?: string;
   giftDate: string | null;
   donorResolutionState: 'UNREVIEWED' | 'AMBIGUOUS' | 'UNRESOLVED' | 'CONFIRMED';
-  hasCoreGiftIssue: boolean;
   isReadyForProcessing: boolean;
-  processingStatus: 'NOT_READY' | 'PROCESS_FAILED';
+  processingStatus: 'NOT_PROCESSED' | 'PROCESS_FAILED';
   errorDetail: string | null;
   batchName: string;
   linkedDonorEmail?: string;
@@ -249,9 +248,8 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'ada.lovelace@example.org',
     giftDate: '2026-04-01',
     donorResolutionState: 'UNREVIEWED',
-    hasCoreGiftIssue: false,
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'April import batch',
     giftAidRequested: true,
@@ -270,9 +268,8 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'jamie.taylor@unknown.example.org',
     giftDate: '2026-04-02',
     donorResolutionState: 'AMBIGUOUS',
-    hasCoreGiftIssue: false,
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'April import batch',
   },
@@ -285,9 +282,8 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'chris.bennett@example.org',
     giftDate: '2026-04-03',
     donorResolutionState: 'UNRESOLVED',
-    hasCoreGiftIssue: false,
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'April import batch',
   },
@@ -300,9 +296,8 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'elliot.meyer@example.org',
     giftDate: null,
     donorResolutionState: 'CONFIRMED',
-    hasCoreGiftIssue: true,
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Standing orders follow-up',
     linkedDonorEmail: 'elliot.meyer@example.org',
@@ -316,7 +311,6 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'chris.bennett@example.org',
     giftDate: '2026-04-05',
     donorResolutionState: 'CONFIRMED',
-    hasCoreGiftIssue: false,
     isReadyForProcessing: false,
     processingStatus: 'PROCESS_FAILED',
     errorDetail: 'Duplicate external payment id needs follow-up before retry.',
@@ -332,9 +326,8 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'ada.lovelace@example.org',
     giftDate: '2026-04-20',
     donorResolutionState: 'CONFIRMED',
-    hasCoreGiftIssue: false,
     isReadyForProcessing: true,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Stripe processing smoke batch',
     linkedDonorEmail: 'ada.lovelace@example.org',
@@ -351,9 +344,8 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'nora.patel@example.org',
     giftDate: '2026-04-21',
     donorResolutionState: 'CONFIRMED',
-    hasCoreGiftIssue: false,
     isReadyForProcessing: true,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Stripe processing smoke batch',
     linkedDonorEmail: 'nora.patel@example.org',
@@ -373,9 +365,8 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'robin.sloan@example.org',
     giftDate: '2026-04-22',
     donorResolutionState: 'CONFIRMED',
-    hasCoreGiftIssue: false,
     isReadyForProcessing: true,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Stripe processing smoke batch',
     linkedDonorEmail: 'robin.sloan@example.org',
@@ -387,7 +378,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     giftAidRequested: false,
   },
   {
-    name: 'Stripe smoke - Elliot blocked core issue',
+    name: 'Stripe smoke - Elliot missing gift date',
     intakeSource: 'stripe_webhook',
     amountMicros: 12_000_000,
     donorFirstName: 'Elliot',
@@ -395,9 +386,8 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'elliot.meyer@example.org',
     giftDate: null,
     donorResolutionState: 'CONFIRMED',
-    hasCoreGiftIssue: true,
     isReadyForProcessing: false,
-    processingStatus: 'NOT_READY',
+    processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Stripe processing smoke batch',
     linkedDonorEmail: 'elliot.meyer@example.org',
@@ -938,7 +928,6 @@ const seedGiftStagings = async (
               ? { providerIntervalCount: seed.providerIntervalCount }
               : {}),
             donorResolutionState: seed.donorResolutionState,
-            hasCoreGiftIssue: seed.hasCoreGiftIssue,
             isReadyForProcessing: seed.isReadyForProcessing,
             processingStatus: seed.processingStatus,
             errorDetail: seed.errorDetail,

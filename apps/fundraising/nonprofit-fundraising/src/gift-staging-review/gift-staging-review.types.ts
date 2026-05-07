@@ -10,7 +10,7 @@ export type DonorResolution =
   | 'CONFIRMED';
 
 export type ProcessingStatus =
-  | 'NOT_READY'
+  | 'NOT_PROCESSED'
   | 'PROCESSED'
   | 'PROCESS_FAILED';
 
@@ -53,7 +53,6 @@ export type StoredGiftStagingRecord = {
   rawProviderEvidence: unknown;
   donorResolutionState: string | null;
   donor: PersonSummary | null;
-  hasCoreGiftIssue: boolean | null;
   isReadyForProcessing: boolean | null;
   processingStatus: string | null;
   errorDetail: string | null;
@@ -107,7 +106,6 @@ export type GiftStagingReviewRecord = {
   donorResolution: DonorResolution;
   linkedDonor: PersonSummary | null;
   linkedDonorName: string;
-  hasCoreGiftIssue: boolean;
   isReadyForProcessing: boolean;
   processingStatus: ProcessingStatus;
   errorDetail: string;

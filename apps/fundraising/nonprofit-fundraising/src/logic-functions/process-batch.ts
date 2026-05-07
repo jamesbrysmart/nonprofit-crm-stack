@@ -81,8 +81,11 @@ const loadBatchAndRows = async (
           donorResolutionState: true,
           donor: {
             id: true,
+            emails: {
+              primaryEmail: true,
+              additionalEmails: true,
+            },
           },
-          hasCoreGiftIssue: true,
           isReadyForProcessing: true,
           processingStatus: true,
           errorDetail: true,

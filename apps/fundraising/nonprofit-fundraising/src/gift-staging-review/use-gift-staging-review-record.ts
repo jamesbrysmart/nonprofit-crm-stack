@@ -59,7 +59,6 @@ const loadStoredRecord = async (
           primaryEmail: true,
         },
       },
-      hasCoreGiftIssue: true,
       isReadyForProcessing: true,
       processingStatus: true,
       errorDetail: true,
@@ -91,12 +90,12 @@ export const useGiftStagingReviewRecord = (recordId: string | null) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = async () => {
+  const refresh = async (): Promise<GiftStagingReviewRecord | null> => {
     if (!recordId) {
       setError('No record selected');
       setRecord(null);
       setLoading(false);
-      return;
+      return null;
     }
 
     setLoading(true);
@@ -108,15 +107,19 @@ export const useGiftStagingReviewRecord = (recordId: string | null) => {
       if (!loadedRecord) {
         setRecord(null);
         setError('Record not found');
-        return;
+        return null;
       }
 
-      setRecord(buildGiftStagingReviewRecord(loadedRecord));
+      const nextRecord = buildGiftStagingReviewRecord(loadedRecord);
+      setRecord(nextRecord);
+
+      return nextRecord;
     } catch (loadError) {
       setError(
         loadError instanceof Error ? loadError.message : String(loadError),
       );
       setRecord(null);
+      return null;
     } finally {
       setLoading(false);
     }

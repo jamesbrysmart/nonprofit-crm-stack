@@ -1,46 +1,18 @@
-import type { CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useRecordId } from 'twenty-sdk/front-component';
+import {
+  cardWithLooseGapStyle,
+  detailsGridStyle,
+  labelStyle,
+  panelStackStyle,
+  secondaryTextStyle,
+  valueStyle,
+} from 'src/front-components/gift-staging-review-ui';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
 
 export const GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'daa7d7bb-d8ca-471c-b219-3ea699657c5b';
-
-const sectionCardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
-  borderRadius: '8px',
-  padding: '16px',
-  display: 'grid',
-  gap: '16px',
-  background: '#ffffff',
-};
-
-const labelStyle: CSSProperties = {
-  fontSize: '12px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: '#57606a',
-  fontWeight: 500,
-};
-
-const valueStyle: CSSProperties = {
-  fontSize: '15px',
-  color: '#1f2328',
-  lineHeight: 1.4,
-};
-
-const secondaryTextStyle: CSSProperties = {
-  fontSize: '13px',
-  color: '#57606a',
-  lineHeight: 1.5,
-};
-
-const gridStyle: CSSProperties = {
-  display: 'grid',
-  gap: '12px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-};
 
 const renderValue = (value: string) => {
   return value === '' ? 'Not recorded' : value;
@@ -63,17 +35,10 @@ const GiftStagingAudit = () => {
   }
 
   return (
-    <div
-      style={{
-        padding: '20px',
-        fontFamily: 'Inter, sans-serif',
-        display: 'grid',
-        gap: '20px',
-      }}
-    >
-      <div style={sectionCardStyle}>
+    <div style={panelStackStyle}>
+      <div style={cardWithLooseGapStyle}>
         <div style={labelStyle}>Source and provider evidence</div>
-        <div style={gridStyle}>
+        <div style={detailsGridStyle}>
           <div>
             <div style={labelStyle}>Intake source</div>
             <div style={valueStyle}>{renderValue(record.intakeSource)}</div>
@@ -117,9 +82,9 @@ const GiftStagingAudit = () => {
         </div>
       </div>
 
-      <div style={sectionCardStyle}>
+      <div style={cardWithLooseGapStyle}>
         <div style={labelStyle}>Processing diagnostics</div>
-        <div style={gridStyle}>
+        <div style={detailsGridStyle}>
           <div>
             <div style={labelStyle}>Processing status</div>
             <div style={valueStyle}>{record.processingStatus}</div>
@@ -128,12 +93,6 @@ const GiftStagingAudit = () => {
             <div style={labelStyle}>Marked ready</div>
             <div style={valueStyle}>
               {record.isReadyForProcessing ? 'Yes' : 'No'}
-            </div>
-          </div>
-          <div>
-            <div style={labelStyle}>Core gift issue</div>
-            <div style={valueStyle}>
-              {record.hasCoreGiftIssue ? 'Present' : 'Not flagged'}
             </div>
           </div>
           <div>
@@ -152,14 +111,14 @@ const GiftStagingAudit = () => {
       </div>
 
       {isGiftAidEnabled() ? (
-        <div style={sectionCardStyle}>
+        <div style={cardWithLooseGapStyle}>
           <div style={labelStyle}>Gift Aid evidence</div>
           <div style={secondaryTextStyle}>
             {record.giftAidRequested
               ? 'Gift Aid was requested on this staged row.'
               : 'Gift Aid was not requested on this staged row.'}
           </div>
-          <div style={gridStyle}>
+          <div style={detailsGridStyle}>
             <div>
               <div style={labelStyle}>Declaration captured</div>
               <div style={valueStyle}>

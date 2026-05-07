@@ -67,6 +67,24 @@ yarn twenty exec --postInstall
 
 The seed is intended to be safe to rerun as new workflow slices are added.
 
+## CRM Demo Seed
+
+For stakeholder demos that need standard Twenty CRM records alongside the
+fundraising app data, there is a separate idempotent seed logic function:
+
+```bash
+yarn twenty exec --functionName seed-plunkett-demo
+```
+
+This creates a small fictional set of:
+
+- companies,
+- linked contacts,
+- opportunities across corporate partnerships, grants, and major gifts.
+
+It is intentionally separate from `post-install` so normal app-dev fixture runs
+do not always add CRM demo records.
+
 Before adding a custom UI, command flow, trigger pattern, or config model, check the repo reference notes in:
 
 - `docs/apps-migration/TWENTY_NATIVE_REFERENCE.md`

@@ -1,15 +1,25 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import {
   enqueueSnackbar,
   useRecordId,
 } from 'twenty-sdk/front-component';
 import { Button } from 'twenty-sdk/ui';
-import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
+import {
+  actionRowStyle,
+  compactDividerSectionStyle,
+  compactMetaItemStyle,
+  compactValueStyle,
+  compactWidgetRootStyle,
+  inputStyle,
+  badgeStyle,
+  labelStyle,
+  secondaryTextStyle,
+  sectionHeaderStyle,
+} from 'src/front-components/gift-staging-review-ui';
+import { isGiftStagingProcessable } from 'src/gift-staging-review/gift-staging-processability';
 import { processGiftStagingRow } from 'src/gift-staging-review/gift-staging-processing.api';
 import {
-  clearCoreGiftIssue,
-  flagCoreGiftIssue,
   markReady,
   saveGiftDate,
 } from 'src/gift-staging-review/gift-staging-review.actions';
@@ -17,38 +27,6 @@ import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-sta
 
 export const GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'f220540d-7733-4c07-bcb3-35d18c643be7';
-
-const cardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
-  borderRadius: '8px',
-  padding: '16px',
-  display: 'grid',
-  gap: '16px',
-  background: '#ffffff',
-  fontFamily: 'Inter, sans-serif',
-};
-
-const labelStyle: CSSProperties = {
-  fontSize: '12px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: '#57606a',
-  fontWeight: 500,
-};
-
-const secondaryTextStyle: CSSProperties = {
-  fontSize: '13px',
-  color: '#57606a',
-  lineHeight: 1.5,
-};
-
-const inputStyle: CSSProperties = {
-  border: '1px solid #d0d7de',
-  borderRadius: '6px',
-  padding: '10px 12px',
-  font: 'inherit',
-  background: '#ffffff',
-};
 
 const getInputEventValue = (event: unknown) => {
   if (
@@ -63,6 +41,30 @@ const getInputEventValue = (event: unknown) => {
   }
 
   return '';
+};
+
+const getProcessingTone = (processingStatus: string) => {
+  if (processingStatus === 'PROCESSED') {
+    return 'success' as const;
+  }
+
+  if (processingStatus === 'PROCESS_FAILED') {
+    return 'warning' as const;
+  }
+
+  return 'neutral' as const;
+};
+
+const getProcessingLabel = (processingStatus: string) => {
+  if (processingStatus === 'PROCESSED') {
+    return 'Processed';
+  }
+
+  if (processingStatus === 'PROCESS_FAILED') {
+    return 'Process failed';
+  }
+
+  return 'Not processed';
 };
 
 const GiftStagingProcessing = () => {
@@ -92,6 +94,20 @@ const GiftStagingProcessing = () => {
     return <div style={secondaryTextStyle}>Staging row not found.</div>;
   }
 
+  const processingTone = getProcessingTone(
+    record.processingStatus,
+  );
+  const processingLabel = getProcessingLabel(record.processingStatus);
+  const isProcessable = isGiftStagingProcessable({
+    processingStatus: record.processingStatus,
+    donorResolutionState: record.donorResolution,
+    donorFirstName: record.donorFirstName,
+    donorLastName: record.donorLastName,
+    linkedDonorId: record.linkedDonor?.id,
+  });
+  const showMarkReady =
+    !record.isReadyForProcessing && record.processingStatus !== 'PROCESSED';
+  const canProcess = isProcessable;
   const afterMutationRefresh = async () => {
     await refresh();
   };
@@ -119,45 +135,13 @@ const GiftStagingProcessing = () => {
     }
   };
 
-  const handleToggleCoreGiftIssue = async () => {
-    setSaving(true);
-
-    try {
-      if (record.hasCoreGiftIssue) {
-        await clearCoreGiftIssue(recordId);
-        await enqueueSnackbar({
-          message: 'Core gift issue cleared.',
-          variant: 'success',
-        });
-      } else {
-        await flagCoreGiftIssue(recordId);
-        await enqueueSnackbar({
-          message: 'Core gift issue flagged.',
-          variant: 'success',
-        });
-      }
-
-      await afterMutationRefresh();
-    } catch (actionError) {
-      await enqueueSnackbar({
-        message:
-          actionError instanceof Error
-            ? actionError.message
-            : 'Unable to update core gift issue state.',
-        variant: 'error',
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleMarkReady = async () => {
     setSaving(true);
 
     try {
       await markReady(recordId);
       await enqueueSnackbar({
-        message: 'Row marked ready.',
+        message: 'Marked as reviewed.',
         variant: 'success',
       });
       await afterMutationRefresh();
@@ -166,7 +150,7 @@ const GiftStagingProcessing = () => {
         message:
           actionError instanceof Error
             ? actionError.message
-            : 'Unable to mark row ready.',
+            : 'Unable to mark as reviewed.',
         variant: 'error',
       });
     } finally {
@@ -185,10 +169,10 @@ const GiftStagingProcessing = () => {
       await enqueueSnackbar({
         message:
           result.processingStatus === 'PROCESSED'
-            ? 'Staged gift processed successfully.'
+            ? 'Gift record created.'
             : result.processingStatus === 'PROCESS_FAILED'
-              ? result.errorDetail ?? 'Staged gift failed during processing.'
-              : 'This staged gift is not ready for processing.',
+              ? result.errorDetail ?? 'This gift could not be processed.'
+              : 'This gift cannot be processed yet.',
         variant:
           result.processingStatus === 'PROCESSED'
             ? 'success'
@@ -203,7 +187,7 @@ const GiftStagingProcessing = () => {
         message:
           processError instanceof Error
             ? processError.message
-            : 'Unable to process staged gift.',
+            : 'Unable to process this gift.',
         variant: 'error',
       });
     } finally {
@@ -212,91 +196,80 @@ const GiftStagingProcessing = () => {
   };
 
   return (
-    <div style={cardStyle}>
-      <div style={labelStyle}>Processing and core fixes</div>
-      <div style={secondaryTextStyle}>
-        Processing status: {record.processingStatus}
-      </div>
-      <div style={secondaryTextStyle}>
-        Committed gift: {record.committedGiftName}
+    <div style={compactWidgetRootStyle}>
+      <div style={sectionHeaderStyle}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={badgeStyle(processingTone)}>{processingLabel}</span>
+          {record.isReadyForProcessing ? (
+            <span style={badgeStyle('success')}>Ready</span>
+          ) : null}
+        </div>
+        {record.committedGiftName !== '' ? (
+          <div style={{ ...compactMetaItemStyle, justifyItems: 'end' }}>
+            <div style={labelStyle}>Gift record</div>
+            <div style={compactValueStyle}>{record.committedGiftName}</div>
+          </div>
+        ) : null}
       </div>
 
-      <label style={{ display: 'grid', gap: '6px' }}>
-        <span style={labelStyle}>Gift date</span>
-        <input
-          style={inputStyle}
-          type="date"
-          value={giftDateInput}
-          onChange={(event) => setGiftDateInput(getInputEventValue(event))}
-        />
-      </label>
-
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'grid',
+          gap: '6px',
+          gridTemplateColumns: 'minmax(0, 1fr) auto',
+          alignItems: 'end',
+        }}
+      >
+        <label style={{ display: 'grid', gap: '4px' }}>
+          <span style={labelStyle}>Gift date</span>
+          <input
+            style={inputStyle}
+            type="date"
+            value={giftDateInput}
+            onChange={(event) => setGiftDateInput(getInputEventValue(event))}
+            disabled={saving || processingRow}
+          />
+        </label>
         <Button
-          title="Save gift date"
+          title="Save"
           variant="secondary"
           onClick={() => {
             void handleSaveGiftDate();
           }}
-          disabled={saving}
-        />
-        <Button
-          title={
-            record.hasCoreGiftIssue
-              ? 'Clear core gift issue'
-              : 'Flag core gift issue'
-          }
-          variant="secondary"
-          onClick={() => {
-            void handleToggleCoreGiftIssue();
-          }}
-          disabled={saving}
+          disabled={saving || processingRow}
         />
       </div>
 
       {record.errorDetail !== '' ? (
-        <div style={{ ...secondaryTextStyle, color: '#d12424' }}>
-          Last error: {record.errorDetail}
+        <div style={{ ...compactDividerSectionStyle, gap: '4px' }}>
+          <div style={labelStyle}>Problem</div>
+          <div style={{ ...secondaryTextStyle, color: '#b42318' }}>
+            {record.errorDetail}
+          </div>
         </div>
       ) : null}
 
-      <div style={secondaryTextStyle}>
-        Ready means the row is reviewed enough to be processed.
-      </div>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={actionRowStyle}>
         <Button
-          title="Mark ready"
+          title={processingRow ? 'Processing...' : 'Process'}
           variant="primary"
           accent="blue"
           onClick={() => {
-            void handleMarkReady();
-          }}
-          disabled={saving || record.hasCoreGiftIssue}
-        />
-        <Button
-          title={processingRow ? 'Processing...' : 'Process row'}
-          variant="secondary"
-          onClick={() => {
             void handleProcessRow();
           }}
-          disabled={
-            saving || processingRow || record.processingStatus === 'PROCESSED'
-          }
+          disabled={saving || processingRow || !canProcess}
         />
+        {showMarkReady ? (
+          <Button
+            title="Mark reviewed"
+            variant="secondary"
+            onClick={() => {
+              void handleMarkReady();
+            }}
+            disabled={saving || processingRow}
+          />
+        ) : null}
       </div>
-
-      {record.providerAgreementId !== '' ? (
-        <div style={secondaryTextStyle}>
-          Recurring provider evidence is present. Check `Audit` before
-          processing if cadence evidence matters.
-        </div>
-      ) : null}
-      {isGiftAidEnabled() && record.giftAidRequested ? (
-        <div style={secondaryTextStyle}>
-          Gift Aid capture facts are present. Check `Audit` for the captured
-          declaration evidence.
-        </div>
-      ) : null}
     </div>
   );
 };

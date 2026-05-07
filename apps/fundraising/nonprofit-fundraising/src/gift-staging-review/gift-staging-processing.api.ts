@@ -6,7 +6,7 @@ type ProcessGiftStagingRowRequest = {
 
 export type ProcessGiftStagingRowResponse = {
   giftStagingId: string;
-  processingStatus: 'NOT_READY' | 'PROCESSED' | 'PROCESS_FAILED';
+  processingStatus: 'NOT_PROCESSED' | 'PROCESSED' | 'PROCESS_FAILED';
   committedGiftId: string | null;
   recurringAgreementId: string | null;
   errorDetail: string | null;

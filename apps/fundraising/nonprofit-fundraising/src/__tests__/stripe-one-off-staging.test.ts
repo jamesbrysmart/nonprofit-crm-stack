@@ -83,9 +83,8 @@ describe('buildStripeOneOffGiftStagingInput', () => {
         },
       },
       donorResolutionState: 'UNREVIEWED',
-      hasCoreGiftIssue: false,
       isReadyForProcessing: false,
-      processingStatus: 'NOT_READY',
+      processingStatus: 'NOT_PROCESSED',
       giftAidRequested: false,
       giftAidDeclarationCaptured: false,
     });
@@ -217,7 +216,7 @@ describe('buildStripeOneOffGiftStagingInput', () => {
         intervalCount: 1,
       },
     });
-    expect(input.processingStatus).toBe('NOT_READY');
+    expect(input.processingStatus).toBe('NOT_PROCESSED');
     expect(input.isReadyForProcessing).toBe(false);
   });
 

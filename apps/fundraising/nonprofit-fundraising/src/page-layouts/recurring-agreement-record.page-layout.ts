@@ -4,7 +4,6 @@ import {
 } from 'twenty-sdk/define';
 import { RECURRING_AGREEMENT_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/recurring-agreement-donor-context.front-component';
 import { RECURRING_AGREEMENT_LINKED_GIFTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/recurring-agreement-linked-gifts.front-component';
-import { RECURRING_AGREEMENT_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/recurring-agreement-record.front-component';
 import { RECURRING_AGREEMENT_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/recurring-agreement-state.front-component';
 import { RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/recurring-agreement.object';
 
@@ -49,25 +48,6 @@ export default definePageLayout({
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
               RECURRING_AGREEMENT_LINKED_GIFTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-      ],
-    },
-    {
-      universalIdentifier: 'a7064ef4-54ee-4530-a8f9-61707e053e9d',
-      title: 'Review',
-      position: 50,
-      icon: 'IconRepeat',
-      layoutMode: PageLayoutTabLayoutMode.CANVAS,
-      widgets: [
-        {
-          universalIdentifier: 'c7a97b0f-8b80-4af8-b9cc-f323214e5d73',
-          title: 'Recurring agreement review',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              RECURRING_AGREEMENT_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

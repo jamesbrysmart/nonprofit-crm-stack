@@ -74,8 +74,7 @@ export const deriveRecurringHealth = (
     return {
       state: 'PAUSED',
       label: 'Paused',
-      message:
-        'This agreement is paused, so future fulfillment is not currently expected.',
+      message: 'This agreement is paused, so no fulfilment is currently expected.',
       daysDelta: null,
     };
   }
@@ -84,8 +83,7 @@ export const deriveRecurringHealth = (
     return {
       state: 'CANCELED',
       label: 'Canceled',
-      message:
-        'This agreement is canceled and should no longer be treated as an active commitment.',
+      message: 'This agreement is canceled and no longer active.',
       daysDelta: null,
     };
   }
@@ -94,8 +92,7 @@ export const deriveRecurringHealth = (
     return {
       state: 'COMPLETED',
       label: 'Completed',
-      message:
-        'This agreement is completed, so recurring fulfillment is no longer expected.',
+      message: 'This agreement is completed and no further fulfilment is expected.',
       daysDelta: null,
     };
   }
@@ -104,8 +101,7 @@ export const deriveRecurringHealth = (
     return {
       state: 'DELINQUENT',
       label: 'Delinquent',
-      message:
-        'This agreement is marked delinquent and needs operator attention even if other fields look valid.',
+      message: 'This agreement is delinquent and needs attention.',
       daysDelta: nextExpectedDate ? dayDiff(now, nextExpectedDate) : null,
     };
   }
@@ -114,8 +110,7 @@ export const deriveRecurringHealth = (
     return {
       state: 'NO_EXPECTATION',
       label: 'No expectation',
-      message:
-        'No next expected date is currently set, so operators cannot tell when fulfillment should arrive next.',
+      message: 'No next expected date is set yet.',
       daysDelta: null,
     };
   }
@@ -134,8 +129,7 @@ export const deriveRecurringHealth = (
   return {
     state: 'ON_TRACK',
     label: 'On track',
-    message:
-      'This agreement currently looks active and within its expected fulfillment window.',
+    message: 'This agreement is within its expected fulfilment window.',
     daysDelta,
   };
 };

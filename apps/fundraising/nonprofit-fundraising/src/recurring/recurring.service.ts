@@ -75,7 +75,10 @@ export const searchRecurringAgreements = async (
           intervalCount: true,
           nextExpectedAt: true,
           provider: true,
-          amount: true,
+          amount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
           providerAgreementId: true,
           mandateReference: true,
           person: {
@@ -148,7 +151,10 @@ export const loadRecurringAgreementById = async (
       status: true,
       cadence: true,
       intervalCount: true,
-      amount: true,
+      amount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
       startDate: true,
       endDate: true,
       nextExpectedAt: true,
