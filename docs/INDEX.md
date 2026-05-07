@@ -26,6 +26,7 @@ Read these before running operational commands or changing operational behavior.
 
 - `UX_UI.md` — canonical UX and interaction principles for custom UI.
 - `ui/ARCHITECTURE.md` — canonical shared UI model, reuse criteria, current defaults, and open architecture questions.
+- `ui/OPERATIONAL_COMPONENT_PATTERNS.md` — canonical recurring component shapes for custom operational UI while Twenty SDK UI is still evolving.
 - `ui/STORYBOOK.md` — canonical Storybook taxonomy, workflow-pack expectations, and review process.
 - `ui/TWENTY_APPS.md` — canonical migration-aware guidance for Twenty apps/front components.
 - `ui/components/` — requirement docs for high-value repeated UI components and patterns.

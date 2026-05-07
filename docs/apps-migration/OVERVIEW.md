@@ -129,6 +129,13 @@ The current working note for that topic is:
 
 - [`APP_RUNTIME_ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
 
+Closely related cross-cutting constraint:
+
+- API pressure is now tracked in:
+  - [`API_PRESSURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
+
+That note should be used when evaluating whether an app design is operationally safe under shared Twenty API, workflow, and logic-function budgets rather than only functionally correct in isolation.
+
 ### 5.1 Twenty App Workflow Source Of Truth
 
 For app scaffolding, setup, build, and dev workflow, treat the official Twenty docs as canonical:
@@ -172,6 +179,8 @@ This doc should not duplicate step-by-step app setup instructions unless we inte
   - captures the current repo-local workflow split between Twenty app development and the integrated `dev-stack` environment.
 - [`APP_RUNTIME_ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
   - exploratory runtime-boundary note for stored-vs-derived decisions, app-to-Twenty handover, and pilot-vs-production architecture questions.
+- [`API_PRESSURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
+  - tracks migration-wide API/workflow/logic-function pressure constraints and the design posture they imply for future apps.
 - [`ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/ARCHITECTURE.md)
   - defines shared UI evaluation rules and current defaults.
 - [`TWENTY_APPS.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/TWENTY_APPS.md)

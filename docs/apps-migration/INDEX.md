@@ -28,6 +28,8 @@ If you need:
   - [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
 - open app-runtime and stored-vs-derived architecture questions:
   - [APP_RUNTIME_ARCHITECTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
+- migration-wide API pressure and shared-budget constraints:
+  - [API_PRESSURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
 - evolving implementation patterns discovered during sessions:
   - [MIGRATION_WORKING_PATTERNS.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
 - current UI blocks and reuse candidates:
@@ -56,6 +58,8 @@ If you need:
   - references and observations about Twenty-native capabilities, constraints, metadata field types, field-definition patterns, and front-component runtime behavior
 - [APP_RUNTIME_ARCHITECTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
   - exploratory runtime-boundary note for app-to-Twenty handover, update propagation, and stored-vs-derived decisions
+- [API_PRESSURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
+  - migration-wide note on core API limits, workflow/logic-function pressure domains, and design posture for future apps
 - [ONLINE_DONATION_INTAKE_CONTRACT.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_CONTRACT.md)
   - source-neutral internal contract for online donation adapters feeding staging and processing
 - [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)

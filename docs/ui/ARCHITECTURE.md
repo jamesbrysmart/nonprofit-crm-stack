@@ -24,6 +24,7 @@ This doc is not authoritative for:
 Related docs:
 
 - `docs/UX_UI.md`: stable UX and interaction principles.
+- `docs/ui/OPERATIONAL_COMPONENT_PATTERNS.md`: recurring shapes for custom operational components and their intended job/hierarchy.
 - `docs/ui/STORYBOOK.md`: Storybook process and review harness guidance.
 - `docs/ui/TWENTY_APPS.md`: migration-aware UI guidance.
 - `docs/ui/components/`: requirement docs for high-value repeated UI components/patterns.

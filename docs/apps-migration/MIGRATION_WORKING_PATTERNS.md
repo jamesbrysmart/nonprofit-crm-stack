@@ -55,7 +55,8 @@ Current leaning:
 
 Why:
 
-- in Twenty, the first tab can behave differently from later tabs
+- on full desktop record pages, the first visible tab is rendered differently from later tabs
+- when more than one tab is visible, Twenty pins the first tab into a left-side column under the native summary card rather than leaving it in the main tab strip
 - in drawer context, denser layouts can feel constrained
 - `GRID` layouts become more valuable in full record view than in narrow side-panel space
 
@@ -64,6 +65,13 @@ What this suggests:
 - keep the first tab short, high-signal, and operational
 - use it for status, next action, summary, and signposts
 - move fuller review/edit/detail surfaces into later tabs where needed
+- treat efficient use of space as especially important on the first tab because width is structurally constrained there on desktop record pages
+- treat second and later tabs as the better home for denser working layouts, side-by-side review blocks, and heavier `GRID` usage
+
+Scope note:
+
+- this pinned-first-tab behavior matters most on full desktop record pages
+- it does not apply in the same way in the side panel, on mobile, or when there is only one visible tab
 
 ## 4. Prefer Building Blocks Over Monoliths
 

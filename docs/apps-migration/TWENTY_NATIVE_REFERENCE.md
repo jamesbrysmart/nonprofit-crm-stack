@@ -146,8 +146,9 @@ Practical read:
   - one large custom review component gives the app more control, but gives the organisation less control
 - This makes native `FIELDS` / `FIELD` widgets worth preferring as an early product path where they are good enough, especially for secondary review/edit surfaces
 - Additional runtime observation:
-  - the first tab on a record page may behave more like a `Home` / landing tab than a neutral full-width workspace
-  - in the fundraising experiments, the first tab remained visually compressed in record view in ways later tabs did not
+  - the first tab on a record page behaves more like a `Home` / landing tab than a neutral full-width workspace
+  - on full desktop record pages, when more than one tab is visible, Twenty pins the first tab into a left-side column under the native summary card instead of rendering it in the main tab strip
+  - this means the first tab is structurally narrower than later tabs and should be treated as a concise operational surface
   - this makes the first tab a better place for concise state, actions, and signposting than for the densest field-heavy review layout
 - `GRID` should be treated as context-sensitive rather than universally beneficial:
   - in narrow drawer contexts it can collapse into stacked widget chrome and feel wasteful,

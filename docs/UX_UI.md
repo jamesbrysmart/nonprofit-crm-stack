@@ -1,6 +1,6 @@
 # UI / UX Principles
 
-Updated: 2026-04-02
+Updated: 2026-05-04
 Status: Current guidance
 Purpose: Define stable UX and interaction principles for custom UI in this project.
 
@@ -9,6 +9,7 @@ This doc is authoritative for UX principles only.
 Related docs:
 
 - `docs/ui/ARCHITECTURE.md`: shared UI model, reuse criteria, and open architectural questions.
+- `docs/ui/OPERATIONAL_COMPONENT_PATTERNS.md`: recurring operational component shapes for custom UI while Twenty SDK UI evolves.
 - `docs/ui/STORYBOOK.md`: Storybook process and review guidance.
 - `docs/ui/TWENTY_APPS.md`: migration-aware guidance for Twenty apps/front components.
 
@@ -36,6 +37,8 @@ Related docs:
 - Keep microcopy concise, clear, and action-oriented.
 - Use sentence case.
 - Avoid decorative or overly clever phrasing in operational workflows.
+- Prefer operator-facing product language over internal model or engineering language.
+- Describe what the user should do or what happened to their work, not how the system models the state.
 
 ## 5. Accessibility And Responsiveness
 
@@ -47,3 +50,9 @@ Related docs:
 
 - Provisional UX decisions should be easy to find and revisit.
 - When a workflow diverges intentionally from a current default, record why in the relevant architecture or feature doc rather than leaving the difference unexplained in code.
+
+## 7. As-Built Notes
+
+- `apps/fundraising/nonprofit-fundraising`: gift staging review widgets currently share a compact local styling layer, inherit host typography by default, and should expose one review tab rather than carrying parallel legacy and v2 review surfaces.
+- `apps/fundraising/nonprofit-fundraising`: gift staging review copy is moving away from technical/internal terms toward donation-admin language such as `gift record`, `donor details`, `selected donor`, and `review later`.
+- `apps/fundraising/nonprofit-fundraising`: recurring agreement record UI now prefers a lean `Home` tab made of compact signposting blocks (`Recurring state`, `Donor context`, `Linked gifts`) and avoids a separate all-in-one review surface.
