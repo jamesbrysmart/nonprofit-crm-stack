@@ -86,6 +86,10 @@ export type ProcessBatchRequest = {
   giftBatchId: string;
 };
 
+export type RunBatchDonorMatchRequest = {
+  giftBatchId: string;
+};
+
 export type ProcessBatchResponse = {
   giftBatchId: string;
   batchStatus: BatchStatus;
@@ -99,4 +103,13 @@ export type ProcessBatchResponse = {
   batchPathFailed: number;
   rowFallbackProcessed: number;
   rowFallbackFailed: number;
+};
+
+export type RunBatchDonorMatchResponse = {
+  giftBatchId: string;
+  totalCandidateRows: number;
+  evaluatedRows: number;
+  autoLinkedRows: number;
+  ambiguousRows: number;
+  unchangedRows: number;
 };

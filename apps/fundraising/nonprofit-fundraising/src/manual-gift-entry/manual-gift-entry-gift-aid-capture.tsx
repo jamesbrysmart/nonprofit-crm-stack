@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import type { ManualGiftDonorType } from 'src/manual-gift-entry/manual-gift-entry.types';
 
 type ManualGiftEntryGiftAidCaptureProps = {
   giftAidRequested: boolean;
@@ -15,13 +16,17 @@ type ManualGiftEntryGiftAidCaptureProps = {
   onGiftAidTextVersionChange: (value: string) => void;
 };
 
-const cardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
-  borderRadius: '10px',
-  padding: '16px',
+type ManualGiftEntryGiftAidSectionProps =
+  ManualGiftEntryGiftAidCaptureProps & {
+    donorType: ManualGiftDonorType;
+    includedInFlow: boolean;
+  };
+
+const sectionStyle: CSSProperties = {
   display: 'grid',
-  gap: '12px',
-  background: '#ffffff',
+  gap: '10px',
+  paddingBottom: '14px',
+  borderBottom: '1px solid #e6e8eb',
 };
 
 const labelStyle: CSSProperties = {
@@ -102,12 +107,8 @@ export const ManualGiftEntryGiftAidCapture = ({
   onGiftAidTextVersionChange,
 }: ManualGiftEntryGiftAidCaptureProps) => {
   return (
-    <div style={cardStyle}>
+    <div style={sectionStyle}>
       <div style={sectionTitleStyle}>Gift Aid</div>
-      <p style={bodyTextStyle}>
-        Capture Gift Aid request and declaration facts here. The final
-        claimability outcome is still derived on the committed gift.
-      </p>
 
       <label
         style={{
@@ -125,11 +126,15 @@ export const ManualGiftEntryGiftAidCapture = ({
             onGiftAidRequestedChange(getInputEventChecked(event))
           }
         />
-        <span>Gift Aid requested for this gift</span>
+        <span>Gift Aid applies</span>
       </label>
 
       {giftAidRequested ? (
         <>
+          <p style={bodyTextStyle}>
+            Add Gift Aid details only when they were captured during entry.
+          </p>
+
           <label
             style={{
               display: 'flex',
@@ -146,7 +151,7 @@ export const ManualGiftEntryGiftAidCapture = ({
                 onGiftAidDeclarationCapturedChange(getInputEventChecked(event))
               }
             />
-            <span>Declaration captured in this entry flow</span>
+            <span>Declaration captured during entry</span>
           </label>
 
           <div
@@ -173,7 +178,7 @@ export const ManualGiftEntryGiftAidCapture = ({
               <input
                 style={inputStyle}
                 value={giftAidCoverageScope}
-                placeholder="past_and_future"
+                placeholder="Past and future"
                 onChange={(event) =>
                   onGiftAidCoverageScopeChange(getInputEventValue(event))
                 }
@@ -193,7 +198,7 @@ export const ManualGiftEntryGiftAidCapture = ({
               <input
                 style={inputStyle}
                 value={giftAidDeclarationSource}
-                placeholder="manual_entry"
+                placeholder="Manual entry"
                 onChange={(event) =>
                   onGiftAidDeclarationSourceChange(getInputEventValue(event))
                 }
@@ -215,10 +220,21 @@ export const ManualGiftEntryGiftAidCapture = ({
         </>
       ) : (
         <div style={secondaryTextStyle}>
-          Leave Gift Aid off when no request or declaration facts were captured
-          during entry.
+          Leave this off unless Gift Aid details were taken during entry.
         </div>
       )}
     </div>
   );
+};
+
+export const ManualGiftEntryGiftAidSection = ({
+  donorType,
+  includedInFlow,
+  ...props
+}: ManualGiftEntryGiftAidSectionProps) => {
+  if (!includedInFlow || donorType !== 'INDIVIDUAL') {
+    return null;
+  }
+
+  return <ManualGiftEntryGiftAidCapture {...props} />;
 };

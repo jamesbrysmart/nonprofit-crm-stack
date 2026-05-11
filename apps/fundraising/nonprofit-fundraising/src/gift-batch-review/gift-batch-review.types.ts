@@ -52,6 +52,7 @@ export type GiftBatchReviewRecord = {
   failedItems: number;
   readyItems: number;
   unresolvedItems: number;
+  ambiguousItems: number;
   rows: GiftBatchReviewRow[];
 };
 

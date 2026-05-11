@@ -2,6 +2,15 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useRecordId } from 'twenty-sdk/front-component';
+import {
+  compactDividerSectionStyle,
+  compactMetaGridStyle,
+  compactMetaItemStyle,
+  compactValueStyle,
+  compactWidgetRootStyle,
+  labelStyle,
+  secondaryTextStyle,
+} from 'src/front-components/gift-staging-review-ui';
 
 export const GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'e16aaf4a-97cd-488b-a19e-73635165ad1f';
@@ -21,33 +30,8 @@ type GiftGiftAidDeclarationRecord = {
   } | null;
 };
 
-const cardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
-  borderRadius: '10px',
-  padding: '16px',
-  display: 'grid',
-  gap: '10px',
-  background: '#ffffff',
-};
-
-const labelStyle: CSSProperties = {
-  fontSize: '12px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: '#57606a',
-};
-
-const valueStyle: CSSProperties = {
-  fontSize: '15px',
-  fontWeight: 600,
-  color: '#1f2328',
-};
-
-const textStyle: CSSProperties = {
-  fontSize: '13px',
-  color: '#57606a',
-  lineHeight: 1.5,
-};
+const valueStyle: CSSProperties = compactValueStyle;
+const textStyle: CSSProperties = secondaryTextStyle;
 
 const statusPillBaseStyle: CSSProperties = {
   borderRadius: '999px',
@@ -273,8 +257,7 @@ const GiftGiftAidDeclaration = () => {
   const declarationName = normalizeString(declaration?.name);
 
   return (
-    <div style={cardStyle}>
-      <div style={labelStyle}>Gift Aid declaration</div>
+    <div style={compactWidgetRootStyle}>
       <div style={valueStyle}>
         {declarationName === '' ? 'No linked declaration' : declarationName}
       </div>
@@ -284,47 +267,43 @@ const GiftGiftAidDeclaration = () => {
       <div style={textStyle}>{getIssueLabel(declaration)}</div>
       <div style={textStyle}>{getDeclarationMessage(declaration)}</div>
       {declaration?.id ? (
-        <div
-          style={{
-            display: 'grid',
-            gap: '8px',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          }}
-        >
-          <div>
-            <div style={labelStyle}>Declaration date</div>
-            <div style={textStyle}>{formatDate(declaration.declarationDate)}</div>
-          </div>
-          <div>
-            <div style={labelStyle}>Coverage scope</div>
-            <div style={textStyle}>
-              {normalizeString(declaration.coverageScope) === ''
-                ? 'Not recorded'
-                : toTitleCase(normalizeString(declaration.coverageScope))}
+        <div style={compactDividerSectionStyle}>
+          <div style={compactMetaGridStyle}>
+            <div style={compactMetaItemStyle}>
+              <div style={labelStyle}>Declaration date</div>
+              <div style={textStyle}>{formatDate(declaration.declarationDate)}</div>
             </div>
-          </div>
-          <div>
-            <div style={labelStyle}>Source</div>
-            <div style={textStyle}>
-              {normalizeString(declaration.source) === ''
-                ? 'Not recorded'
-                : declaration.source}
+            <div style={compactMetaItemStyle}>
+              <div style={labelStyle}>Coverage scope</div>
+              <div style={textStyle}>
+                {normalizeString(declaration.coverageScope) === ''
+                  ? 'Not recorded'
+                  : toTitleCase(normalizeString(declaration.coverageScope))}
+              </div>
             </div>
-          </div>
-          <div>
-            <div style={labelStyle}>Text version</div>
-            <div style={textStyle}>
-              {normalizeString(declaration.textVersion) === ''
-                ? 'Not recorded'
-                : declaration.textVersion}
+            <div style={compactMetaItemStyle}>
+              <div style={labelStyle}>Source</div>
+              <div style={textStyle}>
+                {normalizeString(declaration.source) === ''
+                  ? 'Not recorded'
+                  : declaration.source}
+              </div>
             </div>
-          </div>
-          {normalizeString(declaration.revokedAt) !== '' ? (
-            <div>
-              <div style={labelStyle}>Revoked at</div>
-              <div style={textStyle}>{formatDate(declaration.revokedAt)}</div>
+            <div style={compactMetaItemStyle}>
+              <div style={labelStyle}>Text version</div>
+              <div style={textStyle}>
+                {normalizeString(declaration.textVersion) === ''
+                  ? 'Not recorded'
+                  : declaration.textVersion}
+              </div>
             </div>
-          ) : null}
+            {normalizeString(declaration.revokedAt) !== '' ? (
+              <div style={compactMetaItemStyle}>
+                <div style={labelStyle}>Revoked</div>
+                <div style={textStyle}>{formatDate(declaration.revokedAt)}</div>
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>

@@ -72,7 +72,7 @@ export const computeClaimBatchRollups = (gifts: GiftAidClaimGiftRecord[]) => {
   ).length;
 
   return {
-    giftCount: claimableGifts.length,
+    giftCount: gifts.length,
     totalAmount: {
       amountMicros: claimableGifts.reduce(
         (sum, gift) => sum + (gift.amount?.amountMicros ?? 0),
@@ -106,6 +106,7 @@ export const getCurrentDraftClaimBatch = async (
           name: true,
           status: true,
           submittedAt: true,
+          latestSubmissionStatus: true,
           giftCount: true,
           totalAmount: true,
           hasBlockingIssues: true,
@@ -145,12 +146,13 @@ export const getOrCreateCurrentDraftClaimBatch = async (
         },
       },
       id: true,
-      name: true,
-      status: true,
-      submittedAt: true,
-      giftCount: true,
-      totalAmount: true,
-      hasBlockingIssues: true,
+          name: true,
+          status: true,
+          submittedAt: true,
+          latestSubmissionStatus: true,
+          giftCount: true,
+          totalAmount: true,
+          hasBlockingIssues: true,
       blockingIssueCount: true,
       notes: true,
     },
@@ -396,6 +398,7 @@ export const loadGiftAidClaimWorkspace = async (
       name: true,
       status: true,
       submittedAt: true,
+      latestSubmissionStatus: true,
       giftCount: true,
       totalAmount: true,
       hasBlockingIssues: true,
@@ -440,7 +443,12 @@ export const loadGiftAidClaimWorkspace = async (
   const submissions =
     result?.giftAidClaimSubmissions?.edges?.map(
       (edge: { node: GiftAidClaimSubmissionRecord }) => edge.node,
-    ) ?? [];
+    )?.sort((left, right) => {
+      const leftTimestamp = left.submittedAt ?? left.completedAt ?? '';
+      const rightTimestamp = right.submittedAt ?? right.completedAt ?? '';
+
+      return rightTimestamp.localeCompare(leftTimestamp);
+    }) ?? [];
 
   if (!batch) {
     return {
@@ -474,6 +482,7 @@ const loadClaimBatch = async (client: CoreApiClient, batchId: string) => {
       name: true,
       status: true,
       submittedAt: true,
+      latestSubmissionStatus: true,
       giftCount: true,
       totalAmount: true,
       hasBlockingIssues: true,
@@ -523,7 +532,7 @@ export const finalizeGiftAidClaimBatch = async (
       __args: {
         id: batch.id,
         data: {
-          status: 'SUBMITTED',
+          status: 'FINALIZED',
           submittedAt,
         },
       },
@@ -536,7 +545,7 @@ export const finalizeGiftAidClaimBatch = async (
   return {
     claimBatchId: batch.id,
     nextDraftBatchId: nextDraft.id,
-    status: 'SUBMITTED',
+    status: 'FINALIZED',
     submittedAt,
   };
 };

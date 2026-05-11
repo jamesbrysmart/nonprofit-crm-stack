@@ -21,6 +21,15 @@ export const GIFT_DONOR_LAST_NAME_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER =
   '801acbd4-c386-44d4-98d5-7eb751baec7a';
 
+export const GIFT_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
+  '3cbc11d6-d0af-420f-ab8f-cd43bd3913a3';
+
+export const GIFT_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER =
+  '0ef32006-84d2-49ef-8fb0-b7a74d79df77';
+
+export const GIFT_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER =
+  '81d4b8be-f4fc-4862-b964-2c8780eec656';
+
 export const GIFT_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER =
   'fe6e8b0b-0921-4e6f-8334-88bb7326e07c';
 
@@ -32,6 +41,15 @@ export const GIFT_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER =
 
 export const GIFT_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER =
   '41c3ad7e-e79b-42c5-a9ce-2e6b1690d951';
+
+export const GIFT_REFUNDED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '5ff8c4d7-cfe2-4977-bd31-9db722990e5f';
+
+export const GIFT_REFUND_DATE_FIELD_UNIVERSAL_IDENTIFIER =
+  '2d4314c8-2fd9-4799-952b-2b808590f0cd';
+
+export const GIFT_REFUND_NOTE_FIELD_UNIVERSAL_IDENTIFIER =
+  '1f9cf126-e2d7-42aa-a447-0459d4113b6d';
 
 export const GIFT_GIFT_AID_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
   '27718cee-e315-4c7c-8b83-35bd33820a24';
@@ -108,6 +126,80 @@ export default defineObject({
       defaultValue: null,
     },
     {
+      universalIdentifier: GIFT_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'paymentType',
+      label: 'Payment type',
+      description: 'How the charity received the gift',
+      icon: 'IconCreditCard',
+      defaultValue: "'BANK_TRANSFER'",
+      options: [
+        {
+          id: '90e8e311-a918-4443-a484-871a603dba20',
+          value: 'CARD',
+          label: 'Card',
+          position: 0,
+          color: 'blue',
+        },
+        {
+          id: 'ae10bad2-4782-4bf0-81e8-b55288d2f5f8',
+          value: 'DIRECT_DEBIT',
+          label: 'Direct debit',
+          position: 1,
+          color: 'blue',
+        },
+        {
+          id: 'c582872e-d89c-4949-8975-d7a868df8190',
+          value: 'BANK_TRANSFER',
+          label: 'Bank transfer',
+          position: 2,
+          color: 'green',
+        },
+        {
+          id: 'f86577e5-c6cb-49af-89db-880e7bda5f83',
+          value: 'CASH',
+          label: 'Cash',
+          position: 3,
+          color: 'yellow',
+        },
+        {
+          id: '805cc662-9365-426b-80a5-fca72675ef31',
+          value: 'CHEQUE',
+          label: 'Cheque',
+          position: 4,
+          color: 'orange',
+        },
+        {
+          id: '4f312dc3-e657-4e4d-b2cb-c39ed10bf511',
+          value: 'OTHER',
+          label: 'Other',
+          position: 5,
+          color: 'gray',
+        },
+      ],
+    },
+    {
+      universalIdentifier: GIFT_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'appealName',
+      label: 'Appeal',
+      description:
+        'Temporary appeal capture used until the dedicated appeal object/lookup is available.',
+      icon: 'IconTargetArrow',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'companyName',
+      label: 'Company name',
+      description: 'Captured organisation name at entry time for company gifts',
+      icon: 'IconBuildingSkyscraper',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
       universalIdentifier: GIFT_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.TEXT,
       name: 'externalId',
@@ -144,6 +236,36 @@ export default defineObject({
       label: 'Provider payment ID',
       description: 'Provider-side payment reference when available',
       icon: 'IconReceiptPound',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_REFUNDED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'refundedAmount',
+      label: 'Refunded amount',
+      description: 'Total amount later refunded against this original gift',
+      icon: 'IconArrowBackUp',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_REFUND_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.DATE_TIME,
+      name: 'refundDate',
+      label: 'Refund date',
+      description: 'Effective date of the currently recorded refund on this gift',
+      icon: 'IconCalendarTime',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_REFUND_NOTE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'refundNote',
+      label: 'Refund note',
+      description: 'Lightweight operational note explaining the refund',
+      icon: 'IconNote',
       isNullable: true,
       defaultValue: null,
     },

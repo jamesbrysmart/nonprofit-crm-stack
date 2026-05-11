@@ -8,8 +8,14 @@ import {
 } from 'twenty-sdk/front-component';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { Button } from 'twenty-sdk/ui';
-import { processBatch } from 'src/batch-processing/batch-processing.api';
-import type { ProcessBatchResponse } from 'src/batch-processing/batch-processing.types';
+import {
+  processBatch,
+  runBatchDonorMatch,
+} from 'src/batch-processing/batch-processing.api';
+import type {
+  ProcessBatchResponse,
+  RunBatchDonorMatchResponse,
+} from 'src/batch-processing/batch-processing.types';
 import { buildGiftBatchReviewRecord } from 'src/gift-batch-review/gift-batch-review.model';
 import { processGiftStagingRow } from 'src/gift-staging-review/gift-staging-processing.api';
 import type {
@@ -103,6 +109,7 @@ const getStatusPillStyle = (status: string): CSSProperties => {
 
 type GiftStagingQueueScope =
   | 'all'
+  | 'ambiguous'
   | 'failed'
   | 'not-ready'
   | 'needs-donor-review'
@@ -117,6 +124,9 @@ const buildGiftStagingQueryParams = (
   };
 
   switch (scope) {
+    case 'ambiguous':
+      queryParams['filter[donorResolutionState][IS]'] = ['AMBIGUOUS'];
+      break;
     case 'failed':
       queryParams['filter[processingStatus][IS]'] = ['PROCESS_FAILED'];
       break;
@@ -215,7 +225,10 @@ const GiftBatchRecord = () => {
   const recordId = useRecordId();
   const [record, setRecord] = useState<GiftBatchReviewRecord | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [matchingDonors, setMatchingDonors] = useState(false);
   const [lastRun, setLastRun] = useState<ProcessBatchResponse | null>(null);
+  const [lastDonorMatchRun, setLastDonorMatchRun] =
+    useState<RunBatchDonorMatchResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingRowId, setProcessingRowId] = useState<string | null>(null);
@@ -283,6 +296,38 @@ const GiftBatchRecord = () => {
       });
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleRunDonorMatch = async () => {
+    if (!recordId) {
+      return;
+    }
+
+    setMatchingDonors(true);
+
+    try {
+      const result = await runBatchDonorMatch({
+        giftBatchId: recordId,
+      });
+      setLastDonorMatchRun(result);
+
+      await enqueueSnackbar({
+        message: `Donor match complete: ${result.autoLinkedRows} linked, ${result.ambiguousRows} ambiguous, ${result.unchangedRows} still unreviewed.`,
+        variant: 'success',
+      });
+
+      await refresh();
+    } catch (matchError) {
+      await enqueueSnackbar({
+        message:
+          matchError instanceof Error
+            ? matchError.message
+            : 'Unable to run donor match.',
+        variant: 'error',
+      });
+    } finally {
+      setMatchingDonors(false);
     }
   };
 
@@ -404,6 +449,10 @@ const GiftBatchRecord = () => {
           <div style={metricValueStyle}>{record.readyItems}</div>
         </div>
         <div style={cardStyle}>
+          <div style={labelStyle}>Ambiguous</div>
+          <div style={metricValueStyle}>{record.ambiguousItems}</div>
+        </div>
+        <div style={cardStyle}>
           <div style={labelStyle}>Needs donor review</div>
           <div style={metricValueStyle}>{record.unresolvedItems}</div>
         </div>
@@ -415,6 +464,40 @@ const GiftBatchRecord = () => {
           <div style={labelStyle}>Processed</div>
           <div style={metricValueStyle}>{record.processedItems}</div>
         </div>
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ display: 'grid', gap: '6px' }}>
+          <div style={labelStyle}>Batch donor match</div>
+          <div style={secondaryTextStyle}>
+            Run one conservative donor-match pass across this batch before
+            row-by-row review. This only auto-links when exact first name, last
+            name, and email point to one clear donor.
+          </div>
+        </div>
+        <div>
+          <Button
+            title={matchingDonors ? 'Matching...' : 'Run donor match'}
+            variant="secondary"
+            onClick={() => {
+              void handleRunDonorMatch();
+            }}
+            disabled={matchingDonors || processing || record.rows.length === 0}
+          />
+        </div>
+        {lastDonorMatchRun ? (
+          <div style={{ display: 'grid', gap: '6px' }}>
+            <div style={secondaryTextStyle}>
+              Last run: {lastDonorMatchRun.autoLinkedRows} linked,{' '}
+              {lastDonorMatchRun.ambiguousRows} ambiguous,{' '}
+              {lastDonorMatchRun.unchangedRows} still unreviewed.
+            </div>
+            <div style={secondaryTextStyle}>
+              Evaluated {lastDonorMatchRun.evaluatedRows} of{' '}
+              {lastDonorMatchRun.totalCandidateRows} candidate rows.
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div style={cardStyle}>
@@ -478,6 +561,13 @@ const GiftBatchRecord = () => {
             variant="secondary"
             onClick={() => {
               void handleOpenGiftStagingQueue('failed');
+            }}
+          />
+          <Button
+            title={`Open ${record.ambiguousItems} ambiguous rows`}
+            variant="secondary"
+            onClick={() => {
+              void handleOpenGiftStagingQueue('ambiguous');
             }}
           />
           <Button

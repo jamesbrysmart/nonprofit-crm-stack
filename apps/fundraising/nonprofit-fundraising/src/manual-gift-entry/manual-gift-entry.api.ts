@@ -1,8 +1,14 @@
 import type {
+  CompanyDuplicateCheckRequest,
+  CompanyDuplicateCheckResponse,
   DuplicateCheckRequest,
   DuplicateCheckResponse,
+  ManualGiftDuplicateCheckRequest,
+  ManualGiftDuplicateCheckResponse,
   ManualGiftEntryRequest,
   ManualGiftEntryResponse,
+  SearchOpportunitiesRequest,
+  SearchOpportunitiesResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import type {
   SearchRecurringAgreementsRequest,
@@ -55,10 +61,26 @@ export const checkDonorDuplicates = (
     input,
   );
 
+export const checkCompanyDuplicates = (
+  input: CompanyDuplicateCheckRequest,
+): Promise<CompanyDuplicateCheckResponse> =>
+  postJson<CompanyDuplicateCheckResponse>(
+    '/s/company-resolution/check-company-duplicates',
+    input,
+  );
+
 export const createManualGift = (
   input: ManualGiftEntryRequest,
 ): Promise<ManualGiftEntryResponse> =>
   postJson<ManualGiftEntryResponse>('/s/manual-gift-entry/create-gift', input);
+
+export const checkManualGiftDuplicates = (
+  input: ManualGiftDuplicateCheckRequest,
+): Promise<ManualGiftDuplicateCheckResponse> =>
+  postJson<ManualGiftDuplicateCheckResponse>(
+    '/s/manual-gift-entry/check-duplicates',
+    input,
+  );
 
 export const searchRecurringAgreements = (
   input: SearchRecurringAgreementsRequest,
@@ -67,3 +89,8 @@ export const searchRecurringAgreements = (
     '/s/recurring-agreements/search',
     input,
   );
+
+export const searchOpportunities = (
+  input: SearchOpportunitiesRequest,
+): Promise<SearchOpportunitiesResponse> =>
+  postJson<SearchOpportunitiesResponse>('/s/opportunities/search', input);

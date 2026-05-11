@@ -2,6 +2,16 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useRecordId } from 'twenty-sdk/front-component';
+import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
+import {
+  compactDividerSectionStyle,
+  compactMetaGridStyle,
+  compactMetaItemStyle,
+  compactValueStyle,
+  compactWidgetRootStyle,
+  labelStyle,
+  secondaryTextStyle,
+} from 'src/front-components/gift-staging-review-ui';
 
 export const GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '867a2364-6eaa-4ef6-a7d3-85759e0e9b93';
@@ -25,33 +35,7 @@ type GiftAidGiftRecord = {
   } | null;
 };
 
-const cardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
-  borderRadius: '10px',
-  padding: '16px',
-  display: 'grid',
-  gap: '10px',
-  background: '#ffffff',
-};
-
-const labelStyle: CSSProperties = {
-  fontSize: '12px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: '#57606a',
-};
-
-const textStyle: CSSProperties = {
-  fontSize: '13px',
-  color: '#57606a',
-  lineHeight: 1.5,
-};
-
-const metricValueStyle: CSSProperties = {
-  fontSize: '20px',
-  fontWeight: 600,
-  color: '#1f2328',
-};
+const textStyle: CSSProperties = secondaryTextStyle;
 
 const statusPillBaseStyle: CSSProperties = {
   borderRadius: '999px',
@@ -131,6 +115,8 @@ const getReasonLabel = (reason: string | null | undefined) => {
       return 'Declaration donor mismatch';
     case 'non_individual_donor':
       return 'Non-individual donor';
+    case 'gift_refunded_or_reversed':
+      return 'Gift refunded or reversed';
     case 'not_requested':
       return 'Gift Aid not requested';
     default:
@@ -163,6 +149,10 @@ const getNextAction = (record: GiftAidGiftRecord) => {
 
   if (reason === 'non_individual_donor') {
     return 'This gift should remain outside Gift Aid claim preparation.';
+  }
+
+  if (reason === 'gift_refunded_or_reversed') {
+    return 'This gift has a recorded refund or reversal state and should remain outside Gift Aid claim preparation.';
   }
 
   if (reason === 'not_requested') {
@@ -265,6 +255,25 @@ const GiftGiftAidState = () => {
     void run();
   }, [recordId]);
 
+  useEffect(() => {
+    if (!recordId) {
+      return;
+    }
+
+    return subscribeToGiftRecordInvalidated({
+      recordId,
+      onInvalidate: async () => {
+        const loaded = await loadGift(recordId);
+
+        if (!loaded) {
+          return;
+        }
+
+        setRecord(loaded);
+      },
+    });
+  }, [recordId]);
+
   if (loading) {
     return <div style={textStyle}>Loading Gift Aid state...</div>;
   }
@@ -277,58 +286,41 @@ const GiftGiftAidState = () => {
     return <div style={textStyle}>Gift not found.</div>;
   }
 
-  const donorName = `${normalizeString(record.donorFirstName)} ${normalizeString(record.donorLastName)}`.trim();
   const statusLabel = getStatusLabel(record.giftAidStatus);
   const reasonLabel = getReasonLabel(record.giftAidReasonCode);
   const nextAction = getNextAction(record);
   const decisionSource = normalizeString(record.giftAidDecisionSource);
-  const title = record.name ?? (donorName !== '' ? donorName : 'Gift');
   const declarationName =
     normalizeString(record.giftAidDeclaration?.name) ||
     normalizeString(record.giftAidDeclaration?.id) ||
     'Not linked';
 
   return (
-    <div
-      style={{
-        padding: '20px',
-        fontFamily: 'sans-serif',
-        display: 'grid',
-        gap: '16px',
-      }}
-    >
-      <div style={cardStyle}>
-        <div style={labelStyle}>Gift Aid state</div>
-        <div style={metricValueStyle}>{title}</div>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <div style={getStatusStyle(record.giftAidStatus)}>{statusLabel}</div>
-          <div style={textStyle}>{reasonLabel}</div>
-        </div>
-        <div style={textStyle}>{nextAction}</div>
+    <div style={compactWidgetRootStyle}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={getStatusStyle(record.giftAidStatus)}>{statusLabel}</div>
+        <div style={textStyle}>{reasonLabel}</div>
       </div>
+      <div style={compactValueStyle}>{nextAction}</div>
 
-      <div
-        style={{
-          display: 'grid',
-          gap: '12px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        }}
-      >
-        <div style={cardStyle}>
-          <div style={labelStyle}>Decision source</div>
-          <div style={textStyle}>
-            {decisionSource === '' ? 'Not recorded' : toTitleCase(decisionSource)}
+      <div style={compactDividerSectionStyle}>
+        <div style={compactMetaGridStyle}>
+          <div style={compactMetaItemStyle}>
+            <div style={labelStyle}>Decision source</div>
+            <div style={textStyle}>
+              {decisionSource === '' ? 'Not recorded' : toTitleCase(decisionSource)}
+            </div>
           </div>
-        </div>
-        <div style={cardStyle}>
-          <div style={labelStyle}>Last evaluated</div>
-          <div style={textStyle}>
-            {formatDateTime(record.giftAidLastEvaluatedAt)}
+          <div style={compactMetaItemStyle}>
+            <div style={labelStyle}>Last checked</div>
+            <div style={textStyle}>
+              {formatDateTime(record.giftAidLastEvaluatedAt)}
+            </div>
           </div>
-        </div>
-        <div style={cardStyle}>
-          <div style={labelStyle}>Linked declaration</div>
-          <div style={textStyle}>{declarationName}</div>
+          <div style={compactMetaItemStyle}>
+            <div style={labelStyle}>Declaration</div>
+            <div style={textStyle}>{declarationName}</div>
+          </div>
         </div>
       </div>
     </div>

@@ -2,7 +2,10 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { GIFT_AID_CLAIM_BATCH_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-record.front-component';
+import { GIFT_AID_CLAIM_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-actions.front-component';
+import { GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-submission.front-component';
+import { GIFT_AID_CLAIM_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-summary.front-component';
+import { GIFT_AID_CLAIM_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-worklists.front-component';
 import { GIFT_AID_CLAIM_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-aid-claim-batch.object';
 
 export default definePageLayout({
@@ -12,20 +15,89 @@ export default definePageLayout({
   objectUniversalIdentifier: GIFT_AID_CLAIM_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
   tabs: [
     {
-      universalIdentifier: '283757ae-faf2-4f5c-8d44-0e47313fd90f',
-      title: 'Workspace',
+      universalIdentifier: 'fcf1fe12-cf95-4a04-ae28-a97f2f82992a',
+      title: 'Home',
       position: 0,
-      icon: 'IconReceiptTax',
-      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      icon: 'IconHome',
+      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
-          universalIdentifier: '77a67309-ef96-47d8-b6ef-61e5df99d5fa',
-          title: 'Gift Aid claim workspace',
+          universalIdentifier: '2ff1b81d-aab7-4526-8b3d-fc15093cc7e8',
+          title: 'Claim summary',
           type: 'FRONT_COMPONENT',
           configuration: {
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
-              GIFT_AID_CLAIM_BATCH_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+              GIFT_AID_CLAIM_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: '7160c2cd-b26d-473b-ad9c-a6612367a026',
+          title: 'Gift worklists',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_AID_CLAIM_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: '18d9a49a-ac6d-4029-8fa3-9f7a6d03737f',
+          title: 'Submission status',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
+      ],
+    },
+    {
+      universalIdentifier: '283757ae-faf2-4f5c-8d44-0e47313fd90f',
+      title: 'Workspace',
+      position: 50,
+      icon: 'IconReceiptTax',
+      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
+      widgets: [
+        {
+          universalIdentifier: '6f28f70a-f0ab-4b5d-85c8-8c9248ba8f2e',
+          title: 'Claim summary',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_AID_CLAIM_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: 'b64c7552-5be2-4975-b870-2766b52231da',
+          title: 'Primary action',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_AID_CLAIM_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: '1bb1ef8a-9ca5-4eb2-b3f5-a77e552bd9e1',
+          title: 'Gift worklists',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_AID_CLAIM_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: 'f75c2a2e-f1bb-4a63-a7aa-c85e7dadcf86',
+          title: 'Submission status',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

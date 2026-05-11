@@ -1,6 +1,8 @@
 import type {
   ProcessBatchRequest,
   ProcessBatchResponse,
+  RunBatchDonorMatchRequest,
+  RunBatchDonorMatchResponse,
 } from 'src/batch-processing/batch-processing.types';
 
 const getAppApiConfig = () => {
@@ -45,3 +47,11 @@ export const processBatch = (
   input: ProcessBatchRequest,
 ): Promise<ProcessBatchResponse> =>
   postJson<ProcessBatchResponse>('/s/batch-processing/process-batch', input);
+
+export const runBatchDonorMatch = (
+  input: RunBatchDonorMatchRequest,
+): Promise<RunBatchDonorMatchResponse> =>
+  postJson<RunBatchDonorMatchResponse>(
+    '/s/batch-processing/run-donor-match',
+    input,
+  );

@@ -1,4 +1,7 @@
-import type { GiftAidCaptureInput } from 'src/gift-aid/gift-aid.types';
+import type {
+  GiftAidCaptureInput,
+  MailingAddressEvidence,
+} from 'src/gift-aid/gift-aid.types';
 
 export type PersonSummary = {
   id: string;
@@ -8,6 +11,20 @@ export type PersonSummary = {
   } | null;
   emails?: {
     primaryEmail?: string | null;
+  } | null;
+};
+
+export type CompanySummary = {
+  id: string;
+  name?: string | null;
+};
+
+export type OpportunitySummary = {
+  id: string;
+  name?: string | null;
+  company?: {
+    id?: string | null;
+    name?: string | null;
   } | null;
 };
 
@@ -28,22 +45,87 @@ export type DuplicateCheckResponse = {
   candidates: PersonSummary[];
 };
 
+export type CompanyDuplicateCheckRequest = {
+  companyName?: string;
+};
+
+export type CompanyDuplicateCheckResponse = {
+  status: DonorDuplicateCheckStatus;
+  checkedCompanyName: string;
+  candidates: CompanySummary[];
+};
+
 export type ManualGiftDonorChoice = 'USE_EXISTING' | 'CREATE_NEW';
+export type ManualGiftCompanyChoice = 'USE_EXISTING' | 'CREATE_NEW';
+export type ManualGiftDonorType = 'INDIVIDUAL' | 'COMPANY';
+
+export type ManualGiftPaymentType =
+  | 'CARD'
+  | 'DIRECT_DEBIT'
+  | 'BANK_TRANSFER'
+  | 'CASH'
+  | 'CHEQUE'
+  | 'OTHER';
 
 export type ManualGiftEntryRequest = GiftAidCaptureInput & {
+  donorType?: ManualGiftDonorType;
   donorFirstName?: string;
   donorLastName?: string;
   donorEmail?: string;
+  donorMailingAddress?: MailingAddressEvidence | null;
+  companyName?: string;
   amountValue?: string;
+  currencyCode?: string;
+  paymentType?: ManualGiftPaymentType;
   giftDate?: string;
+  appealName?: string;
+  selectedOpportunityId?: string;
   donorChoice?: ManualGiftDonorChoice;
   selectedDonorId?: string;
+  companyChoice?: ManualGiftCompanyChoice;
+  selectedCompanyId?: string;
   selectedRecurringAgreementId?: string;
 };
 
 export type ManualGiftEntryResponse = {
   giftId: string;
-  donorId: string;
-  donorChoice: ManualGiftDonorChoice;
+  donorType: ManualGiftDonorType;
+  donorId?: string | null;
+  companyId?: string | null;
+  donorChoice?: ManualGiftDonorChoice | null;
+  companyChoice?: ManualGiftCompanyChoice | null;
   recurringAgreementId?: string | null;
+};
+
+export type SearchOpportunitiesRequest = {
+  query?: string;
+  companyId?: string;
+};
+
+export type SearchOpportunitiesResponse = {
+  opportunities: OpportunitySummary[];
+};
+
+export type ManualGiftDuplicateCheckRequest = {
+  donorType?: ManualGiftDonorType;
+  selectedDonorId?: string;
+  selectedCompanyId?: string;
+  amountValue?: string;
+  currencyCode?: string;
+  giftDate?: string;
+};
+
+export type ManualGiftDuplicateMatch = {
+  kind: 'COMMITTED_GIFT' | 'STAGED_GIFT';
+  id: string;
+  name: string;
+  giftDate: string;
+  amountMicros: number;
+  currencyCode: string;
+  status?: string | null;
+  giftBatchName?: string | null;
+};
+
+export type ManualGiftDuplicateCheckResponse = {
+  matches: ManualGiftDuplicateMatch[];
 };

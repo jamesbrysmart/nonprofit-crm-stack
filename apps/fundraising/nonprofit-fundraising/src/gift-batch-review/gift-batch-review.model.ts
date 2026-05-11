@@ -139,6 +139,9 @@ export const buildGiftBatchReviewRecord = (
     readyItems: reviewRows.filter(
       (row) => row.isProcessable && row.isReadyForProcessing,
     ).length,
+    ambiguousItems: reviewRows.filter(
+      (row) => row.donorResolutionState === 'AMBIGUOUS',
+    ).length,
     unresolvedItems: reviewRows.filter(
       (row) =>
         row.donorResolutionState === 'UNREVIEWED' ||

@@ -2,6 +2,7 @@ import type {
   FinalizeGiftAidClaimBatchResponse,
   QueueGiftAidClaimSubmissionResponse,
 } from 'src/gift-aid-claims/gift-aid-claim.types';
+import { broadcastGiftAidClaimWorkspaceInvalidated } from 'src/gift-aid-claims/gift-aid-claim-workspace-sync';
 
 const getAppApiConfig = () => {
   const apiBaseUrl = process.env.TWENTY_API_URL;
@@ -42,7 +43,10 @@ export const finalizeGiftAidClaimBatch = async (payload: {
     );
   }
 
-  return JSON.parse(rawBody) as FinalizeGiftAidClaimBatchResponse;
+  const parsed = JSON.parse(rawBody) as FinalizeGiftAidClaimBatchResponse;
+  broadcastGiftAidClaimWorkspaceInvalidated(payload.batchId);
+
+  return parsed;
 };
 
 export const queueGiftAidClaimSubmission = async (payload: {
@@ -69,5 +73,8 @@ export const queueGiftAidClaimSubmission = async (payload: {
     );
   }
 
-  return JSON.parse(rawBody) as QueueGiftAidClaimSubmissionResponse;
+  const parsed = JSON.parse(rawBody) as QueueGiftAidClaimSubmissionResponse;
+  broadcastGiftAidClaimWorkspaceInvalidated(payload.batchId);
+
+  return parsed;
 };

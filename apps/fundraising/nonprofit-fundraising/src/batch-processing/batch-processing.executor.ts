@@ -1,6 +1,11 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { attachGiftsToCurrentDraftClaimBatch } from 'src/gift-aid-claims/gift-aid-claim-batch';
+import {
+  collectDonorIds,
+  recomputeDonorRollups,
+} from 'src/donor-rollups/donor-rollups';
+import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import {
@@ -20,6 +25,7 @@ const CHUNK_DELAY_MS = 700;
 type SuccessfulWriteback = {
   id: string;
   committedGiftId: string;
+  donorId: string;
   recurringAgreementId?: string;
   processingStatus: 'PROCESSED';
   errorDetail: null;
@@ -72,56 +78,8 @@ class CorrelationContractFailure extends Error {
   }
 }
 
-const getRestConfig = () => {
-  const apiBaseUrl = process.env.TWENTY_API_URL;
-  const token =
-    process.env.TWENTY_APP_ACCESS_TOKEN ?? process.env.TWENTY_API_KEY;
-
-  if (!apiBaseUrl || !token) {
-    throw new Error('Twenty REST configuration missing');
-  }
-
-  return {
-    apiBaseUrl: apiBaseUrl.replace(/\/$/, ''),
-    token,
-  };
-};
-
 const sleep = async (delayMs: number) => {
   await new Promise((resolve) => setTimeout(resolve, delayMs));
-};
-
-const requestTwentyRest = async <T>({
-  path,
-  method,
-  body,
-}: {
-  path: string;
-  method: 'POST';
-  body: unknown;
-}): Promise<T> => {
-  const { apiBaseUrl, token } = getRestConfig();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const rawBody = await response.text();
-
-  if (!response.ok) {
-    throw new Error(rawBody || `Twenty REST request failed with ${response.status}`);
-  }
-
-  if (rawBody.trim() === '') {
-    return null as T;
-  }
-
-  return JSON.parse(rawBody) as T;
 };
 
 const normalizeString = (value: string | null | undefined) =>
@@ -640,6 +598,7 @@ const createGiftViaRowFallback = async (
   return {
     id: row.id,
     committedGiftId: giftId,
+    donorId,
     processingStatus: 'PROCESSED',
     errorDetail: null,
     isReadyForProcessing: false,
@@ -699,6 +658,7 @@ const createBatchGiftChunk = async (
   return entries.map((entry, index) => ({
     id: entry.row.id,
     committedGiftId: giftIds[index],
+    donorId: normalizeString(entry.row.donor?.id),
     processingStatus: 'PROCESSED' as const,
     errorDetail: null,
     isReadyForProcessing: false as const,
@@ -902,73 +862,31 @@ const prepareBatchGiftEntries = async (
   };
 };
 
-const writeBackChunk = async (chunk: RowWriteback[]) => {
-  const persistedChunk = chunk.map((record) => {
-    const persistedRecord: Record<string, unknown> = {
-      id: record.id,
-      processingStatus: record.processingStatus,
-      errorDetail: record.errorDetail,
-    };
-
-    if ('committedGiftId' in record) {
-      persistedRecord.committedGiftId = record.committedGiftId;
-      persistedRecord.isReadyForProcessing = record.isReadyForProcessing;
-
-      if (normalizeString(record.recurringAgreementId) !== '') {
-        persistedRecord.recurringAgreementId = record.recurringAgreementId;
-      }
-    }
-
-    return persistedRecord;
-  });
-
-  const response = await requestTwentyRest<unknown>({
-    path: '/rest/batch/giftStagings?upsert=true&depth=0',
-    method: 'POST',
-    body: persistedChunk,
-  });
-
-  const body =
-    response && typeof response === 'object'
-      ? (response as {
-          data?: { createGiftStagings?: Array<{ id?: unknown }> };
-        })
-      : undefined;
-
-  const records = Array.isArray(body?.data?.createGiftStagings)
-    ? body.data.createGiftStagings
-    : [];
-
-  const returnedIds = new Set(
-    records
-      .map((record) =>
-        typeof record?.id === 'string' ? record.id.trim() : undefined,
-      )
-      .filter((id): id is string => Boolean(id)),
-  );
-  const expectedIds = new Set(persistedChunk.map((record) => record.id as string));
-
-  if (returnedIds.size !== expectedIds.size) {
-    throw new Error('Batch staging writeback returned unexpected id count');
-  }
-
-  for (const id of expectedIds) {
-    if (!returnedIds.has(id)) {
-      throw new Error(`Batch staging writeback missing id ${id}`);
-    }
-  }
-};
-
 const persistWritebacks = async (writebacks: RowWriteback[]) => {
-  const chunks = chunkArray(writebacks, WRITEBACK_CHUNK_SIZE);
+  await persistGiftStagingBatchUpserts(
+    writebacks.map((record) => {
+      const persistedRecord: Record<string, unknown> = {
+        id: record.id,
+        processingStatus: record.processingStatus,
+        errorDetail: record.errorDetail,
+      };
 
-  for (let index = 0; index < chunks.length; index += 1) {
-    await writeBackChunk(chunks[index]);
+      if ('committedGiftId' in record) {
+        persistedRecord.committedGiftId = record.committedGiftId;
+        persistedRecord.isReadyForProcessing = record.isReadyForProcessing;
 
-    if (index < chunks.length - 1) {
-      await sleep(CHUNK_DELAY_MS);
-    }
-  }
+        if (normalizeString(record.recurringAgreementId) !== '') {
+          persistedRecord.recurringAgreementId = record.recurringAgreementId;
+        }
+      }
+
+      return persistedRecord as { id: string } & Record<string, unknown>;
+    }),
+    {
+      chunkSize: WRITEBACK_CHUNK_SIZE,
+      delayMs: CHUNK_DELAY_MS,
+    },
+  );
 };
 
 export const executeBatchGiftProcessing = async (
@@ -1013,6 +931,23 @@ export const executeBatchGiftProcessing = async (
     if (claimableGiftIds.length > 0) {
       const client = new CoreApiClient();
       await attachGiftsToCurrentDraftClaimBatch(client, claimableGiftIds);
+    }
+  }
+
+  const donorIdsToRecompute = collectDonorIds(
+    result.successfulWritebacks.map((writeback) => writeback.donorId),
+  );
+
+  if (donorIdsToRecompute.length > 0) {
+    try {
+      const client = new CoreApiClient();
+      await recomputeDonorRollups(client, donorIdsToRecompute);
+    } catch (error) {
+      console.warn(
+        'Non-blocking donor rollup recompute failed after batch processing',
+        donorIdsToRecompute,
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 

@@ -7,6 +7,15 @@ import {
   useRecordId,
 } from 'twenty-sdk/front-component';
 import { Button } from 'twenty-sdk/ui';
+import {
+  compactDividerSectionStyle,
+  compactMetaGridStyle,
+  compactMetaItemStyle,
+  compactValueStyle,
+  compactWidgetRootStyle,
+  labelStyle,
+  secondaryTextStyle,
+} from 'src/front-components/gift-staging-review-ui';
 
 export const GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '2f9473b3-b340-492f-914f-9224e8616f5d';
@@ -39,33 +48,8 @@ type GiftGiftAidDonorContextRecord = {
   } | null;
 };
 
-const cardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
-  borderRadius: '10px',
-  padding: '16px',
-  display: 'grid',
-  gap: '10px',
-  background: '#ffffff',
-};
-
-const labelStyle: CSSProperties = {
-  fontSize: '12px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: '#57606a',
-};
-
-const valueStyle: CSSProperties = {
-  fontSize: '15px',
-  fontWeight: 600,
-  color: '#1f2328',
-};
-
-const textStyle: CSSProperties = {
-  fontSize: '13px',
-  color: '#57606a',
-  lineHeight: 1.5,
-};
+const valueStyle: CSSProperties = compactValueStyle;
+const textStyle: CSSProperties = secondaryTextStyle;
 
 const statusPillBaseStyle: CSSProperties = {
   borderRadius: '999px',
@@ -149,7 +133,7 @@ const getIssue = (record: GiftGiftAidDonorContextRecord) => {
     return {
       label: 'No donor linked',
       tone: 'warning' as const,
-      message: 'Link the donor before relying on donor-side Gift Aid context.',
+      message: 'Link the donor before relying on donor details for Gift Aid.',
     };
   }
 
@@ -158,7 +142,7 @@ const getIssue = (record: GiftGiftAidDonorContextRecord) => {
       label: 'Donor context needs review',
       tone: 'warning' as const,
       message:
-        'The linked donor does not match the linked declaration. Review the donor record before continuing.',
+        'The linked donor does not match the declaration. Review the donor before continuing.',
     };
   }
 
@@ -167,7 +151,7 @@ const getIssue = (record: GiftGiftAidDonorContextRecord) => {
       label: 'Mailing address incomplete',
       tone: 'warning' as const,
       message:
-        'The linked donor exists, but the mailing address still looks incomplete for Gift Aid review.',
+        'The linked donor is present, but the mailing address still looks incomplete for Gift Aid.',
     };
   }
 
@@ -305,39 +289,34 @@ const GiftGiftAidDonorContext = () => {
   };
 
   return (
-    <div style={cardStyle}>
-      <div style={labelStyle}>Gift Aid donor context</div>
+    <div style={compactWidgetRootStyle}>
       <div style={valueStyle}>{linkedDonorName}</div>
       <div style={getStatusStyle(issue.tone)}>{issue.label}</div>
       <div style={textStyle}>{issue.message}</div>
-      <div
-        style={{
-          display: 'grid',
-          gap: '8px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        }}
-      >
-        <div>
-          <div style={labelStyle}>Gift donor evidence</div>
-          <div style={textStyle}>{donorEvidenceName}</div>
-        </div>
-        <div>
-          <div style={labelStyle}>Linked donor email</div>
-          <div style={textStyle}>
-            {linkedDonorEmail === '' ? 'Not recorded' : linkedDonorEmail}
+      <div style={compactDividerSectionStyle}>
+        <div style={compactMetaGridStyle}>
+          <div style={compactMetaItemStyle}>
+            <div style={labelStyle}>Gift details captured</div>
+            <div style={textStyle}>{donorEvidenceName}</div>
           </div>
-        </div>
-        <div style={{ gridColumn: '1 / -1' }}>
-          <div style={labelStyle}>Mailing address</div>
-          <div style={textStyle}>
-            {formatAddressSummary(linkedDonor?.mailingAddress ?? null)}
+          <div style={compactMetaItemStyle}>
+            <div style={labelStyle}>Donor email</div>
+            <div style={textStyle}>
+              {linkedDonorEmail === '' ? 'Not recorded' : linkedDonorEmail}
+            </div>
+          </div>
+          <div style={compactMetaItemStyle}>
+            <div style={labelStyle}>Mailing address</div>
+            <div style={textStyle}>
+              {formatAddressSummary(linkedDonor?.mailingAddress ?? null)}
+            </div>
           </div>
         </div>
       </div>
       {linkedDonor?.id ? (
         <div>
           <Button
-            title="Go to donor"
+            title="Open donor"
             variant="secondary"
             onClick={() => {
               void handleGoToDonor();

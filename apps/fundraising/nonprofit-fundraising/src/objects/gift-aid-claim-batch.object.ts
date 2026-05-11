@@ -12,6 +12,9 @@ export const GIFT_AID_CLAIM_BATCH_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_AID_CLAIM_BATCH_SUBMITTED_AT_FIELD_UNIVERSAL_IDENTIFIER =
   '22017f13-1f56-4070-9d9f-7c2501da262f';
 
+export const GIFT_AID_CLAIM_BATCH_LATEST_SUBMISSION_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
+  '322860e6-a97d-48b7-a2df-93508ec546d4';
+
 export const GIFT_AID_CLAIM_BATCH_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER =
   '42b70a0d-5e6a-4a75-a75a-e12fc61eb2b2';
 
@@ -64,8 +67,8 @@ export default defineObject({
         },
         {
           id: '0b20a57a-889b-463d-b81f-91f540e35777',
-          value: 'SUBMITTED',
-          label: 'Submitted',
+          value: 'FINALIZED',
+          label: 'Finalized',
           position: 1,
           color: 'green',
         },
@@ -76,10 +79,71 @@ export default defineObject({
         GIFT_AID_CLAIM_BATCH_SUBMITTED_AT_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.DATE_TIME,
       name: 'submittedAt',
-      label: 'Submitted at',
+      label: 'Finalized at',
       icon: 'IconClock',
       isNullable: true,
       defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_AID_CLAIM_BATCH_LATEST_SUBMISSION_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'latestSubmissionStatus',
+      label: 'Latest submission status',
+      icon: 'IconSend',
+      isNullable: true,
+      defaultValue: null,
+      options: [
+        {
+          id: 'dc6cf53e-b9d2-4e22-97e9-477c999e01fc',
+          value: 'QUEUED',
+          label: 'Queued',
+          position: 0,
+          color: 'gray',
+        },
+        {
+          id: 'a39544d6-8f41-40ea-924c-8c83bb7dd143',
+          value: 'BUILT',
+          label: 'Built',
+          position: 1,
+          color: 'blue',
+        },
+        {
+          id: '5660b47c-a975-4f1f-a768-fdd6d6946dab',
+          value: 'ACKNOWLEDGED',
+          label: 'Acknowledged',
+          position: 2,
+          color: 'yellow',
+        },
+        {
+          id: '5f539d8b-645a-4d73-842f-3ed4be823e33',
+          value: 'AWAITING_RESPONSE',
+          label: 'Awaiting response',
+          position: 3,
+          color: 'orange',
+        },
+        {
+          id: '7edb6d97-78b7-4303-a8cb-3686a9e8c2a1',
+          value: 'RESPONDED',
+          label: 'Responded',
+          position: 4,
+          color: 'green',
+        },
+        {
+          id: '4210dc68-7e6b-4281-8951-621c51fdaf3e',
+          value: 'FAILED',
+          label: 'Failed',
+          position: 5,
+          color: 'red',
+        },
+        {
+          id: '95e7722d-ae6b-4ee5-a99b-b812f1b2ab91',
+          value: 'TIMED_OUT',
+          label: 'Timed out',
+          position: 6,
+          color: 'red',
+        },
+      ],
     },
     {
       universalIdentifier:

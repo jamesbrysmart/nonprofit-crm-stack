@@ -1,4 +1,4 @@
-export type GiftAidClaimBatchStatus = 'DRAFT' | 'SUBMITTED';
+export type GiftAidClaimBatchStatus = 'DRAFT' | 'FINALIZED';
 
 export type GiftAidClaimSubmissionStatus =
   | 'QUEUED'
@@ -31,6 +31,7 @@ export type GiftAidClaimBatchRecord = {
   name: string;
   status?: GiftAidClaimBatchStatus | null;
   submittedAt?: string | null;
+  latestSubmissionStatus?: GiftAidClaimSubmissionStatus | null;
   giftCount?: number | null;
   totalAmount?:
     | {
@@ -126,7 +127,7 @@ export type FinalizeGiftAidClaimBatchResponse = {
   claimBatchId: string;
   submittedAt: string;
   nextDraftBatchId: string;
-  status: 'SUBMITTED';
+  status: 'FINALIZED';
 };
 
 export type QueueGiftAidClaimSubmissionResponse = {

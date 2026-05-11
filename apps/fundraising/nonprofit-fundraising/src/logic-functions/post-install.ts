@@ -99,7 +99,7 @@ type ExistingGiftAidDeclarationRecord = {
 
 type SeedGiftAidClaimBatch = {
   name: string;
-  status: 'DRAFT' | 'SUBMITTED';
+  status: 'DRAFT' | 'FINALIZED';
   giftCount: number;
   totalAmountMicros: number;
   hasBlockingIssues: boolean;
@@ -231,6 +231,14 @@ const SEED_BATCHES: SeedBatch[] = [
   {
     name: 'Stripe processing smoke batch',
     source: 'stripe_smoke',
+    status: 'PENDING',
+    totalItems: 4,
+    processedItems: 0,
+    failedItems: 0,
+  },
+  {
+    name: 'Donor match smoke batch',
+    source: 'csv_import',
     status: 'PENDING',
     totalItems: 4,
     processedItems: 0,
@@ -393,6 +401,62 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     linkedDonorEmail: 'elliot.meyer@example.org',
     provider: 'STRIPE',
     providerPaymentId: 'pi_smoke_elliot_blocked',
+  },
+  {
+    name: 'Donor match smoke - Ada exact match',
+    intakeSource: 'csv_import',
+    amountMicros: 10_000_000,
+    donorFirstName: 'Ada',
+    donorLastName: 'Lovelace',
+    donorEmail: 'ada.lovelace@example.org',
+    giftDate: '2026-04-25',
+    donorResolutionState: 'UNREVIEWED',
+    isReadyForProcessing: false,
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Donor match smoke batch',
+  },
+  {
+    name: 'Donor match smoke - Jamie exact match',
+    intakeSource: 'csv_import',
+    amountMicros: 12_500_000,
+    donorFirstName: 'Jamie',
+    donorLastName: 'Taylor',
+    donorEmail: 'jamie.taylor.one@example.org',
+    giftDate: '2026-04-26',
+    donorResolutionState: 'UNREVIEWED',
+    isReadyForProcessing: false,
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Donor match smoke batch',
+  },
+  {
+    name: 'Donor match smoke - Jamie ambiguous by name',
+    intakeSource: 'csv_import',
+    amountMicros: 15_000_000,
+    donorFirstName: 'Jamie',
+    donorLastName: 'Taylor',
+    donorEmail: 'jamie.taylor@unknown.example.org',
+    giftDate: '2026-04-27',
+    donorResolutionState: 'UNREVIEWED',
+    isReadyForProcessing: false,
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Donor match smoke batch',
+  },
+  {
+    name: 'Donor match smoke - Sasha no candidate',
+    intakeSource: 'csv_import',
+    amountMicros: 9_000_000,
+    donorFirstName: 'Sasha',
+    donorLastName: 'Baker',
+    donorEmail: 'sasha.baker@example.org',
+    giftDate: '2026-04-28',
+    donorResolutionState: 'UNREVIEWED',
+    isReadyForProcessing: false,
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Donor match smoke batch',
   },
 ];
 

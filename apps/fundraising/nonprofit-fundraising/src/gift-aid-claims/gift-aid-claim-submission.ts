@@ -8,9 +8,12 @@ import {
 import { runGiftAidHmrcSubmission } from './gift-aid-hmrc-runner';
 import type {
   GiftAidClaimBatchRecord,
+  GiftAidClaimSubmissionRecord,
   GiftAidClaimSubmissionEnvironment,
   GiftAidClaimSubmissionSnapshot,
 } from './gift-aid-claim.types';
+
+const RETRYABLE_SUBMISSION_STATUSES = new Set(['FAILED', 'TIMED_OUT']);
 
 const getSubmissionEnvironment = (): GiftAidClaimSubmissionEnvironment =>
   (process.env.HMRC_SUBMISSION_ENVIRONMENT ?? 'TEST').trim().toUpperCase() ===
@@ -57,6 +60,8 @@ const buildSnapshot = async (
 const computeSnapshotHash = (snapshot: GiftAidClaimSubmissionSnapshot) =>
   createHash('sha256').update(JSON.stringify(snapshot)).digest('hex');
 
+const serializeRawJson = (value: unknown) => JSON.stringify(value);
+
 const createSubmissionRecord = async (
   client: CoreApiClient,
   batchId: string,
@@ -72,7 +77,7 @@ const createSubmissionRecord = async (
           status: 'QUEUED',
           environment: snapshot.environment,
           submittedAt,
-          snapshotJson: snapshot,
+          snapshotJson: serializeRawJson(snapshot),
           snapshotHash,
           giftAidClaimBatch: {
             connect: {
@@ -117,6 +122,63 @@ const loadClaimBatch = async (client: CoreApiClient, batchId: string) => {
   return refreshed?.giftAidClaimBatch as GiftAidClaimBatchRecord | null;
 };
 
+const loadClaimSubmissions = async (
+  client: CoreApiClient,
+  batchId: string,
+): Promise<GiftAidClaimSubmissionRecord[]> => {
+  const result = await client.query({
+    giftAidClaimSubmissions: {
+      __args: {
+        first: 50,
+        filter: {
+          giftAidClaimBatchId: {
+            eq: batchId,
+          },
+        },
+      },
+      edges: {
+        node: {
+          id: true,
+          status: true,
+          submittedAt: true,
+          completedAt: true,
+          environment: true,
+          name: true,
+        },
+      },
+    },
+  } as any);
+
+  return (
+    result?.giftAidClaimSubmissions?.edges?.map(
+      (edge: { node: GiftAidClaimSubmissionRecord }) => edge.node,
+    )?.sort((left, right) => {
+      const leftTimestamp = left.submittedAt ?? left.completedAt ?? '';
+      const rightTimestamp = right.submittedAt ?? right.completedAt ?? '';
+
+      return rightTimestamp.localeCompare(leftTimestamp);
+    }) ?? []
+  );
+};
+
+const syncLatestSubmissionStatus = async (
+  client: CoreApiClient,
+  batchId: string,
+  status: GiftAidClaimSubmissionRecord['status'] | null,
+) => {
+  await client.mutation({
+    updateGiftAidClaimBatch: {
+      __args: {
+        id: batchId,
+        data: {
+          latestSubmissionStatus: status,
+        },
+      },
+      id: true,
+    },
+  } as any);
+};
+
 export const queueGiftAidClaimSubmission = async (
   client: CoreApiClient,
   batchId: string,
@@ -130,8 +192,19 @@ export const queueGiftAidClaimSubmission = async (
     throw new Error('Gift Aid claim batch not found');
   }
 
-  if (claimBatch.status !== 'SUBMITTED') {
+  if (claimBatch.status !== 'FINALIZED') {
     throw new Error('Gift Aid claim batch must be finalized before HMRC queueing');
+  }
+
+  const latestSubmission = (await loadClaimSubmissions(client, batchId))[0] ?? null;
+
+  if (
+    latestSubmission?.status &&
+    !RETRYABLE_SUBMISSION_STATUSES.has(latestSubmission.status)
+  ) {
+    throw new Error(
+      `This finalized claim already has a ${latestSubmission.status.toLowerCase()} submission attempt recorded.`,
+    );
   }
 
   const snapshot = await buildSnapshot(client, claimBatch);
@@ -145,6 +218,7 @@ export const queueGiftAidClaimSubmission = async (
   }
 
   const submission = await createSubmissionRecord(client, claimBatch.id, snapshot);
+  await syncLatestSubmissionStatus(client, claimBatch.id, 'QUEUED');
   let adapterResult:
     | Awaited<ReturnType<typeof runGiftAidHmrcSubmission>>
     | undefined;
@@ -168,15 +242,16 @@ export const queueGiftAidClaimSubmission = async (
             completedAt,
             failureCode: 'RUNNER_ERROR',
             failureMessage,
-            errorSummaryJson: {
+            errorSummaryJson: serializeRawJson({
               code: 'RUNNER_ERROR',
               message: failureMessage,
-            },
+            }),
           },
         },
         id: true,
       },
     } as any);
+    await syncLatestSubmissionStatus(client, claimBatch.id, 'FAILED');
 
     throw error;
   }
@@ -193,12 +268,13 @@ export const queueGiftAidClaimSubmission = async (
             completedAt: adapterResult.completedAt,
             correlationId: adapterResult.correlationId,
             transactionId: adapterResult.transactionId,
-            responseJson: adapterResult.responseBody,
+            responseJson: serializeRawJson(adapterResult.responseBody),
           },
         },
         id: true,
       },
     } as any);
+    await syncLatestSubmissionStatus(client, claimBatch.id, adapterResult.status);
 
     return {
       claimBatchId: claimBatch.id,
@@ -219,16 +295,17 @@ export const queueGiftAidClaimSubmission = async (
           correlationId: adapterResult.correlationId,
           failureCode: adapterResult.failureCode,
           failureMessage: adapterResult.failureMessage,
-          responseJson: adapterResult.responseBody,
-          errorSummaryJson: {
+          responseJson: serializeRawJson(adapterResult.responseBody),
+          errorSummaryJson: serializeRawJson({
             code: adapterResult.failureCode,
             message: adapterResult.failureMessage,
-          },
+          }),
         },
       },
       id: true,
     },
   } as any);
+  await syncLatestSubmissionStatus(client, claimBatch.id, adapterResult.status);
 
   return {
     claimBatchId: claimBatch.id,
