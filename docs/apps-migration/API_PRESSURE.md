@@ -303,6 +303,35 @@ Design warning:
 
 - any feature that expands recurring semantics should be reviewed for how much extra pressure it imposes on the batch path before the product shape is considered stable.
 
+### Donor rollups as a pressure-shaped maintained summary
+
+Current reference:
+
+- `apps/fundraising/nonprofit-fundraising/src/donor-rollups/donor-rollups.ts`
+- `apps/fundraising/nonprofit-fundraising/src/logic-functions/recompute-donor-rollups.ts`
+- `apps/fundraising/nonprofit-fundraising/src/logic-functions/refresh-donor-rollups-on-gift-updated.ts`
+- `apps/fundraising/nonprofit-fundraising/src/logic-functions/create-manual-gift.ts`
+- `apps/fundraising/nonprofit-fundraising/src/batch-processing/batch-processing.executor.ts`
+
+Why it matters:
+
+- donor segmentation/reporting fields such as `lastGiftDate`, `lifetimeGiftAmount`, and `lifetimeGiftCount` are valuable enough to justify materialized `person` fields,
+- but a naive per-gift trigger design would add row-level logic-function executions and repeated recompute reads directly onto the already expensive gift-processing path,
+- while a pure read-time TypeScript model would not support native sorting, filtering, or reporting on donors.
+
+Pressure implications:
+
+- the current shape keeps recompute logic in one shared module,
+- uses set-aware route/batch boundaries as the primary maintenance path,
+- patches `person` records only when recomputed values actually changed,
+- keeps database-event triggers as an integrity backstop rather than the normal hot path for bulk gift creation,
+- and uses explicit rebuild control points for bulk repair work: a manual admin route plus daily cron reconciliation.
+
+Design warning:
+
+- treat maintained summaries as a separate concern from gift processing itself,
+- and avoid letting row-level trigger fan-out become the dominant recompute mechanism for batch-created records unless the workflow is genuinely row-level.
+
 ## 5. Pressure Domains To Track During Migration
 
 For migration decisions, treat these as separate but interacting pressure domains:
@@ -361,6 +390,12 @@ If the fan-out is non-obvious, document it in the implementation note for that f
 ### Keep human-triggered control points where helpful
 
 - For operational workflows, explicit admin actions can be safer than fully automatic triggers when the automatic path would create uncontrolled pressure or expensive retries.
+
+### Prefer shared recompute modules for maintained summaries
+
+- If a summary needs more than one trigger point, keep one recompute implementation and call it from multiple control points.
+- Prefer set-aware callers that pass a deduped parent-id set rather than invoking the summary logic once per child record.
+- Use record-level triggers as integrity coverage for out-of-band edits when they are needed, not as the default execution model for batch-driven workflows.
 
 ## 7. Questions To Ask For New App Features
 

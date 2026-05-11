@@ -120,12 +120,18 @@ For the first implemented determination pass, the service should actively enforc
 
 For the same first pass, the following should remain explicitly deferred even though they still belong to the broader Gift Aid model:
 
-- refund or reversal effects on claimability;
+- finalized/submitted-claim follow-up after refund or reversal;
 - already-claimed exclusion until claim-batch behaviour is in place;
 - richer ambiguity handling where multiple declarations may apply;
 - deeper retrospective edge cases beyond the lean retrospective-coverage rule;
 - sponsorship treatment;
 - Gift Aid Small Donations Scheme handling.
+
+Current first-pass clarification:
+
+- a refunded gift should be treated as no longer claimable;
+- if it is only in draft-claim territory, it can be removed or excluded from the draft claim in the first pass;
+- if it has already been used in finalized/submitted claim history, that follow-up remains explicitly deferred rather than being silently auto-resolved.
 
 ## 4. Draft-Claim Inclusion Rules
 
@@ -197,26 +203,33 @@ Declaration-specific clarification:
 
 ## 6. Submission Behaviour
 
-When a user submits the current draft claim, the service should:
+When a user finalizes the current draft claim, the service should:
 
-- change the batch status from `draft` to `submitted`;
-- stamp `submittedAt`;
+- change the batch status from `draft` to `finalized`;
+- stamp `submittedAt` as the internal finalization timestamp;
 - freeze batch composition;
 - freeze Gift Aid-relevant fields on included gifts for audit and export reproducibility;
 - treat those gifts as `claimed`;
 - create the next current open draft claim for future eligible gifts.
 
-For v1, `submitted` means:
+For v1, `finalized` means:
 
 - internally finalized;
 - immutable;
 - ready for HMRC export or later submission automation;
 - not yet actually sent to HMRC.
 
+Submission history is a separate concern:
+
+- `GiftAidClaimBatch.status` should stay the internal workflow state (`draft` / `finalized`);
+- actual HMRC/export attempts should be recorded as `GiftAidClaimSubmission` history records;
+- the batch may additionally carry a latest-submission summary signal for list visibility, but that is not the same thing as the batch lifecycle itself.
+
 Current backend surface:
 
 - a read-only `current-draft` workflow endpoint can return the current draft batch or `null` if none exists yet;
-- a submit workflow endpoint can finalize a clean draft batch and return the submitted batch plus the next draft batch;
+- a finalize workflow endpoint can finalize a clean draft batch and return the finalized batch plus the next draft batch;
+- a separate queue-submission workflow endpoint can create or retry HMRC/export submission history from a finalized batch;
 - these are workflow endpoints, not a full generic claim-batch CRUD surface.
 
 ## 7. Freeze Rules

@@ -459,11 +459,21 @@ Current bounded-slice decision:
 
 - first submit/finalize pass is internal finalization, not HMRC-oriented submission:
   - why:
-    - this matches the product review’s current leaning that `submitted` in the first migrated app should mean internally finalized / ready for later export or automation, not transmitted to HMRC.
+    - this matches the product review’s current leaning that the first migrated app should treat the claim batch as internally finalized / ready for later export or automation, not transmitted to HMRC.
   - deferred / revisit:
     - external adapter boundaries,
     - transmission status history,
     - richer submission audit records.
+
+- claim-batch lifecycle and claim-submission history stay separate:
+  - why:
+    - `giftAidClaimBatch.status` should remain a clean internal workflow state (`DRAFT` / `FINALIZED`),
+    - while actual submission attempts belong to `giftAidClaimSubmission` history,
+    - and a lightweight latest-submission summary can be synchronized onto the batch for list visibility without collapsing the two concepts back together.
+  - deferred / revisit:
+    - whether batch-level latest-submission state remains a stored summary or becomes a more generalized rollup/backfill pattern,
+    - richer list/filter design around submission progress,
+    - and any wider export/HMRC response lifecycle surfacing.
 
 - first submit/finalize pass keeps historical-stability concerns documented, but not fully enforced:
   - why:

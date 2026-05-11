@@ -28,3 +28,10 @@ Use the following labels in `Current read`:
 - `Observed behavior`: The workflow around donor evidence edits, donor matching, and later processing is fragile in unhappy-path cases and can lead to unclear outcomes.
 - `Why it matters`: This affects when donor review is considered settled, what should invalidate it, and whether easy editing of imported/integrated donor evidence in staging creates more risk than value.
 - `Current read`: `decision gap`
+
+### 2026-05-07: Gift Aid claim submission records should be reviewed for read-only user locking before go-live
+
+- `Scenario`: Admins can inspect system-generated `GiftAidClaimSubmission` history records that are created and updated by the app submission process.
+- `Observed behavior`: The current app/runtime role shape has not yet been reviewed deeply enough to prove safe user-facing read-only locking on `GiftAidClaimSubmission` without risking collateral impact on app-managed create/update behavior.
+- `Why it matters`: Claim submission records are intended as system-generated history/audit records, not a normal manual maintenance workflow, so user editability should be reviewed before go-live rather than left as an implicit default.
+- `Current read`: `defer`

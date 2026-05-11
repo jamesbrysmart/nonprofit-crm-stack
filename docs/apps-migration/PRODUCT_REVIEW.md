@@ -371,6 +371,9 @@ Current behavior:
 - This product-review pass is not treating CSV import as a custom fundraising-service UI to migrate.
 - Current target direction is to use Twenty's CSV import functionality rather than rebuilding a separate CSV importer inside the fundraising app.
 - The migration still needs a product path for imported gift-like rows: how they map to gift staging or committed gift records, and what the user reviews after the import completes.
+- Current local code review of Twenty (v2.2-line) suggests the standard object-level `Import records` path is still a generic front-end spreadsheet import that maps rows to object fields and then batch creates/upserts records.
+- On current evidence, that means native `Import records` should be treated as a lower-control intake path than app-managed integrations: it does not appear to route rows through our fundraising-specific intake logic by default.
+- The same local review suggests Twenty's richer spreadsheet-import hooks exist inside Twenty front-end code, but are not clearly exposed through the supported Twenty app SDK surface we use at runtime. This should be treated as current verified understanding, not a permanent platform guarantee.
 
 Current target posture:
 
@@ -393,6 +396,9 @@ Open questions:
 - Should each gift CSV import create or select a `giftBatch` so users can open focused batch scope afterwards?
 - What minimal gift / staging fields must be present in the first supported import template?
 - How should donor identity / dedupe review happen after Twenty import?
+- If we later need CSV import to behave more like integration intake, do we need:
+  - upstream Twenty support for app-level spreadsheet-import customization,
+  - or a bespoke fundraising import wrapper built outside the stock `Import records` flow?
 
 Migration read:
 
@@ -403,6 +409,7 @@ Migration read:
 - Preserve staging as the post-import boundary and batch-first review as the default operating model for imported gifts.
 - Be firmer here than the current generic runtime logic: CSV should not inherit auto-process behavior by accident.
 - Make post-import batch scope explicit by default so donor-match, batch processing, and blocker-first review happen inside a focused review container rather than the broader staging queue.
+- Near-term working assumption: native `Import records` may not reliably auto-create/attach a `giftBatch` or run fundraising-specific post-import logic for us. If that capability becomes important, it should be treated as a focused future spike rather than assumed available.
 
 #### Scenario: Editing Staged Donor Or Gift Details
 
@@ -2565,7 +2572,7 @@ Use these user jobs as the basis for reviewing Gift Aid during migration:
 5. A user needs routine claimable gifts to enter the current draft claim automatically.
 6. A user needs a current draft claim workspace showing included gifts, total/value, blocking issues, and submit readiness.
 7. A user needs a needs-review view for Gift Aid gifts that require donor/declaration/gift correction.
-8. A user needs to submit/finalize a clean draft claim without implying it has been transmitted to HMRC.
+8. A user needs to finalize a clean draft claim without implying it has been transmitted to HMRC, while still seeing latest submission progress separately.
 9. A user needs already-submitted claims and claimed gifts protected from ordinary silent drift.
 10. A user needs unresolved Gift Aid questions to be visible in normal donation operations without turning Gift Aid into a heavyweight case-management subsystem.
 
@@ -2801,32 +2808,33 @@ Migration read:
 - Preserve current draft review and needs-review concepts.
 - Recreate the UI using shared list/drawer primitives where possible, while respecting Gift Aid-specific claim context.
 
-#### Scenario: Submitting A Claim Batch
+#### Scenario: Finalizing A Claim Batch And Tracking Submission Progress
 
 Why it matters:
 
-- Submission/finalization is the point where a draft claim becomes history and the included gifts should stop drifting through ordinary background re-evaluation.
-- The product must avoid implying that internal submission is the same as HMRC transmission unless that integration exists.
+- Internal finalization is the point where a draft claim becomes history and the included gifts should stop drifting through ordinary background re-evaluation.
+- The product must avoid implying that internal finalization is the same as HMRC transmission unless that integration exists.
+- Users still need list-level visibility of whether a finalized claim has actually been queued/responded/failed without reopening the batch record.
 
 Current behavior:
 
-- Backend exposes `GET /gift-aid-claim-batches/current-draft`.
-- Backend exposes `POST /gift-aid-claim-batches/:id/submit`.
-- Submit refreshes draft summary, blocks if the draft has blocking issues, patches batch status to `submitted`, sets submitted timestamp, reloads submitted batch, and creates/returns the next draft.
-- Client submit action updates the current workspace to the next draft and shows a notice.
-- Current design docs explicitly say v1 submitted means internally finalized / ready for export or later HMRC automation, not actually sent to HMRC.
+- Backend exposes a current-draft workflow endpoint.
+- Backend finalization refreshes draft summary, blocks if the draft has blocking issues, patches batch status to `finalized`, sets the internal finalization timestamp, reloads the finalized batch, and creates/returns the next draft.
+- Submission queueing is a separate step that creates a `GiftAidClaimSubmission` history record from a finalized batch.
+- Latest submission status can be summarized back onto the batch for list visibility, while full attempt history remains on the submission object.
+- Current design docs explicitly say v1 batch finalization means internally finalized / ready for export or later HMRC automation, not actually sent to HMRC.
 
 Key metadata / UI / logic:
 
-- Metadata: claim batch status and submitted timestamp.
-- UI: `GiftAidClaimView` submit claim button.
+- Metadata: claim batch status, finalized timestamp, and latest submission status summary.
+- UI: current-claim / claim-batch finalization action plus separate submission queueing/follow-up surface.
 - Logic: `GiftAidClaimBatchController`.
 - Logic: `GiftAidClaimBatchService.submitBatch`.
 - Logic: `useGiftAidClaimWorkspace.submitCurrentClaim`.
 
 Open questions:
 
-- Should first migration keep internal submit only, add export, or wait for HMRC-oriented data requirements?
+- Should first migration keep internal finalize + queue-submission only, add export, or wait for fuller HMRC-oriented data requirements?
 - What submit-time snapshot/freeze is needed for audit reproducibility?
 - Does the next draft need to be eagerly created after submission or lazily created on next claimable gift?
 
@@ -2834,6 +2842,7 @@ Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve review-before-finalize and no-HMRC-claim-unless-implemented.
+- Keep batch lifecycle separate from submission-history lifecycle.
 - Review submit-time freeze/snapshot requirements before expanding the lifecycle.
 
 #### Scenario: Protecting Submitted Claim History
@@ -3184,3 +3193,111 @@ Migration read:
 - Product posture: `Open` with current leaning `Preserve + simplify`.
 - Treat household management as a supporting donor/person action until product review proves a dedicated workspace is needed.
 - Keep the drawer/action interaction consistent with the broader migration UI principles.
+
+### 2.19 Gift Record Layout Working Direction
+
+This is a working product/layout reference for the canonical `Gift` record during migration. It is not a locked final UI contract.
+
+Important caveats:
+
+- the current `Gift` object is still pre-v1;
+- more first-party fields will likely be added over time;
+- customer custom fields also need to fit the model;
+- so this should guide layout/control direction rather than become a permanent whitelist.
+
+Why it matters:
+
+- The `Gift` record should not become one flat editable object with no distinction between ordinary maintenance, sensitive correction, system-owned state, and future lifecycle actions.
+- The layout should use Twenty-native field widgets where they work well, while reserving custom components for interpretation, signposting, controlled correction, and domain-specific workflows such as Gift Aid.
+- Gift Aid is also organisation-specific. For some orgs, the cleanest product model may be to add or remove a `Gift Aid` tab through layout composition rather than forcing capability-specific visibility logic into one universal record layout.
+
+Current behavior:
+
+- The current `Gift` record page still has a stale split between an older `Gift Aid` tab and a newer `Gift Aid v2` tab.
+- `Home` is currently mostly native fields.
+- The newer `Gift Aid v2` direction uses three custom widgets:
+  - `Gift Aid state`
+  - `Gift Aid declaration`
+  - `Gift Aid donor context`
+- Current discussion also points toward a broader distinction between:
+  - lower-risk/contextual maintenance fields,
+  - sensitive correction fields,
+  - system/downstream-owned fields,
+  - explicit lifecycle-action territory.
+
+Current working field pattern:
+
+- Lower-risk / contextual examples:
+  - `appealName`
+  - `opportunity`
+  - later similar coding/context fields such as fund
+- Sensitive correction examples:
+  - donor/company linkage
+  - donor/company identifying facts
+  - amount
+  - gift date
+  - payment type
+  - recurring linkage
+  - Gift Aid-relevant facts
+- System-/downstream-owned examples:
+  - derived Gift Aid outcome fields
+  - Gift Aid claim-batch linkage
+  - source/provenance/provider identifiers
+- Future lifecycle-action territory:
+  - refund
+  - chargeback
+  - void / reversal
+  - failed payment after creation
+
+Important nuance:
+
+- field sensitivity is only half the model;
+- the other half is the gift's downstream posture:
+  - no downstream use yet
+  - partially used downstream
+  - clearly relied on downstream
+- downstream posture should influence how open or controlled the sensitive-correction path feels, rather than relying only on a static field list.
+
+Current working layout direction:
+
+- `Home`
+  - compact summary / signposting surface
+  - record-level signal for downstream posture or editing posture
+  - small set of everyday high-signal fields
+- `Details`
+  - native `FIELDS` widgets
+  - ordinary record maintenance
+  - main growth home for contextual fields and future custom fields
+- `Gift Aid`
+  - optional layout-driven tab rather than a universally forced surface
+  - best current direction is one refined tab built from the `v2` widgets, not parallel old/new tabs
+- `Corrections`
+  - keep conceptual for now; do not force a full correction subsystem into the first migration pass before the controlled-correction behavior is clearer
+- `Lifecycle` / `History`
+  - also conceptual for now; use explicit actions rather than quiet field edits when those workflows become real
+
+Use of Twenty primitives:
+
+- Prefer native `FIELDS` widgets where the job is ordinary data maintenance and extensibility matters.
+- Prefer custom front components where the job is:
+  - interpreted/derived operational state,
+  - downstream posture signalling,
+  - controlled correction,
+  - Gift Aid review logic,
+  - future lifecycle actions.
+
+Open questions:
+
+- Should `Home` remain mostly native in the first migration pass, or should it gain one compact custom summary/signposting block?
+- Which core fields belong on `Home` versus `Details` in the first workable version?
+- How early should downstream posture become visible on the record if the full correction/lifecycle model is not yet built?
+- Should non-UK or Gift Aid-disabled orgs simply omit the `Gift Aid` tab through layout composition rather than relying on runtime conditional visibility inside a shared record layout?
+
+Migration read:
+
+- Product posture: `Redesign` with current leaning:
+  - native fields for ordinary maintenance,
+  - custom widgets for operational interpretation,
+  - optional domain tabs such as `Gift Aid` composed at layout level when relevant.
+- Do not preserve the stale `Gift Aid` / `Gift Aid v2` split.
+- Use the `Gift` record as a place to establish a cleaner separation between ordinary maintenance, sensitive correction, and service-/downstream-owned state, even if the full corrections/lifecycle model lands later.

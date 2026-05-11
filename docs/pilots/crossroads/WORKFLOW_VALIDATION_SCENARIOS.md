@@ -88,6 +88,60 @@ Manual entry is not Crossroads' only current priority, but it is a core product 
 7. Manual gift with minimal required data only
 8. Manual gift where duplicate check fails or cannot run
 
+### Reference points: manual entry depth and shape
+
+This section is not a final design decision. It captures the main options and tensions that came out of workflow review so they can be revisited consistently as the manual-entry surface evolves.
+
+#### Stable core candidate
+
+Current working view of the cross-charity core:
+
+- donor identity
+- amount
+- currency
+- payment type
+- gift date
+
+These are the fields that most strongly support the idea of Manual Gift Entry as a fast, trustworthy direct-create path.
+
+#### Important but still open
+
+The main open question is not whether these areas matter, but how much of them should sit in the default path:
+
+- donor address
+- Gift Aid capture
+- appeal
+- opportunity
+- recurring linkage
+- batch linkage
+
+Some of these are likely to be relevant depending on the gift being entered rather than depending on the charity as a whole.
+
+#### Charity-specific depth
+
+Some capabilities may be irrelevant for certain charities and should not necessarily appear at all. Gift Aid is the clearest current example.
+
+The requirement here is to avoid forcing irrelevant complexity onto every charity. The implementation mechanism remains open and should not be assumed from this document.
+
+#### Working product tensions
+
+These are the main questions still in play:
+
+- how much of donor address should be treated as core versus conditional depth
+- how quickly appeal and opportunity should return as first-class context
+- how far the form should support richer gift context before it starts to feel burdensome
+- how to avoid recreating the older all-in-one manual-entry drawer while still supporting the variety of gifts a charity may need to enter
+
+#### Incremental direction to validate
+
+The current working direction is to add depth in layers rather than trying to complete Manual Gift Entry in one pass:
+
+1. strengthen the stable core
+2. reintroduce the highest-value contextual fields
+3. pause and reassess before adding broader gift-context depth
+
+This subsection exists as a reference point for future workflow validation, not as a locked implementation plan.
+
 ### Expanded scenario: manual gift where duplicate donors are found
 
 **User / role**  
@@ -520,6 +574,243 @@ A staged gift has an explicitly confirmed donor.
 - Duplicate candidate existed but reviewer chose one explicitly.
 - Gift Aid declaration belongs to a different duplicate donor.
 - Processing fails after donor has been confirmed.
+
+### Reference points: post-create correction and gift lifecycle
+
+This subsection is not a final implementation design. It captures the current working product frame for how committed gifts should behave once they exist.
+
+#### Working principle
+
+The current product philosophy remains:
+
+- uncertainty should be resolved before canonical gift creation where possible
+- downstream processes should be able to trust committed gifts
+
+But real operations still require:
+
+- occasional correction of data-quality errors after gift creation
+- explicit handling of real-world post-creation events
+
+The current working principle is:
+
+- a canonical gift should be easy to correct while it is still operationally internal
+- and harder to silently mutate once it has been used downstream
+
+#### Two different problem types
+
+The main distinction is between:
+
+- record errors
+- real-world post-creation events
+
+Examples of record errors:
+
+- admin entered something incorrectly
+- an integration mapped something badly
+- donor matching or deduplication was wrong
+- a duplicate or typo slipped through
+
+Examples of real-world post-creation events:
+
+- refund
+- chargeback
+- payment failure
+- void or reversal
+- later consequences for Gift Aid, finance, reporting, or acknowledgement
+
+These should not be treated as the same thing.
+
+#### Downstream state matters
+
+Field sensitivity is not static. The correct handling depends on both:
+
+- the field being changed
+- whether the gift is still operationally internal or has already been used downstream
+
+For current workflow thinking, “downstream use” includes things like:
+
+- receipting / acknowledgement
+- Gift Aid claim inclusion
+- finance export
+- reconciliation
+- external sync
+- reporting states that should be treated as locked or relied on
+
+#### Working matrix
+
+| Change type | Sensitivity | Before downstream use | After downstream use | Current working read |
+| --- | --- | --- | --- | --- |
+| Appeal / opportunity / notes / internal references | Lower | Low-friction correction is acceptable | Still generally editable, but may need signposting if used in reporting/export contexts | ordinary correction |
+| Donor link / amount / currency / gift date / payment type / Gift Aid facts / recurring linkage | Higher | Correction can still happen on the gift itself with relatively low friction | Should become more explicit, warn about consequences, and support follow-up rather than quiet mutation | sensitive correction |
+| Refund / chargeback / void / reversal / failed payment after creation | Not a normal edit | Should not be modeled as plain field editing | Should be visible as explicit gift-level action/state change | lifecycle event |
+
+#### Current v1 direction
+
+The current working direction is:
+
+- avoid introducing a separate correction or adjustment object in v1 unless the repo model clearly demands it
+- allow controlled correction on the gift itself
+- use UI guardrails, audit/history where available, and downstream warnings/signposting
+- represent real post-creation lifecycle events explicitly in the gift state or through controlled actions rather than raw edits
+
+#### Extensibility note
+
+This should not be treated as a fixed field whitelist.
+
+The current `Gift` object is still pre-v1 and will likely continue to evolve. Examples already in view include:
+
+- dedicated `appeal` and `fund` fields or relations replacing temporary capture fields
+- additional first-party fundraising fields added as the pilot hardens
+- customer-added custom fields
+
+So the useful product pattern is:
+
+- classify fields by role and sensitivity
+- then apply the same pattern as the object grows
+
+Current working categories are:
+
+- contextual / lower-risk
+- sensitive correction fields
+- system-owned or downstream-owned fields
+- explicit lifecycle actions or states
+
+The exact UI/control mechanism should remain open. Depending on the case, the eventual solution may rely more on:
+
+- layout and grouping
+- field emphasis and signposting
+- field-level permissions
+- controlled actions
+- or code-level protection where silent mutation would create real downstream risk
+
+This subsection should be used as a reference point for future workflow validation and UI/layout discussions, not as a locked solution.
+
+### Expanded scenario: canonical gift is later refunded
+
+**User / role**  
+Finance/admin user correcting the operational state of a committed gift after money has been returned to the donor.
+
+**Goal**  
+Represent a real refund as an explicit lifecycle event without deleting the original gift or quietly mutating its financial history.
+
+**Starting context**  
+A committed gift exists and is believed to have happened. Later, the charity refunds the money to the donor.
+
+**Workflow steps**
+
+1. User opens the committed gift record.
+2. User chooses an explicit refund action rather than editing gift amount/date/details directly.
+3. User records the minimum refund facts required by the workflow.
+4. System marks the gift as refunded while preserving the original gift record.
+5. System updates dependent operational surfaces where the refund has immediate effect.
+
+**Expected system behaviour**
+
+- The original gift record remains visible for audit/history.
+- The original amount is preserved rather than edited away.
+- The gift becomes visibly refunded rather than continuing to appear as a normal active gift.
+- Refund is treated as a lifecycle event, not a normal field edit.
+- If the gift is only in draft Gift Aid territory, the system can remove or exclude it from the draft claim before submission.
+- If the gift has already been used in a finalized/submitted Gift Aid claim, the system should not silently rewrite claim history; that follow-up remains a later, more explicit workflow.
+
+**Acceptance checks**
+
+- Refunded gift is distinguishable from an active gift in normal record views.
+- The original gift facts remain visible.
+- The refund path does not require deleting the gift or editing amount to zero.
+- Draft-claim Gift Aid behaviour works cleanly in the first pass where applicable.
+- Submitted-claim consequences are not silently hidden or auto-mutated.
+
+**Edge cases / blindspots**
+
+- Refund occurs before the gift has been used downstream.
+- Refund occurs after Gift Aid draft-claim inclusion but before claim finalization.
+- Refund occurs after finalized/submitted claim inclusion.
+- Partial refund versus full refund.
+- Provider-originated refund versus admin-recorded refund.
+
+### Reference points: refund first-pass boundary
+
+The current working direction is to start with `Refund` as the first explicit gift lifecycle action because it is the clearest high-value post-creation event.
+
+#### Core refund meaning
+
+The first-pass product meaning should be:
+
+- the gift happened
+- money later went back to the donor
+- the original gift record should remain visible
+- the gift should no longer behave like a normal active successful gift
+
+#### What the first pass should avoid
+
+- deleting the gift
+- editing amount down to zero
+- quietly repurposing ordinary editable fields to imply refund
+- introducing a full accounting-style reversal model too early
+
+#### Minimum first-pass outcome
+
+The refund model should support these truths:
+
+- the original gift existed
+- it was later refunded
+- it is visibly distinct from an active gift
+- it can affect Gift Aid behaviour in the simple draft-claim case
+- it may have downstream consequences that need follow-up rather than silent mutation
+
+#### First-pass Gift Aid boundary
+
+Gift Aid consequences should be handled in two layers:
+
+- draft-claim interaction belongs in the first pass
+  - refunded gifts should be removable or excludable from draft claim preparation before submission
+- finalized/submitted-claim consequences should be treated as a later step
+  - this case is important but more complex
+  - it should not be hidden
+  - and it should not be silently auto-resolved in the initial refund implementation
+
+#### Refund first-pass implementation shape
+
+The current lean model should be:
+
+- preserve the original gift amount as the historical fact
+- store refund facts separately
+- derive refund state from those facts rather than introducing a broad lifecycle status field too early
+
+The likely first-pass fields are:
+
+- `refundedAmount`
+- `refundDate`
+- `refundNote` or similar lightweight explanation field
+
+Refund state would then be derived as:
+
+- not refunded
+- partially refunded
+- fully refunded
+
+from the relationship between original gift amount and refunded amount.
+
+The current working direction is explicitly:
+
+- no standalone gift lifecycle status field yet
+- no separate refund object in the first pass
+- no accounting-style reversal model
+- no mutation of original gift amount to represent refund
+
+This should be treated as the minimum implementation shape for a lean first refund pass, not as the final long-term lifecycle architecture.
+
+#### Deferred for v1
+
+The following Gift refinements should remain documented as future reference points, but are currently deferred for v1 unless testing exposes a concrete operational gap:
+
+- a broader corrections model beyond the current ordinary/sensitive distinction
+- additional lifecycle actions beyond refund
+  - for now, deleting an invalid/accidental record remains an acceptable lightweight safety valve
+- stronger downstream-reliance handling where the system does not yet have direct evidence
+
+These remain useful future enhancement areas, but they should not be treated as required to complete the current v1 Gift lifecycle slice.
 
 ## 8. Finance handoff / reconciliation
 

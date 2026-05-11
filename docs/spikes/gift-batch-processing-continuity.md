@@ -140,10 +140,15 @@ Current implementation choice:
 
 - Native Twenty CSV import (current product direction) bypasses fundraising-service intake logic.
 - Therefore intake-time dedupe diagnostics from our bespoke endpoints are not guaranteed for those rows.
+- Current local code review also suggests the stock object-level `Import records` path is a generic field-mapping + batch create/upsert flow, and that Twenty's richer spreadsheet-import hooks are internal to Twenty front-end rather than clearly exposed through the supported app SDK surface.
+- Treat that as the current verified understanding of the platform, not a guaranteed permanent limitation.
 
 ### Implication
 
 - We need a batch-level identity action that can run after import and after admin edits, regardless of ingestion source.
+- If we later want CSV import to auto-create/attach `giftBatch` records or run fundraising-specific post-import logic, that should be treated as a separate spike:
+  - confirm whether Twenty exposes a supported app/runtime way to wrap native import,
+  - otherwise decide whether to accept lower-control native import or build a bespoke fundraising import flow.
 
 ## Product Decisions Captured (Current)
 

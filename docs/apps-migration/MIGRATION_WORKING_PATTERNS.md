@@ -148,6 +148,19 @@ Supporting context already exists in:
 - [PRODUCT_REVIEW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PRODUCT_REVIEW.md)
 - [PILOT_APP_IMPLEMENTATION_PLAN.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
 
+Current working clarification:
+
+- if the main value of a summary is page-local operator interpretation, keep it in the TypeScript model layer by default;
+- if the value must support native filtering, sorting, segmentation, or reporting, materialized fields can be justified;
+- when materialized summaries are justified, keep the recompute logic in a shared module and prefer set-aware orchestration boundaries over row-level trigger fan-out.
+
+Current example:
+
+- donor giving summaries on `person` in `nonprofit-fundraising` now use materialized fields for `lastGiftDate`, `lifetimeGiftAmount`, and `lifetimeGiftCount`,
+- with a shared recompute module called from manual gift creation, batch processing, and a manual rebuild route,
+- plus a daily cron reconciliation path for import/setup repair and ongoing drift correction,
+- while narrow `databaseEvent` triggers act as integrity backstops for out-of-band edits rather than the main maintenance path.
+
 ## 7. Capability Boundaries Should Stay Visible, Even If Not Fully Solved Yet
 
 Current leaning:
@@ -205,6 +218,29 @@ Working implication:
 Current leaning:
 
 - treat sibling front components on the same record page as isolated by default
+
+## 11. Prefer Nested Relation Writes
+
+Current leaning:
+
+- prefer nested relation writes such as `record: { connect: { where: { id } } }` when assigning or changing relations in app mutations
+- treat flat join-column writes such as `recordId` or `personId` as supported but secondary
+- allow flat `...Id` writes where they are clearly simpler and intentional, especially:
+  - single-parent create flows where the meaning is obvious
+  - clearing a relation with `...Id: null`
+  - filters/selects where the join column is the natural query surface
+
+Why:
+
+- nested relation writes match the GraphQL mutation shape more explicitly
+- they are easier to read when a mutation touches several relations at once
+- they keep relation intent clearer than a mix of payload fields that can look like ordinary scalar data
+
+Scope note:
+
+- this is a working preference, not a claim that flat join-column writes are invalid
+- Twenty exposes join columns for many-to-one relations, so both styles can work
+- the goal is consistency and readability across sessions, not refactoring working code for style alone
 - if multiple widgets on the same record need to stay coherent after mutations, add an explicit sync strategy
 - prefer narrow record-scoped invalidation over broad page-wide refreshes
 
