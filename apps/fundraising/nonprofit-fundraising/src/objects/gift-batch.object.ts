@@ -21,6 +21,12 @@ export const GIFT_BATCH_PROCESSED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_BATCH_FAILED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER =
   'f1c6d37b-7d39-4fd4-8a1e-b475e89f7e2d';
 
+export const GIFT_BATCH_EXPECTED_ITEM_COUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '9977b71f-3d98-47c7-86cc-161f21726ed2';
+
+export const GIFT_BATCH_EXPECTED_TOTAL_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  'c425289c-73f5-4e55-a93a-63e602743c41';
+
 export default defineObject({
   universalIdentifier: GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
   nameSingular: 'giftBatch',
@@ -114,6 +120,30 @@ export default defineObject({
       description: 'How many rows in the batch currently have processing errors',
       icon: 'IconAlertTriangle',
       defaultValue: 0,
+    },
+    {
+      universalIdentifier:
+        GIFT_BATCH_EXPECTED_ITEM_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.NUMBER,
+      name: 'expectedItemCount',
+      label: 'Expected item count',
+      description:
+        'Expected number of gifts in the batch for offline reconciliation',
+      icon: 'IconHash',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_BATCH_EXPECTED_TOTAL_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'expectedTotalAmount',
+      label: 'Expected total amount',
+      description:
+        'Expected total batch value for offline reconciliation checks',
+      icon: 'IconCurrencyPound',
+      isNullable: true,
+      defaultValue: null,
     },
   ],
 });

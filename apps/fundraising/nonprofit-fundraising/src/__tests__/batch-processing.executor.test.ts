@@ -82,7 +82,7 @@ const buildProcessingRow = (
   rawProviderEvidence: null,
   donorResolutionState: 'UNREVIEWED',
   donor: null,
-  isReadyForProcessing: true,
+  giftReadyStatus: 'READY_TO_PROCESS',
   processingStatus: 'NOT_PROCESSED',
   errorDetail: null,
   giftAidRequested: false,
@@ -180,7 +180,7 @@ describe('canProcessBatchRow', () => {
     expect(
       canProcessBatchRow(
         buildProcessingRow({
-          donorResolutionState: 'UNRESOLVED',
+          donorResolutionState: 'NEW_DONOR',
           donor: null,
         }),
       ),

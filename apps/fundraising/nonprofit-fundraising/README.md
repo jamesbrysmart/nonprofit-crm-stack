@@ -67,6 +67,21 @@ yarn twenty exec --postInstall
 
 The seed is intended to be safe to rerun as new workflow slices are added.
 
+## Current Limitation
+
+On the current Twenty app-dev upgrade line under test, secret
+`applicationVariables` appear to break app settings loading and logic-function
+startup before values can be entered in the UI.
+
+As a temporary local workaround, the app-level secret variables for:
+
+- `STRIPE_WEBHOOK_SECRET`
+- `HMRC_CHARITIES_CONFIG_JSON`
+
+have been removed from the manifest. Until that upstream issue is resolved,
+expect Stripe webhook verification and HMRC submission/config-driven Gift Aid
+flows to remain unavailable in this app-dev setup.
+
 ## CRM Demo Seed
 
 For stakeholder demos that need standard Twenty CRM records alongside the

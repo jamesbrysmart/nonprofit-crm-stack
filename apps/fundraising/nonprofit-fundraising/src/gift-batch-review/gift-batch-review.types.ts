@@ -1,3 +1,5 @@
+import type { GiftReadyStatus } from 'src/gift-staging-review/gift-ready-status';
+
 export type BatchReviewRow = {
   id: string;
   name: string;
@@ -14,7 +16,7 @@ export type BatchReviewRow = {
   provider: string | null;
   providerAgreementId: string | null;
   donorResolutionState: string | null;
-  isReadyForProcessing: boolean | null;
+  giftReadyStatus: GiftReadyStatus | null;
   processingStatus: string | null;
   errorDetail: string | null;
   donor:
@@ -38,6 +40,13 @@ export type BatchSummaryRecord = {
   totalItems: number | null;
   processedItems: number | null;
   failedItems: number | null;
+  expectedItemCount: number | null;
+  expectedTotalAmount:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
 };
 
 export type GiftBatchReviewRecord = {
@@ -46,12 +55,22 @@ export type GiftBatchReviewRecord = {
   source: string;
   status: string;
   totalItems: number;
+  isOverWorkflowLimit: boolean;
+  workflowLimitMessage: string | null;
   totalValueDisplay: string;
+  expectedItemCount: number | null;
+  expectedTotalAmount:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
+  expectedTotalValueDisplay: string;
   eligibleItems: number;
   processedItems: number;
   failedItems: number;
   readyItems: number;
-  unresolvedItems: number;
+  needsReviewItems: number;
   ambiguousItems: number;
   rows: GiftBatchReviewRow[];
 };
@@ -67,7 +86,7 @@ export type GiftBatchReviewRow = {
   providerAgreementId: string;
   donorResolutionState: string;
   processingStatus: string;
-  isReadyForProcessing: boolean;
+  giftReadyStatus: GiftReadyStatus;
   isProcessable: boolean;
   isProcessed: boolean;
   errorDetail: string;

@@ -140,8 +140,10 @@ const GiftAidClaimBatchSummary = () => {
     try {
       const result = await finalizeGiftAidClaimBatch({ batchId: recordId });
       await enqueueSnackbar({
-        message: `Draft claim finalized at ${result.submittedAt}.`,
-        variant: 'success',
+        message: result.warningMessage
+          ? `Draft claim finalized at ${result.submittedAt}. ${result.warningMessage}`
+          : `Draft claim finalized at ${result.submittedAt}.`,
+        variant: result.warningMessage ? 'warning' : 'success',
       });
       await refresh();
     } catch (finalizeError) {
@@ -177,7 +179,9 @@ const GiftAidClaimBatchSummary = () => {
                 : 'Claim submission queued.';
 
       await enqueueSnackbar({
-        message,
+        message: result.warningMessage
+          ? `${message} ${result.warningMessage}`
+          : message,
         variant:
           result.status === 'FAILED' || result.status === 'TIMED_OUT'
             ? 'error'

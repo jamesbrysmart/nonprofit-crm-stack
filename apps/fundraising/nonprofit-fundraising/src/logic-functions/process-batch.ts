@@ -3,121 +3,16 @@ import {
   defineLogicFunction,
   type RoutePayload,
 } from 'twenty-sdk/define';
+import { loadBatchProcessingContext } from 'src/batch-processing/batch-loaders';
 import {
-  buildNotReadyWritebacks,
-  canProcessBatchRow,
-  executeBatchGiftProcessing,
-  persistBatchRowWritebacks,
-} from 'src/batch-processing/batch-processing.executor';
+  getGiftBatchWorkflowLimitMessage,
+  isGiftBatchOverWorkflowLimit,
+} from 'src/batch-processing/batch-processing.limits';
+import { processGiftStagingRows } from 'src/gift-staging-review/gift-ready-check.service';
 import type {
-  BatchProcessingRow,
-  BatchSummaryRecord,
   ProcessBatchRequest,
   ProcessBatchResponse,
 } from 'src/batch-processing/batch-processing.types';
-
-const loadBatchAndRows = async (
-  client: CoreApiClient,
-  giftBatchId: string,
-): Promise<{
-  batch: BatchSummaryRecord | null;
-  rows: BatchProcessingRow[];
-}> => {
-  const result = await client.query({
-    giftBatch: {
-      __args: {
-        filter: {
-          id: { eq: giftBatchId },
-        },
-      },
-      id: true,
-      name: true,
-      status: true,
-      totalItems: true,
-      processedItems: true,
-      failedItems: true,
-    },
-    giftStagings: {
-      __args: {
-        first: 200,
-        filter: {
-          giftBatchId: {
-            eq: giftBatchId,
-          },
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          name: true,
-          donorFirstName: true,
-          donorLastName: true,
-          donorEmail: true,
-          donorMailingAddress: {
-            addressStreet1: true,
-            addressStreet2: true,
-            addressCity: true,
-            addressState: true,
-            addressPostcode: true,
-            addressCountry: true,
-          },
-          amount: {
-            amountMicros: true,
-            currencyCode: true,
-          },
-          giftDate: true,
-          donationType: true,
-          externalId: true,
-          sourceFingerprint: true,
-          providerEventId: true,
-          provider: true,
-          providerPaymentId: true,
-          paymentProviderCustomerId: true,
-          providerAgreementId: true,
-          providerIntervalUnit: true,
-          providerIntervalCount: true,
-          donorPhone: true,
-          rawProviderEvidence: true,
-          donorResolutionState: true,
-          donor: {
-            id: true,
-            emails: {
-              primaryEmail: true,
-              additionalEmails: true,
-            },
-          },
-          isReadyForProcessing: true,
-          processingStatus: true,
-          errorDetail: true,
-          giftAidRequested: true,
-          giftAidDeclarationCaptured: true,
-          giftAidDeclarationDate: true,
-          giftAidCoverageScope: true,
-          giftAidDeclarationSource: true,
-          giftAidTextVersion: true,
-          giftAidDeclaration: {
-            id: true,
-          },
-          recurringAgreement: {
-            id: true,
-          },
-          committedGift: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    },
-  } as any);
-
-  return {
-    batch: (result?.giftBatch as BatchSummaryRecord | null) ?? null,
-    rows:
-      result?.giftStagings?.edges?.map(
-        (edge: { node: BatchProcessingRow }) => edge.node,
-      ) ?? [],
-  };
-};
 
 const updateBatch = async (
   client: CoreApiClient,
@@ -135,47 +30,11 @@ const updateBatch = async (
   } as any);
 };
 
-const handler = async (
-  event: RoutePayload<ProcessBatchRequest>,
-): Promise<ProcessBatchResponse> => {
-  const giftBatchId = event.body?.giftBatchId?.trim();
-
-  if (!giftBatchId) {
-    throw new Error('giftBatchId is required');
-  }
-
-  const client = new CoreApiClient();
-  const { batch, rows } = await loadBatchAndRows(client, giftBatchId);
-
-  if (!batch) {
-    throw new Error('Batch not found');
-  }
-
-  await updateBatch(client, giftBatchId, {
-    status: 'PROCESSING',
-  });
-
-  const processableRows = rows.filter((row) => canProcessBatchRow(row));
-  const notReadyRows = rows.filter((row) => !canProcessBatchRow(row));
-
-  // Keep write pressure low by doing one routing writeback pass before any
-  // create calls rather than churning row state throughout the core loop.
-  await persistBatchRowWritebacks(buildNotReadyWritebacks(notReadyRows));
-
-  let executionMetrics = {
-    chunkCount: 0,
-    batchPathProcessed: 0,
-    batchPathFailed: 0,
-    rowFallbackProcessed: 0,
-    rowFallbackFailed: 0,
-  };
-
-  if (processableRows.length > 0) {
-    const result = await executeBatchGiftProcessing(processableRows);
-    executionMetrics = result.metrics;
-  }
-
-  const refreshed = await loadBatchAndRows(client, giftBatchId);
+const summarizeBatchOutcome = async (
+  client: CoreApiClient,
+  batchId: string,
+) => {
+  const refreshed = await loadBatchProcessingContext(client, batchId);
   const totalItems = refreshed.rows.length;
   const processedItems = refreshed.rows.filter(
     (row) => row.processingStatus === 'PROCESSED',
@@ -189,32 +48,90 @@ const handler = async (
       row.processingStatus !== 'PROCESS_FAILED',
   ).length;
 
-  const batchStatus =
-    processedItems === totalItems && failedItems === 0 && notReadyItems === 0
-      ? 'PROCESSED'
-      : 'PROCESSED_WITH_ISSUES';
-
-  await updateBatch(client, giftBatchId, {
-    status: batchStatus,
-    totalItems,
-    processedItems,
-    failedItems,
-  });
-
   return {
-    giftBatchId,
-    batchStatus,
     totalItems,
     processedItems,
     failedItems,
     notReadyItems,
-    executorMode: 'BOUNDED_HYBRID',
-    chunkCount: executionMetrics.chunkCount,
-    batchPathProcessed: executionMetrics.batchPathProcessed,
-    batchPathFailed: executionMetrics.batchPathFailed,
-    rowFallbackProcessed: executionMetrics.rowFallbackProcessed,
-    rowFallbackFailed: executionMetrics.rowFallbackFailed,
   };
+};
+
+const handler = async (
+  event: RoutePayload<ProcessBatchRequest>,
+): Promise<ProcessBatchResponse> => {
+  const giftBatchId = event.body?.giftBatchId?.trim();
+
+  if (!giftBatchId) {
+    throw new Error('giftBatchId is required');
+  }
+
+  const client = new CoreApiClient();
+  const { batch, rows } = await loadBatchProcessingContext(client, giftBatchId);
+
+  if (!batch) {
+    throw new Error('Batch not found');
+  }
+
+  if (isGiftBatchOverWorkflowLimit(batch.totalItems)) {
+    throw new Error(getGiftBatchWorkflowLimitMessage(batch.totalItems));
+  }
+
+  await updateBatch(client, giftBatchId, {
+    status: 'PROCESSING',
+  });
+
+  try {
+    const processingResult = await processGiftStagingRows(client, rows);
+    const executionMetrics = processingResult.executionMetrics;
+
+    const { totalItems, processedItems, failedItems, notReadyItems } =
+      await summarizeBatchOutcome(client, giftBatchId);
+
+    const batchStatus =
+      processedItems === totalItems && failedItems === 0 && notReadyItems === 0
+        ? 'PROCESSED'
+        : 'PROCESSED_WITH_ISSUES';
+
+    await updateBatch(client, giftBatchId, {
+      status: batchStatus,
+      totalItems,
+      processedItems,
+      failedItems,
+    });
+
+    return {
+      giftBatchId,
+      batchStatus,
+      totalItems,
+      processedItems,
+      failedItems,
+      notReadyItems,
+      executorMode: 'BOUNDED_HYBRID',
+      chunkCount: executionMetrics.chunkCount,
+      batchPathProcessed: executionMetrics.batchPathProcessed,
+      batchPathFailed: executionMetrics.batchPathFailed,
+      rowFallbackProcessed: executionMetrics.rowFallbackProcessed,
+      rowFallbackFailed: executionMetrics.rowFallbackFailed,
+    };
+  } catch (error) {
+    try {
+      const { totalItems, processedItems, failedItems } =
+        await summarizeBatchOutcome(client, giftBatchId);
+
+      await updateBatch(client, giftBatchId, {
+        status: 'PROCESSED_WITH_ISSUES',
+        totalItems,
+        processedItems,
+        failedItems,
+      });
+    } catch {
+      await updateBatch(client, giftBatchId, {
+        status: 'PROCESSED_WITH_ISSUES',
+      });
+    }
+
+    throw error;
+  }
 };
 
 export default defineLogicFunction({

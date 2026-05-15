@@ -1,3 +1,5 @@
+import { postTwentyRest } from 'src/app-api/twenty-rest-client';
+
 const DEFAULT_CHUNK_SIZE = 60;
 const DEFAULT_CHUNK_DELAY_MS = 700;
 
@@ -20,56 +22,8 @@ const chunkArray = <T,>(items: T[], size: number): T[][] => {
   return chunks;
 };
 
-const getRestConfig = () => {
-  const apiBaseUrl = process.env.TWENTY_API_URL;
-  const token =
-    process.env.TWENTY_APP_ACCESS_TOKEN ?? process.env.TWENTY_API_KEY;
-
-  if (!apiBaseUrl || !token) {
-    throw new Error('Twenty REST configuration missing');
-  }
-
-  return {
-    apiBaseUrl: apiBaseUrl.replace(/\/$/, ''),
-    token,
-  };
-};
-
 const sleep = async (delayMs: number) => {
   await new Promise((resolve) => setTimeout(resolve, delayMs));
-};
-
-const requestTwentyRest = async <T>({
-  path,
-  method,
-  body,
-}: {
-  path: string;
-  method: 'POST';
-  body: unknown;
-}): Promise<T> => {
-  const { apiBaseUrl, token } = getRestConfig();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const rawBody = await response.text();
-
-  if (!response.ok) {
-    throw new Error(rawBody || `Twenty REST request failed with ${response.status}`);
-  }
-
-  if (rawBody.trim() === '') {
-    return null as T;
-  }
-
-  return JSON.parse(rawBody) as T;
 };
 
 const normalizeId = (value: unknown) =>
@@ -123,9 +77,8 @@ export const upsertGiftStagingBatch = async (
     };
   });
 
-  const response = await requestTwentyRest<unknown>({
+  const response = await postTwentyRest<unknown>({
     path: '/rest/batch/giftStagings?upsert=true&depth=0',
-    method: 'POST',
     body: persistedChunk,
   });
 

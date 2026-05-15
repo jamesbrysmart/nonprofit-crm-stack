@@ -59,7 +59,9 @@ describe('Stripe one-off staging intake', () => {
     expect(createdRecord?.donorPhone).toBe('+44 20 7946 0958');
     expect(createdRecord?.donorMailingAddress).toEqual({
       addressStreet1: '12 Analytical Engine Row',
+      addressStreet2: '',
       addressCity: 'London',
+      addressState: '',
       addressPostcode: 'SW1A 1AA',
       addressCountry: 'GB',
     });
@@ -90,7 +92,7 @@ describe('Stripe one-off staging intake', () => {
       },
     });
     expect(createdRecord?.donorResolutionState).toBe('UNREVIEWED');
-    expect(createdRecord?.isReadyForProcessing).toBe(false);
+    expect(createdRecord?.giftReadyStatus).toBe('NEEDS_REVIEW');
     expect(createdRecord?.processingStatus).toBe('NOT_PROCESSED');
     expect(createdRecord?.amount?.currencyCode).toBe('GBP');
     expect(createdRecord?.amount?.amountMicros).toBe(25_000_000);

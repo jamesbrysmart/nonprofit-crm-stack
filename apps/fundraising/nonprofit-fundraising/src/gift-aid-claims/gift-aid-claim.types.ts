@@ -126,8 +126,9 @@ export type GiftAidClaimWorkspaceRecord = {
 export type FinalizeGiftAidClaimBatchResponse = {
   claimBatchId: string;
   submittedAt: string;
-  nextDraftBatchId: string;
+  nextDraftBatchId: string | null;
   status: 'FINALIZED';
+  warningMessage?: string | null;
 };
 
 export type QueueGiftAidClaimSubmissionResponse = {
@@ -140,4 +141,5 @@ export type QueueGiftAidClaimSubmissionResponse = {
     | 'RESPONDED'
     | 'FAILED'
     | 'TIMED_OUT';
+  warningMessage?: string | null;
 };

@@ -5,7 +5,6 @@ import {
   APP_DISPLAY_NAME,
   APPLICATION_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
-import { DEFAULT_ROLE_UNIVERSAL_IDENTIFIER } from 'src/roles/default-function.role';
 
 export default defineApplication({
   universalIdentifier: APPLICATION_UNIVERSAL_IDENTIFIER,
@@ -43,18 +42,5 @@ export default defineApplication({
       value: 'mock_success',
       isSecret: false,
     },
-    HMRC_CHARITIES_CONFIG_JSON: {
-      universalIdentifier: '2d99d15f-e4c1-4f4f-97a6-cf3ce2c08a46',
-      description:
-        'JSON configuration for HMRC charities claim building and test submission credentials.',
-      isSecret: true,
-    },
-    STRIPE_WEBHOOK_SECRET: {
-      universalIdentifier: '3b5602d0-ad2f-4377-affe-a810d390fd35',
-      description:
-        'Webhook signing secret used for validating inbound Stripe webhook events during app-owned integration testing.',
-      isSecret: true,
-    },
   },
-  defaultRoleUniversalIdentifier: DEFAULT_ROLE_UNIVERSAL_IDENTIFIER,
 });

@@ -69,5 +69,39 @@ export default definePageLayout({
         },
       ],
     },
+    {
+      universalIdentifier: '6c6135d0-b81c-454d-8237-3c9fe835f4ae',
+      title: 'Timeline',
+      position: 200,
+      icon: 'IconTimelineEvent',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      widgets: [
+        {
+          universalIdentifier: '704d5052-e27c-4528-9244-7c3f579a2675',
+          title: 'Timeline',
+          type: 'TIMELINE',
+          configuration: {
+            configurationType: 'TIMELINE',
+          },
+        },
+      ],
+    },
+    {
+      universalIdentifier: '3f163f00-3ed0-448f-b5c2-55ef7cbf49d7',
+      title: 'Notes',
+      position: 300,
+      icon: 'IconNotes',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      widgets: [
+        {
+          universalIdentifier: '9b99661c-edf4-4530-a08c-756e0a6988cf',
+          title: 'Notes',
+          type: 'NOTES',
+          configuration: {
+            configurationType: 'NOTES',
+          },
+        },
+      ],
+    },
   ],
 });

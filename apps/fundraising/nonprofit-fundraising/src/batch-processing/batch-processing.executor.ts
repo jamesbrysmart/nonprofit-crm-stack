@@ -1,61 +1,38 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { postTwentyRest } from 'src/app-api/twenty-rest-client';
+import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
-import { attachGiftsToCurrentDraftClaimBatch } from 'src/gift-aid-claims/gift-aid-claim-batch';
-import {
-  collectDonorIds,
-  recomputeDonorRollups,
-} from 'src/donor-rollups/donor-rollups';
-import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
+import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
+import { hasLinkedDonorForProcessing } from 'src/gift-staging-review/gift-staging-processability';
 import {
-  hasLinkedDonorForProcessing,
-  hasSufficientDonorEvidenceForNewDonor,
-  isGiftStagingProcessable,
-} from 'src/gift-staging-review/gift-staging-processability';
-import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
-import type { RecurringAgreementCadence } from 'src/recurring/recurring.types';
+  applyLinkedDonorEmailUpdates,
+  buildGiftPayloadFromRow,
+  createGiftViaRowFallback,
+  normalizeString,
+  requiresRecurringRowFallback,
+  type BatchGiftEntry,
+  type FailedWriteback,
+  type NotReadyWriteback,
+  type RowWriteback,
+  type SuccessfulWriteback,
+} from './batch-processing.executor.support';
+import {
+  finalizeBatchExecutionMetrics,
+  runBatchProcessingSideEffects,
+} from './batch-processing.executor.effects';
 import type { BatchProcessingRow } from './batch-processing.types';
+
+export {
+  deriveLinkedDonorEmailUpdate,
+  deriveRecurringCadenceFromProviderEvidence,
+} from './batch-processing.executor.support';
 
 const MAX_BATCH_SIZE = 60;
 const GIFT_CREATE_CHUNK_SIZE = 30;
 const WRITEBACK_CHUNK_SIZE = 60;
 const CHUNK_DELAY_MS = 700;
-
-type SuccessfulWriteback = {
-  id: string;
-  committedGiftId: string;
-  donorId: string;
-  recurringAgreementId?: string;
-  processingStatus: 'PROCESSED';
-  errorDetail: null;
-  isReadyForProcessing: false;
-  executionPath: 'BATCH' | 'ROW_FALLBACK';
-  giftAidStatus: string | null;
-};
-
-type FailedWriteback = {
-  id: string;
-  processingStatus: 'PROCESS_FAILED';
-  errorDetail: string;
-  executionPath: 'BATCH' | 'ROW_FALLBACK';
-};
-
-type NotReadyWriteback = {
-  id: string;
-  processingStatus: 'NOT_PROCESSED';
-  errorDetail: null;
-};
-
-type RowWriteback =
-  | SuccessfulWriteback
-  | FailedWriteback
-  | NotReadyWriteback;
-
-type BatchGiftEntry = {
-  row: BatchProcessingRow;
-  payload: Record<string, unknown>;
-};
 
 export type BatchExecutionMetrics = {
   chunkCount: number;
@@ -80,533 +57,6 @@ class CorrelationContractFailure extends Error {
 
 const sleep = async (delayMs: number) => {
   await new Promise((resolve) => setTimeout(resolve, delayMs));
-};
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
-
-const normalizeEmail = (value: string | null | undefined) =>
-  normalizeString(value).toLowerCase();
-
-const normalizeProviderForRecurringAgreement = (
-  value: string | null | undefined,
-) => normalizeString(value).toUpperCase();
-
-const isProviderBackedRecurringStagingRow = (row: BatchProcessingRow) =>
-  normalizeString(row.recurringAgreement?.id) === '' &&
-  normalizeProviderForRecurringAgreement(row.provider) !== '' &&
-  normalizeString(row.providerAgreementId) !== '';
-
-const requiresRecurringRowFallback = (row: BatchProcessingRow) =>
-  normalizeString(row.recurringAgreement?.id) !== '' ||
-  isProviderBackedRecurringStagingRow(row);
-
-type DerivedRecurringCadence = {
-  cadence: RecurringAgreementCadence;
-  intervalCount: number;
-};
-
-export const deriveRecurringCadenceFromProviderEvidence = ({
-  providerIntervalUnit,
-  providerIntervalCount,
-}: {
-  providerIntervalUnit: string | null | undefined;
-  providerIntervalCount: number | null | undefined;
-}): DerivedRecurringCadence => {
-  const unit = normalizeString(providerIntervalUnit).toLowerCase();
-
-  if (unit === '') {
-    throw new Error(
-      'Provider recurring interval unit is required before creating a recurring agreement',
-    );
-  }
-
-  if (
-    typeof providerIntervalCount !== 'number' ||
-    !Number.isInteger(providerIntervalCount) ||
-    providerIntervalCount <= 0
-  ) {
-    throw new Error(
-      'Provider recurring interval count is required before creating a recurring agreement',
-    );
-  }
-
-  if (unit === 'week' && providerIntervalCount === 1) {
-    return { cadence: 'WEEKLY', intervalCount: 1 };
-  }
-
-  if (unit === 'month' && providerIntervalCount === 1) {
-    return { cadence: 'MONTHLY', intervalCount: 1 };
-  }
-
-  if (unit === 'month' && providerIntervalCount === 3) {
-    return { cadence: 'QUARTERLY', intervalCount: 1 };
-  }
-
-  if (unit === 'year' && providerIntervalCount === 1) {
-    return { cadence: 'ANNUAL', intervalCount: 1 };
-  }
-
-  throw new Error(
-    `Unsupported provider recurring interval ${providerIntervalCount} ${unit}`,
-  );
-};
-
-const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
-  const amountMicros = row.amount?.amountMicros;
-  const currencyCode = normalizeString(row.amount?.currencyCode);
-  const donorId = normalizeString(row.donor?.id);
-  const donorFirstName = normalizeString(row.donorFirstName);
-  const donorLastName = normalizeString(row.donorLastName);
-  const donorEmail = normalizeString(row.donorEmail);
-  const giftDate = normalizeString(row.giftDate);
-
-  if (typeof amountMicros !== 'number' || !Number.isFinite(amountMicros) || amountMicros <= 0) {
-    throw new Error('Row amount is not valid for batch processing');
-  }
-
-  if (currencyCode === '') {
-    throw new Error('Row currency is not valid for batch processing');
-  }
-
-  if (
-    !hasLinkedDonorForProcessing({ linkedDonorId: row.donor?.id }) &&
-    !hasSufficientDonorEvidenceForNewDonor(row)
-  ) {
-    throw new Error(
-      'Donor first name and last name are required before processing a new donor',
-    );
-  }
-
-  if (giftDate === '') {
-    throw new Error('Gift date is required for batch processing');
-  }
-
-  return {
-    name: row.name,
-    amount: {
-      currencyCode,
-      amountMicros: Math.round(amountMicros),
-    },
-    giftDate,
-    donorFirstName,
-    donorLastName,
-    ...(donorEmail !== '' ? { donorEmail } : {}),
-    ...(normalizeString(row.externalId) !== ''
-      ? { externalId: normalizeString(row.externalId) }
-      : {}),
-    ...(normalizeString(row.sourceFingerprint) !== ''
-      ? { sourceFingerprint: normalizeString(row.sourceFingerprint) }
-      : {}),
-    ...(normalizeString(row.provider) !== ''
-      ? { provider: normalizeString(row.provider) }
-      : {}),
-    ...(normalizeString(row.providerPaymentId) !== ''
-      ? { providerPaymentId: normalizeString(row.providerPaymentId) }
-      : {}),
-    ...(donorId !== '' ? { donorId } : {}),
-    giftAidRequested: row.giftAidRequested === true,
-    giftAidDeclarationCaptured: row.giftAidDeclarationCaptured === true,
-    ...(normalizeString(row.giftAidDeclarationDate) !== ''
-      ? { giftAidDeclarationDate: normalizeString(row.giftAidDeclarationDate) }
-      : {}),
-    ...(normalizeString(row.giftAidCoverageScope) !== ''
-      ? { giftAidCoverageScope: normalizeString(row.giftAidCoverageScope) }
-      : {}),
-    ...(normalizeString(row.giftAidDeclarationSource) !== ''
-      ? {
-          giftAidDeclarationSource: normalizeString(
-            row.giftAidDeclarationSource,
-          ),
-        }
-      : {}),
-    ...(normalizeString(row.giftAidTextVersion) !== ''
-      ? { giftAidTextVersion: normalizeString(row.giftAidTextVersion) }
-      : {}),
-    ...(normalizeString(row.giftAidDeclaration?.id) !== ''
-      ? { giftAidDeclarationId: normalizeString(row.giftAidDeclaration?.id) }
-      : {}),
-    ...(normalizeString(row.recurringAgreement?.id) !== ''
-      ? {
-          recurringAgreementId: normalizeString(row.recurringAgreement?.id),
-        }
-      : {}),
-  };
-};
-
-type DonorEmailsUpdate = {
-  donorId: string;
-  emails: {
-    primaryEmail: string | null;
-    additionalEmails: string[] | null;
-  };
-};
-
-export const deriveLinkedDonorEmailUpdate = (
-  row: BatchProcessingRow,
-): DonorEmailsUpdate | null => {
-  const donorId = normalizeString(row.donor?.id);
-  const stagedEmail = normalizeString(row.donorEmail);
-  const normalizedStagedEmail = normalizeEmail(row.donorEmail);
-
-  if (donorId === '' || stagedEmail === '' || normalizedStagedEmail === '') {
-    return null;
-  }
-
-  const primaryEmail = normalizeString(row.donor?.emails?.primaryEmail);
-  const additionalEmails = Array.isArray(row.donor?.emails?.additionalEmails)
-    ? row.donor.emails.additionalEmails
-        .map((email) => normalizeString(email))
-        .filter((email) => email !== '')
-    : [];
-
-  const knownEmails = new Set(
-    [primaryEmail, ...additionalEmails]
-      .map((email) => normalizeEmail(email))
-      .filter((email) => email !== ''),
-  );
-
-  if (knownEmails.has(normalizedStagedEmail)) {
-    return null;
-  }
-
-  return {
-    donorId,
-    emails: {
-      primaryEmail: primaryEmail === '' ? null : primaryEmail,
-      additionalEmails:
-        additionalEmails.length > 0
-          ? [...additionalEmails, stagedEmail]
-          : [stagedEmail],
-    },
-  };
-};
-
-const applyLinkedDonorEmailUpdates = async (
-  client: CoreApiClient,
-  rows: BatchProcessingRow[],
-) => {
-  for (const row of rows) {
-    const update = deriveLinkedDonorEmailUpdate(row);
-
-    if (!update) {
-      continue;
-    }
-
-    try {
-      await client.mutation({
-        updatePerson: {
-          __args: {
-            id: update.donorId,
-            data: {
-              emails: update.emails,
-            },
-          },
-          id: true,
-        },
-      } as any);
-    } catch (error) {
-      console.warn(
-        'Non-blocking donor email enrichment failed',
-        row.id,
-        error instanceof Error ? error.message : String(error),
-      );
-    }
-  }
-};
-
-const ensurePersonForRowFallback = async (
-  client: CoreApiClient,
-  row: BatchProcessingRow,
-) => {
-  const donorFirstName = normalizeString(row.donorFirstName);
-  const donorLastName = normalizeString(row.donorLastName);
-  const donorEmail = normalizeString(row.donorEmail);
-  const donorMailingAddress = row.donorMailingAddress;
-
-  if (donorFirstName === '' || donorLastName === '') {
-    throw new Error(
-      'Donor first name and last name are required before processing a new donor',
-    );
-  }
-
-  const result = await client.mutation({
-    createPerson: {
-      __args: {
-        data: {
-          name: {
-            firstName: donorFirstName,
-            lastName: donorLastName,
-          },
-          ...(donorEmail !== ''
-            ? {
-                emails: {
-                  primaryEmail: donorEmail,
-                },
-              }
-            : {}),
-          ...(donorMailingAddress
-            ? {
-                mailingAddress: donorMailingAddress,
-              }
-            : {}),
-        },
-      },
-      id: true,
-    },
-  } as any);
-
-  const personId = normalizeString(result?.createPerson?.id);
-
-  if (personId === '') {
-    throw new Error('Create person response missing id');
-  }
-
-  return personId;
-};
-
-type ProviderRecurringAgreementRecord = {
-  id: string;
-};
-
-const findRecurringAgreementByProviderAgreementId = async ({
-  client,
-  provider,
-  providerAgreementId,
-}: {
-  client: CoreApiClient;
-  provider: string;
-  providerAgreementId: string;
-}): Promise<string | null> => {
-  const result = await client.query({
-    recurringAgreements: {
-      __args: {
-        first: 1,
-        filter: {
-          provider: {
-            eq: provider,
-          },
-          providerAgreementId: {
-            eq: providerAgreementId,
-          },
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-        },
-      },
-    },
-  } as any);
-
-  const agreement = result?.recurringAgreements?.edges?.[0]?.node as
-    | ProviderRecurringAgreementRecord
-    | undefined;
-  const agreementId = normalizeString(agreement?.id);
-
-  return agreementId === '' ? null : agreementId;
-};
-
-const buildProviderRecurringAgreementName = (row: BatchProcessingRow) => {
-  const donorName = [row.donorFirstName, row.donorLastName]
-    .map(normalizeString)
-    .filter(Boolean)
-    .join(' ');
-  const provider = normalizeProviderForRecurringAgreement(row.provider);
-
-  if (donorName !== '' && provider !== '') {
-    return `${provider} recurring agreement for ${donorName}`;
-  }
-
-  if (donorName !== '') {
-    return `Recurring agreement for ${donorName}`;
-  }
-
-  return row.name;
-};
-
-const createProviderBackedRecurringAgreement = async ({
-  client,
-  row,
-  payload,
-}: {
-  client: CoreApiClient;
-  row: BatchProcessingRow;
-  payload: Record<string, unknown>;
-}): Promise<string> => {
-  const provider = normalizeProviderForRecurringAgreement(row.provider);
-  const providerAgreementId = normalizeString(row.providerAgreementId);
-  const donorId = normalizeString(payload.donorId as string | undefined);
-
-  if (provider === '') {
-    throw new Error(
-      'Provider is required before creating a provider-backed recurring agreement',
-    );
-  }
-
-  if (providerAgreementId === '') {
-    throw new Error(
-      'Provider agreement ID is required before creating a provider-backed recurring agreement',
-    );
-  }
-
-  const existingAgreementId = await findRecurringAgreementByProviderAgreementId({
-    client,
-    provider,
-    providerAgreementId,
-  });
-
-  if (existingAgreementId) {
-    return existingAgreementId;
-  }
-
-  const { cadence, intervalCount } = deriveRecurringCadenceFromProviderEvidence({
-    providerIntervalUnit: row.providerIntervalUnit,
-    providerIntervalCount: row.providerIntervalCount,
-  });
-
-  const result = await client.mutation({
-    createRecurringAgreement: {
-      __args: {
-        data: {
-          name: buildProviderRecurringAgreementName(row),
-          status: 'ACTIVE',
-          cadence,
-          intervalCount,
-          amount: payload.amount,
-          startDate: payload.giftDate,
-          nextExpectedAt: payload.giftDate,
-          provider,
-          providerAgreementId,
-          person: {
-            connect: {
-              where: {
-                id: donorId,
-              },
-            },
-          },
-        },
-      },
-      id: true,
-    },
-  } as any);
-
-  const createdAgreementId = normalizeString(result?.createRecurringAgreement?.id);
-
-  if (createdAgreementId === '') {
-    throw new Error('Create recurring agreement response missing id');
-  }
-
-  return createdAgreementId;
-};
-
-const createGiftViaRowFallback = async (
-  row: BatchProcessingRow,
-): Promise<SuccessfulWriteback> => {
-  const client = new CoreApiClient();
-  const giftAidDeclarationService = createGiftAidDeclarationService(client);
-  let payload = buildGiftPayloadFromRow(row);
-  let donorId = normalizeString(payload.donorId as string | undefined);
-
-  if (donorId === '') {
-    donorId = await ensurePersonForRowFallback(client, row);
-    payload = {
-      ...payload,
-      donorId,
-    };
-  }
-
-  payload = await applyGiftAidMetadata(
-    giftAidDeclarationService,
-    payload,
-    isGiftAidEnabled(),
-  );
-  let recurringAgreementId = normalizeString(
-    payload.recurringAgreementId as string | undefined,
-  );
-  const declarationId = normalizeString(payload.giftAidDeclarationId);
-
-  if (recurringAgreementId === '' && isProviderBackedRecurringStagingRow(row)) {
-    recurringAgreementId = await createProviderBackedRecurringAgreement({
-      client,
-      row,
-      payload,
-    });
-  }
-
-  const createData = { ...payload } as Record<string, unknown>;
-  delete createData.donorId;
-  delete createData.donorMailingAddress;
-  delete createData.giftAidDeclarationId;
-  delete createData.recurringAgreementId;
-  const result = await client.mutation({
-    createGift: {
-      __args: {
-        data: {
-          ...createData,
-          donor: {
-            connect: {
-              where: {
-                id: donorId,
-              },
-            },
-          },
-          ...(declarationId !== ''
-            ? {
-                giftAidDeclaration: {
-                  connect: {
-                    where: {
-                      id: declarationId,
-                    },
-                  },
-                },
-              }
-            : {}),
-          ...(recurringAgreementId !== ''
-            ? {
-                recurringAgreement: {
-                  connect: {
-                    where: {
-                      id: recurringAgreementId,
-                    },
-                  },
-                },
-              }
-            : {}),
-        },
-      },
-      id: true,
-    },
-  } as any);
-
-  const giftId = result?.createGift?.id;
-
-  if (typeof giftId !== 'string' || giftId === '') {
-    throw new Error('Create gift response missing id');
-  }
-
-  if (recurringAgreementId !== '') {
-    await advanceRecurringAgreementExpectation(
-      client,
-      recurringAgreementId,
-      normalizeString(payload.giftDate),
-    );
-  }
-
-  await applyLinkedDonorEmailUpdates(client, [row]);
-
-  return {
-    id: row.id,
-    committedGiftId: giftId,
-    donorId,
-    processingStatus: 'PROCESSED',
-    errorDetail: null,
-    isReadyForProcessing: false,
-    executionPath: 'ROW_FALLBACK',
-    ...(recurringAgreementId !== '' ? { recurringAgreementId } : {}),
-    giftAidStatus:
-      typeof payload.giftAidStatus === 'string' ? payload.giftAidStatus : null,
-  };
 };
 
 const parseCreatedGiftIds = (
@@ -642,9 +92,8 @@ const parseCreatedGiftIds = (
 const createBatchGiftChunk = async (
   entries: BatchGiftEntry[],
 ): Promise<SuccessfulWriteback[]> => {
-  const response = await requestTwentyRest<unknown>({
+  const response = await postTwentyRest<unknown>({
     path: '/rest/batch/gifts?depth=0',
-    method: 'POST',
     body: entries.map((entry) => entry.payload),
   });
   const giftIds = parseCreatedGiftIds(response, entries.length);
@@ -661,7 +110,7 @@ const createBatchGiftChunk = async (
     donorId: normalizeString(entry.row.donor?.id),
     processingStatus: 'PROCESSED' as const,
     errorDetail: null,
-    isReadyForProcessing: false as const,
+    giftReadyStatus: null,
     executionPath: 'BATCH' as const,
     giftAidStatus:
       typeof entry.payload.giftAidStatus === 'string'
@@ -693,6 +142,7 @@ const buildFailedWriteback = ({
     id: rowId,
     processingStatus: 'PROCESS_FAILED',
     errorDetail,
+    giftReadyStatus: null,
     executionPath,
   };
 };
@@ -873,11 +323,13 @@ const persistWritebacks = async (writebacks: RowWriteback[]) => {
 
       if ('committedGiftId' in record) {
         persistedRecord.committedGiftId = record.committedGiftId;
-        persistedRecord.isReadyForProcessing = record.isReadyForProcessing;
+        persistedRecord.giftReadyStatus = record.giftReadyStatus;
 
         if (normalizeString(record.recurringAgreementId) !== '') {
           persistedRecord.recurringAgreementId = record.recurringAgreementId;
         }
+      } else if ('giftReadyStatus' in record) {
+        persistedRecord.giftReadyStatus = record.giftReadyStatus;
       }
 
       return persistedRecord as { id: string } & Record<string, unknown>;
@@ -923,46 +375,12 @@ export const executeBatchGiftProcessing = async (
     ...result.failedWritebacks,
   ]);
 
-  if (isGiftAidEnabled()) {
-    const claimableGiftIds = result.successfulWritebacks
-      .filter((writeback) => writeback.giftAidStatus === 'CLAIMABLE')
-      .map((writeback) => writeback.committedGiftId);
-
-    if (claimableGiftIds.length > 0) {
-      const client = new CoreApiClient();
-      await attachGiftsToCurrentDraftClaimBatch(client, claimableGiftIds);
-    }
-  }
-
-  const donorIdsToRecompute = collectDonorIds(
-    result.successfulWritebacks.map((writeback) => writeback.donorId),
-  );
-
-  if (donorIdsToRecompute.length > 0) {
-    try {
-      const client = new CoreApiClient();
-      await recomputeDonorRollups(client, donorIdsToRecompute);
-    } catch (error) {
-      console.warn(
-        'Non-blocking donor rollup recompute failed after batch processing',
-        donorIdsToRecompute,
-        error instanceof Error ? error.message : String(error),
-      );
-    }
-  }
-
-  result.metrics.batchPathProcessed = result.successfulWritebacks.filter(
-    (writeback) => writeback.executionPath === 'BATCH',
-  ).length;
-  result.metrics.batchPathFailed = result.failedWritebacks.filter(
-    (writeback) => writeback.executionPath === 'BATCH',
-  ).length;
-  result.metrics.rowFallbackProcessed = result.successfulWritebacks.filter(
-    (writeback) => writeback.executionPath === 'ROW_FALLBACK',
-  ).length;
-  result.metrics.rowFallbackFailed = result.failedWritebacks.filter(
-    (writeback) => writeback.executionPath === 'ROW_FALLBACK',
-  ).length;
+  await runBatchProcessingSideEffects(result.successfulWritebacks);
+  finalizeBatchExecutionMetrics({
+    successfulWritebacks: result.successfulWritebacks,
+    failedWritebacks: result.failedWritebacks,
+    metrics: result.metrics,
+  });
 
   return result;
 };
@@ -976,6 +394,7 @@ export const buildNotReadyWritebacks = (
       id: row.id,
       processingStatus: 'NOT_PROCESSED',
       errorDetail: null,
+      giftReadyStatus: 'NEEDS_REVIEW',
     }));
 };
 
@@ -990,13 +409,7 @@ export const persistBatchRowWritebacks = async (
 };
 
 export const canProcessBatchRow = (row: BatchProcessingRow) => {
-  return isGiftStagingProcessable({
-    processingStatus: row.processingStatus,
-    donorResolutionState: row.donorResolutionState,
-    donorFirstName: row.donorFirstName,
-    donorLastName: row.donorLastName,
-    linkedDonorId: row.donor?.id,
-  });
+  return classifyBatchPreflight(row).category === 'READY';
 };
 
 export const getBatchProcessingLimits = () => {

@@ -1,4 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { postTwentyRest } from 'src/app-api/twenty-rest-client';
 import type {
   DatabaseEventPayload,
   ObjectRecordDeleteEvent,
@@ -91,54 +92,6 @@ const buildOrDonorFilter = (donorIds: string[]) => ({
     },
   })),
 });
-
-const getRestConfig = () => {
-  const apiBaseUrl = process.env.TWENTY_API_URL;
-  const token =
-    process.env.TWENTY_APP_ACCESS_TOKEN ?? process.env.TWENTY_API_KEY;
-
-  if (!apiBaseUrl || !token) {
-    throw new Error('Twenty REST configuration missing');
-  }
-
-  return {
-    apiBaseUrl: apiBaseUrl.replace(/\/$/, ''),
-    token,
-  };
-};
-
-const requestTwentyRest = async <T>({
-  path,
-  method,
-  body,
-}: {
-  path: string;
-  method: 'POST';
-  body: unknown;
-}): Promise<T> => {
-  const { apiBaseUrl, token } = getRestConfig();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const rawBody = await response.text();
-
-  if (!response.ok) {
-    throw new Error(rawBody || `Twenty REST request failed with ${response.status}`);
-  }
-
-  if (rawBody.trim() === '') {
-    return null as T;
-  }
-
-  return JSON.parse(rawBody) as T;
-};
 
 const areAmountsEqual = (
   left: CurrencyAmount | null | undefined,
@@ -418,9 +371,8 @@ const loadDonorIdsWithExistingRollups = async (
 
 const persistDonorRollupWritebacks = async (writebacks: DonorRollupWriteback[]) => {
   for (const chunk of chunkArray(writebacks, PERSON_WRITEBACK_CHUNK_SIZE)) {
-    const response = await requestTwentyRest<unknown>({
+    const response = await postTwentyRest<unknown>({
       path: '/rest/batch/people?upsert=true&depth=0',
-      method: 'POST',
       body: chunk,
     });
 

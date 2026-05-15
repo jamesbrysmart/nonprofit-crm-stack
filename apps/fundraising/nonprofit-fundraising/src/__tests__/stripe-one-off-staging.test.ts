@@ -58,6 +58,7 @@ describe('buildStripeOneOffGiftStagingInput', () => {
       provider: 'STRIPE',
       providerPaymentId: 'pi_123',
       paymentProviderCustomerId: 'cus_123',
+      providerAgreementId: null,
       donorMailingAddress: {
         addressStreet1: '12 Analytical Engine Row',
         addressCity: 'London',
@@ -83,7 +84,7 @@ describe('buildStripeOneOffGiftStagingInput', () => {
         },
       },
       donorResolutionState: 'UNREVIEWED',
-      isReadyForProcessing: false,
+      giftReadyStatus: 'NEEDS_REVIEW',
       processingStatus: 'NOT_PROCESSED',
       giftAidRequested: false,
       giftAidDeclarationCaptured: false,
@@ -131,7 +132,7 @@ describe('buildStripeOneOffGiftStagingInput', () => {
     expect(input.providerPaymentId).toBe('pi_456');
     expect(input.providerEventId).toBe('evt_test_123');
     expect(input.paymentProviderCustomerId).toBe('cus_456');
-    expect(input.providerAgreementId).toBeUndefined();
+    expect(input.providerAgreementId).toBeNull();
     expect(input.donorMailingAddress).toEqual({
       addressStreet1: '5 Music Lane',
       addressStreet2: 'Apartment 3',
@@ -217,7 +218,7 @@ describe('buildStripeOneOffGiftStagingInput', () => {
       },
     });
     expect(input.processingStatus).toBe('NOT_PROCESSED');
-    expect(input.isReadyForProcessing).toBe(false);
+    expect(input.giftReadyStatus).toBe('NEEDS_REVIEW');
   });
 
   it('falls back to the event created timestamp when the session created timestamp is absent', () => {

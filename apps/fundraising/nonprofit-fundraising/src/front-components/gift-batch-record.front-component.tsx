@@ -131,15 +131,21 @@ const buildGiftStagingQueryParams = (
       queryParams['filter[processingStatus][IS]'] = ['PROCESS_FAILED'];
       break;
     case 'not-ready':
-      queryParams['filter[isReadyForProcessing][IS]'] = 'false';
-      queryParams['filter[processingStatus][IS_NOT]'] = ['PROCESSED'];
+      queryParams['filter[giftReadyStatus][IS]'] = ['NEEDS_REVIEW'];
+      queryParams['filter[processingStatus][IS_NOT]'] = [
+        'PROCESSED',
+        'PROCESS_FAILED',
+      ];
       break;
     case 'needs-donor-review':
       queryParams['filter[donorResolutionState][IS_NOT]'] = ['CONFIRMED'];
       break;
     case 'ready':
-      queryParams['filter[isReadyForProcessing][IS]'] = 'true';
-      queryParams['filter[processingStatus][IS_NOT]'] = ['PROCESSED'];
+      queryParams['filter[giftReadyStatus][IS]'] = ['READY_TO_PROCESS'];
+      queryParams['filter[processingStatus][IS_NOT]'] = [
+        'PROCESSED',
+        'PROCESS_FAILED',
+      ];
       break;
     case 'all':
     default:
@@ -195,7 +201,7 @@ const loadGiftBatchReview = async (
           donor: {
             id: true,
           },
-          isReadyForProcessing: true,
+          giftReadyStatus: true,
           processingStatus: true,
           errorDetail: true,
           committedGift: {
@@ -397,7 +403,10 @@ const GiftBatchRecord = () => {
   }
 
   const notReadyItems = record.rows.filter(
-    (row) => row.processingStatus !== 'PROCESSED' && !row.isReadyForProcessing,
+    (row) =>
+      row.processingStatus !== 'PROCESSED' &&
+      row.processingStatus !== 'PROCESS_FAILED' &&
+      row.giftReadyStatus === 'NEEDS_REVIEW',
   ).length;
 
   return (
@@ -627,7 +636,7 @@ const GiftBatchRecord = () => {
                         ? 'PROCESSED'
                         : row.processingStatus === 'PROCESS_FAILED'
                           ? 'PROCESS_FAILED'
-                          : row.isReadyForProcessing
+                          : row.giftReadyStatus === 'READY_TO_PROCESS'
                             ? 'READY'
                             : 'NOT_PROCESSED',
                     )}
@@ -636,7 +645,7 @@ const GiftBatchRecord = () => {
                       ? 'PROCESSED'
                       : row.processingStatus === 'PROCESS_FAILED'
                         ? 'PROCESS_FAILED'
-                        : row.isReadyForProcessing
+                        : row.giftReadyStatus === 'READY_TO_PROCESS'
                           ? 'READY'
                           : 'NOT_PROCESSED'}
                   </div>
@@ -659,10 +668,10 @@ const GiftBatchRecord = () => {
                     ? 'Row has already been processed.'
                     : row.donorResolutionState === 'AMBIGUOUS'
                       ? 'Donor ambiguity still blocks this row.'
-                      : row.isReadyForProcessing
-                        ? 'Row can process now and is also marked ready.'
+                      : row.giftReadyStatus === 'READY_TO_PROCESS'
+                        ? 'Row can process now and has passed the readiness check.'
                         : row.isProcessable
-                          ? 'Row can process now but has not been explicitly marked ready.'
+                          ? 'Row may be processable, but it still needs a readiness check.'
                           : 'Row still needs more review before it can process.'}
                 </div>
                 {row.errorDetail !== '' ? (

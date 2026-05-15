@@ -75,7 +75,9 @@ describe('Stripe event router intake', () => {
     );
     expect(createdRecord?.donorMailingAddress).toEqual({
       addressStreet1: '44 Compiler Street',
+      addressStreet2: '',
       addressCity: 'London',
+      addressState: '',
       addressPostcode: 'EC1A 1BB',
       addressCountry: 'GB',
     });
@@ -97,7 +99,7 @@ describe('Stripe event router intake', () => {
         },
       },
     });
-    expect(createdRecord?.providerAgreementId).toBeNull();
+    expect(createdRecord?.providerAgreementId).toBe('');
     expect(createdRecord?.processingStatus).toBe('NOT_PROCESSED');
   });
 
@@ -171,7 +173,7 @@ describe('Stripe event router intake', () => {
     expect(staging?.providerPaymentId).toBe(`pi_router_${suffix}`);
     expect(staging?.providerAgreementId).toBe(subscriptionId);
     expect(staging?.processingStatus).toBe('NOT_PROCESSED');
-    expect(staging?.isReadyForProcessing).toBe(false);
+    expect(staging?.giftReadyStatus).toBe('NEEDS_REVIEW');
   });
 
   it('should ignore unsupported Stripe event types without mutation', async () => {

@@ -119,5 +119,39 @@ export default definePageLayout({
         },
       ],
     },
+    {
+      universalIdentifier: '9548e653-5807-45df-9531-e8f4884307d0',
+      title: 'Timeline',
+      position: 100,
+      icon: 'IconTimelineEvent',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      widgets: [
+        {
+          universalIdentifier: '45dd7e3d-77f4-490b-b6d7-8862b2c5feda',
+          title: 'Timeline',
+          type: 'TIMELINE',
+          configuration: {
+            configurationType: 'TIMELINE',
+          },
+        },
+      ],
+    },
+    {
+      universalIdentifier: '8ef9b77d-ea41-42a1-bca6-2d4f030ca732',
+      title: 'Tasks',
+      position: 150,
+      icon: 'IconCheckbox',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      widgets: [
+        {
+          universalIdentifier: '2f78c02b-e364-4d72-8e59-511d53dc7f0b',
+          title: 'Tasks',
+          type: 'TASKS',
+          configuration: {
+            configurationType: 'TASKS',
+          },
+        },
+      ],
+    },
   ],
 });

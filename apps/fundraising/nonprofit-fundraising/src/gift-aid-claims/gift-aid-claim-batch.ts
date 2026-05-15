@@ -1,188 +1,23 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
-import type {
-  FinalizeGiftAidClaimBatchResponse,
-  GiftAidClaimBatchRecord,
-  GiftAidClaimGiftRecord,
-  GiftAidClaimSubmissionRecord,
-  GiftAidClaimWorkspaceRecord,
-} from './gift-aid-claim.types';
+import { postTwentyRest } from 'src/app-api/twenty-rest-client';
+import {
+  getOrCreateCurrentDraftClaimBatch,
+  loadClaimBatch,
+  loadGiftAidClaimWorkspace,
+  normalizeString,
+  refreshClaimBatchSummary,
+} from './gift-aid-claim-batch.queries';
+import type { FinalizeGiftAidClaimBatchResponse } from './gift-aid-claim.types';
 
-const getNowIsoDate = () => new Date().toISOString();
-
-const buildDraftBatchName = () => {
-  const date = getNowIsoDate().slice(0, 10);
-  return `Gift Aid draft ${date}`;
-};
-
-const getRestConfig = () => {
-  const apiBaseUrl = process.env.TWENTY_API_URL;
-  const token =
-    process.env.TWENTY_APP_ACCESS_TOKEN ?? process.env.TWENTY_API_KEY;
-
-  if (!apiBaseUrl || !token) {
-    throw new Error('Twenty REST configuration missing');
-  }
-
-  return {
-    apiBaseUrl: apiBaseUrl.replace(/\/$/, ''),
-    token,
-  };
-};
-
-const requestTwentyRest = async <T>({
-  path,
-  method,
-  body,
-}: {
-  path: string;
-  method: 'POST';
-  body: unknown;
-}): Promise<T> => {
-  const { apiBaseUrl, token } = getRestConfig();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const rawBody = await response.text();
-
-  if (!response.ok) {
-    throw new Error(rawBody || `Twenty REST request failed with ${response.status}`);
-  }
-
-  if (rawBody.trim() === '') {
-    return null as T;
-  }
-
-  return JSON.parse(rawBody) as T;
-};
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
-
-export const computeClaimBatchRollups = (gifts: GiftAidClaimGiftRecord[]) => {
-  const claimableGifts = gifts.filter((gift) => gift.giftAidStatus === 'CLAIMABLE');
-  const blockingIssueCount = gifts.filter(
-    (gift) => gift.giftAidStatus !== 'CLAIMABLE',
-  ).length;
-
-  return {
-    giftCount: gifts.length,
-    totalAmount: {
-      amountMicros: claimableGifts.reduce(
-        (sum, gift) => sum + (gift.amount?.amountMicros ?? 0),
-        0,
-      ),
-      currencyCode:
-        claimableGifts.find((gift) => gift.amount?.currencyCode)?.amount
-          ?.currencyCode ?? 'GBP',
-    },
-    hasBlockingIssues: blockingIssueCount > 0,
-    blockingIssueCount,
-  };
-};
-
-export const getCurrentDraftClaimBatch = async (
-  client: CoreApiClient,
-): Promise<GiftAidClaimBatchRecord | undefined> => {
-  const result = await client.query({
-    giftAidClaimBatches: {
-      __args: {
-        first: 10,
-        filter: {
-          status: {
-            eq: 'DRAFT',
-          },
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          name: true,
-          status: true,
-          submittedAt: true,
-          latestSubmissionStatus: true,
-          giftCount: true,
-          totalAmount: true,
-          hasBlockingIssues: true,
-          blockingIssueCount: true,
-          notes: true,
-        },
-      },
-    },
-  } as any);
-
-  return result?.giftAidClaimBatches?.edges?.[0]?.node as
-    | GiftAidClaimBatchRecord
-    | undefined;
-};
-
-export const getOrCreateCurrentDraftClaimBatch = async (
-  client: CoreApiClient,
-): Promise<GiftAidClaimBatchRecord> => {
-  const existing = await getCurrentDraftClaimBatch(client);
-  if (existing?.id) {
-    return existing;
-  }
-
-  const created = await client.mutation({
-    createGiftAidClaimBatch: {
-      __args: {
-        data: {
-          name: buildDraftBatchName(),
-          status: 'DRAFT',
-          giftCount: 0,
-          totalAmount: {
-            amountMicros: 0,
-            currencyCode: 'GBP',
-          },
-          hasBlockingIssues: false,
-          blockingIssueCount: 0,
-        },
-      },
-      id: true,
-          name: true,
-          status: true,
-          submittedAt: true,
-          latestSubmissionStatus: true,
-          giftCount: true,
-          totalAmount: true,
-          hasBlockingIssues: true,
-      blockingIssueCount: true,
-      notes: true,
-    },
-  } as any);
-
-  return created.createGiftAidClaimBatch as GiftAidClaimBatchRecord;
-};
-
-export const refreshClaimBatchSummary = async (
-  client: CoreApiClient,
-  batchId: string,
-) => {
-  const gifts = await listGiftsForClaimBatch(client, batchId);
-  const rollups = computeClaimBatchRollups(gifts);
-
-  await client.mutation({
-    updateGiftAidClaimBatch: {
-      __args: {
-        id: batchId,
-        data: {
-          giftCount: rollups.giftCount,
-          totalAmount: rollups.totalAmount,
-          hasBlockingIssues: rollups.hasBlockingIssues,
-          blockingIssueCount: rollups.blockingIssueCount,
-        },
-      },
-      id: true,
-    },
-  } as any);
-};
+export { computeClaimBatchRollups } from './gift-aid-claim-batch-rollups';
+export {
+  getCurrentDraftClaimBatch,
+  getOrCreateCurrentDraftClaimBatch,
+  listGiftsForClaimBatch,
+  listNeedsReviewGiftAidGifts,
+  loadGiftAidClaimWorkspace,
+  refreshClaimBatchSummary,
+} from './gift-aid-claim-batch.queries';
 
 export const attachGiftToCurrentDraftIfClaimable = async (
   client: CoreApiClient,
@@ -230,9 +65,8 @@ export const attachGiftsToCurrentDraftClaimBatch = async (
 
   const batch = await getOrCreateCurrentDraftClaimBatch(client);
 
-  const response = await requestTwentyRest<unknown>({
+  const response = await postTwentyRest<unknown>({
     path: '/rest/batch/gifts?upsert=true&depth=0',
-    method: 'POST',
     body: giftIds.map((id) => ({
       id,
       giftAidClaimBatchId: batch.id,
@@ -263,235 +97,6 @@ export const attachGiftsToCurrentDraftClaimBatch = async (
   }
 
   await refreshClaimBatchSummary(client, batch.id);
-};
-
-export const listGiftsForClaimBatch = async (
-  client: CoreApiClient,
-  batchId: string,
-): Promise<GiftAidClaimGiftRecord[]> => {
-  const result = await client.query({
-    gifts: {
-      __args: {
-        first: 200,
-        filter: {
-          giftAidClaimBatchId: {
-            eq: batchId,
-          },
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          name: true,
-          giftDate: true,
-          giftAidStatus: true,
-          giftAidReasonCode: true,
-          giftAidDecisionSource: true,
-          amount: {
-            amountMicros: true,
-            currencyCode: true,
-          },
-          donorFirstName: true,
-          donorLastName: true,
-          donorEmail: true,
-          donor: {
-            id: true,
-            mailingAddress: {
-              addressStreet1: true,
-              addressStreet2: true,
-              addressCity: true,
-              addressState: true,
-              addressPostcode: true,
-              addressCountry: true,
-            },
-          },
-          giftAidDeclaration: {
-            id: true,
-          },
-        },
-      },
-    },
-  } as any);
-
-  return (
-    result?.gifts?.edges?.map(
-      (edge: { node: GiftAidClaimGiftRecord }) => edge.node,
-    ) ?? []
-  );
-};
-
-export const listNeedsReviewGiftAidGifts = async (
-  client: CoreApiClient,
-): Promise<GiftAidClaimGiftRecord[]> => {
-  const result = await client.query({
-    gifts: {
-      __args: {
-        first: 200,
-        filter: {
-          and: [
-            {
-              giftAidStatus: {
-                eq: 'NEEDS_REVIEW',
-              },
-            },
-            {
-              giftAidClaimBatchId: {
-                is: 'NULL',
-              },
-            },
-          ],
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          name: true,
-          giftDate: true,
-          giftAidStatus: true,
-          giftAidReasonCode: true,
-          giftAidDecisionSource: true,
-          amount: {
-            amountMicros: true,
-            currencyCode: true,
-          },
-          donorFirstName: true,
-          donorLastName: true,
-          donorEmail: true,
-          donor: {
-            id: true,
-            mailingAddress: {
-              addressStreet1: true,
-              addressStreet2: true,
-              addressCity: true,
-              addressState: true,
-              addressPostcode: true,
-              addressCountry: true,
-            },
-          },
-          giftAidDeclaration: {
-            id: true,
-          },
-        },
-      },
-    },
-  } as any);
-
-  return (
-    result?.gifts?.edges?.map(
-      (edge: { node: GiftAidClaimGiftRecord }) => edge.node,
-    ) ?? []
-  );
-};
-
-export const loadGiftAidClaimWorkspace = async (
-  client: CoreApiClient,
-  batchId: string,
-): Promise<GiftAidClaimWorkspaceRecord> => {
-  const result = await client.query({
-    giftAidClaimBatch: {
-      __args: {
-        filter: {
-          id: { eq: batchId },
-        },
-      },
-      id: true,
-      name: true,
-      status: true,
-      submittedAt: true,
-      latestSubmissionStatus: true,
-      giftCount: true,
-      totalAmount: true,
-      hasBlockingIssues: true,
-      blockingIssueCount: true,
-      notes: true,
-    },
-    giftAidClaimSubmissions: {
-      __args: {
-        first: 50,
-        filter: {
-          giftAidClaimBatchId: {
-            eq: batchId,
-          },
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          name: true,
-          status: true,
-          environment: true,
-          submittedAt: true,
-          submittedToHmrcAt: true,
-          lastPolledAt: true,
-          completedAt: true,
-          correlationId: true,
-          transactionId: true,
-          failureCode: true,
-          failureMessage: true,
-          snapshotJson: true,
-          snapshotHash: true,
-          responseJson: true,
-          errorSummaryJson: true,
-        },
-      },
-    },
-  } as any);
-
-  const gifts = await listGiftsForClaimBatch(client, batchId);
-  const needsReviewGifts = await listNeedsReviewGiftAidGifts(client);
-  const batch = (result?.giftAidClaimBatch as GiftAidClaimBatchRecord | null) ?? null;
-  const submissions =
-    result?.giftAidClaimSubmissions?.edges?.map(
-      (edge: { node: GiftAidClaimSubmissionRecord }) => edge.node,
-    )?.sort((left, right) => {
-      const leftTimestamp = left.submittedAt ?? left.completedAt ?? '';
-      const rightTimestamp = right.submittedAt ?? right.completedAt ?? '';
-
-      return rightTimestamp.localeCompare(leftTimestamp);
-    }) ?? [];
-
-  if (!batch) {
-    return {
-      batch: null,
-      gifts,
-      submissions,
-      needsReviewGifts,
-    };
-  }
-
-  return {
-    batch: {
-      ...batch,
-      ...computeClaimBatchRollups(gifts),
-    },
-    gifts,
-    submissions,
-    needsReviewGifts,
-  };
-};
-
-const loadClaimBatch = async (client: CoreApiClient, batchId: string) => {
-  const refreshed = await client.query({
-    giftAidClaimBatch: {
-      __args: {
-        filter: {
-          id: { eq: batchId },
-        },
-      },
-      id: true,
-      name: true,
-      status: true,
-      submittedAt: true,
-      latestSubmissionStatus: true,
-      giftCount: true,
-      totalAmount: true,
-      hasBlockingIssues: true,
-      blockingIssueCount: true,
-      notes: true,
-    },
-  } as any);
-
-  return refreshed?.giftAidClaimBatch as GiftAidClaimBatchRecord | null;
 };
 
 export const finalizeGiftAidClaimBatch = async (
@@ -540,14 +145,26 @@ export const finalizeGiftAidClaimBatch = async (
     },
   } as any);
 
-  const nextDraft = await getOrCreateCurrentDraftClaimBatch(client);
+  try {
+    const nextDraft = await getOrCreateCurrentDraftClaimBatch(client);
 
-  return {
-    claimBatchId: batch.id,
-    nextDraftBatchId: nextDraft.id,
-    status: 'FINALIZED',
-    submittedAt,
-  };
+    return {
+      claimBatchId: batch.id,
+      nextDraftBatchId: nextDraft.id,
+      status: 'FINALIZED',
+      submittedAt,
+      warningMessage: null,
+    };
+  } catch {
+    return {
+      claimBatchId: batch.id,
+      nextDraftBatchId: null,
+      status: 'FINALIZED',
+      submittedAt,
+      warningMessage:
+        'Draft claim finalized, but the next draft batch could not be prepared automatically.',
+    };
+  }
 };
 
 export const submitGiftAidClaimBatch = finalizeGiftAidClaimBatch;

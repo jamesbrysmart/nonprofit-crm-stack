@@ -2,11 +2,16 @@ import type {
   DuplicateCheckResponse,
   PersonSummary,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
+import type {
+  BatchPreflightCategory,
+  BatchPreflightIssueCode,
+} from 'src/batch-processing/batch-processing.preflight';
+import type { GiftReadyStatus } from './gift-ready-status';
 
 export type DonorResolution =
   | 'UNREVIEWED'
   | 'AMBIGUOUS'
-  | 'UNRESOLVED'
+  | 'NEW_DONOR'
   | 'CONFIRMED';
 
 export type ProcessingStatus =
@@ -53,7 +58,7 @@ export type StoredGiftStagingRecord = {
   rawProviderEvidence: unknown;
   donorResolutionState: string | null;
   donor: PersonSummary | null;
-  isReadyForProcessing: boolean | null;
+  giftReadyStatus: GiftReadyStatus | null;
   processingStatus: string | null;
   errorDetail: string | null;
   giftAidRequested: boolean | null;
@@ -63,6 +68,11 @@ export type StoredGiftStagingRecord = {
   giftAidDeclarationSource: string | null;
   giftAidTextVersion: string | null;
   giftAidDeclaration:
+    | {
+        id: string;
+      }
+    | null;
+  recurringAgreement:
     | {
         id: string;
       }
@@ -106,7 +116,7 @@ export type GiftStagingReviewRecord = {
   donorResolution: DonorResolution;
   linkedDonor: PersonSummary | null;
   linkedDonorName: string;
-  isReadyForProcessing: boolean;
+  giftReadyStatus: GiftReadyStatus;
   processingStatus: ProcessingStatus;
   errorDetail: string;
   giftAidRequested: boolean;
@@ -120,6 +130,8 @@ export type GiftStagingReviewRecord = {
   giftBatchName: string;
   committedGiftId: string;
   committedGiftName: string;
+  preflightCategory: BatchPreflightCategory;
+  preflightIssueCodes: BatchPreflightIssueCode[];
 };
 
 export type DerivedReviewState = {

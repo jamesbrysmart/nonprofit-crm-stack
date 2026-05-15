@@ -3,11 +3,8 @@ import {
   defineLogicFunction,
   type RoutePayload,
 } from 'twenty-sdk/define';
-import {
-  canProcessBatchRow,
-  executeBatchGiftProcessing,
-} from 'src/batch-processing/batch-processing.executor';
-import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
+import { loadGiftStagingRowsForProcessing } from 'src/batch-processing/batch-loaders';
+import { processGiftStagingRows } from 'src/gift-staging-review/gift-ready-check.service';
 
 type ProcessGiftStagingRowRequest = {
   giftStagingId: string;
@@ -21,80 +18,6 @@ type ProcessGiftStagingRowResponse = {
   errorDetail: string | null;
 };
 
-const loadGiftStagingRow = async (
-  client: CoreApiClient,
-  giftStagingId: string,
-): Promise<BatchProcessingRow | null> => {
-  const result = await client.query({
-    giftStaging: {
-      __args: {
-        filter: {
-          id: { eq: giftStagingId },
-        },
-      },
-      id: true,
-      name: true,
-      donorFirstName: true,
-      donorLastName: true,
-      donorEmail: true,
-      donorMailingAddress: {
-        addressStreet1: true,
-        addressStreet2: true,
-        addressCity: true,
-        addressState: true,
-        addressPostcode: true,
-        addressCountry: true,
-      },
-      amount: {
-        amountMicros: true,
-        currencyCode: true,
-      },
-      giftDate: true,
-      donationType: true,
-      externalId: true,
-      sourceFingerprint: true,
-      providerEventId: true,
-      provider: true,
-      providerPaymentId: true,
-      paymentProviderCustomerId: true,
-      providerAgreementId: true,
-      providerIntervalUnit: true,
-      providerIntervalCount: true,
-      donorPhone: true,
-      rawProviderEvidence: true,
-      donorResolutionState: true,
-      donor: {
-        id: true,
-        emails: {
-          primaryEmail: true,
-          additionalEmails: true,
-        },
-      },
-      isReadyForProcessing: true,
-      processingStatus: true,
-      errorDetail: true,
-      giftAidRequested: true,
-      giftAidDeclarationCaptured: true,
-      giftAidDeclarationDate: true,
-      giftAidCoverageScope: true,
-      giftAidDeclarationSource: true,
-      giftAidTextVersion: true,
-      giftAidDeclaration: {
-        id: true,
-      },
-      recurringAgreement: {
-        id: true,
-      },
-      committedGift: {
-        id: true,
-        name: true,
-      },
-    },
-  } as any);
-
-  return (result?.giftStaging as BatchProcessingRow | null) ?? null;
-};
-
 const handler = async (
   event: RoutePayload<ProcessGiftStagingRowRequest>,
 ): Promise<ProcessGiftStagingRowResponse> => {
@@ -105,13 +28,14 @@ const handler = async (
   }
 
   const client = new CoreApiClient();
-  const row = await loadGiftStagingRow(client, giftStagingId);
+  const rows = await loadGiftStagingRowsForProcessing(client, [giftStagingId]);
+  const row = rows[0] ?? null;
 
   if (!row) {
     throw new Error('Gift staging row not found');
   }
 
-  if (!canProcessBatchRow(row)) {
+  if (row.giftReadyStatus !== 'READY_TO_PROCESS') {
     return {
       giftStagingId,
       processingStatus: 'NOT_PROCESSED',
@@ -121,16 +45,17 @@ const handler = async (
     };
   }
 
-  const result = await executeBatchGiftProcessing([row]);
-  const successful = result.successfulWritebacks[0];
-  const failed = result.failedWritebacks[0];
+  const result = await processGiftStagingRows(client, [row]);
+  const refreshedRow = (
+    await loadGiftStagingRowsForProcessing(client, [giftStagingId])
+  )[0] ?? row;
 
-  if (successful) {
+  if (result.processedItems === 1) {
     return {
       giftStagingId,
       processingStatus: 'PROCESSED',
-      committedGiftId: successful.committedGiftId,
-      recurringAgreementId: successful.recurringAgreementId ?? null,
+      committedGiftId: refreshedRow.committedGift?.id ?? null,
+      recurringAgreementId: refreshedRow.recurringAgreement?.id ?? null,
       errorDetail: null,
     };
   }
@@ -140,7 +65,7 @@ const handler = async (
     processingStatus: 'PROCESS_FAILED',
     committedGiftId: null,
     recurringAgreementId: null,
-    errorDetail: failed?.errorDetail ?? 'Row processing failed',
+    errorDetail: refreshedRow.errorDetail ?? 'Row processing failed',
   };
 };
 

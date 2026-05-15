@@ -1,3 +1,5 @@
+import type { GiftReadyStatus } from 'src/gift-staging-review/gift-ready-status';
+
 export type BatchStatus =
   | 'PENDING'
   | 'PROCESSING'
@@ -13,9 +15,17 @@ export type BatchSummaryRecord = {
   id: string;
   name: string;
   status: BatchStatus | string | null;
+  source?: string | null;
   totalItems: number | null;
   processedItems: number | null;
   failedItems: number | null;
+  expectedItemCount?: number | null;
+  expectedTotalAmount?:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
 };
 
 export type BatchProcessingRow = {
@@ -61,7 +71,7 @@ export type BatchProcessingRow = {
       additionalEmails?: string[] | null;
     } | null;
   } | null;
-  isReadyForProcessing: boolean | null;
+  giftReadyStatus: GiftReadyStatus | null;
   processingStatus: string | null;
   errorDetail: string | null;
   giftAidRequested: boolean | null;
@@ -90,6 +100,22 @@ export type RunBatchDonorMatchRequest = {
   giftBatchId: string;
 };
 
+export type RunSelectedGiftStagingDonorMatchRequest = {
+  giftStagingIds: string[];
+};
+
+export type CheckBatchRequest = {
+  giftBatchId: string;
+};
+
+export type CheckSelectedGiftStagingReadinessRequest = {
+  giftStagingIds: string[];
+};
+
+export type ProcessSelectedGiftStagingRequest = {
+  giftStagingIds: string[];
+};
+
 export type ProcessBatchResponse = {
   giftBatchId: string;
   batchStatus: BatchStatus;
@@ -112,4 +138,50 @@ export type RunBatchDonorMatchResponse = {
   autoLinkedRows: number;
   ambiguousRows: number;
   unchangedRows: number;
+};
+
+export type RunSelectedGiftStagingDonorMatchResponse = {
+  selectedItemCount: number;
+  totalCandidateRows: number;
+  evaluatedRows: number;
+  autoLinkedRows: number;
+  ambiguousRows: number;
+  unchangedRows: number;
+};
+
+export type CheckBatchResponse = {
+  giftBatchId: string;
+  checkedAt: string;
+  actualItemCount: number;
+  expectedItemCount: number | null;
+  itemCountMatchesExpected: boolean | null;
+  expectedTotalDisplay: string | null;
+  actualTotalDisplay: string;
+  totalMatchesExpected: boolean | null;
+  readyItems: number;
+  needsReviewItems: number;
+  failedItems: number;
+  processedItems: number;
+};
+
+export type CheckSelectedGiftStagingReadinessResponse = {
+  selectedItemCount: number;
+  checkedAt: string;
+  readyItems: number;
+  needsReviewItems: number;
+  failedItems: number;
+  processedItems: number;
+};
+
+export type ProcessSelectedGiftStagingResponse = {
+  selectedItemCount: number;
+  processedItems: number;
+  failedItems: number;
+  notReadyItems: number;
+  executorMode: 'BOUNDED_HYBRID';
+  chunkCount: number;
+  batchPathProcessed: number;
+  batchPathFailed: number;
+  rowFallbackProcessed: number;
+  rowFallbackFailed: number;
 };

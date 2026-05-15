@@ -4,7 +4,12 @@ import type {
   GiftBatchReviewRecord,
   GiftBatchReviewRow,
 } from './gift-batch-review.types';
+import {
+  getGiftBatchWorkflowLimitMessage,
+  isGiftBatchOverWorkflowLimit,
+} from 'src/batch-processing/batch-processing.limits';
 import { isGiftStagingProcessable } from 'src/gift-staging-review/gift-staging-processability';
+import { normalizeGiftReadyStatus } from 'src/gift-staging-review/gift-ready-status';
 
 const coalesceString = (
   value: string | null | undefined,
@@ -76,6 +81,18 @@ const formatTotalValueDisplay = (rows: BatchReviewRow[]): string => {
   return `${currencyCode} ${(totalAmountMicros / 1_000_000).toFixed(2)}`;
 };
 
+const formatExpectedTotalValueDisplay = (
+  amount: BatchSummaryRecord['expectedTotalAmount'],
+): string => {
+  if (!amount || typeof amount.amountMicros !== 'number') {
+    return '';
+  }
+
+  return `${coalesceString(amount.currencyCode, 'GBP')} ${(
+    amount.amountMicros / 1_000_000
+  ).toFixed(2)}`;
+};
+
 const buildReviewRow = (row: BatchReviewRow): GiftBatchReviewRow => {
   const processingStatus = coalesceString(row.processingStatus, 'NOT_PROCESSED');
   const isProcessable = isGiftStagingProcessable({
@@ -103,7 +120,7 @@ const buildReviewRow = (row: BatchReviewRow): GiftBatchReviewRow => {
       'UNREVIEWED',
     ),
     processingStatus,
-    isReadyForProcessing: row.isReadyForProcessing ?? false,
+    giftReadyStatus: normalizeGiftReadyStatus(row.giftReadyStatus),
     isProcessable,
     isProcessed: processingStatus === 'PROCESSED',
     errorDetail: coalesceString(row.errorDetail),
@@ -119,6 +136,11 @@ export const buildGiftBatchReviewRecord = (
   rows: BatchReviewRow[],
 ): GiftBatchReviewRecord => {
   const reviewRows = rows.map(buildReviewRow);
+  const totalItems =
+    typeof batch.totalItems === 'number' && Number.isFinite(batch.totalItems)
+      ? batch.totalItems
+      : reviewRows.length;
+  const isOverWorkflowLimit = isGiftBatchOverWorkflowLimit(totalItems);
   const processedItems = reviewRows.filter(
     (row) => row.processingStatus === 'PROCESSED',
   ).length;
@@ -131,22 +153,39 @@ export const buildGiftBatchReviewRecord = (
     name: batch.name,
     source: coalesceString(batch.source, 'Unknown source'),
     status: coalesceString(batch.status, 'PENDING'),
-    totalItems: reviewRows.length,
-    totalValueDisplay: formatTotalValueDisplay(rows),
+    totalItems,
+    isOverWorkflowLimit,
+    workflowLimitMessage: isOverWorkflowLimit
+      ? getGiftBatchWorkflowLimitMessage(totalItems)
+      : null,
+    totalValueDisplay: isOverWorkflowLimit
+      ? 'Unavailable for oversized batch'
+      : formatTotalValueDisplay(rows),
+    expectedItemCount:
+      typeof batch.expectedItemCount === 'number'
+        ? batch.expectedItemCount
+        : null,
+    expectedTotalAmount: batch.expectedTotalAmount ?? null,
+    expectedTotalValueDisplay: formatExpectedTotalValueDisplay(
+      batch.expectedTotalAmount,
+    ),
     eligibleItems: reviewRows.filter((row) => row.isProcessable).length,
     processedItems,
     failedItems,
     readyItems: reviewRows.filter(
-      (row) => row.isProcessable && row.isReadyForProcessing,
+      (row) =>
+        row.processingStatus !== 'PROCESSED' &&
+        row.processingStatus !== 'PROCESS_FAILED' &&
+        row.giftReadyStatus === 'READY_TO_PROCESS',
     ).length,
     ambiguousItems: reviewRows.filter(
       (row) => row.donorResolutionState === 'AMBIGUOUS',
     ).length,
-    unresolvedItems: reviewRows.filter(
+    needsReviewItems: reviewRows.filter(
       (row) =>
-        row.donorResolutionState === 'UNREVIEWED' ||
-        row.donorResolutionState === 'AMBIGUOUS' ||
-        row.donorResolutionState === 'UNRESOLVED',
+        row.processingStatus !== 'PROCESSED' &&
+        row.processingStatus !== 'PROCESS_FAILED' &&
+        row.giftReadyStatus === 'NEEDS_REVIEW',
     ).length,
     rows: reviewRows,
   };

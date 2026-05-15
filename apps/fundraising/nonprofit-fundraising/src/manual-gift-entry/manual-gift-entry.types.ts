@@ -36,6 +36,7 @@ export type DonorDuplicateCheckStatus =
 export type DuplicateCheckRequest = {
   donorFirstName?: string;
   donorLastName?: string;
+  donorEmail?: string;
 };
 
 export type DuplicateCheckResponse = {

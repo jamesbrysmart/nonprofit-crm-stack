@@ -59,7 +59,7 @@ const loadStoredRecord = async (
           primaryEmail: true,
         },
       },
-      isReadyForProcessing: true,
+      giftReadyStatus: true,
       processingStatus: true,
       errorDetail: true,
       giftAidRequested: true,
@@ -69,6 +69,9 @@ const loadStoredRecord = async (
       giftAidDeclarationSource: true,
       giftAidTextVersion: true,
       giftAidDeclaration: {
+        id: true,
+      },
+      recurringAgreement: {
         id: true,
       },
       giftBatch: {

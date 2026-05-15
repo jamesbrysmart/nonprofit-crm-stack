@@ -101,6 +101,10 @@ const GiftStagingReviewSummary = () => {
       <div style={compactDividerSectionStyle}>
         <div style={compactMetaGridStyle}>
           <div style={compactMetaItemStyle}>
+            <div style={labelStyle}>Amount</div>
+            <div style={secondaryTextStyle}>{record.amountDisplay}</div>
+          </div>
+          <div style={compactMetaItemStyle}>
             <div style={labelStyle}>Batch</div>
             <div style={secondaryTextStyle}>
               {record.giftBatchId === ''

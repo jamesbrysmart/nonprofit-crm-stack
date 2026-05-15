@@ -1,12 +1,13 @@
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useRecordId } from 'twenty-sdk/front-component';
 import {
-  cardWithLooseGapStyle,
-  detailsGridStyle,
+  compactConfirmationCardStyle,
+  compactDividerSectionStyle,
+  compactMetaGridStyle,
+  compactMetaItemStyle,
+  compactWidgetRootStyle,
   labelStyle,
-  panelStackStyle,
   secondaryTextStyle,
-  valueStyle,
 } from 'src/front-components/gift-staging-review-ui';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
@@ -16,6 +17,33 @@ export const GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
 
 const renderValue = (value: string) => {
   return value === '' ? 'Not recorded' : value;
+};
+
+const auditValueStyle = {
+  ...secondaryTextStyle,
+  color: '#1f2328',
+};
+
+const sectionTitleStyle = {
+  fontSize: '14px',
+  fontWeight: 600,
+  color: '#1f2328',
+  lineHeight: 1.4,
+};
+
+const hasValue = (value: string | null | undefined) =>
+  typeof value === 'string' && value.trim() !== '';
+
+const humanizeEnum = (value: string) => {
+  if (!hasValue(value)) {
+    return 'Not recorded';
+  }
+
+  return value
+    .toLowerCase()
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 };
 
 const GiftStagingAudit = () => {
@@ -34,131 +62,174 @@ const GiftStagingAudit = () => {
     return <div style={secondaryTextStyle}>Staging row not found.</div>;
   }
 
+  const sourceEvidenceItems = [
+    {
+      label: 'Intake source',
+      value: record.intakeSource,
+      alwaysShow: true,
+    },
+    {
+      label: 'Provider',
+      value: record.provider,
+      alwaysShow: true,
+    },
+    {
+      label: 'External ID',
+      value: record.externalId,
+    },
+    {
+      label: 'Provider payment ID',
+      value: record.providerPaymentId,
+    },
+    {
+      label: 'Provider agreement ID',
+      value: record.providerAgreementId,
+    },
+    {
+      label: 'Source fingerprint',
+      value: record.sourceFingerprint,
+    },
+  ].filter((item) => item.alwaysShow === true || hasValue(item.value));
+
+  const recurringEvidenceItems = [
+    {
+      label: 'Provider interval unit',
+      value: record.providerIntervalUnit,
+    },
+    {
+      label: 'Provider interval count',
+      value:
+        record.providerIntervalCount === null
+          ? ''
+          : String(record.providerIntervalCount),
+    },
+  ].filter((item) => hasValue(item.value));
+
+  const hasGiftAidEvidence =
+    isGiftAidEnabled() &&
+    (record.giftAidRequested ||
+      record.giftAidDeclarationCaptured ||
+      hasValue(record.giftAidDeclarationDate) ||
+      hasValue(record.giftAidCoverageScope) ||
+      hasValue(record.giftAidDeclarationSource) ||
+      hasValue(record.giftAidTextVersion) ||
+      hasValue(record.giftAidDeclarationId));
+
   return (
-    <div style={panelStackStyle}>
-      <div style={cardWithLooseGapStyle}>
-        <div style={labelStyle}>Source and provider evidence</div>
-        <div style={detailsGridStyle}>
-          <div>
-            <div style={labelStyle}>Intake source</div>
-            <div style={valueStyle}>{renderValue(record.intakeSource)}</div>
-          </div>
-          <div>
-            <div style={labelStyle}>Provider</div>
-            <div style={valueStyle}>{renderValue(record.provider)}</div>
-          </div>
-          <div>
-            <div style={labelStyle}>External ID</div>
-            <div style={valueStyle}>{renderValue(record.externalId)}</div>
-          </div>
-          <div>
-            <div style={labelStyle}>Source fingerprint</div>
-            <div style={valueStyle}>{renderValue(record.sourceFingerprint)}</div>
-          </div>
-          <div>
-            <div style={labelStyle}>Provider payment ID</div>
-            <div style={valueStyle}>{renderValue(record.providerPaymentId)}</div>
-          </div>
-          <div>
-            <div style={labelStyle}>Provider agreement ID</div>
-            <div style={valueStyle}>
-              {renderValue(record.providerAgreementId)}
+    <div style={compactWidgetRootStyle}>
+      <div style={compactConfirmationCardStyle}>
+        <div style={sectionTitleStyle}>Source and provider evidence</div>
+        <div style={compactMetaGridStyle}>
+          {sourceEvidenceItems.map((item) => (
+            <div key={item.label} style={compactMetaItemStyle}>
+              <div style={labelStyle}>{item.label}</div>
+              <div style={auditValueStyle}>{renderValue(item.value)}</div>
             </div>
-          </div>
-          <div>
-            <div style={labelStyle}>Provider interval unit</div>
-            <div style={valueStyle}>
-              {renderValue(record.providerIntervalUnit)}
+          ))}
+        </div>
+      </div>
+
+      <div style={compactDividerSectionStyle}>
+        <div style={compactConfirmationCardStyle}>
+          <div style={sectionTitleStyle}>Processing diagnostics</div>
+          {record.errorDetail !== '' ? (
+            <div style={{ display: 'grid', gap: '4px' }}>
+              <div style={labelStyle}>Last error</div>
+              <div style={{ ...secondaryTextStyle, color: '#b42318' }}>
+                {record.errorDetail}
+              </div>
             </div>
-          </div>
-          <div>
-            <div style={labelStyle}>Provider interval count</div>
-            <div style={valueStyle}>
-              {record.providerIntervalCount === null
-                ? 'Not recorded'
-                : String(record.providerIntervalCount)}
+          ) : null}
+          <div style={compactMetaGridStyle}>
+            <div style={compactMetaItemStyle}>
+              <div style={labelStyle}>Processing status</div>
+              <div style={auditValueStyle}>
+                {humanizeEnum(record.processingStatus)}
+              </div>
+            </div>
+            <div style={compactMetaItemStyle}>
+              <div style={labelStyle}>Ready status</div>
+              <div style={auditValueStyle}>
+                {humanizeEnum(record.giftReadyStatus)}
+              </div>
+            </div>
+            <div style={compactMetaItemStyle}>
+              <div style={labelStyle}>Gift record</div>
+              <div style={auditValueStyle}>
+                {renderValue(record.committedGiftName)}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div style={cardWithLooseGapStyle}>
-        <div style={labelStyle}>Processing diagnostics</div>
-        <div style={detailsGridStyle}>
-          <div>
-            <div style={labelStyle}>Processing status</div>
-            <div style={valueStyle}>{record.processingStatus}</div>
-          </div>
-          <div>
-            <div style={labelStyle}>Marked ready</div>
-            <div style={valueStyle}>
-              {record.isReadyForProcessing ? 'Yes' : 'No'}
+      {recurringEvidenceItems.length > 0 ? (
+        <div style={compactDividerSectionStyle}>
+          <div style={compactConfirmationCardStyle}>
+            <div style={sectionTitleStyle}>Captured evidence</div>
+            <div style={compactMetaGridStyle}>
+              {recurringEvidenceItems.map((item) => (
+                <div key={item.label} style={compactMetaItemStyle}>
+                  <div style={labelStyle}>{item.label}</div>
+                  <div style={auditValueStyle}>{renderValue(item.value)}</div>
+                </div>
+              ))}
             </div>
           </div>
-          <div>
-            <div style={labelStyle}>Committed gift</div>
-            <div style={valueStyle}>{renderValue(record.committedGiftName)}</div>
-          </div>
         </div>
-        <div>
-          <div style={labelStyle}>Last error</div>
-          <div style={secondaryTextStyle}>
-            {record.errorDetail === ''
-              ? 'No processing error has been recorded on this row.'
-              : record.errorDetail}
-          </div>
-        </div>
-      </div>
+      ) : null}
 
-      {isGiftAidEnabled() ? (
-        <div style={cardWithLooseGapStyle}>
-          <div style={labelStyle}>Gift Aid evidence</div>
-          <div style={secondaryTextStyle}>
-            {record.giftAidRequested
-              ? 'Gift Aid was requested on this staged row.'
-              : 'Gift Aid was not requested on this staged row.'}
-          </div>
-          <div style={detailsGridStyle}>
-            <div>
-              <div style={labelStyle}>Declaration captured</div>
-              <div style={valueStyle}>
-                {record.giftAidDeclarationCaptured ? 'Yes' : 'No'}
+      {hasGiftAidEvidence ? (
+        <div style={compactDividerSectionStyle}>
+          <div style={compactConfirmationCardStyle}>
+            <div style={sectionTitleStyle}>Gift Aid evidence</div>
+            <div style={secondaryTextStyle}>
+              {record.giftAidRequested
+                ? 'Gift Aid was requested on this staged row.'
+                : 'Gift Aid evidence is recorded on this staged row.'}
+            </div>
+            <div style={compactMetaGridStyle}>
+              <div style={compactMetaItemStyle}>
+                <div style={labelStyle}>Declaration captured</div>
+                <div style={auditValueStyle}>
+                  {record.giftAidDeclarationCaptured ? 'Yes' : 'No'}
+                </div>
+              </div>
+              <div style={compactMetaItemStyle}>
+                <div style={labelStyle}>Declaration date</div>
+                <div style={auditValueStyle}>
+                  {renderValue(record.giftAidDeclarationDate)}
+                </div>
+              </div>
+              <div style={compactMetaItemStyle}>
+                <div style={labelStyle}>Coverage scope</div>
+                <div style={auditValueStyle}>
+                  {renderValue(record.giftAidCoverageScope)}
+                </div>
+              </div>
+              <div style={compactMetaItemStyle}>
+                <div style={labelStyle}>Declaration source</div>
+                <div style={auditValueStyle}>
+                  {renderValue(record.giftAidDeclarationSource)}
+                </div>
+              </div>
+              <div style={compactMetaItemStyle}>
+                <div style={labelStyle}>Text version</div>
+                <div style={auditValueStyle}>
+                  {renderValue(record.giftAidTextVersion)}
+                </div>
+              </div>
+              <div style={compactMetaItemStyle}>
+                <div style={labelStyle}>Linked declaration</div>
+                <div style={auditValueStyle}>
+                  {renderValue(record.giftAidDeclarationId)}
+                </div>
               </div>
             </div>
-            <div>
-              <div style={labelStyle}>Declaration date</div>
-              <div style={valueStyle}>
-                {renderValue(record.giftAidDeclarationDate)}
-              </div>
+            <div style={secondaryTextStyle}>
+              Gift Aid outcome still belongs on the final gift record. This
+              tab is for captured evidence and support review.
             </div>
-            <div>
-              <div style={labelStyle}>Coverage scope</div>
-              <div style={valueStyle}>
-                {renderValue(record.giftAidCoverageScope)}
-              </div>
-            </div>
-            <div>
-              <div style={labelStyle}>Declaration source</div>
-              <div style={valueStyle}>
-                {renderValue(record.giftAidDeclarationSource)}
-              </div>
-            </div>
-            <div>
-              <div style={labelStyle}>Text version</div>
-              <div style={valueStyle}>
-                {renderValue(record.giftAidTextVersion)}
-              </div>
-            </div>
-            <div>
-              <div style={labelStyle}>Linked declaration</div>
-              <div style={valueStyle}>
-                {renderValue(record.giftAidDeclarationId)}
-              </div>
-            </div>
-          </div>
-          <div style={secondaryTextStyle}>
-            Gift Aid outcome still belongs on the final committed gift. This
-            tab is for captured evidence and support review.
           </div>
         </div>
       ) : null}

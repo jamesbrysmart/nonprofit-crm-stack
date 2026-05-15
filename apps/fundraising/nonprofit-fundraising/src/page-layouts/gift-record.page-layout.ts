@@ -73,9 +73,43 @@ export default definePageLayout({
       ],
     },
     {
+      universalIdentifier: '6fca1c27-c8de-4cce-8e65-4bd3fd0bc8ca',
+      title: 'Timeline',
+      position: 20,
+      icon: 'IconTimelineEvent',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      widgets: [
+        {
+          universalIdentifier: '0a13056f-6109-49b8-a61a-6a47b1af1b8b',
+          title: 'Timeline',
+          type: 'TIMELINE',
+          configuration: {
+            configurationType: 'TIMELINE',
+          },
+        },
+      ],
+    },
+    {
+      universalIdentifier: '8d7d984c-5714-44b9-a113-2af3381bb5bf',
+      title: 'Notes',
+      position: 30,
+      icon: 'IconNotes',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      widgets: [
+        {
+          universalIdentifier: '1c5ee980-15f9-4b39-a936-34f21aab04bc',
+          title: 'Notes',
+          type: 'NOTES',
+          configuration: {
+            configurationType: 'NOTES',
+          },
+        },
+      ],
+    },
+    {
       universalIdentifier: '3b1dbb79-d032-4fc3-9d7b-0fe76f80f2e1',
       title: 'Gift Aid',
-      position: 20,
+      position: 40,
       icon: 'IconReceiptTax',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [

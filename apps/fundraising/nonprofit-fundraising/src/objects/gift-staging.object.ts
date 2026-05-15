@@ -66,6 +66,9 @@ export const GIFT_STAGING_DONOR_RESOLUTION_STATE_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_IS_READY_FOR_PROCESSING_FIELD_UNIVERSAL_IDENTIFIER =
   'cb3d34bd-6b3d-4b33-85c0-db4db0be35a4';
 
+export const GIFT_STAGING_GIFT_READY_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
+  '1ac97fa8-5de6-44c7-8a53-0f8e6ec675c6';
+
 export const GIFT_STAGING_PROCESSING_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
   'ff99598e-8d08-436f-952c-ba295af9db28';
 
@@ -338,8 +341,8 @@ export default defineObject({
         },
         {
           id: '2fb2e1ca-bf86-4228-b9f8-dbc0eb530f3f',
-          value: 'UNRESOLVED',
-          label: 'Unresolved',
+          value: 'NEW_DONOR',
+          label: 'New donor',
           position: 2,
           color: 'gray',
         },
@@ -356,11 +359,38 @@ export default defineObject({
       universalIdentifier:
         GIFT_STAGING_IS_READY_FOR_PROCESSING_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.BOOLEAN,
-      name: 'isReadyForProcessing',
-      label: 'Ready for processing',
-      description: 'Explicit reviewer intent that the row is ready',
+      name: 'markedReady',
+      label: 'Legacy marked ready',
+      description: 'Legacy reviewer-ready flag retained temporarily during readiness-status migration',
       icon: 'IconListCheck',
       defaultValue: false,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_GIFT_READY_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'giftReadyStatus',
+      label: 'Gift ready status',
+      description:
+        'Latest system-checked readiness result for moving this staged row into gift processing',
+      icon: 'IconChecklist',
+      defaultValue: "'NEEDS_REVIEW'",
+      options: [
+        {
+          id: 'a2f4d596-65bc-443d-a5f7-cdcaef0a6205',
+          value: 'NEEDS_REVIEW',
+          label: 'Needs review',
+          position: 0,
+          color: 'yellow',
+        },
+        {
+          id: 'ad8d28f8-bb53-45ea-bd75-a8ca9d1db8dd',
+          value: 'READY_TO_PROCESS',
+          label: 'Ready to process',
+          position: 1,
+          color: 'green',
+        },
+      ],
     },
     {
       universalIdentifier: GIFT_STAGING_PROCESSING_STATUS_FIELD_UNIVERSAL_IDENTIFIER,

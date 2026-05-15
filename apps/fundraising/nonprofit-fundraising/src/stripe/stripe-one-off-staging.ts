@@ -118,13 +118,13 @@ export type StripeOneOffGiftStagingInput = {
   provider: typeof STRIPE_PROVIDER;
   providerPaymentId?: string;
   paymentProviderCustomerId?: string;
-  providerAgreementId?: string;
+  providerAgreementId?: string | null;
   providerIntervalUnit?: string;
   providerIntervalCount?: number;
   donorMailingAddress?: MailingAddressEvidence;
   rawProviderEvidence?: RawProviderEvidence;
   donorResolutionState: 'UNREVIEWED';
-  isReadyForProcessing: false;
+  giftReadyStatus: 'NEEDS_REVIEW';
   processingStatus: 'NOT_PROCESSED';
 };
 
@@ -587,13 +587,13 @@ export const buildStripeOneOffGiftStagingInput = (
     provider: STRIPE_PROVIDER,
     ...(providerPaymentId ? { providerPaymentId } : {}),
     ...(paymentProviderCustomerId ? { paymentProviderCustomerId } : {}),
-    ...(providerAgreementId ? { providerAgreementId } : {}),
+    providerAgreementId: providerAgreementId ?? null,
     ...intervalEvidence,
     ...(donorMailingAddress ? { donorMailingAddress } : {}),
     ...giftAidEvidence,
     rawProviderEvidence,
     donorResolutionState: 'UNREVIEWED',
-    isReadyForProcessing: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
   };
 };

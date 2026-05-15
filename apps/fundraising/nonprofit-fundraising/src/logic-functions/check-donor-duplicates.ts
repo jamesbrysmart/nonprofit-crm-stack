@@ -8,9 +8,12 @@ import type {
 type CheckDonorDuplicatesBody = {
   donorFirstName?: string;
   donorLastName?: string;
+  donorEmail?: string;
 };
 
 const normalizeNamePart = (value: string | undefined) => value?.trim() ?? '';
+const normalizeEmail = (value: string | undefined) =>
+  value?.trim().toLowerCase() ?? '';
 
 const buildResult = (
   checkedFirstName: string,
@@ -48,33 +51,56 @@ const handler = async (
 ): Promise<DuplicateCheckResponse> => {
   const checkedFirstName = normalizeNamePart(event.body?.donorFirstName);
   const checkedLastName = normalizeNamePart(event.body?.donorLastName);
+  const checkedEmail = normalizeEmail(event.body?.donorEmail);
 
-  if (checkedFirstName === '' || checkedLastName === '') {
+  if (
+    checkedFirstName === '' &&
+    checkedLastName === '' &&
+    checkedEmail === ''
+  ) {
     return buildResult(checkedFirstName, checkedLastName, []);
   }
 
   const client = new CoreApiClient();
+  const filters: Array<Record<string, unknown>> = [];
+
+  if (checkedFirstName !== '' && checkedLastName !== '') {
+    filters.push({
+      and: [
+        {
+          name: {
+            firstName: {
+              eq: checkedFirstName,
+            },
+          },
+        },
+        {
+          name: {
+            lastName: {
+              eq: checkedLastName,
+            },
+          },
+        },
+      ],
+    });
+  }
+
+  if (checkedEmail !== '') {
+    filters.push({
+      emails: {
+        primaryEmail: {
+          eq: checkedEmail,
+        },
+      },
+    });
+  }
+
   const result = await client.query({
     people: {
       __args: {
         first: 20,
         filter: {
-          and: [
-            {
-              name: {
-                firstName: {
-                  eq: checkedFirstName,
-                },
-              },
-            },
-            {
-              name: {
-                lastName: {
-                  eq: checkedLastName,
-                },
-              },
-            },
-          ],
+          ...(filters.length === 1 ? filters[0] : { or: filters }),
         },
       },
       edges: {

@@ -17,10 +17,9 @@ import {
   secondaryTextStyle,
   sectionHeaderStyle,
 } from 'src/front-components/gift-staging-review-ui';
-import { isGiftStagingProcessable } from 'src/gift-staging-review/gift-staging-processability';
 import { processGiftStagingRow } from 'src/gift-staging-review/gift-staging-processing.api';
 import {
-  markReady,
+  checkIfReady,
   saveGiftDate,
 } from 'src/gift-staging-review/gift-staging-review.actions';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
@@ -98,16 +97,10 @@ const GiftStagingProcessing = () => {
     record.processingStatus,
   );
   const processingLabel = getProcessingLabel(record.processingStatus);
-  const isProcessable = isGiftStagingProcessable({
-    processingStatus: record.processingStatus,
-    donorResolutionState: record.donorResolution,
-    donorFirstName: record.donorFirstName,
-    donorLastName: record.donorLastName,
-    linkedDonorId: record.linkedDonor?.id,
-  });
-  const showMarkReady =
-    !record.isReadyForProcessing && record.processingStatus !== 'PROCESSED';
-  const canProcess = isProcessable;
+  const showCheckReady = record.processingStatus !== 'PROCESSED';
+  const canProcess =
+    record.giftReadyStatus === 'READY_TO_PROCESS' &&
+    record.processingStatus !== 'PROCESSED';
   const afterMutationRefresh = async () => {
     await refresh();
   };
@@ -135,13 +128,13 @@ const GiftStagingProcessing = () => {
     }
   };
 
-  const handleMarkReady = async () => {
+  const handleCheckReady = async () => {
     setSaving(true);
 
     try {
-      await markReady(recordId);
+      await checkIfReady(recordId);
       await enqueueSnackbar({
-        message: 'Marked as reviewed.',
+        message: 'Readiness checked.',
         variant: 'success',
       });
       await afterMutationRefresh();
@@ -200,8 +193,8 @@ const GiftStagingProcessing = () => {
       <div style={sectionHeaderStyle}>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={badgeStyle(processingTone)}>{processingLabel}</span>
-          {record.isReadyForProcessing ? (
-            <span style={badgeStyle('success')}>Ready</span>
+          {record.giftReadyStatus === 'READY_TO_PROCESS' ? (
+            <span style={badgeStyle('success')}>Ready to process</span>
           ) : null}
         </div>
         {record.committedGiftName !== '' ? (
@@ -259,12 +252,12 @@ const GiftStagingProcessing = () => {
           }}
           disabled={saving || processingRow || !canProcess}
         />
-        {showMarkReady ? (
+        {showCheckReady ? (
           <Button
-            title="Mark reviewed"
+            title="Check if ready"
             variant="secondary"
             onClick={() => {
-              void handleMarkReady();
+              void handleCheckReady();
             }}
             disabled={saving || processingRow}
           />

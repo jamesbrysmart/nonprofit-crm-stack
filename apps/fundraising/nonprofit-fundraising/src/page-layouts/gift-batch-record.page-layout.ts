@@ -3,7 +3,6 @@ import {
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
 import { GIFT_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-actions.front-component';
-import { GIFT_BATCH_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-record.front-component';
 import { GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-summary.front-component';
 import { GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-worklists.front-component';
 import { GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-batch.object';
@@ -54,25 +53,6 @@ export default definePageLayout({
       ],
     },
     {
-      universalIdentifier: '4a46465c-5f40-494d-aac2-48d11b241ad8',
-      title: 'Review',
-      position: 100,
-      icon: 'IconChecklist',
-      layoutMode: PageLayoutTabLayoutMode.CANVAS,
-      widgets: [
-        {
-          universalIdentifier: 'c502ed99-5f1b-48ef-9711-f00ad572f42f',
-          title: 'Gift batch review',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_BATCH_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-      ],
-    },
-    {
       universalIdentifier: 'dbf57088-cb16-41c7-b7eb-c6c5c21028c4',
       title: 'Fields',
       position: 50,
@@ -85,6 +65,40 @@ export default definePageLayout({
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
+          },
+        },
+      ],
+    },
+    {
+      universalIdentifier: '2ea8e687-3ac6-40d5-b6a1-9185a57031fb',
+      title: 'Timeline',
+      position: 100,
+      icon: 'IconTimelineEvent',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      widgets: [
+        {
+          universalIdentifier: 'c8140f05-6834-4514-97d1-55cd63236940',
+          title: 'Timeline',
+          type: 'TIMELINE',
+          configuration: {
+            configurationType: 'TIMELINE',
+          },
+        },
+      ],
+    },
+    {
+      universalIdentifier: 'f0a4f9b5-49c7-47b5-bcd7-f8f0e58aa7e5',
+      title: 'Notes',
+      position: 150,
+      icon: 'IconNotes',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      widgets: [
+        {
+          universalIdentifier: '43d6275c-bbe2-438c-8802-a59b9e792c31',
+          title: 'Notes',
+          type: 'NOTES',
+          configuration: {
+            configurationType: 'NOTES',
           },
         },
       ],

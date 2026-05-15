@@ -56,6 +56,9 @@ const getInputEventValue = (event: unknown) => {
   return '';
 };
 
+const normalizeEmail = (value: string | null | undefined) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
 const GiftStagingDonorReview = () => {
   const recordId = useRecordId();
   const { record, loading, error, refresh } = useGiftStagingReviewRecord(
@@ -105,6 +108,18 @@ const GiftStagingDonorReview = () => {
     stagedEmail !== '' &&
     linkedDonorPrimaryEmail !== '' &&
     stagedEmail.toLowerCase() !== linkedDonorPrimaryEmail.toLowerCase();
+  const hasRecordedPrimaryEmailConflict =
+    record.errorDetail.includes('already the primary email');
+  const emailConflictCandidates =
+    duplicateCheckResult?.candidates.filter(
+      (candidate) =>
+        normalizeEmail(candidate.emails?.primaryEmail) !== '' &&
+        normalizeEmail(candidate.emails?.primaryEmail) ===
+          normalizeEmail(donorEmail),
+    ) ?? [];
+  const hasPrimaryEmailConflictCandidate =
+    record.linkedDonorName === '' &&
+    (hasRecordedPrimaryEmailConflict || emailConflictCandidates.length > 0);
 
   const donorState =
     record.linkedDonorName !== ''
@@ -174,6 +189,7 @@ const GiftStagingDonorReview = () => {
       const result = await checkDonorDuplicates({
         donorFirstName,
         donorLastName,
+        donorEmail,
       });
       setDuplicateCheckResult(result);
       setSelectedDonorId(
@@ -231,7 +247,7 @@ const GiftStagingDonorReview = () => {
     try {
       await leaveUnresolved(recordId);
       await enqueueSnackbar({
-        message: 'Marked for later review.',
+        message: 'This row will create a new donor on processing if it is otherwise ready.',
         variant: 'success',
       });
       await afterMutationRefresh();
@@ -276,12 +292,16 @@ const GiftStagingDonorReview = () => {
             disabled={checkingDuplicates || saving}
           />
           <Button
-            title={record.linkedDonorName !== '' ? 'Clear donor' : 'Review later'}
+            title={
+              record.linkedDonorName !== ''
+                ? 'Use new donor instead'
+                : 'Create new donor on processing'
+            }
             variant="secondary"
             onClick={() => {
               void handleLeaveUnresolved();
             }}
-            disabled={saving}
+            disabled={saving || hasPrimaryEmailConflictCandidate}
           />
         </div>
       </div>
@@ -351,6 +371,14 @@ const GiftStagingDonorReview = () => {
         </div>
       ) : null}
 
+      {hasRecordedPrimaryEmailConflict && !duplicateCheckResult ? (
+        <div style={secondaryTextStyle}>
+          This email already belongs to an existing donor. Find matches to review
+          that donor, or change the staged email before this row can create a new
+          donor.
+        </div>
+      ) : null}
+
       {duplicateCheckResult ? (
         <div
           style={{
@@ -359,6 +387,12 @@ const GiftStagingDonorReview = () => {
             gap: '6px',
           }}
         >
+          {hasPrimaryEmailConflictCandidate ? (
+            <div style={secondaryTextStyle}>
+              This email already belongs to an existing donor. Link that donor or
+              change the staged email before this row can create a new donor.
+            </div>
+          ) : null}
           {duplicateCheckResult.candidates.map((candidate) => {
             const selected = candidate.id === selectedDonorId;
 

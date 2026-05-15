@@ -60,8 +60,6 @@ const buildSnapshot = async (
 const computeSnapshotHash = (snapshot: GiftAidClaimSubmissionSnapshot) =>
   createHash('sha256').update(JSON.stringify(snapshot)).digest('hex');
 
-const serializeRawJson = (value: unknown) => JSON.stringify(value);
-
 const createSubmissionRecord = async (
   client: CoreApiClient,
   batchId: string,
@@ -77,7 +75,7 @@ const createSubmissionRecord = async (
           status: 'QUEUED',
           environment: snapshot.environment,
           submittedAt,
-          snapshotJson: serializeRawJson(snapshot),
+          snapshotJson: snapshot,
           snapshotHash,
           giftAidClaimBatch: {
             connect: {
@@ -179,6 +177,42 @@ const syncLatestSubmissionStatus = async (
   } as any);
 };
 
+const markSubmissionFailed = async ({
+  client,
+  submissionId,
+  batchId,
+  failureCode,
+  failureMessage,
+}: {
+  client: CoreApiClient;
+  submissionId: string;
+  batchId: string;
+  failureCode: string;
+  failureMessage: string;
+}) => {
+  const completedAt = new Date().toISOString();
+
+  await client.mutation({
+    updateGiftAidClaimSubmission: {
+      __args: {
+        id: submissionId,
+        data: {
+          status: 'FAILED',
+          completedAt,
+          failureCode,
+          failureMessage,
+          errorSummaryJson: {
+            code: failureCode,
+            message: failureMessage,
+          },
+        },
+      },
+      id: true,
+    },
+  } as any);
+  await syncLatestSubmissionStatus(client, batchId, 'FAILED');
+};
+
 export const queueGiftAidClaimSubmission = async (
   client: CoreApiClient,
   batchId: string,
@@ -218,42 +252,34 @@ export const queueGiftAidClaimSubmission = async (
   }
 
   const submission = await createSubmissionRecord(client, claimBatch.id, snapshot);
-  await syncLatestSubmissionStatus(client, claimBatch.id, 'QUEUED');
   let adapterResult:
     | Awaited<ReturnType<typeof runGiftAidHmrcSubmission>>
     | undefined;
 
   try {
+    await syncLatestSubmissionStatus(client, claimBatch.id, 'QUEUED');
     adapterResult = await runGiftAidHmrcSubmission(
       snapshot,
       snapshot.environment,
     );
   } catch (error) {
-    const completedAt = new Date().toISOString();
     const failureMessage =
       error instanceof Error ? error.message : 'HMRC submission runner failed';
 
-    await client.mutation({
-      updateGiftAidClaimSubmission: {
-        __args: {
-          id: submission.id,
-          data: {
-            status: 'FAILED',
-            completedAt,
-            failureCode: 'RUNNER_ERROR',
-            failureMessage,
-            errorSummaryJson: serializeRawJson({
-              code: 'RUNNER_ERROR',
-              message: failureMessage,
-            }),
-          },
-        },
-        id: true,
-      },
-    } as any);
-    await syncLatestSubmissionStatus(client, claimBatch.id, 'FAILED');
+    await markSubmissionFailed({
+      client,
+      submissionId: submission.id,
+      batchId: claimBatch.id,
+      failureCode: 'RUNNER_ERROR',
+      failureMessage,
+    });
 
-    throw error;
+    return {
+      claimBatchId: claimBatch.id,
+      submissionId: submission.id,
+      status: 'FAILED',
+      warningMessage: failureMessage,
+    };
   }
 
   if (adapterResult.ok) {
@@ -268,7 +294,7 @@ export const queueGiftAidClaimSubmission = async (
             completedAt: adapterResult.completedAt,
             correlationId: adapterResult.correlationId,
             transactionId: adapterResult.transactionId,
-            responseJson: serializeRawJson(adapterResult.responseBody),
+            responseJson: adapterResult.responseBody,
           },
         },
         id: true,
@@ -280,6 +306,7 @@ export const queueGiftAidClaimSubmission = async (
       claimBatchId: claimBatch.id,
       submissionId: submission.id,
       status: adapterResult.status,
+      warningMessage: null,
     };
   }
 
@@ -295,11 +322,11 @@ export const queueGiftAidClaimSubmission = async (
           correlationId: adapterResult.correlationId,
           failureCode: adapterResult.failureCode,
           failureMessage: adapterResult.failureMessage,
-          responseJson: serializeRawJson(adapterResult.responseBody),
-          errorSummaryJson: serializeRawJson({
+          responseJson: adapterResult.responseBody,
+          errorSummaryJson: {
             code: adapterResult.failureCode,
             message: adapterResult.failureMessage,
-          }),
+          },
         },
       },
       id: true,
@@ -311,5 +338,9 @@ export const queueGiftAidClaimSubmission = async (
     claimBatchId: claimBatch.id,
     submissionId: submission.id,
     status: adapterResult.status,
+    warningMessage:
+      adapterResult.status === 'FAILED' || adapterResult.status === 'TIMED_OUT'
+        ? adapterResult.failureMessage
+        : null,
   };
 };

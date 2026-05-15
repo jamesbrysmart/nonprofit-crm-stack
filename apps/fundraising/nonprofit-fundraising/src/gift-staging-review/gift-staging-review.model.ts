@@ -6,7 +6,8 @@ import type {
   StoredGiftStagingRecord,
 } from './gift-staging-review.types';
 import type { PersonSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
-import { isGiftStagingProcessable } from './gift-staging-processability';
+import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
+import { normalizeGiftReadyStatus } from './gift-ready-status';
 
 const coalesceString = (
   value: string | null | undefined,
@@ -84,8 +85,8 @@ const mapDonorResolution = (
   switch (storedValue) {
     case 'CONFIRMED':
       return 'CONFIRMED';
-    case 'UNRESOLVED':
-      return 'UNRESOLVED';
+    case 'NEW_DONOR':
+      return 'NEW_DONOR';
     case 'AMBIGUOUS':
       return 'AMBIGUOUS';
     default:
@@ -113,6 +114,21 @@ export const buildGiftStagingReviewRecord = (
   const donorLastName = coalesceString(stored.donorLastName);
   const donorEmail = coalesceString(stored.donorEmail);
   const linkedDonor = stored.donor ?? null;
+  const preflight = classifyBatchPreflight({
+    amount:
+      typeof stored.amount === 'string' ? null : stored.amount,
+    donor: stored.donor,
+    donorFirstName: stored.donorFirstName,
+    donorLastName: stored.donorLastName,
+    donorResolutionState: stored.donorResolutionState,
+    giftDate: stored.giftDate,
+    processingStatus: stored.processingStatus,
+    provider: stored.provider,
+    providerAgreementId: stored.providerAgreementId,
+    providerIntervalCount: stored.providerIntervalCount,
+    providerIntervalUnit: stored.providerIntervalUnit,
+    recurringAgreement: stored.recurringAgreement,
+  });
 
   return {
     id: stored.id,
@@ -154,7 +170,7 @@ export const buildGiftStagingReviewRecord = (
     ),
     linkedDonor,
     linkedDonorName: buildPersonDisplayName(linkedDonor),
-    isReadyForProcessing: stored.isReadyForProcessing ?? false,
+    giftReadyStatus: normalizeGiftReadyStatus(stored.giftReadyStatus),
     processingStatus: mapProcessingStatus(stored.processingStatus),
     errorDetail: coalesceString(stored.errorDetail),
     giftAidRequested: stored.giftAidRequested ?? false,
@@ -171,6 +187,8 @@ export const buildGiftStagingReviewRecord = (
       stored.committedGift?.name,
       stored.committedGift?.id ? 'Committed gift linked' : 'Not processed',
     ),
+    preflightCategory: preflight.category,
+    preflightIssueCodes: preflight.issueCodes,
   };
 };
 
@@ -178,13 +196,6 @@ export const deriveReviewState = (
   record: GiftStagingReviewRecord,
 ): DerivedReviewState => {
   const hasLinkedDonor = Boolean(record.linkedDonor?.id);
-  const isProcessable = isGiftStagingProcessable({
-    processingStatus: record.processingStatus,
-    donorResolutionState: record.donorResolution,
-    donorFirstName: record.donorFirstName,
-    donorLastName: record.donorLastName,
-    linkedDonorId: record.linkedDonor?.id,
-  });
 
   if (record.processingStatus === 'PROCESSED') {
     return {
@@ -200,18 +211,105 @@ export const deriveReviewState = (
     };
   }
 
-  if (isProcessable) {
+  if (record.giftReadyStatus === 'NEEDS_REVIEW') {
+    if (record.preflightIssueCodes.includes('DONOR_REVIEW_REQUIRED')) {
+      if (record.errorDetail !== '') {
+        return {
+          title: 'Needs review',
+          accent: '#9a6700',
+          background: '#fff8c5',
+          reason: record.errorDetail,
+          nextAction:
+            'Review the donor candidate, link the right donor, or correct the staged donor details before processing.',
+          hasBlocker: true,
+        };
+      }
+
+      return {
+        title: 'Needs review',
+        accent: '#9a6700',
+        background: '#fff8c5',
+        reason:
+          'More than one donor could match this gift. Choose the right donor before processing.',
+        nextAction:
+          'Choose a donor now, or leave this for later review.',
+        hasBlocker: true,
+      };
+    }
+
+    if (record.preflightIssueCodes.includes('GIFT_DATE_REQUIRED')) {
+      return {
+        title: 'Needs review',
+        accent: '#7c5d00',
+        background: '#fff8e1',
+        reason:
+          'Gift date is missing. Add the date before processing this gift.',
+        nextAction:
+          'Open Details to update the gift date, then come back to processing when the row is complete.',
+        hasBlocker: true,
+      };
+    }
+
+    if (
+      record.preflightIssueCodes.includes('AMOUNT_REQUIRED') ||
+      record.preflightIssueCodes.includes('AMOUNT_INVALID') ||
+      record.preflightIssueCodes.includes('CURRENCY_REQUIRED')
+    ) {
+      return {
+        title: 'Needs review',
+        accent: '#7c5d00',
+        background: '#fff8e1',
+        reason:
+          'Amount details are incomplete or invalid. Fix the gift amount before processing this row.',
+        nextAction:
+          'Open Details to update the amount, then recheck the row before processing.',
+        hasBlocker: true,
+      };
+    }
+
+    if (record.preflightIssueCodes.includes('DONOR_EVIDENCE_REQUIRED')) {
+      return {
+        title: 'Needs review',
+        accent: '#7c5d00',
+        background: '#fff8e1',
+        reason:
+          'Donor evidence is incomplete. Add enough donor details before this gift can be processed.',
+        nextAction:
+          'Capture donor details or link the right donor, then come back to processing.',
+        hasBlocker: true,
+      };
+    }
+
+    if (record.preflightIssueCodes.includes('RECURRING_INTERVAL_INVALID')) {
+      return {
+        title: 'Needs review',
+        accent: '#7c5d00',
+        background: '#fff8e1',
+        reason:
+          'Recurring interval evidence is not in a supported shape for processing.',
+        nextAction:
+          'Review the recurring details before processing this row.',
+        hasBlocker: true,
+      };
+    }
+  }
+
+  if (record.preflightCategory === 'READY') {
     return {
-      title: record.isReadyForProcessing ? 'Ready' : 'Can be processed',
+      title:
+        record.giftReadyStatus === 'READY_TO_PROCESS'
+          ? 'Ready to process'
+          : 'Can likely be processed',
       accent: '#1a7f37',
       background: '#eef9f0',
-      reason: record.isReadyForProcessing
-        ? 'This gift has been reviewed and marked ready.'
-        : 'This gift now has the details needed to be processed.',
+      reason:
+        record.giftReadyStatus === 'READY_TO_PROCESS'
+          ? 'This gift has passed the current readiness checks and can be processed.'
+          : 'This gift looks complete, but it has not been checked for readiness yet.',
       nextAction:
-        record.isReadyForProcessing
+        record.giftReadyStatus === 'READY_TO_PROCESS'
           ? 'Process it now, or come back to it later from the queue or batch.'
-          : 'You can process it now, or mark it reviewed first if you want to record that review is complete.',
+          : 'Run the readiness check if you want to confirm this row before processing.',
       hasBlocker: false,
     };
   }
@@ -224,20 +322,7 @@ export const deriveReviewState = (
       reason:
         'A previous processing attempt failed, so this gift needs attention before you try again.',
       nextAction:
-        'Fix the problem, then mark it reviewed again if needed before processing.',
-      hasBlocker: true,
-    };
-  }
-
-  if (!hasLinkedDonor && record.donorResolution === 'AMBIGUOUS') {
-    return {
-      title: 'Donor needs review',
-      accent: '#9a6700',
-      background: '#fff8c5',
-      reason:
-        'More than one donor could match this gift. Choose the right donor before processing.',
-      nextAction:
-        'Choose a donor now, or leave this for later review.',
+        'Fix the problem, then run the readiness check again before processing.',
       hasBlocker: true,
     };
   }
@@ -255,15 +340,15 @@ export const deriveReviewState = (
     };
   }
 
-  if (!hasLinkedDonor && record.donorResolution === 'UNRESOLVED') {
+  if (!hasLinkedDonor && record.donorResolution === 'NEW_DONOR') {
     return {
-      title: 'Donor reviewed, not linked',
+      title: 'New donor on processing',
       accent: '#57606a',
       background: '#f6f8fa',
       reason:
-        'No existing donor was chosen. This gift can still be processed by creating a new donor.',
+        'No existing donor was chosen. If this row is otherwise ready, processing will create a new donor.',
       nextAction:
-        'Mark it reviewed when you are satisfied, or come back later if more donor review is needed.',
+        'Run the readiness check when you are satisfied, or come back later if more donor review is needed.',
       hasBlocker: false,
     };
   }
@@ -273,9 +358,9 @@ export const deriveReviewState = (
     accent: '#57606a',
     background: '#f6f8fa',
     reason:
-      'The donor has been set, but this gift has not been marked as reviewed yet.',
+      'The donor has been set, but this gift still needs a readiness check before processing.',
     nextAction:
-      'Make any final changes, then mark it reviewed when you are satisfied.',
+      'Make any final changes, then run the readiness check when you are satisfied.',
     hasBlocker: false,
   };
 };
