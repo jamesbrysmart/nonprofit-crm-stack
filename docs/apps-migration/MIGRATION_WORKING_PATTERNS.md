@@ -10,6 +10,42 @@ It is intentionally provisional.
 
 The purpose of this doc is to preserve useful migration context between sessions so we do not keep rediscovering the same patterns from scratch.
 
+It should also be treated as the main place to capture cross-cutting implementation constraints and "do not assume X" guidance that future sessions need in order to avoid introducing workflow bugs while simplifying the app.
+
+## Unexpected Or Unresolved Behaviors
+
+Use this doc as the main place to record behaviors we observe in the app or in testing that are:
+
+- unexpected
+- not yet fully explained
+- potentially a Twenty Apps/platform behavior
+- potentially an app bug or test mistake on our side
+- worth re-checking later as Twenty evolves or more evidence appears
+
+The point is not to turn every oddity into architecture. The point is to avoid rediscovering the same behavior repeatedly, or "fixing" something later without realizing it was already investigated.
+
+When adding one of these notes, keep it short and use this shape:
+
+- `Observation`
+- `Current understanding`
+- `Impact on app code or tests`
+- `What to re-check later`
+
+Current example:
+
+- `Observation`
+  - in the Stripe one-off staging path, the app-side builder now produces `providerAgreementId: null` for "no subscription", but persisted `giftStaging` reads in integration tests currently return `providerAgreementId: ''`
+- `Current understanding`
+  - write-side intent should remain `null`
+  - the empty string appears to be a current read/persistence behavior of the platform for this nullable text field, not business meaning we want to preserve in app code
+- `Impact on app code or tests`
+  - unit tests should assert the app builder contract (`null`)
+  - integration tests that read the persisted `giftStaging` record should currently expect `''`
+- `What to re-check later`
+  - verify this behavior on future Twenty updates
+  - if the platform starts round-tripping nullable text fields as `null`, simplify the integration expectation and remove the special note
+  - if we find broader evidence of nullable text fields normalizing to empty string, treat that as a platform-wide read-model constraint rather than a one-off test quirk
+
 ## 1. Native First, Custom Where It Matters
 
 Current leaning:
@@ -241,13 +277,71 @@ Scope note:
 - this is a working preference, not a claim that flat join-column writes are invalid
 - Twenty exposes join columns for many-to-one relations, so both styles can work
 - the goal is consistency and readability across sessions, not refactoring working code for style alone
-- if multiple widgets on the same record need to stay coherent after mutations, add an explicit sync strategy
-- prefer narrow record-scoped invalidation over broad page-wide refreshes
+
+## 12. Operational Surfaces Need Fresh State, Not Universal Reactivity
+
+Current leaning:
+
+- classify widgets and record surfaces by operator trust requirement
+- refresh operational decision surfaces explicitly
+- leave audit/detail surfaces snapshot-at-open by default unless stale data is proven harmful
+- treat `reactive by default` as a cost to justify, not a hygiene improvement
+
+Why:
+
+- some surfaces are operational control loops where stale state can change the user's next action
+- other surfaces are primarily inspection/history views where second-by-second freshness adds complexity without real product value
+- blanket reactivity increases coordination complexity and frontend fragility without necessarily improving trust
+
+Working classification:
+
+- `live-trust surface`
+  - the user may take immediate action based on the displayed state
+  - stale data could lead to the wrong operator decision
+  - explicit refresh or invalidation is required
+- `snapshot-at-open surface`
+  - the user is mainly inspecting, reviewing history, or reading details
+  - stale-while-open is acceptable unless a concrete workflow shows otherwise
+
+Current examples:
+
+- `giftStaging` review widgets: live-trust
+- `giftBatch` summary/actions/worklists: live-trust
+- `gift-aid-claim-submission-record.front-component.tsx`: snapshot-at-open by default
+- recurring review widgets: decide from actual workflow semantics, not component similarity
+
+Working implication:
+
+- prefer narrow record-scoped invalidation over global reactivity
+- do not standardize on always-live widgets
+- when a new surface is built, ask whether stale data could change the next user action
+
+## 13. Multi-Widget Record Pages Need Explicit Sync
+
+Problem:
+
+- front-component widgets on the same record page should be treated as isolated by default
+- a mutation in one widget does not automatically refresh sibling widgets showing related state
+- this creates a front-end state problem: keeping the page coherent after a record update
+
+Options considered:
+
+- rely on Twenty to provide page-level refresh or shared record invalidation
+- use an app-owned browser-level invalidation signal between widgets
+- build a richer shared client-side state layer across widgets
+
+Current choice:
+
+- use a narrow `BroadcastChannel` invalidation pattern for record-scoped widget refresh
+- keep the payload minimal, ideally object + record scoped
+- use it only to trigger local refetch, not to share durable UI state
 
 Why:
 
 - each front-component widget is rendered separately and currently runs in its own worker runtime
 - one widget mutating a record does not automatically refresh sibling widgets on the same page
+- `BroadcastChannel` has worked as a lightweight same-record refresh mechanism in the current runtime
+- it keeps the state of truth in Twenty rather than moving workflow logic into the browser
 - this can leave the most important summary widgets visibly stale immediately after a user action
 
 What we have tested so far:
@@ -267,3 +361,108 @@ Working implication:
 - use it for invalidation only, not general widget-to-widget messaging
 - keep the payload narrow, ideally object + record scoped
 - reassess if Twenty later provides native page-level invalidation or shared record refresh support
+- do not assume internal Twenty frontend state tools such as `Jotai` are part of the app contract unless the app SDK exposes them
+
+## 14. Some Objects Are Workflow-Owned, Not Natively Mutable
+
+Current leaning:
+
+- treat some application objects as workflow-owned rather than generally editable through Twenty's native create/edit surfaces
+- where that is the case, prefer explicit app actions and logic functions over generic native object mutation
+- do not assume every object that exists in Twenty should remain normally creatable/editable through the default UI
+
+Why:
+
+- Twenty's native `New record` path creates the record first and then opens the ordinary record page or side panel
+- for workflow-heavy objects, that means users can bypass the intended guided entry path and land in a review-oriented surface that is not designed as a create flow
+- object-level permissions can hide the native create affordance, but they are currently too blunt to express "allow this object to be created through app workflows but not through the generic native create UI"
+- in practice, this can make it safer to disable broad native mutation for some objects and replace it with explicit app-owned actions
+
+Current example:
+
+- `Gift` is increasingly behaving like a workflow-owned object
+- the custom `New gift` entry path already uses app API calls and logic functions rather than Twenty's native record creation flow
+- if we remove broad native edit/update access for `Gift`, the native `New record` affordance disappears, but the app-owned `New gift` workflow can still remain the supported creation path
+- this is not "ordinary CRUD with a nicer shortcut"; it is a deliberate product boundary:
+  - generic native mutation is restricted
+  - supported mutation happens through explicit workflows such as:
+    - manual gift creation
+    - refund actions
+    - later app-owned amendment/review actions where needed
+
+Working implication:
+
+- future sessions should not casually suggest "let the user just edit the `Gift` record" without first checking whether that object is intended to remain natively mutable
+- when an object is workflow-owned, ask:
+  - should users create this through Twenty's generic `New record` path?
+  - should users update it through ordinary field editing?
+  - or should mutation happen only through explicit app workflows/actions?
+- if the answer is workflow-owned, design the user action as an app workflow first and treat native object editing as secondary or intentionally unavailable
+
+Scope note:
+
+- this is not a claim that every fundraising object should become locked down
+- it is a warning against assuming that Twenty's native object mutation model is always the right product model for operational records
+- likely candidates for this treatment are system- or workflow-owned records such as:
+  - `Gift`
+  - potentially `GiftAidClaimSubmission`
+  - any future object where uncontrolled native create/edit would bypass important workflow rules or create misleading states
+
+## 15. `giftBatch` And Bulk Selection Solve Different Problems
+
+Current leaning:
+
+- support both persisted batch-scoped staging workflows and unbatched bulk actions over selected `giftStaging` rows
+- do not assume every intake source should create a `giftBatch`
+- do not assume bulk multi-select makes `giftBatch` unnecessary
+
+Why:
+
+- a `giftBatch` is a persisted operational grouping
+- bulk multi-select is an ad hoc user selection
+- those support different workflows even when the underlying row actions are similar
+
+Working distinction:
+
+- use `giftBatch` when the intake source naturally represents a durable set that users need to return to as a unit
+  - examples:
+    - CSV import
+    - file-style provider import
+    - reconciliation or payout-style grouped intake
+- use bulk selection when rows arrive or are reviewed as a broader queue and the grouping is temporary rather than intrinsic
+  - examples:
+    - trickle webhook intake
+    - ad hoc cleanup/review work over staging rows from mixed sources
+
+Important implication:
+
+- integrations may legitimately use either model
+- that choice should be made from intake shape and workflow need, not implementation convenience
+- do not hardcode a rule that all integrations batch, and do not hardcode a rule that none do
+
+What future sessions should not assume:
+
+- `giftBatch` is not just "multi-record processing"
+- bulk selection is not a replacement for persisted provenance, reconciliation scope, or expected count/total metadata
+- when designing a new intake path, decide explicitly whether it needs:
+  - a persisted operational scope (`giftBatch`)
+  - or an unbatched staging flow plus bulk actions
+
+Current caution:
+
+- do not prematurely classify specific integrations until both paths are well supported
+- for example, a source like Stripe may ultimately fit better as unbatched trickle intake, but that should be decided after the bulk-action path is in place rather than forced early
+
+Action-semantics guardrail:
+
+- the same action name should mean the same thing at every scope:
+  - one `giftStaging` row
+  - many selected `giftStaging` rows
+  - rows inside a `giftBatch`
+- `Run donor match`, readiness checks, and processing should therefore reuse the same core semantics across:
+  - single-record actions
+  - selected-row bulk actions
+  - batch actions
+- only scope-specific differences should vary:
+  - `giftBatch` adds persisted grouping, provenance, and optional expected count/total semantics
+  - bulk selection does not

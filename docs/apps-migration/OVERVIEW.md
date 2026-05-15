@@ -136,6 +136,18 @@ Closely related cross-cutting constraint:
 
 That note should be used when evaluating whether an app design is operationally safe under shared Twenty API, workflow, and logic-function budgets rather than only functionally correct in isolation.
 
+Related review-framing note:
+
+- [`REVIEW_POSTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
+- [`APP_HARDENING_REVIEW_RUBRIC.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
+- [`APP_HARDENING_BACKLOG.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_BACKLOG.md)
+
+Those notes should be used when reviewing app code or local patterns so we distinguish clearly between:
+
+- documented Twenty Apps contract,
+- current observed platform behavior,
+- and provisional app-owned workarounds or patterns that should be revisited as Twenty evolves.
+
 ### 5.1 Twenty App Workflow Source Of Truth
 
 For app scaffolding, setup, build, and dev workflow, treat the official Twenty docs as canonical:
@@ -179,6 +191,12 @@ This doc should not duplicate step-by-step app setup instructions unless we inte
   - captures the current repo-local workflow split between Twenty app development and the integrated `dev-stack` environment.
 - [`APP_RUNTIME_ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
   - exploratory runtime-boundary note for stored-vs-derived decisions, app-to-Twenty handover, and pilot-vs-production architecture questions.
+- [`REVIEW_POSTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
+  - defines how future app reviews should be framed while Twenty Apps is still evolving, including workaround posture and revisit triggers.
+- [`APP_HARDENING_REVIEW_RUBRIC.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
+  - practical checklist for running a high-signal app hardening review without overreacting to fast-moving Twenty platform areas.
+- [`APP_HARDENING_BACKLOG.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_BACKLOG.md)
+  - ordered technical hardening backlog for the current fundraising app based on the latest review pass.
 - [`API_PRESSURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
   - tracks migration-wide API/workflow/logic-function pressure constraints and the design posture they imply for future apps.
 - [`ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/ARCHITECTURE.md)

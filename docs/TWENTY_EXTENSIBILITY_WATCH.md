@@ -54,13 +54,13 @@ When updating this doc in regular syncs, keep it lightweight:
 - In SaaS, an “edge layer” or vendor-managed runtime is still possible, but should be treated as a hedge or possible complement rather than a target shape. It may prove useful for some specialized integrations, or it may turn out to be compensating for app/runtime gaps that narrow over time.
 - Do not use service/runtime thinking here as a reason to slow the app-first migration posture. The main open question is boundary placement once the released Twenty apps framework can be tested properly.
 
-## Current Extensibility Surface (baseline verified 2026-04-30)
+## Current Extensibility Surface (baseline verified 2026-05-14)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `2.2.0` (current merged repo includes release tag `v2.2.0` and later `upstream/main` commits).
+  - Current package version in-tree: `2.4.2` (current merged repo head also includes release tag `v2.5.0`, so repo tag and in-tree package version are no longer the same signal).
   - CLI command registry now includes: `remote add`, `remote list`, `remote remove`, `remote status`, `remote switch`, `build`, `deploy`, `dev`, `publish`, `install`, `typecheck`, `uninstall`, `add`, `logs`, `exec`, `catalog-sync`, plus `server start|status|logs|stop|reset`.
   - `dev` now explicitly supports `--once` for one-shot build/sync/typed-client generation without a long-running watcher.
   - Local server management now also supports a separate `--test` instance, which gives the app workflow a cleaner isolated integration-test story.
@@ -87,7 +87,7 @@ When updating this doc in regular syncs, keep it lightweight:
     - the front-component renderer explicitly aliases `twenty-sdk/ui` to Twenty UI for example builds, and the built-in front-component story set includes `twenty-ui-example.front-component`.
   - Practical read for app work: treat `twenty-sdk/ui` as the intended native UI surface for front components when the active app-tooling version supports it, but keep the current published app scaffold/version as the compatibility baseline until the version gap closes.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `2.2.0`.
+  - Current package version in-tree: `2.4.2`.
   - Scaffolder now defaults to a minimal app plus test scaffold; richer starting points are example-based (`--example hello-world`, `--example postcard`) rather than `--exhaustive` / `--minimal` mode selection.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
   - Default scaffold now includes application config, a default role, schema/integration test scaffolding with dedicated test-instance setup, and local CI/CD workflow templates; scaffolded source now uses the split SDK import paths (`twenty-sdk/define`, `twenty-sdk/front-component`) consistently.
@@ -95,7 +95,7 @@ When updating this doc in regular syncs, keep it lightweight:
   - Template dependency currently uses `twenty-sdk: latest` (watch for docs/runtime drift when reproducing examples across versions).
 - **Manifest/build surface (as of current code):**
   - Manifest shape in `packages/twenty-shared/src/application/manifestType.ts` is:
-    `application`, `objects`, `fields`, `logicFunctions`, `frontComponents`, `roles`, `skills`, `agents`, `publicAssets`, `views`, `navigationMenuItems`, `pageLayouts`, `pageLayoutTabs`.
+    `application`, `objects`, `fields`, `logicFunctions`, `frontComponents`, `roles`, `skills`, `agents`, `connectionProviders`, `publicAssets`, `views`, `navigationMenuItems`, `pageLayouts`, `pageLayoutTabs`, `commandMenuItems`.
     (Notably, prior `sources` entry is no longer present in this manifest type.)
   - `ApplicationManifest` in `applicationType.ts` now includes optional embedded `postInstallLogicFunction` and `preInstallLogicFunction` manifests alongside `packageJsonChecksum` / `yarnLockChecksum`; install hooks are auto-detected rather than referenced by universal identifier in `defineApplication()`.
   - Field manifests now support `isUnique`, which matters for representing app-owned schema constraints without falling back to post-sync/manual metadata edits.
@@ -111,6 +111,7 @@ When updating this doc in regular syncs, keep it lightweight:
   - Front-component authoring/imports are now expected to use `twenty-sdk/front-component` for runtime hooks/actions and `twenty-sdk/define` for the definition wrapper, which is a meaningful packaging clarification for any app code we write locally.
   - Front-component command manifests now include `GLOBAL_OBJECT_CONTEXT`, and navigation menu items can target a specific `pageLayoutUniversalIdentifier`, which is a meaningful UI/navigation signal for app-driven record surfaces.
   - The layout surface now also supports `definePageLayoutTab()`, which lets an app attach a tab with widgets to an existing standard or app-owned page layout without replacing the whole layout.
+  - The current docs now treat command menu items as a first-class app entity paired with front components via `defineCommandMenuItem()`, and the manifest builder emits a dedicated top-level `commandMenuItems` array. Practical read: treat embedded `command` blocks on front components as legacy/version-sensitive unless verified against the active runtime.
 - **Tools/AI workflow integration:**
   - `skills` are now first-class app entities in shared manifest types and SDK exports (`defineSkill`), and upstream docs now document skill authoring in the Apps capability guide.
   - `agents` are now also first-class app entities in shared manifest types and docs (`defineAgent`), extending the AI/app packaging surface beyond tool-exposed logic functions.
@@ -125,8 +126,49 @@ When updating this doc in regular syncs, keep it lightweight:
   - Marketplace/catalog and asset support are moving forward, but the practical install story is still not something we should treat as broadly production-proven for our use case without targeted validation.
   - Route-trigger request events now include optional `rawBody` on `LogicFunctionEvent`, forwarded from Nest's preserved request body when available; this removes the previous likely platform gap for Stripe-style strict webhook signature verification.
   - REST permission resolution now explicitly accepts application auth context and uses the app default role, which is a positive signal for app-auth batch-path access, but we still need an end-to-end proof against the concrete batch routes we care about.
+  - App variable semantics are still moving: docs now explicitly say non-secret `applicationVariables` are injected into front components while secret ones remain logic-function-only, and upstream included a recent `Fix application variable issue` commit (`7ade9e3aab`) that is directly relevant to the secret-variable bootstrap/decryption problem we saw locally. Treat this as promising but not yet proven for our exact repro.
   - Recent SDK changes are now more about package shape, import boundaries, OAuth/registration plumbing, and install/validation ergonomics than about obvious new fundraising-specific platform primitives.
   - Docs/examples move quickly and can drift between releases; verify against `packages/twenty-docs` and `packages/twenty-sdk/README.md` after each upstream sync, especially around CLI/scaffolder command names.
+
+---
+
+## Latest Snapshot — 2026-05-14
+
+**Context:** Updated `services/twenty-core` from merge commit `31a1c21546` to merge commit `b1c6338ed2` (local merge on 2026-05-14; fetched upstream head/tag: `a941f6fe01`, tagged `v2.5.0`; in-tree `twenty-sdk` and `create-twenty-app` package versions remain `2.4.2`).
+
+**Highlights**
+
+1. **Command menu items now look like a distinct, first-class app surface rather than incidental front-component metadata**
+   - The docs now explicitly say front components should be surfaced by pairing them with `defineCommandMenuItem()`.
+   - The manifest shape includes a dedicated top-level `commandMenuItems` array.
+   - The SDK CLI scaffolds `command-menu-item` files directly, and the manifest builder reads explicit `defineCommandMenuItem()` exports as their own entity type.
+   - Practical read: for app review and future refactors, treat explicit command menu item files as the canonical pattern and embedded `command` blocks on front components as legacy/version-sensitive.
+
+2. **The role/app-config direction is now clearer and more formal**
+   - The docs now explicitly position `defineApplicationRole()` as the default-role path.
+   - `defaultRoleUniversalIdentifier` on `defineApplication()` is still supported, but clearly deprecated.
+   - Practical read: the structural cleanup we just made in `nonprofit-fundraising` is aligned with current Twenty direction, not just warning suppression.
+
+3. **There is an upstream signal that application-variable handling is still being actively repaired**
+   - Upstream commit `7ade9e3aab` is literally titled `Fix application variable issue`.
+   - Docs now explicitly state that non-secret `applicationVariables` are injected into front components, while secret ones remain logic-function-only.
+   - We should not overclaim what `7ade9e3aab` fixes without a targeted runtime proof, but it is directly relevant to the secret-variable bootstrap/decryption failure we hit locally.
+
+4. **Security and runtime plumbing continued to mature, but mostly below the app-authoring abstraction**
+   - `v2.5.0` includes more encryption work (`ENCRYPTION_KEY`, versioned envelope, connected-account token encryption, TOTP secret migration).
+   - That is good platform hardening, but for our app review it is more of a “watch behavior around secrets/connections” signal than a new migration primitive.
+
+5. **Version signals are now easier to confuse, so this doc should keep calling them apart**
+   - Repo tag / runtime line: `v2.5.0`
+   - In-tree app-tooling package versions: `2.4.2`
+   - Practical read: do not assume the checked-out repo tag, the Docker runtime line, and the published app package versions are the same number.
+
+**Actions for our stack**
+
+1. Use `v2.5.0` code as a reference point for the structural app review, not as an automatic runtime-upgrade target.
+2. Prefer explicit `defineCommandMenuItem()` files anywhere we still rely on command-like front-component wiring.
+3. Keep secret application variables in the “upstream behavior still moving” bucket until Twenty confirms or we prove the current fix path against our exact repro.
+4. During review, separate “must align now because Twenty is clearly standardizing here” from “interesting new platform capability but not worth churn before v1”.
 
 ---
 

@@ -28,6 +28,12 @@ If you need:
   - [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
 - open app-runtime and stored-vs-derived architecture questions:
   - [APP_RUNTIME_ARCHITECTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
+- review framing for an evolving Twenty Apps platform:
+  - [REVIEW_POSTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
+- app hardening review rubric for current and future review passes:
+  - [APP_HARDENING_REVIEW_RUBRIC.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
+- current execution backlog from the latest app hardening review:
+  - [APP_HARDENING_BACKLOG.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_BACKLOG.md)
 - migration-wide API pressure and shared-budget constraints:
   - [API_PRESSURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
 - evolving implementation patterns discovered during sessions:
@@ -58,6 +64,12 @@ If you need:
   - references and observations about Twenty-native capabilities, constraints, metadata field types, field-definition patterns, and front-component runtime behavior
 - [APP_RUNTIME_ARCHITECTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
   - exploratory runtime-boundary note for app-to-Twenty handover, update propagation, and stored-vs-derived decisions
+- [REVIEW_POSTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
+  - defines how app reviews should be framed while Twenty Apps is still evolving, including workaround policy and revisit triggers
+- [APP_HARDENING_REVIEW_RUBRIC.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
+  - practical checklist for app hardening reviews, including what to fix now versus document and watch
+- [APP_HARDENING_BACKLOG.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_BACKLOG.md)
+  - ordered hardening backlog for the current fundraising app, based on the latest review pass
 - [API_PRESSURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
   - migration-wide note on core API limits, workflow/logic-function pressure domains, and design posture for future apps
 - [ONLINE_DONATION_INTAKE_CONTRACT.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_CONTRACT.md)
