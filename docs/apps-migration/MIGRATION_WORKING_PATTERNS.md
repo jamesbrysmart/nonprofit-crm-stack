@@ -448,10 +448,17 @@ What future sessions should not assume:
   - a persisted operational scope (`giftBatch`)
   - or an unbatched staging flow plus bulk actions
 
-Current caution:
+Current expected direction:
 
-- do not prematurely classify specific integrations until both paths are well supported
-- for example, a source like Stripe may ultimately fit better as unbatched trickle intake, but that should be decided after the bulk-action path is in place rather than forced early
+- both paths are now intentionally supported:
+  - persisted `giftBatch` workflows
+  - unbatched `giftStaging` workflows with bulk selected-row actions
+- integration-by-integration classification should still remain explicit rather than hardcoded globally
+- current expected default:
+  - real-time direct integrations such as Stripe one-off intake should normally enter as unbatched `giftStaging`
+  - naturally grouped imports or sync sets should normally use `giftBatch`
+- this is an expected default, not a hard rule:
+  - organisations or future integration designs may still choose differently where the operational workflow clearly warrants it
 
 Action-semantics guardrail:
 

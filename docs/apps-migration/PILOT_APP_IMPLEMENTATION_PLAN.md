@@ -74,6 +74,10 @@ Reference:
 
 - treat `fundraising-service` as the source of truth for current product behavior and domain boundaries,
 - treat `services/fundraising-service/scripts/setup-schema.mjs` as a secondary reference for fundraising metadata intent and naming, not as the authority on Twenty app metadata structure,
+- treat the old service-owned appeal/fund schema as prior art only:
+  - use it to understand current workflow and useful field intent,
+  - but do not treat it as the target app data model,
+  - and do not preserve temporary placeholder capture such as free-text appeal fields as the desired end state when real relations to app-owned objects are the cleaner model,
 - treat the spike app as the reference for Twenty-native shape and viable primitive usage,
 - do not copy the spike app mechanically into the production app,
 - do not copy `fundraising-service` mechanically into Twenty code either.

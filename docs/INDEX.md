@@ -57,6 +57,7 @@ These describe intended behavior and workflows at the feature level.
 - `solutions/` — cross-feature designs / “how we solve it” docs.
   - `solutions/gift-batch-processing.md` — canonical as-built solution notes for batch processing, donor-match/create-donors runs, invariants, and operating model.
 - `spikes/twenty-app-batch-processing-design.md` — working design note for the best current Twenty-native batch-processing executor shape and its platform constraints.
+- `spikes/embedded-donation-form-runtime-spike.md` — working spike note for validating the lean embeddable `DonationForm` runtime seam: publish, embed, Checkout, temporary snapshot, webhook, and `GiftStaging`
 
 ## API / Reference notes (may drift)
 

@@ -56,6 +56,12 @@ The question is:
 - which should be renamed or reframed
 - which important intake facts are still missing
 
+For fundraising context specifically, current modelling direction is:
+
+- `Fund` and `Appeal` are distinct concepts and should not be conflated,
+- `giftStaging` should ultimately use real relations to those core objects where the product slice implements them,
+- and source/channel/page/send/platform detail should not automatically be forced into appeal hierarchy just because richer attribution objects are not implemented yet.
+
 ## Working rule for this model
 
 When deciding whether a field belongs on `giftStaging`, current leaning is:
@@ -178,11 +184,18 @@ Why:
 ### Reconsider later
 
 - broader attribution/designation fields
-  - campaign
-  - designation
-  - fund / appeal intent from source
+  - raw source-supplied campaign/page/channel labels
+  - fund intent / designation from source
+  - appeal intent / attribution from source
 
 These likely matter, but they should be added deliberately once a real adapter or pilot workflow needs them.
+
+Working distinction to preserve:
+
+- if the source is telling us where the money should be designated, that points toward `Fund`,
+- if the source is telling us which fundraising effort should get attribution, that points toward `Appeal`,
+- if the source is telling us the execution detail under that effort, that likely points toward future `AppealActivity` or stays as evidence until that object exists,
+- and none of those should default to "create more appeal hierarchy" without a separate product decision.
 
 ### Why this bucket matters
 

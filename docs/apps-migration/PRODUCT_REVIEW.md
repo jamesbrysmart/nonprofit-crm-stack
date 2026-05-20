@@ -2268,6 +2268,17 @@ The current implementation is more than a lookup list: it includes appeal create
 
 The migration goal is to preserve appeals as a fundraising attribution and performance concept, while reviewing which performance values are stored, derived, or imported; how gifts update appeal totals; and whether the custom appeal browser should exist inside Twenty apps or be replaced partly by Twenty record pages / list views.
 
+Important modelling direction for future sessions:
+
+- treat the old `fundraising-service` appeal/fund schema as current-behavior prior art, not as the target app data model,
+- treat `Fund` and `Appeal` as distinct core concepts:
+  - `Fund` is the destination/designation/restriction of money,
+  - `Appeal` is the fundraising effort / attribution bucket,
+- use real relations from `gift` and `giftStaging` to `Fund` and `Appeal` rather than long-lived text placeholders,
+- treat source/channel/send/page/platform detail as a likely future `AppealActivity` concern rather than the default job of appeal hierarchy,
+- keep `Event` conceptually separate from `Appeal`,
+- and do not assume a generic `CampaignMember` / `AppealRecipient` model is part of the core appeal design at this stage.
+
 ### 2.14 Appeals Use Cases
 
 Use these user jobs as the basis for reviewing appeals during migration:
@@ -2303,20 +2314,24 @@ Why it matters:
 
 Current behavior:
 
-- `setup-schema.mjs` provisions an `appeal` object.
-- Gifts and gift-staging records can relate to appeals.
-- Appeals can relate to a default fund.
-- `setup-schema.mjs` also provisions `solicitationSnapshot`, which relates to appeal.
-- Appeal API endpoints list, create, get, and update appeal records.
+- In `fundraising-service`, `setup-schema.mjs` provisions an `appeal` object and related solicitation/default-fund metadata as part of the current product surface.
+- In the current Twenty app, dedicated `Fund` / `Appeal` objects have not yet replaced all temporary capture patterns; some transitional fields such as free-text `gift.appealName` still exist in the app code and should be treated as migration-state compatibility rather than the target model.
+- Gifts and gift-staging records need first-class appeal attribution in the target app model.
+- `fundraising-service` appeal API endpoints list, create, get, and update appeal records.
 
 Key metadata / UI / logic:
 
-- Metadata: `appeal.appealType`, `description`, `startDate`, `endDate`.
-- Metadata: `goalAmount`, `targetSolicitedCount`, `budgetAmount`.
-- Metadata: relation from appeal to default fund.
-- Metadata: relation from gift to appeal.
-- Metadata: relation from staged gift to appeal.
-- Metadata: relation from solicitation snapshot to appeal.
+- Target-model direction:
+  - distinct core objects for `fund` and `appeal`,
+  - real relations from `gift` and `giftStaging` to `appeal`,
+  - future source/channel/execution detail likely living in a separate `AppealActivity` object rather than child appeals by default,
+  - no current assumption of a generic recipient/member junction model for ordinary appeals.
+- Current service metadata prior art: `appealType`, `description`, `startDate`, `endDate`.
+- Current service metadata prior art: `goalAmount`, `targetSolicitedCount`, `budgetAmount`.
+- Current service metadata prior art: relation from appeal to default fund.
+- Current service metadata prior art: relation from solicitation snapshot to appeal.
+- Target app relation direction: relation from gift to appeal.
+- Target app relation direction: relation from staged gift to appeal.
 - UI: Twenty-native appeal object can be opened as an ordinary record/list outside the fundraising-service UI.
 - Logic: `AppealController`.
 - Logic: `AppealService`.
@@ -2325,14 +2340,17 @@ Key metadata / UI / logic:
 Open questions:
 
 - What is the minimal appeal record needed for the first Twenty-app migration?
+- Which appeal setup fields belong in a solid v1 `Appeal` object versus later performance/reporting slices?
 - Should appeal performance / rollup fields remain on appeal, be calculated from gifts/snapshots, or move to a reporting layer?
 - Should appeal type remain free text / select options, or a more explicit product model?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
-- Preserve the appeal object and gift/staging/solicitation links.
-- Review performance metadata before assuming every current appeal field should become custom-app UI.
+- Preserve `Appeal` as a core fundraising attribution object that is distinct from `Fund`.
+- Preserve the need for gift/staging/solicitation links, but do not treat the current service schema as the target object shape.
+- Review performance metadata before assuming every current appeal field should become custom-app UI or stored app metadata.
+- Treat temporary free-text appeal capture in the current app as a transition concern to retire, not as the desired long-term product model.
 
 #### Scenario: Creating And Editing Appeal Setup
 
@@ -2361,13 +2379,14 @@ Key metadata / UI / logic:
 Open questions:
 
 - Which setup fields are essential during create versus edit later?
-- Should default fund be an explicit relation picker rather than `defaultFundId` text/payload field?
+- Should a future `Appeal.defaultFund` relation be added only once actual defaulting behavior is designed, rather than as a passive field that implies unsupported behavior?
 - Should budget/target/goal be required for particular appeal types?
 
 Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve create/edit for appeal setup.
+- Keep room for a future `defaultFund` relation, but do not treat it as part of the required first-pass app model unless the defaulting behavior is also designed.
 - Prefer Twenty-native record controls / relation pickers where they cover the need cleanly.
 
 #### Scenario: Coding Gifts And Staged Gifts To An Appeal
@@ -2379,16 +2398,17 @@ Why it matters:
 
 Current behavior:
 
-- Manual Gift Entry exposes appeal selection through the shared `GiftDetailsForm`.
-- Gift staging drawer detail edits expose appeal selection through the same shared `GiftDetailsForm` path.
+- In `fundraising-service`, Manual Gift Entry exposes appeal selection through the shared `GiftDetailsForm`.
+- In `fundraising-service`, gift staging drawer detail edits expose appeal selection through the same shared `GiftDetailsForm` path.
+- In the current Twenty app, some manual gift paths still use temporary free-text `appealName` capture on `gift`; that should be treated as compatibility state during migration, not as the target attribution model.
 - Create-gift payloads can include `appealId`.
 - Staged gift payload/update paths can include `appealId`.
 - Batch processing carries staging row `appealId` into the committed gift payload.
 
 Key metadata / UI / logic:
 
-- Metadata: gift relation to appeal / `appealId`.
-- Metadata: staged gift relation to appeal / `appealId`.
+- Target-model direction: gift relation to appeal / `appealId`.
+- Target-model direction: staged gift relation to appeal / `appealId`.
 - UI: `GiftDetailsForm`.
 - UI: `ManualGiftEntry`.
 - UI: `DrawerDetailsSection`.
@@ -2407,6 +2427,7 @@ Migration read:
 
 - Product posture: `Preserve + simplify`.
 - Preserve appeal attribution on gifts and staged gifts.
+- Prefer real relations over long-lived text placeholders for appeal attribution in the Twenty app.
 - Keep coding UI consistent with the future shared gift-detail / record-editing pattern.
 
 #### Scenario: Browsing Appeals As An Operational List
@@ -3228,9 +3249,9 @@ Current behavior:
 Current working field pattern:
 
 - Lower-risk / contextual examples:
-  - `appealName`
+  - `appeal` relation
   - `opportunity`
-  - later similar coding/context fields such as fund
+  - `fund` relation
 - Sensitive correction examples:
   - donor/company linkage
   - donor/company identifying facts
@@ -3243,6 +3264,8 @@ Current working field pattern:
   - derived Gift Aid outcome fields
   - Gift Aid claim-batch linkage
   - source/provenance/provider identifiers
+- Transitional compatibility examples to retire from the target model:
+  - legacy free-text `appealName` style capture where a real relation is the intended long-term fit
 - Future lifecycle-action territory:
   - refund
   - chargeback

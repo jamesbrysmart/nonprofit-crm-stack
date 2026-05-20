@@ -26,6 +26,8 @@ If you need:
   - [ONLINE_DONATION_INTAKE_CONTRACT.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_CONTRACT.md)
 - current preferred staging/intake field model and rationale:
   - [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
+- agreed lean runtime boundary and lifecycle for embeddable donation forms:
+  - [DONATION_FORMS_EMBEDDED_RUNTIME.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/DONATION_FORMS_EMBEDDED_RUNTIME.md)
 - open app-runtime and stored-vs-derived architecture questions:
   - [APP_RUNTIME_ARCHITECTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
 - review framing for an evolving Twenty Apps platform:
@@ -76,6 +78,8 @@ If you need:
   - source-neutral internal contract for online donation adapters feeding staging and processing
 - [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
   - current recommended field-level interpretation of that intake contract for staging metadata
+- [DONATION_FORMS_EMBEDDED_RUNTIME.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/DONATION_FORMS_EMBEDDED_RUNTIME.md)
+  - agreed lean product/runtime note for the embeddable `DonationForm` feature
 
 ## Working Reference Notes
 
