@@ -70,6 +70,8 @@ type RawProviderEvidence = {
   customerId?: string;
   paymentIntentId?: string;
   subscriptionId?: string;
+  metadata?: Record<string, string>;
+  customFields?: Record<string, string>;
   giftAid?: {
     requested?: boolean;
     declarationCaptured?: boolean;
@@ -122,6 +124,8 @@ export type StripeOneOffGiftStagingInput = {
   providerIntervalUnit?: string;
   providerIntervalCount?: number;
   donorMailingAddress?: MailingAddressEvidence;
+  sourceAppealName?: string;
+  sourceFundName?: string;
   rawProviderEvidence?: RawProviderEvidence;
   donorResolutionState: 'UNREVIEWED';
   giftReadyStatus: 'NEEDS_REVIEW';
@@ -270,6 +274,8 @@ const buildRawProviderEvidence = ({
   donorMailingAddress,
   providerIntervalUnit,
   providerIntervalCount,
+  metadata,
+  customFields,
 }: {
   eventType: string;
   checkoutSessionId: string;
@@ -290,6 +296,8 @@ const buildRawProviderEvidence = ({
   donorMailingAddress?: MailingAddressEvidence;
   providerIntervalUnit?: string;
   providerIntervalCount?: number;
+  metadata?: Record<string, string>;
+  customFields?: Record<string, string>;
 }): RawProviderEvidence => ({
   provider: 'STRIPE',
   eventType,
@@ -297,6 +305,8 @@ const buildRawProviderEvidence = ({
   ...(customerId ? { customerId } : {}),
   ...(paymentIntentId ? { paymentIntentId } : {}),
   ...(subscriptionId ? { subscriptionId } : {}),
+  ...(metadata ? { metadata } : {}),
+  ...(customFields ? { customFields } : {}),
   ...(giftAid ? { giftAid } : {}),
   customerDetails: {
     ...(donorName !== '' ? { name: donorName } : {}),
@@ -344,6 +354,89 @@ const getMetadataValue = (
   }
 
   return undefined;
+};
+
+const buildNormalizedMetadataMap = (
+  metadata: StripeCheckoutSession['metadata'],
+): Record<string, string> | undefined => {
+  if (!metadata) {
+    return undefined;
+  }
+
+  const normalizedEntries = Object.entries(metadata)
+    .map(([key, value]) => [normalizeString(key), normalizeString(value)] as const)
+    .filter(([key, value]) => key !== '' && value !== '');
+
+  return normalizedEntries.length === 0
+    ? undefined
+    : Object.fromEntries(normalizedEntries);
+};
+
+const buildNormalizedCustomFieldMap = (
+  customFields: StripeCheckoutSession['custom_fields'],
+): Record<string, string> | undefined => {
+  if (!customFields || customFields.length === 0) {
+    return undefined;
+  }
+
+  const normalizedEntries = customFields
+    .map((field) => {
+      const key = normalizeString(field?.key);
+      const value =
+        normalizeString(field?.text?.value) ||
+        normalizeString(field?.dropdown?.value) ||
+        normalizeString(field?.numeric?.value);
+
+      return [key, value] as const;
+    })
+    .filter(([key, value]) => key !== '' && value !== '');
+
+  return normalizedEntries.length === 0
+    ? undefined
+    : Object.fromEntries(normalizedEntries);
+};
+
+const getAttributionEvidenceValue = (
+  session: StripeCheckoutSession,
+  keys: string[],
+): string | undefined =>
+  getMetadataValue(session, keys) ??
+  keys
+    .map((key) => getCustomFieldValue(session, key))
+    .find((value) => normalizeString(value) !== '');
+
+const extractStripeAttributionEvidence = (session: StripeCheckoutSession) => {
+  const sourceAppealName = getAttributionEvidenceValue(session, [
+    'appealName',
+    'appeal_name',
+    'appeal',
+    'campaignName',
+    'campaign_name',
+    'campaign',
+    'campaignLabel',
+    'campaign_label',
+    'pageName',
+    'page_name',
+    'pageTitle',
+    'page_title',
+  ]);
+  const sourceFundName = getAttributionEvidenceValue(session, [
+    'fundName',
+    'fund_name',
+    'fund',
+    'fundLabel',
+    'fund_label',
+    'designation',
+    'designationName',
+    'designation_name',
+    'designationLabel',
+    'designation_label',
+  ]);
+
+  return {
+    ...(sourceAppealName ? { sourceAppealName } : {}),
+    ...(sourceFundName ? { sourceFundName } : {}),
+  };
 };
 
 const getGiftAidRequestedValue = (session: StripeCheckoutSession): boolean => {
@@ -490,6 +583,11 @@ export const buildStripeOneOffGiftStagingInput = (
   const paymentProviderCustomerId = getStripeObjectId(session.customer);
   const providerAgreementId = getStripeObjectId(session.subscription);
   const intervalEvidence = getSubscriptionIntervalEvidence(session.subscription);
+  const attributionEvidence = extractStripeAttributionEvidence(session);
+  const normalizedMetadata = buildNormalizedMetadataMap(session.metadata);
+  const normalizedCustomFields = buildNormalizedCustomFieldMap(
+    session.custom_fields,
+  );
   const donorMailingAddress = buildDonorMailingAddress(
     session.customer_details?.address,
   );
@@ -558,6 +656,8 @@ export const buildStripeOneOffGiftStagingInput = (
     donorEmail,
     donorPhone,
     donorMailingAddress,
+    ...(normalizedMetadata ? { metadata: normalizedMetadata } : {}),
+    ...(normalizedCustomFields ? { customFields: normalizedCustomFields } : {}),
     ...(intervalEvidence.providerIntervalUnit
       ? { providerIntervalUnit: intervalEvidence.providerIntervalUnit }
       : {}),
@@ -590,6 +690,7 @@ export const buildStripeOneOffGiftStagingInput = (
     providerAgreementId: providerAgreementId ?? null,
     ...intervalEvidence,
     ...(donorMailingAddress ? { donorMailingAddress } : {}),
+    ...attributionEvidence,
     ...giftAidEvidence,
     rawProviderEvidence,
     donorResolutionState: 'UNREVIEWED',

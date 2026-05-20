@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import {
   enqueueSnackbar,
@@ -11,7 +11,6 @@ import {
   compactMetaItemStyle,
   compactValueStyle,
   compactWidgetRootStyle,
-  inputStyle,
   badgeStyle,
   labelStyle,
   secondaryTextStyle,
@@ -20,27 +19,11 @@ import {
 import { processGiftStagingRow } from 'src/gift-staging-review/gift-staging-processing.api';
 import {
   checkIfReady,
-  saveGiftDate,
 } from 'src/gift-staging-review/gift-staging-review.actions';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
 
 export const GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'f220540d-7733-4c07-bcb3-35d18c643be7';
-
-const getInputEventValue = (event: unknown) => {
-  if (
-    typeof event === 'object' &&
-    event !== null &&
-    'detail' in event &&
-    typeof event.detail === 'object' &&
-    event.detail !== null &&
-    'value' in event.detail
-  ) {
-    return String(event.detail.value ?? '');
-  }
-
-  return '';
-};
 
 const getProcessingTone = (processingStatus: string) => {
   if (processingStatus === 'PROCESSED') {
@@ -71,15 +54,8 @@ const GiftStagingProcessing = () => {
   const { record, loading, error, refresh } = useGiftStagingReviewRecord(
     recordId,
   );
-  const [giftDateInput, setGiftDateInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [processingRow, setProcessingRow] = useState(false);
-
-  useEffect(() => {
-    if (record && giftDateInput === '') {
-      setGiftDateInput(record.giftDate);
-    }
-  }, [record, giftDateInput]);
 
   if (loading) {
     return <div style={secondaryTextStyle}>Loading processing widget...</div>;
@@ -103,29 +79,6 @@ const GiftStagingProcessing = () => {
     record.processingStatus !== 'PROCESSED';
   const afterMutationRefresh = async () => {
     await refresh();
-  };
-
-  const handleSaveGiftDate = async () => {
-    setSaving(true);
-
-    try {
-      await saveGiftDate(recordId, giftDateInput);
-      await enqueueSnackbar({
-        message: 'Gift date saved.',
-        variant: 'success',
-      });
-      await afterMutationRefresh();
-    } catch (saveError) {
-      await enqueueSnackbar({
-        message:
-          saveError instanceof Error
-            ? saveError.message
-            : 'Unable to save gift date.',
-        variant: 'error',
-      });
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleCheckReady = async () => {
@@ -203,34 +156,6 @@ const GiftStagingProcessing = () => {
             <div style={compactValueStyle}>{record.committedGiftName}</div>
           </div>
         ) : null}
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gap: '6px',
-          gridTemplateColumns: 'minmax(0, 1fr) auto',
-          alignItems: 'end',
-        }}
-      >
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Gift date</span>
-          <input
-            style={inputStyle}
-            type="date"
-            value={giftDateInput}
-            onChange={(event) => setGiftDateInput(getInputEventValue(event))}
-            disabled={saving || processingRow}
-          />
-        </label>
-        <Button
-          title="Save"
-          variant="secondary"
-          onClick={() => {
-            void handleSaveGiftDate();
-          }}
-          disabled={saving || processingRow}
-        />
       </div>
 
       {record.errorDetail !== '' ? (

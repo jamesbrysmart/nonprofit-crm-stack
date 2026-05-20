@@ -63,12 +63,26 @@ export type BatchProcessingRow = {
   providerIntervalCount: number | null;
   donorPhone: string | null;
   rawProviderEvidence: unknown;
+  sourceAppealName: string | null;
+  sourceFundName: string | null;
   donorResolutionState: string | null;
   donor: {
     id: string;
     emails?: {
       primaryEmail?: string | null;
       additionalEmails?: string[] | null;
+    } | null;
+  } | null;
+  fund: {
+    id: string;
+    name?: string | null;
+  } | null;
+  appeal: {
+    id: string;
+    name?: string | null;
+    defaultFund?: {
+      id?: string | null;
+      name?: string | null;
     } | null;
   } | null;
   giftReadyStatus: GiftReadyStatus | null;
@@ -114,6 +128,28 @@ export type CheckSelectedGiftStagingReadinessRequest = {
 
 export type ProcessSelectedGiftStagingRequest = {
   giftStagingIds: string[];
+};
+
+export type BatchGiftCodingAppealMode =
+  | 'LEAVE_UNCHANGED'
+  | 'CLEAR'
+  | 'SET_ALL'
+  | 'SET_WHERE_BLANK';
+
+export type BatchGiftCodingFundMode =
+  | 'LEAVE_UNCHANGED'
+  | 'CLEAR'
+  | 'SET_ALL'
+  | 'SET_WHERE_BLANK'
+  | 'SET_APPEAL_DEFAULT_ALL'
+  | 'SET_APPEAL_DEFAULT_WHERE_BLANK';
+
+export type UpdateBatchGiftCodingRequest = {
+  giftBatchId: string;
+  appealMode: BatchGiftCodingAppealMode;
+  selectedAppealId?: string;
+  fundMode: BatchGiftCodingFundMode;
+  selectedFundId?: string;
 };
 
 export type ProcessBatchResponse = {
@@ -184,4 +220,12 @@ export type ProcessSelectedGiftStagingResponse = {
   batchPathFailed: number;
   rowFallbackProcessed: number;
   rowFallbackFailed: number;
+};
+
+export type UpdateBatchGiftCodingResponse = {
+  giftBatchId: string;
+  targetedItemCount: number;
+  updatedRowCount: number;
+  appealUpdatedCount: number;
+  fundUpdatedCount: number;
 };

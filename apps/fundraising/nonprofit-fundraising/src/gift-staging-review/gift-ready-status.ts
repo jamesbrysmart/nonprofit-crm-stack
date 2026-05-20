@@ -34,6 +34,18 @@ type GiftReadyRow = {
   providerAgreementId?: string | null;
   providerIntervalCount?: number | null;
   providerIntervalUnit?: string | null;
+  sourceAppealName?: string | null;
+  sourceFundName?: string | null;
+  appeal?:
+    | {
+        id?: string | null;
+      }
+    | null;
+  fund?:
+    | {
+        id?: string | null;
+      }
+    | null;
   recurringAgreement?:
     | {
         id?: string | null;

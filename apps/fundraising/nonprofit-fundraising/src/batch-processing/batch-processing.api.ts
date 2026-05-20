@@ -5,6 +5,8 @@ import type {
   ProcessBatchResponse,
   RunBatchDonorMatchRequest,
   RunBatchDonorMatchResponse,
+  UpdateBatchGiftCodingRequest,
+  UpdateBatchGiftCodingResponse,
 } from 'src/batch-processing/batch-processing.types';
 import { postAppRouteJson } from 'src/app-api/app-route-client';
 
@@ -29,5 +31,13 @@ export const checkBatch = (
 ): Promise<CheckBatchResponse> =>
   postAppRouteJson<CheckBatchResponse>(
     '/s/batch-processing/check-batch',
+    input,
+  );
+
+export const updateBatchGiftCoding = (
+  input: UpdateBatchGiftCodingRequest,
+): Promise<UpdateBatchGiftCodingResponse> =>
+  postAppRouteJson<UpdateBatchGiftCodingResponse>(
+    '/s/batch-processing/update-gift-coding',
     input,
   );

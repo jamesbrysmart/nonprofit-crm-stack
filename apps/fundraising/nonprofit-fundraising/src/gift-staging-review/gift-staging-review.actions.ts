@@ -56,6 +56,14 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
       providerAgreementId: true,
       providerIntervalCount: true,
       providerIntervalUnit: true,
+      sourceAppealName: true,
+      sourceFundName: true,
+      appeal: {
+        id: true,
+      },
+      fund: {
+        id: true,
+      },
       recurringAgreement: {
         id: true,
       },
@@ -84,6 +92,10 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
           providerAgreementId?: string | null;
           providerIntervalCount?: number | null;
           providerIntervalUnit?: string | null;
+          sourceAppealName?: string | null;
+          sourceFundName?: string | null;
+          appeal?: { id?: string | null } | null;
+          fund?: { id?: string | null } | null;
           recurringAgreement?: { id?: string | null } | null;
         }
       | null,
@@ -114,6 +126,10 @@ const evaluateGiftReadyStatus = async ({
     providerAgreementId?: string | null;
     providerIntervalCount?: number | null;
     providerIntervalUnit?: string | null;
+    sourceAppealName?: string | null;
+    sourceFundName?: string | null;
+    appeal?: { id?: string | null } | null;
+    fund?: { id?: string | null } | null;
     recurringAgreement?: { id?: string | null } | null;
   };
 }): Promise<GiftReadyStatus> => {
@@ -135,6 +151,10 @@ const evaluateGiftReadyStatus = async ({
       providerAgreementId: row.providerAgreementId ?? null,
       providerIntervalCount: row.providerIntervalCount ?? null,
       providerIntervalUnit: row.providerIntervalUnit ?? null,
+      sourceAppealName: row.sourceAppealName ?? null,
+      sourceFundName: row.sourceFundName ?? null,
+      appeal: row.appeal ?? null,
+      fund: row.fund ?? null,
       recurringAgreement: row.recurringAgreement ?? null,
     },
     peopleByEmail,
@@ -250,5 +270,45 @@ export const checkIfReady = async (recordId: string) => {
     giftReadyStatus,
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
+  });
+};
+
+export const saveGiftCoding = async (
+  recordId: string,
+  coding: {
+    appealId: string;
+    fundId: string;
+  },
+) => {
+  const appealId = coding.appealId.trim();
+  const fundId = coding.fundId.trim();
+
+  return updateGiftStaging(recordId, {
+    ...(appealId !== ''
+      ? {
+          appeal: {
+            connect: {
+              where: {
+                id: appealId,
+              },
+            },
+          },
+        }
+      : {
+          appealId: null,
+        }),
+    ...(fundId !== ''
+      ? {
+          fund: {
+            connect: {
+              where: {
+                id: fundId,
+              },
+            },
+          },
+        }
+      : {
+          fundId: null,
+        }),
   });
 };

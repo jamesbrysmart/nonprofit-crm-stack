@@ -67,8 +67,16 @@ const NewGift = () => {
     setPaymentType,
     giftDate,
     setGiftDate,
-    appealName,
-    setAppealName,
+    fundOptions,
+    appealOptions,
+    selectedFundId,
+    setSelectedFundId,
+    selectedAppealId,
+    setSelectedAppealId,
+    loadingFundOptions,
+    loadingAppealOptions,
+    fundOptionsError,
+    appealOptionsError,
     includeDonorAddress,
     setIncludeDonorAddress,
     addressStreet1,
@@ -677,15 +685,56 @@ const NewGift = () => {
           </label>
         </div>
 
-        <label style={{ display: 'grid', gap: '6px' }}>
-          <span style={labelStyle}>Appeal</span>
-          <input
-            style={inputStyle}
-            value={appealName}
-            placeholder="Appeal name"
-            onChange={(event) => setAppealName(getInputEventValue(event))}
-          />
-        </label>
+        <div
+          style={{
+            display: 'grid',
+            gap: '12px',
+            gridTemplateColumns: '1fr 1fr',
+          }}
+        >
+          <label style={{ display: 'grid', gap: '6px' }}>
+            <span style={labelStyle}>Appeal</span>
+            <select
+              style={inputStyle}
+              value={selectedAppealId}
+              onChange={(event) =>
+                setSelectedAppealId(getInputEventValue(event))
+              }
+              disabled={loadingAppealOptions}
+            >
+              <option value="">No appeal</option>
+              {appealOptions.map((appeal) => (
+                <option key={appeal.id} value={appeal.id}>
+                  {appeal.name ?? 'Untitled appeal'}
+                </option>
+              ))}
+            </select>
+            {appealOptionsError ? (
+              <span style={secondaryTextStyle}>{appealOptionsError}</span>
+            ) : null}
+          </label>
+
+          <label style={{ display: 'grid', gap: '6px' }}>
+            <span style={labelStyle}>Fund</span>
+            <select
+              style={inputStyle}
+              value={selectedFundId}
+              onChange={(event) => setSelectedFundId(getInputEventValue(event))}
+              disabled={loadingFundOptions}
+            >
+              <option value="">No fund</option>
+              {fundOptions.map((fund) => (
+                <option key={fund.id} value={fund.id}>
+                  {fund.name ?? 'Untitled fund'}
+                  {fund.code ? ` (${fund.code})` : ''}
+                </option>
+              ))}
+            </select>
+            {fundOptionsError ? (
+              <span style={secondaryTextStyle}>{fundOptionsError}</span>
+            ) : null}
+          </label>
+        </div>
       </div>
 
       <div style={sectionStyle}>

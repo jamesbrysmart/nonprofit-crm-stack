@@ -104,6 +104,14 @@ export const loadGiftBatchReview = async (
             id: true,
             name: true,
           },
+          appeal: {
+            id: true,
+            name: true,
+          },
+          fund: {
+            id: true,
+            name: true,
+          },
         },
       },
     },

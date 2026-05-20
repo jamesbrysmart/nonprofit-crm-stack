@@ -18,6 +18,10 @@ type BatchProcessingLikeRow = Pick<
   | 'providerIntervalCount'
   | 'providerIntervalUnit'
   | 'recurringAgreement'
+  | 'sourceAppealName'
+  | 'sourceFundName'
+  | 'appeal'
+  | 'fund'
 >;
 
 export type BatchPreflightIssueCode =
@@ -27,7 +31,9 @@ export type BatchPreflightIssueCode =
   | 'AMOUNT_INVALID'
   | 'CURRENCY_REQUIRED'
   | 'GIFT_DATE_REQUIRED'
-  | 'RECURRING_INTERVAL_INVALID';
+  | 'RECURRING_INTERVAL_INVALID'
+  | 'SOURCE_APPEAL_REVIEW_REQUIRED'
+  | 'SOURCE_FUND_REVIEW_REQUIRED';
 
 export type BatchPreflightCategory =
   | 'PROCESSED'
@@ -96,6 +102,10 @@ export const classifyBatchPreflight = (
   const amountMicros = row.amount?.amountMicros;
   const currencyCode = normalizeString(row.amount?.currencyCode);
   const giftDate = normalizeString(row.giftDate);
+  const sourceAppealName = normalizeString(row.sourceAppealName);
+  const sourceFundName = normalizeString(row.sourceFundName);
+  const linkedAppealId = normalizeString(row.appeal?.id);
+  const linkedFundId = normalizeString(row.fund?.id);
 
   if (
     donorResolutionState === 'AMBIGUOUS'
@@ -129,6 +139,14 @@ export const classifyBatchPreflight = (
 
   if (!hasSupportedRecurringCadence(row)) {
     issueCodes.push('RECURRING_INTERVAL_INVALID');
+  }
+
+  if (sourceAppealName !== '' && linkedAppealId === '') {
+    issueCodes.push('SOURCE_APPEAL_REVIEW_REQUIRED');
+  }
+
+  if (sourceFundName !== '' && linkedFundId === '') {
+    issueCodes.push('SOURCE_FUND_REVIEW_REQUIRED');
   }
 
   return {

@@ -1,5 +1,7 @@
 import { defineView, ViewKey } from 'twenty-sdk/define';
+import { APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-gift.field';
 import { DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/donor-on-gift.field';
+import { FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fund-on-gift.field';
 import {
   GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
@@ -69,24 +71,39 @@ export default defineView({
       size: 220,
     },
     {
+      universalIdentifier: '18ec5bd8-f34a-4d02-a8a0-26a6629724c8',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 6,
+      isVisible: true,
+      size: 220,
+    },
+    {
+      universalIdentifier: 'f219aefc-7f6e-449b-95b2-7b6397607da8',
+      fieldMetadataUniversalIdentifier: FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 7,
+      isVisible: true,
+      size: 220,
+    },
+    {
       universalIdentifier: '339ec414-fd2b-42f2-b9d2-f7b8f5fe6c79',
       fieldMetadataUniversalIdentifier:
         GIFT_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 6,
+      position: 8,
       isVisible: true,
       size: 220,
     },
     {
       universalIdentifier: '533e422f-43f4-43e9-868b-d60b9ce12a20',
       fieldMetadataUniversalIdentifier: GIFT_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 7,
+      position: 9,
       isVisible: true,
       size: 140,
     },
     {
       universalIdentifier: '7fd4f7de-1d60-4e40-abf4-5934cc9c9042',
       fieldMetadataUniversalIdentifier: GIFT_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 8,
+      position: 10,
       isVisible: true,
       size: 220,
     },
@@ -94,7 +111,7 @@ export default defineView({
       universalIdentifier: 'ac9c8c8d-84d5-4d51-b533-fdc66fe4c07b',
       fieldMetadataUniversalIdentifier:
         GIFT_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 9,
+      position: 11,
       isVisible: true,
       size: 220,
     },

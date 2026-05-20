@@ -112,6 +112,12 @@ const GiftStagingReviewSummary = () => {
                 : record.giftBatchName}
             </div>
           </div>
+          {record.appealName !== '' ? (
+            <div style={compactMetaItemStyle}>
+              <div style={labelStyle}>Appeal</div>
+              <div style={secondaryTextStyle}>{record.appealName}</div>
+            </div>
+          ) : null}
           <div style={compactMetaItemStyle}>
             <div style={labelStyle}>Gift record</div>
             <div style={secondaryTextStyle}>

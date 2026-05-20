@@ -24,9 +24,6 @@ export const GIFT_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
   '3cbc11d6-d0af-420f-ab8f-cd43bd3913a3';
 
-export const GIFT_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER =
-  '0ef32006-84d2-49ef-8fb0-b7a74d79df77';
-
 export const GIFT_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER =
   '81d4b8be-f4fc-4862-b964-2c8780eec656';
 
@@ -177,17 +174,6 @@ export default defineObject({
           color: 'gray',
         },
       ],
-    },
-    {
-      universalIdentifier: GIFT_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.TEXT,
-      name: 'appealName',
-      label: 'Appeal',
-      description:
-        'Temporary appeal capture used until the dedicated appeal object/lookup is available.',
-      icon: 'IconTargetArrow',
-      isNullable: true,
-      defaultValue: null,
     },
     {
       universalIdentifier: GIFT_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER,

@@ -3,6 +3,8 @@ import type {
   CompanyDuplicateCheckResponse,
   DuplicateCheckRequest,
   DuplicateCheckResponse,
+  ListAppealOptionsResponse,
+  ListFundOptionsResponse,
   ManualGiftDuplicateCheckRequest,
   ManualGiftDuplicateCheckResponse,
   ManualGiftEntryRequest,
@@ -63,3 +65,9 @@ export const searchOpportunities = (
     '/s/opportunities/search',
     input,
   );
+
+export const listFundOptions = (): Promise<ListFundOptionsResponse> =>
+  postAppRouteJson<ListFundOptionsResponse>('/s/funds/options', {});
+
+export const listAppealOptions = (): Promise<ListAppealOptionsResponse> =>
+  postAppRouteJson<ListAppealOptionsResponse>('/s/appeals/options', {});

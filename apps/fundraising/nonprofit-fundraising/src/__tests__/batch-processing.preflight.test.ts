@@ -28,8 +28,12 @@ const buildRow = (
   providerIntervalCount: null,
   donorPhone: null,
   rawProviderEvidence: null,
+  sourceAppealName: null,
+  sourceFundName: null,
   donorResolutionState: 'UNREVIEWED',
   donor: null,
+  fund: null,
+  appeal: null,
   giftReadyStatus: 'NEEDS_REVIEW',
   processingStatus: 'NOT_PROCESSED',
   errorDetail: null,
@@ -93,6 +97,63 @@ describe('classifyBatchPreflight', () => {
     ).toEqual({
       category: 'NEEDS_REVIEW',
       issueCodes: ['RECURRING_INTERVAL_INVALID'],
+    });
+  });
+
+  it('flags unresolved source coding evidence as needs review', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          sourceAppealName: 'Spring Appeal 2026',
+        }),
+      ),
+    ).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['SOURCE_APPEAL_REVIEW_REQUIRED'],
+    });
+
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          sourceFundName: 'Emergency Relief',
+        }),
+      ),
+    ).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['SOURCE_FUND_REVIEW_REQUIRED'],
+    });
+  });
+
+  it('does not flag source coding evidence when canonical coding is already linked', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          sourceAppealName: 'Spring Appeal 2026',
+          appeal: {
+            id: 'appeal-1',
+            name: 'Spring Appeal 2026',
+            defaultFund: null,
+          },
+        }),
+      ),
+    ).toEqual({
+      category: 'READY',
+      issueCodes: [],
+    });
+
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          sourceFundName: 'Emergency Relief',
+          fund: {
+            id: 'fund-1',
+            name: 'Emergency Response Fund',
+          },
+        }),
+      ),
+    ).toEqual({
+      category: 'READY',
+      issueCodes: [],
     });
   });
 

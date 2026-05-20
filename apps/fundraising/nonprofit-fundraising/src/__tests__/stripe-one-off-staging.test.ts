@@ -368,4 +368,99 @@ describe('buildStripeOneOffGiftStagingInput', () => {
       textVersion: 'v1',
     });
   });
+
+  it('extracts human-readable attribution/designation evidence without canonical mapping', () => {
+    const input = buildStripeOneOffGiftStagingInput(
+      buildEvent({
+        data: {
+          object: {
+            id: 'cs_test_attribution',
+            amount_total: 2500,
+            currency: 'gbp',
+            created: 1777198410,
+            customer_details: {
+              email: 'ada@example.com',
+              name: 'Ada Lovelace',
+            },
+            metadata: {
+              campaign_name: 'Spring Appeal 2026',
+              designation: 'Emergency Relief',
+              page_id: 'pg_123',
+            },
+            custom_fields: [
+              {
+                key: 'pageTitle',
+                text: {
+                  value: 'Override page title',
+                },
+              },
+            ],
+            payment_intent: 'pi_attr',
+          },
+        },
+      }),
+    );
+
+    expect(input.sourceAppealName).toBe('Spring Appeal 2026');
+    expect(input.sourceFundName).toBe('Emergency Relief');
+    expect(input.rawProviderEvidence).toEqual({
+      provider: 'STRIPE',
+      eventType: 'checkout.session.completed',
+      checkoutSessionId: 'cs_test_attribution',
+      paymentIntentId: 'pi_attr',
+      metadata: {
+        campaign_name: 'Spring Appeal 2026',
+        designation: 'Emergency Relief',
+        page_id: 'pg_123',
+      },
+      customFields: {
+        pageTitle: 'Override page title',
+      },
+      customerDetails: {
+        name: 'Ada Lovelace',
+        email: 'ada@example.com',
+      },
+    });
+  });
+
+  it('does not promote opaque ids into source appeal or fund names', () => {
+    const input = buildStripeOneOffGiftStagingInput(
+      buildEvent({
+        data: {
+          object: {
+            id: 'cs_test_ids_only',
+            amount_total: 2500,
+            currency: 'gbp',
+            created: 1777198410,
+            customer_details: {
+              email: 'ada@example.com',
+              name: 'Ada Lovelace',
+            },
+            metadata: {
+              campaign_id: 'camp_123',
+              fund_id: 'fund_456',
+            },
+            payment_intent: 'pi_ids_only',
+          },
+        },
+      }),
+    );
+
+    expect(input.sourceAppealName).toBeUndefined();
+    expect(input.sourceFundName).toBeUndefined();
+    expect(input.rawProviderEvidence).toEqual({
+      provider: 'STRIPE',
+      eventType: 'checkout.session.completed',
+      checkoutSessionId: 'cs_test_ids_only',
+      paymentIntentId: 'pi_ids_only',
+      metadata: {
+        campaign_id: 'camp_123',
+        fund_id: 'fund_456',
+      },
+      customerDetails: {
+        name: 'Ada Lovelace',
+        email: 'ada@example.com',
+      },
+    });
+  });
 });

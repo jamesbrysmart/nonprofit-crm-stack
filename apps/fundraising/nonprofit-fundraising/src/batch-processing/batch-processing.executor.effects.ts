@@ -1,4 +1,8 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import {
+  collectAppealIds,
+  recomputeAppealRollups,
+} from 'src/appeal-rollups/appeal-rollups';
 import { attachGiftsToCurrentDraftClaimBatch } from 'src/gift-aid-claims/gift-aid-claim-batch';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import {
@@ -41,6 +45,23 @@ export const runBatchProcessingSideEffects = async (
       console.warn(
         'Non-blocking donor rollup recompute failed after batch processing',
         donorIdsToRecompute,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  const appealIdsToRecompute = collectAppealIds(
+    successfulWritebacks.map((writeback) => writeback.appealId),
+  );
+
+  if (appealIdsToRecompute.length > 0) {
+    try {
+      const client = new CoreApiClient();
+      await recomputeAppealRollups(client, appealIdsToRecompute);
+    } catch (error) {
+      console.warn(
+        'Non-blocking appeal rollup recompute failed after batch processing',
+        appealIdsToRecompute,
         error instanceof Error ? error.message : String(error),
       );
     }

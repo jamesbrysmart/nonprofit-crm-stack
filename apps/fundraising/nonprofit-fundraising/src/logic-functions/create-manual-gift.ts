@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { recomputeAppealRollups } from 'src/appeal-rollups/appeal-rollups';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { attachGiftToCurrentDraftIfClaimable } from 'src/gift-aid-claims/gift-aid-claim-batch';
 import { recomputeDonorRollups } from 'src/donor-rollups/donor-rollups';
@@ -146,7 +147,6 @@ const buildGiftPayload = (args: {
   const donorLastName = normalizeString(body.donorLastName);
   const donorEmail = normalizeString(body.donorEmail);
   const companyName = normalizeString(body.companyName);
-  const appealName = normalizeString(body.appealName);
 
   if (donorType === 'INDIVIDUAL') {
     if (donorFirstName === '' || donorLastName === '') {
@@ -181,7 +181,6 @@ const buildGiftPayload = (args: {
       : {}),
     ...(donorType === 'COMPANY' && companyName !== '' ? { companyName } : {}),
     ...(donorType === 'COMPANY' && companyId ? { companyId } : {}),
-    ...(appealName !== '' ? { appealName } : {}),
     giftAidRequested:
       donorType === 'INDIVIDUAL' ? (body.giftAidRequested ?? null) : null,
     giftAidDeclarationCaptured:
@@ -219,6 +218,48 @@ const buildGiftPayload = (args: {
           ),
         }
       : {}),
+  };
+};
+
+const resolveAppealAndFundSelection = async (
+  client: CoreApiClient,
+  body: ManualGiftEntryRequest,
+) => {
+  const appealId = normalizeString(body.selectedAppealId);
+  let fundId = normalizeString(body.selectedFundId);
+
+  if (appealId !== '' && fundId === '') {
+    const result = await client.query({
+      appeal: {
+        __args: {
+          filter: {
+            id: { eq: appealId },
+          },
+        },
+        id: true,
+        defaultFund: {
+          id: true,
+        },
+      },
+    } as any);
+
+    const resolvedAppeal = result?.appeal as
+      | {
+          id?: string | null;
+          defaultFund?: { id?: string | null } | null;
+        }
+      | null;
+
+    if (!resolvedAppeal?.id) {
+      throw new Error('Selected appeal was not found');
+    }
+
+    fundId = normalizeString(resolvedAppeal.defaultFund?.id);
+  }
+
+  return {
+    appealId,
+    fundId,
   };
 };
 
@@ -374,6 +415,7 @@ const handler = async (
   const recurringAgreementId = normalizeString(
     evaluatedGiftPayload.recurringAgreementId as string | undefined,
   );
+  const { appealId, fundId } = await resolveAppealAndFundSelection(client, body);
   const opportunityId = normalizeString(
     body.selectedOpportunityId as string | undefined,
   );
@@ -417,6 +459,28 @@ const handler = async (
                   connect: {
                     where: {
                       id: opportunityId,
+                    },
+                  },
+                },
+              }
+            : {}),
+          ...(appealId !== ''
+            ? {
+                appeal: {
+                  connect: {
+                    where: {
+                      id: appealId,
+                    },
+                  },
+                },
+              }
+            : {}),
+          ...(fundId !== ''
+            ? {
+                fund: {
+                  connect: {
+                    where: {
+                      id: fundId,
                     },
                   },
                 },
@@ -481,6 +545,18 @@ const handler = async (
       console.warn(
         'Non-blocking donor rollup recompute failed after manual gift create',
         donorId,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  if (appealId !== '') {
+    try {
+      await recomputeAppealRollups(client, [appealId]);
+    } catch (error) {
+      console.warn(
+        'Non-blocking appeal rollup recompute failed after manual gift create',
+        appealId,
         error instanceof Error ? error.message : String(error),
       );
     }

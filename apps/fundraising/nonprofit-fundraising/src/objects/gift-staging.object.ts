@@ -96,6 +96,12 @@ export const GIFT_STAGING_GIFT_AID_TEXT_VERSION_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_RAW_PROVIDER_EVIDENCE_FIELD_UNIVERSAL_IDENTIFIER =
   '6af7e0fd-147d-4082-a1cb-79f0ffdf2227';
 
+export const GIFT_STAGING_SOURCE_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER =
+  'f9b08cec-b96f-44a8-8648-b6b4e71d8c6f';
+
+export const GIFT_STAGING_SOURCE_FUND_NAME_FIELD_UNIVERSAL_IDENTIFIER =
+  '7932f2e6-e1d2-4693-966c-cfed8dc09102';
+
 export default defineObject({
   universalIdentifier: GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
   nameSingular: 'giftStaging',
@@ -507,6 +513,30 @@ export default defineObject({
       description:
         'Bounded provider-specific evidence snapshot preserved for audit and debugging',
       icon: 'IconBraces',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_SOURCE_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'sourceAppealName',
+      label: 'Source appeal/campaign',
+      description:
+        'Source-side appeal or campaign label preserved as intake evidence before canonical appeal mapping is known',
+      icon: 'IconTargetArrow',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_SOURCE_FUND_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'sourceFundName',
+      label: 'Source fund/designation',
+      description:
+        'Source-side fund or designation label preserved as intake evidence before canonical fund mapping is known',
+      icon: 'IconPigMoney',
       isNullable: true,
       defaultValue: null,
     },

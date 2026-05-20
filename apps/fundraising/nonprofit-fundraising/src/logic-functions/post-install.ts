@@ -1,6 +1,10 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { definePostInstallLogicFunction } from 'twenty-sdk/define';
-import type { PersonSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
+import type {
+  AppealSummary,
+  FundSummary,
+  PersonSummary,
+} from 'src/manual-gift-entry/manual-gift-entry.types';
 
 type SeedPerson = {
   firstName: string;
@@ -23,6 +27,37 @@ type SeedBatch = {
   failedItems: number;
   expectedItemCount?: number | null;
   expectedTotalAmountMicros?: number | null;
+};
+
+type SeedFund = {
+  name: string;
+  code?: string;
+  restrictionType:
+    | 'UNRESTRICTED'
+    | 'RESTRICTED'
+    | 'DESIGNATED'
+    | 'ENDOWMENT'
+    | 'OTHER';
+  isActive: boolean;
+  description?: string;
+  notes?: string;
+};
+
+type SeedAppeal = {
+  name: string;
+  status: 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED';
+  appealType:
+    | 'GENERAL'
+    | 'ANNUAL'
+    | 'EMERGENCY'
+    | 'REGULAR_GIVING'
+    | 'EVENT_FUNDRAISING'
+    | 'CAPITAL'
+    | 'CROWDFUNDING'
+    | 'OTHER';
+  defaultFundName?: string;
+  description?: string;
+  externalReference?: string;
 };
 
 type SeedStagingRow = {
@@ -56,6 +91,9 @@ type BatchSummaryRecord = {
   id: string;
   name: string;
 };
+
+type ExistingFundRecord = FundSummary;
+type ExistingAppealRecord = AppealSummary;
 
 type ExistingGiftStagingRecord = {
   id: string;
@@ -275,6 +313,44 @@ const SEED_BATCHES: SeedBatch[] = [
     failedItems: 0,
     expectedItemCount: 100,
     expectedTotalAmountMicros: 1_281_000_000,
+  },
+];
+
+const SEED_FUNDS: SeedFund[] = [
+  {
+    name: 'General Fund',
+    code: 'GEN',
+    restrictionType: 'UNRESTRICTED',
+    isActive: true,
+    description: 'General unrestricted support for the charity.',
+    notes: 'Default unrestricted destination for broad support appeals.',
+  },
+  {
+    name: 'Emergency Response Fund',
+    code: 'ERF',
+    restrictionType: 'RESTRICTED',
+    isActive: true,
+    description: 'Restricted support for time-sensitive frontline response work.',
+    notes: 'Useful for testing appeal default-fund behavior on staging gifts.',
+  },
+];
+
+const SEED_APPEALS: SeedAppeal[] = [
+  {
+    name: 'Spring Appeal 2026',
+    status: 'ACTIVE',
+    appealType: 'ANNUAL',
+    defaultFundName: 'General Fund',
+    description: 'General seasonal appeal for broad unrestricted support.',
+    externalReference: 'SPRING-2026',
+  },
+  {
+    name: 'Emergency Response Appeal',
+    status: 'ACTIVE',
+    appealType: 'EMERGENCY',
+    defaultFundName: 'Emergency Response Fund',
+    description: 'Appeal used for urgent public-facing emergency fundraising.',
+    externalReference: 'EMERG-RESP',
   },
 ];
 
@@ -2331,6 +2407,58 @@ const loadGifts = async (client: CoreApiClient): Promise<ExistingGiftRecord[]> =
   );
 };
 
+const loadFunds = async (client: CoreApiClient): Promise<ExistingFundRecord[]> => {
+  const result = await client.query({
+    funds: {
+      __args: {
+        first: 100,
+      },
+      edges: {
+        node: {
+          id: true,
+          name: true,
+          code: true,
+          isActive: true,
+        },
+      },
+    },
+  } as any);
+
+  return (
+    result?.funds?.edges?.map((edge: { node: ExistingFundRecord }) => edge.node) ??
+    []
+  );
+};
+
+const loadAppeals = async (
+  client: CoreApiClient,
+): Promise<ExistingAppealRecord[]> => {
+  const result = await client.query({
+    appeals: {
+      __args: {
+        first: 100,
+      },
+      edges: {
+        node: {
+          id: true,
+          name: true,
+          status: true,
+          defaultFund: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    },
+  } as any);
+
+  return (
+    result?.appeals?.edges?.map(
+      (edge: { node: ExistingAppealRecord }) => edge.node,
+    ) ?? []
+  );
+};
+
 const loadPersonByEmail = async (
   client: CoreApiClient,
   email: string,
@@ -2521,6 +2649,163 @@ const seedBatches = async (client: CoreApiClient) => {
   }
 
   return batchesByName;
+};
+
+const seedFunds = async (client: CoreApiClient) => {
+  const existingFunds = await loadFunds(client);
+  const fundsByName = new Map<string, ExistingFundRecord>();
+
+  for (const seed of SEED_FUNDS) {
+    const existing = existingFunds.find((fund) => fund.name === seed.name);
+
+    if (existing) {
+      await client.mutation({
+        updateFund: {
+          __args: {
+            id: existing.id,
+            data: {
+              code: seed.code ?? null,
+              restrictionType: seed.restrictionType,
+              isActive: seed.isActive,
+              description: seed.description ?? null,
+              notes: seed.notes ?? null,
+            },
+          },
+          id: true,
+          name: true,
+          code: true,
+          isActive: true,
+        },
+      } as any);
+
+      fundsByName.set(seed.name, {
+        ...existing,
+        code: seed.code ?? null,
+        isActive: seed.isActive,
+      });
+      continue;
+    }
+
+    const result = await client.mutation({
+      createFund: {
+        __args: {
+          data: {
+            name: seed.name,
+            code: seed.code ?? null,
+            restrictionType: seed.restrictionType,
+            isActive: seed.isActive,
+            description: seed.description ?? null,
+            notes: seed.notes ?? null,
+          },
+        },
+        id: true,
+        name: true,
+        code: true,
+        isActive: true,
+      },
+    } as any);
+
+    const created = result?.createFund as ExistingFundRecord | undefined;
+
+    if (created?.id) {
+      fundsByName.set(seed.name, created);
+    }
+  }
+
+  return fundsByName;
+};
+
+const seedAppeals = async (
+  client: CoreApiClient,
+  fundsByName: Map<string, ExistingFundRecord>,
+) => {
+  const existingAppeals = await loadAppeals(client);
+  const appealsByName = new Map<string, ExistingAppealRecord>();
+
+  for (const seed of SEED_APPEALS) {
+    const existing = existingAppeals.find((appeal) => appeal.name === seed.name);
+    const defaultFund = seed.defaultFundName
+      ? fundsByName.get(seed.defaultFundName)
+      : undefined;
+
+    const data = {
+      status: seed.status,
+      appealType: seed.appealType,
+      description: seed.description ?? null,
+      externalReference: seed.externalReference ?? null,
+      ...(defaultFund?.id
+        ? {
+            defaultFund: {
+              connect: {
+                where: {
+                  id: defaultFund.id,
+                },
+              },
+            },
+          }
+        : {
+            defaultFund: {
+              disconnect: true,
+            },
+          }),
+    };
+
+    if (existing) {
+      await client.mutation({
+        updateAppeal: {
+          __args: {
+            id: existing.id,
+            data,
+          },
+          id: true,
+          name: true,
+          status: true,
+          defaultFund: {
+            id: true,
+            name: true,
+          },
+        },
+      } as any);
+
+      appealsByName.set(seed.name, {
+        ...existing,
+        status: seed.status,
+        defaultFund: defaultFund?.id
+          ? {
+              id: defaultFund.id,
+              name: defaultFund.name,
+            }
+          : null,
+      });
+      continue;
+    }
+
+    const result = await client.mutation({
+      createAppeal: {
+        __args: {
+          data: {
+            name: seed.name,
+            ...data,
+          },
+        },
+        id: true,
+        name: true,
+        status: true,
+        defaultFund: {
+          id: true,
+          name: true,
+        },
+      },
+    } as any);
+
+    const created = result?.createAppeal as ExistingAppealRecord | undefined;
+
+    if (created?.id) {
+      appealsByName.set(seed.name, created);
+    }
+  }
+
+  return appealsByName;
 };
 
 const seedGiftStagings = async (
@@ -2871,6 +3156,8 @@ const handler = async (): Promise<void> => {
   // harness we expect to rerun as slices are added and refined.
   const peopleByEmail = await seedPeople(client);
   const batchesByName = await seedBatches(client);
+  const fundsByName = await seedFunds(client);
+  await seedAppeals(client, fundsByName);
   await seedGiftAidDeclarations(client, peopleByEmail);
   const declarationRecords = await loadGiftAidDeclarations(client);
   const declarationsByName = new Map(

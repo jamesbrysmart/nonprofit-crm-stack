@@ -84,12 +84,26 @@ export const loadBatchProcessingContext = async (
           providerIntervalCount: true,
           donorPhone: true,
           rawProviderEvidence: true,
+          sourceAppealName: true,
+          sourceFundName: true,
           donorResolutionState: true,
           donor: {
             id: true,
             emails: {
               primaryEmail: true,
               additionalEmails: true,
+            },
+          },
+          fund: {
+            id: true,
+            name: true,
+          },
+          appeal: {
+            id: true,
+            name: true,
+            defaultFund: {
+              id: true,
+              name: true,
             },
           },
           giftReadyStatus: true,
@@ -251,12 +265,26 @@ export const loadGiftStagingRowsForProcessing = async (
           providerIntervalCount: true,
           donorPhone: true,
           rawProviderEvidence: true,
+          sourceAppealName: true,
+          sourceFundName: true,
           donorResolutionState: true,
           donor: {
             id: true,
             emails: {
               primaryEmail: true,
               additionalEmails: true,
+            },
+          },
+          fund: {
+            id: true,
+            name: true,
+          },
+          appeal: {
+            id: true,
+            name: true,
+            defaultFund: {
+              id: true,
+              name: true,
             },
           },
           giftReadyStatus: true,

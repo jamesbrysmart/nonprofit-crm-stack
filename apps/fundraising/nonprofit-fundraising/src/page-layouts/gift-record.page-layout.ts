@@ -5,6 +5,7 @@ import {
 import { GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-gift-aid-declaration.front-component';
 import { GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-gift-aid-donor-context.front-component';
 import { GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-gift-aid-state.front-component';
+import { GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-record-coding.front-component';
 import { GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-refund-action.front-component';
 import { GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-record-summary.front-component';
 import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
@@ -31,6 +32,16 @@ export default definePageLayout({
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
               GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: '97b9c3c7-55f1-4104-8ea8-4ed898b1a81f',
+          title: 'Gift coding',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

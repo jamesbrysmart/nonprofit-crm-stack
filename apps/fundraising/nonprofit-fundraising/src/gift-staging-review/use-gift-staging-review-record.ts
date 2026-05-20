@@ -23,7 +23,10 @@ const loadStoredRecord = async (
       id: true,
       name: true,
       intakeSource: true,
-      amount: true,
+      amount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
       giftDate: true,
       donationType: true,
       donorFirstName: true,
@@ -48,6 +51,8 @@ const loadStoredRecord = async (
       providerIntervalUnit: true,
       providerIntervalCount: true,
       rawProviderEvidence: true,
+      sourceAppealName: true,
+      sourceFundName: true,
       donorResolutionState: true,
       donor: {
         id: true,
@@ -73,6 +78,18 @@ const loadStoredRecord = async (
       },
       recurringAgreement: {
         id: true,
+      },
+      appeal: {
+        id: true,
+        name: true,
+        defaultFund: {
+          id: true,
+          name: true,
+        },
+      },
+      fund: {
+        id: true,
+        name: true,
       },
       giftBatch: {
         id: true,

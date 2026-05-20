@@ -15,6 +15,7 @@ export type SuccessfulWriteback = {
   id: string;
   committedGiftId: string;
   donorId: string;
+  appealId?: string;
   recurringAgreementId?: string;
   processingStatus: 'PROCESSED';
   errorDetail: null;
@@ -134,6 +135,10 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
   const donorLastName = normalizeString(row.donorLastName);
   const donorEmail = normalizeString(row.donorEmail);
   const giftDate = normalizeString(row.giftDate);
+  const explicitFundId = normalizeString(row.fund?.id);
+  const appealId = normalizeString(row.appeal?.id);
+  const defaultFundId = normalizeString(row.appeal?.defaultFund?.id);
+  const fundId = explicitFundId !== '' ? explicitFundId : defaultFundId;
 
   if (typeof amountMicros !== 'number' || !Number.isFinite(amountMicros) || amountMicros <= 0) {
     throw new Error('Row amount is not valid for batch processing');
@@ -179,6 +184,8 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
       ? { providerPaymentId: normalizeString(row.providerPaymentId) }
       : {}),
     ...(donorId !== '' ? { donorId } : {}),
+    ...(appealId !== '' ? { appealId } : {}),
+    ...(fundId !== '' ? { fundId } : {}),
     giftAidRequested: row.giftAidRequested === true,
     giftAidDeclarationCaptured: row.giftAidDeclarationCaptured === true,
     ...(normalizeString(row.giftAidDeclarationDate) !== ''
@@ -505,6 +512,10 @@ export const createGiftViaRowFallback = async (
   delete createData.donorMailingAddress;
   delete createData.giftAidDeclarationId;
   delete createData.recurringAgreementId;
+  const appealId = normalizeString(payload.appealId as string | undefined);
+  const fundId = normalizeString(payload.fundId as string | undefined);
+  delete createData.appealId;
+  delete createData.fundId;
   const result = await client.mutation({
     createGift: {
       __args: {
@@ -539,6 +550,28 @@ export const createGiftViaRowFallback = async (
                 },
               }
             : {}),
+          ...(appealId !== ''
+            ? {
+                appeal: {
+                  connect: {
+                    where: {
+                      id: appealId,
+                    },
+                  },
+                },
+              }
+            : {}),
+          ...(fundId !== ''
+            ? {
+                fund: {
+                  connect: {
+                    where: {
+                      id: fundId,
+                    },
+                  },
+                },
+              }
+            : {}),
         },
       },
       id: true,
@@ -565,6 +598,7 @@ export const createGiftViaRowFallback = async (
     id: row.id,
     committedGiftId: giftId,
     donorId,
+    ...(appealId !== '' ? { appealId } : {}),
     processingStatus: 'PROCESSED',
     errorDetail: null,
     giftReadyStatus: null,

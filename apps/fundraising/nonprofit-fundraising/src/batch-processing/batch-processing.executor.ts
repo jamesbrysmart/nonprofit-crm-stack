@@ -108,6 +108,13 @@ const createBatchGiftChunk = async (
     id: entry.row.id,
     committedGiftId: giftIds[index],
     donorId: normalizeString(entry.row.donor?.id),
+    ...(normalizeString(entry.payload.appealId as string | undefined) !== ''
+      ? {
+          appealId: normalizeString(
+            entry.payload.appealId as string | undefined,
+          ),
+        }
+      : {}),
     processingStatus: 'PROCESSED' as const,
     errorDetail: null,
     giftReadyStatus: null,

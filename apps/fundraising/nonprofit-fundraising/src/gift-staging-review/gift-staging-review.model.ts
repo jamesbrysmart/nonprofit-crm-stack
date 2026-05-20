@@ -127,6 +127,10 @@ export const buildGiftStagingReviewRecord = (
     providerAgreementId: stored.providerAgreementId,
     providerIntervalCount: stored.providerIntervalCount,
     providerIntervalUnit: stored.providerIntervalUnit,
+    sourceAppealName: stored.sourceAppealName,
+    sourceFundName: stored.sourceFundName,
+    appeal: stored.appeal,
+    fund: stored.fund,
     recurringAgreement: stored.recurringAgreement,
   });
 
@@ -159,6 +163,13 @@ export const buildGiftStagingReviewRecord = (
         ? stored.providerIntervalCount
         : null,
     rawProviderEvidence: stored.rawProviderEvidence ?? null,
+    sourceAppealName: coalesceString(stored.sourceAppealName),
+    sourceFundName: coalesceString(stored.sourceFundName),
+    appealId: coalesceString(stored.appeal?.id),
+    appealName: coalesceString(stored.appeal?.name),
+    appealDefaultFundId: coalesceString(stored.appeal?.defaultFund?.id),
+    fundId: coalesceString(stored.fund?.id),
+    fundName: coalesceString(stored.fund?.name),
     donorEvidenceName: buildEvidenceName(
       donorFirstName,
       donorLastName,
@@ -289,6 +300,33 @@ export const deriveReviewState = (
           'Recurring interval evidence is not in a supported shape for processing.',
         nextAction:
           'Review the recurring details before processing this row.',
+        hasBlocker: true,
+      };
+    }
+
+    if (
+      record.preflightIssueCodes.includes('SOURCE_APPEAL_REVIEW_REQUIRED') ||
+      record.preflightIssueCodes.includes('SOURCE_FUND_REVIEW_REQUIRED')
+    ) {
+      const needsAppeal = record.preflightIssueCodes.includes(
+        'SOURCE_APPEAL_REVIEW_REQUIRED',
+      );
+      const needsFund = record.preflightIssueCodes.includes(
+        'SOURCE_FUND_REVIEW_REQUIRED',
+      );
+
+      return {
+        title: 'Needs review',
+        accent: '#7c5d00',
+        background: '#fff8e1',
+        reason:
+          needsAppeal && needsFund
+            ? 'Source appeal/campaign and fund/designation are recorded but not yet linked.'
+            : needsAppeal
+              ? 'Source appeal/campaign is recorded but no appeal is linked yet.'
+              : 'Source fund/designation is recorded but no fund is linked yet.',
+        nextAction:
+          'Review the source coding evidence and link the right appeal and/or fund before processing.',
         hasBlocker: true,
       };
     }

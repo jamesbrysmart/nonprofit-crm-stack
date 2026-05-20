@@ -1,0 +1,419 @@
+import { useEffect, useMemo, useState } from 'react';
+import { CoreApiClient } from 'twenty-client-sdk/core';
+import { defineFrontComponent } from 'twenty-sdk/define';
+import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
+import { Button } from 'twenty-sdk/ui';
+import {
+  badgeStyle,
+  compactDividerSectionStyle,
+  compactMetaGridStyle,
+  compactMetaItemStyle,
+  compactWidgetRootStyle,
+  inputStyle,
+  labelStyle,
+  secondaryTextStyle,
+  sectionHeaderStyle,
+} from 'src/front-components/gift-staging-review-ui';
+import { getFundIdForAppealSelection } from 'src/gift-coding/gift-coding';
+import { saveGiftCoding } from 'src/gift-record/gift-coding.api';
+import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
+import {
+  listAppealOptions,
+  listFundOptions,
+} from 'src/manual-gift-entry/manual-gift-entry.api';
+import type {
+  AppealSummary,
+  FundSummary,
+} from 'src/manual-gift-entry/manual-gift-entry.types';
+
+export const GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
+  '93dc8e25-d8c5-4d41-b43b-f72bf23f1e13';
+
+type GiftCodingRecord = {
+  id: string;
+  appeal?: {
+    id?: string | null;
+    name?: string | null;
+    defaultFund?: {
+      id?: string | null;
+      name?: string | null;
+    } | null;
+  } | null;
+  fund?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+};
+
+const normalizeString = (value: string | null | undefined) =>
+  typeof value === 'string' ? value.trim() : '';
+
+const getInputEventValue = (event: unknown) => {
+  if (
+    typeof event === 'object' &&
+    event !== null &&
+    'detail' in event &&
+    typeof event.detail === 'object' &&
+    event.detail !== null &&
+    'value' in event.detail
+  ) {
+    return String(event.detail.value ?? '');
+  }
+
+  if (
+    typeof event === 'object' &&
+    event !== null &&
+    'target' in event &&
+    typeof event.target === 'object' &&
+    event.target !== null &&
+    'value' in event.target
+  ) {
+    return String(event.target.value ?? '');
+  }
+
+  return '';
+};
+
+const loadGiftCodingRecord = async (
+  recordId: string,
+): Promise<GiftCodingRecord | null> => {
+  const client = new CoreApiClient();
+  const result = await client.query({
+    gift: {
+      __args: {
+        filter: {
+          id: { eq: recordId },
+        },
+      },
+      id: true,
+      appeal: {
+        id: true,
+        name: true,
+        defaultFund: {
+          id: true,
+          name: true,
+        },
+      },
+      fund: {
+        id: true,
+        name: true,
+      },
+    },
+  } as any);
+
+  return (result?.gift as GiftCodingRecord | null) ?? null;
+};
+
+const GiftRecordCoding = () => {
+  const recordId = useRecordId();
+  const [record, setRecord] = useState<GiftCodingRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [appeals, setAppeals] = useState<AppealSummary[]>([]);
+  const [funds, setFunds] = useState<FundSummary[]>([]);
+  const [loadingAppeals, setLoadingAppeals] = useState(false);
+  const [loadingFunds, setLoadingFunds] = useState(false);
+  const [appealOptionsError, setAppealOptionsError] = useState<string | null>(
+    null,
+  );
+  const [fundOptionsError, setFundOptionsError] = useState<string | null>(null);
+  const [selectedAppealId, setSelectedAppealId] = useState('');
+  const [selectedFundId, setSelectedFundId] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!recordId) {
+        setError('No gift selected');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const loaded = await loadGiftCodingRecord(recordId);
+
+        if (!loaded) {
+          setRecord(null);
+          setError('Gift not found');
+          return;
+        }
+
+        setRecord(loaded);
+      } catch (loadError) {
+        setRecord(null);
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : 'Unable to load gift coding.',
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void run();
+  }, [recordId]);
+
+  useEffect(() => {
+    if (!recordId) {
+      return;
+    }
+
+    return subscribeToGiftRecordInvalidated({
+      recordId,
+      onInvalidate: async () => {
+        const loaded = await loadGiftCodingRecord(recordId);
+
+        if (!loaded) {
+          return;
+        }
+
+        setRecord(loaded);
+      },
+    });
+  }, [recordId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingAppeals(true);
+    setAppealOptionsError(null);
+
+    void listAppealOptions()
+      .then((result) => {
+        if (!cancelled) {
+          setAppeals(result.appeals);
+        }
+      })
+      .catch((loadError) => {
+        if (!cancelled) {
+          setAppeals([]);
+          setAppealOptionsError(
+            loadError instanceof Error
+              ? loadError.message
+              : 'Unable to load appeals.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingAppeals(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingFunds(true);
+    setFundOptionsError(null);
+
+    void listFundOptions()
+      .then((result) => {
+        if (!cancelled) {
+          setFunds(result.funds);
+        }
+      })
+      .catch((loadError) => {
+        if (!cancelled) {
+          setFunds([]);
+          setFundOptionsError(
+            loadError instanceof Error ? loadError.message : 'Unable to load funds.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingFunds(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!record || saving) {
+      return;
+    }
+
+    setSelectedAppealId(normalizeString(record.appeal?.id));
+    setSelectedFundId(normalizeString(record.fund?.id));
+  }, [record, saving]);
+
+  const selectedAppeal = useMemo(
+    () => appeals.find((appeal) => appeal.id === selectedAppealId) ?? null,
+    [appeals, selectedAppealId],
+  );
+
+  if (loading) {
+    return <div style={secondaryTextStyle}>Loading gift coding...</div>;
+  }
+
+  if (error) {
+    return <div style={secondaryTextStyle}>{error}</div>;
+  }
+
+  if (!record || !recordId) {
+    return <div style={secondaryTextStyle}>Gift not found.</div>;
+  }
+
+  const currentAppealId = normalizeString(record.appeal?.id);
+  const currentFundId = normalizeString(record.fund?.id);
+  const currentAppealName = normalizeString(record.appeal?.name);
+  const currentFundName = normalizeString(record.fund?.name);
+  const hasUnsavedChanges =
+    selectedAppealId !== currentAppealId || selectedFundId !== currentFundId;
+
+  const handleAppealChange = (nextAppealId: string) => {
+    setSelectedAppealId(nextAppealId);
+    setSelectedFundId(
+      getFundIdForAppealSelection({
+        appeals,
+        nextAppealId,
+        currentFundId: selectedFundId,
+      }),
+    );
+  };
+
+  const handleSaveCoding = async () => {
+    setSaving(true);
+
+    try {
+      await saveGiftCoding({
+        giftId: recordId,
+        appealId: selectedAppealId,
+        fundId: selectedFundId,
+      });
+      await enqueueSnackbar({
+        message: 'Gift coding saved.',
+        variant: 'success',
+      });
+    } catch (saveError) {
+      await enqueueSnackbar({
+        message:
+          saveError instanceof Error
+            ? saveError.message
+            : 'Unable to save gift coding.',
+        variant: 'error',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={compactWidgetRootStyle}>
+      <div style={sectionHeaderStyle}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={badgeStyle('neutral')}>Canonical coding</span>
+          {currentAppealName !== '' ? (
+            <span style={badgeStyle('success')}>Appeal set</span>
+          ) : null}
+          {currentFundName !== '' ? (
+            <span style={badgeStyle('success')}>Fund set</span>
+          ) : null}
+        </div>
+        <Button
+          title="Save coding"
+          variant="secondary"
+          onClick={() => {
+            void handleSaveCoding();
+          }}
+          disabled={saving || loadingAppeals || loadingFunds || !hasUnsavedChanges}
+        />
+      </div>
+
+      <div style={compactMetaGridStyle}>
+        <div style={compactMetaItemStyle}>
+          <div style={labelStyle}>Current appeal</div>
+          <div style={secondaryTextStyle}>
+            {currentAppealName === '' ? 'No appeal set.' : currentAppealName}
+          </div>
+        </div>
+        <div style={compactMetaItemStyle}>
+          <div style={labelStyle}>Current fund</div>
+          <div style={secondaryTextStyle}>
+            {currentFundName === '' ? 'No fund set.' : currentFundName}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gap: '10px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        }}
+      >
+        <label style={{ display: 'grid', gap: '4px' }}>
+          <span style={labelStyle}>Appeal</span>
+          <select
+            style={inputStyle}
+            value={selectedAppealId}
+            onChange={(event) => handleAppealChange(getInputEventValue(event))}
+            disabled={saving || loadingAppeals}
+          >
+            <option value="">No appeal</option>
+            {appeals.map((appeal) => (
+              <option key={appeal.id} value={appeal.id}>
+                {appeal.name ?? 'Unnamed appeal'}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: 'grid', gap: '4px' }}>
+          <span style={labelStyle}>Fund</span>
+          <select
+            style={inputStyle}
+            value={selectedFundId}
+            onChange={(event) => setSelectedFundId(getInputEventValue(event))}
+            disabled={saving || loadingFunds}
+          >
+            <option value="">No fund</option>
+            {funds.map((fund) => (
+              <option key={fund.id} value={fund.id}>
+                {fund.name ?? 'Unnamed fund'}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {selectedAppeal?.defaultFund?.name ? (
+        <div style={compactDividerSectionStyle}>
+          <div style={labelStyle}>Appeal default fund</div>
+          <div style={secondaryTextStyle}>
+            {selectedAppeal.defaultFund.name}
+            {selectedFundId === '' ? ' will be used if you leave Fund empty.' : ''}
+          </div>
+        </div>
+      ) : null}
+
+      {appealOptionsError || fundOptionsError ? (
+        <div style={compactDividerSectionStyle}>
+          {appealOptionsError ? (
+            <div style={secondaryTextStyle}>{appealOptionsError}</div>
+          ) : null}
+          {fundOptionsError ? (
+            <div style={secondaryTextStyle}>{fundOptionsError}</div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+export default defineFrontComponent({
+  universalIdentifier: GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  name: 'gift-record-coding',
+  description: 'Optional appeal and fund coding widget for committed gifts.',
+  component: GiftRecordCoding,
+});

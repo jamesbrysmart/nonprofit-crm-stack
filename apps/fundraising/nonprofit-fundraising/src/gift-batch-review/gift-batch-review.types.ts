@@ -30,6 +30,18 @@ export type BatchReviewRow = {
         name?: string | null;
       }
     | null;
+  appeal:
+    | {
+        id: string;
+        name?: string | null;
+      }
+    | null;
+  fund:
+    | {
+        id: string;
+        name?: string | null;
+      }
+    | null;
 };
 
 export type BatchSummaryRecord = {
@@ -72,6 +84,9 @@ export type GiftBatchReviewRecord = {
   readyItems: number;
   needsReviewItems: number;
   ambiguousItems: number;
+  unprocessedItems: number;
+  uncodedAppealItems: number;
+  uncodedFundItems: number;
   rows: GiftBatchReviewRow[];
 };
 
@@ -91,4 +106,6 @@ export type GiftBatchReviewRow = {
   isProcessed: boolean;
   errorDetail: string;
   committedGiftName: string;
+  appealId: string;
+  fundId: string;
 };

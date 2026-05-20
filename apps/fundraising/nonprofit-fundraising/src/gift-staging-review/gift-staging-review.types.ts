@@ -1,5 +1,7 @@
 import type {
   DuplicateCheckResponse,
+  AppealSummary,
+  FundSummary,
   PersonSummary,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import type {
@@ -56,6 +58,8 @@ export type StoredGiftStagingRecord = {
   providerIntervalUnit: string | null;
   providerIntervalCount: number | null;
   rawProviderEvidence: unknown;
+  sourceAppealName: string | null;
+  sourceFundName: string | null;
   donorResolutionState: string | null;
   donor: PersonSummary | null;
   giftReadyStatus: GiftReadyStatus | null;
@@ -75,6 +79,22 @@ export type StoredGiftStagingRecord = {
   recurringAgreement:
     | {
         id: string;
+      }
+    | null;
+  appeal:
+    | {
+        id: string;
+        name?: string | null;
+        defaultFund?: {
+          id?: string | null;
+          name?: string | null;
+        } | null;
+      }
+    | null;
+  fund:
+    | {
+        id: string;
+        name?: string | null;
       }
     | null;
   giftBatch:
@@ -112,6 +132,13 @@ export type GiftStagingReviewRecord = {
   providerIntervalUnit: string;
   providerIntervalCount: number | null;
   rawProviderEvidence: unknown;
+  sourceAppealName: string;
+  sourceFundName: string;
+  appealId: string;
+  appealName: string;
+  appealDefaultFundId: string;
+  fundId: string;
+  fundName: string;
   donorEvidenceName: string;
   donorResolution: DonorResolution;
   linkedDonor: PersonSummary | null;
@@ -146,4 +173,14 @@ export type DerivedReviewState = {
 export type GiftStagingReviewData = {
   record: GiftStagingReviewRecord;
   duplicateCheckResult: DuplicateCheckResponse | null;
+};
+
+export type GiftCodingSelectionState = {
+  appealId: string;
+  fundId: string;
+};
+
+export type GiftCodingOptions = {
+  appeals: AppealSummary[];
+  funds: FundSummary[];
 };

@@ -107,4 +107,48 @@ describe('Stripe one-off staging intake', () => {
     expect(secondResponse.sourceFingerprint).toBe(firstResponse.sourceFingerprint);
     expect(secondResponse.externalId).toBe(firstResponse.externalId);
   });
+
+  it('should preserve source attribution/designation evidence without canonical mapping', async () => {
+    const suffix = `${Date.now()}-stripe-attribution`;
+    const event = buildEvent(suffix);
+    event.data!.object!.metadata = {
+      campaign_name: 'Spring Appeal 2026',
+      designation: 'Emergency Relief',
+      campaign_id: 'camp_123',
+    };
+
+    const response = await callAppRoute<StripeOneOffGiftStagingResult>(
+      '/s/stripe/intake/create-one-off-gift-staging',
+      event,
+    );
+
+    expect(response.created).toBe(true);
+
+    const createdRecord = await loadGiftStagingById(response.giftStagingId);
+    expect(createdRecord?.sourceAppealName).toBe('Spring Appeal 2026');
+    expect(createdRecord?.sourceFundName).toBe('Emergency Relief');
+    expect(createdRecord?.rawProviderEvidence).toEqual({
+      provider: 'STRIPE',
+      eventType: 'checkout.session.completed',
+      checkoutSessionId: `cs_stage_${suffix}`,
+      customerId: `cus_stage_${suffix}`,
+      paymentIntentId: `pi_stage_${suffix}`,
+      metadata: {
+        campaign_name: 'Spring Appeal 2026',
+        designation: 'Emergency Relief',
+        campaign_id: 'camp_123',
+      },
+      customerDetails: {
+        name: 'Ada Lovelace',
+        email: `ada.${suffix}@example.org`,
+        phone: '+44 20 7946 0958',
+        address: {
+          addressStreet1: '12 Analytical Engine Row',
+          addressCity: 'London',
+          addressPostcode: 'SW1A 1AA',
+          addressCountry: 'GB',
+        },
+      },
+    });
+  });
 });

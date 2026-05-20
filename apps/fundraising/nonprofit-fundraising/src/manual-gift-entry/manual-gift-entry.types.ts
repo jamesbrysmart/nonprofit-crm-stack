@@ -28,6 +28,23 @@ export type OpportunitySummary = {
   } | null;
 };
 
+export type FundSummary = {
+  id: string;
+  name?: string | null;
+  code?: string | null;
+  isActive?: boolean | null;
+};
+
+export type AppealSummary = {
+  id: string;
+  name?: string | null;
+  status?: string | null;
+  defaultFund?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+};
+
 export type DonorDuplicateCheckStatus =
   | 'NO_MATCH'
   | 'SINGLE_EXACT_MATCH'
@@ -79,7 +96,8 @@ export type ManualGiftEntryRequest = GiftAidCaptureInput & {
   currencyCode?: string;
   paymentType?: ManualGiftPaymentType;
   giftDate?: string;
-  appealName?: string;
+  selectedFundId?: string;
+  selectedAppealId?: string;
   selectedOpportunityId?: string;
   donorChoice?: ManualGiftDonorChoice;
   selectedDonorId?: string;
@@ -105,6 +123,14 @@ export type SearchOpportunitiesRequest = {
 
 export type SearchOpportunitiesResponse = {
   opportunities: OpportunitySummary[];
+};
+
+export type ListFundOptionsResponse = {
+  funds: FundSummary[];
+};
+
+export type ListAppealOptionsResponse = {
+  appeals: AppealSummary[];
 };
 
 export type ManualGiftDuplicateCheckRequest = {

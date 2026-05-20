@@ -1,8 +1,9 @@
 import { defineView } from 'twenty-sdk/define';
+import { APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-gift.field';
+import { FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fund-on-gift.field';
 import { OPPORTUNITY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/opportunity-on-gift.field';
 import { RECURRING_AGREEMENT_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/recurring-agreement-on-gift.field';
 import {
-  GIFT_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DONOR_FIRST_NAME_FIELD_UNIVERSAL_IDENTIFIER,
@@ -77,10 +78,19 @@ export default defineView({
     {
       universalIdentifier: 'cb8d57e5-f638-432a-9b78-a900efc1bc8d',
       fieldMetadataUniversalIdentifier:
-        GIFT_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER,
+        APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         GIFT_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 4,
+      isVisible: true,
+      size: 220,
+    },
+    {
+      universalIdentifier: '556a352d-53df-46d0-bfd1-d8346ad07bd4',
+      fieldMetadataUniversalIdentifier: FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        GIFT_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 5,
       isVisible: true,
       size: 220,
     },
@@ -90,7 +100,7 @@ export default defineView({
         OPPORTUNITY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         GIFT_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 5,
+      position: 6,
       isVisible: true,
       size: 220,
     },
@@ -100,7 +110,7 @@ export default defineView({
         RECURRING_AGREEMENT_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         GIFT_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 6,
+      position: 7,
       isVisible: true,
       size: 220,
     },
@@ -109,7 +119,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier: GIFT_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         GIFT_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 7,
+      position: 8,
       isVisible: true,
       size: 180,
     },
@@ -118,7 +128,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier: GIFT_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         GIFT_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 8,
+      position: 9,
       isVisible: true,
       size: 220,
     },
@@ -128,7 +138,7 @@ export default defineView({
         GIFT_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         GIFT_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 9,
+      position: 10,
       isVisible: true,
       size: 220,
     },

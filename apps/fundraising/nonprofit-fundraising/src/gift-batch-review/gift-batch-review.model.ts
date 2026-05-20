@@ -128,6 +128,8 @@ const buildReviewRow = (row: BatchReviewRow): GiftBatchReviewRow => {
       row.committedGift?.name,
       row.committedGift?.id ? 'Committed gift linked' : 'Not processed',
     ),
+    appealId: coalesceString(row.appeal?.id),
+    fundId: coalesceString(row.fund?.id),
   };
 };
 
@@ -147,6 +149,9 @@ export const buildGiftBatchReviewRecord = (
   const failedItems = reviewRows.filter(
     (row) => row.processingStatus === 'PROCESS_FAILED',
   ).length;
+  const unprocessedRows = reviewRows.filter(
+    (row) => row.processingStatus !== 'PROCESSED',
+  );
 
   return {
     id: batch.id,
@@ -172,6 +177,7 @@ export const buildGiftBatchReviewRecord = (
     eligibleItems: reviewRows.filter((row) => row.isProcessable).length,
     processedItems,
     failedItems,
+    unprocessedItems: unprocessedRows.length,
     readyItems: reviewRows.filter(
       (row) =>
         row.processingStatus !== 'PROCESSED' &&
@@ -181,6 +187,8 @@ export const buildGiftBatchReviewRecord = (
     ambiguousItems: reviewRows.filter(
       (row) => row.donorResolutionState === 'AMBIGUOUS',
     ).length,
+    uncodedAppealItems: unprocessedRows.filter((row) => row.appealId === '').length,
+    uncodedFundItems: unprocessedRows.filter((row) => row.fundId === '').length,
     needsReviewItems: reviewRows.filter(
       (row) =>
         row.processingStatus !== 'PROCESSED' &&
