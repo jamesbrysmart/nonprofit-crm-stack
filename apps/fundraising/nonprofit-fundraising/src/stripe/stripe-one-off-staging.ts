@@ -146,6 +146,26 @@ export type StripeOneOffGiftStagingResult =
       externalId: string;
     };
 
+export type StripeDonationFormGiftStagingUpdateResult =
+  | {
+      updated: true;
+      giftStagingId: string;
+      sourceFingerprint: string;
+      externalId: string;
+    }
+  | {
+      updated: false;
+      reason: 'MISSING_PREPAYMENT_GIFT_STAGING';
+      sourceFingerprint: string;
+      externalId: string;
+      providerEventId: string;
+    };
+
+type GiftStagingLookupRecord = {
+  id: string;
+  rawProviderEvidence?: Record<string, unknown> | null;
+};
+
 const normalizeString = (value: string | null | undefined): string =>
   value?.trim() ?? '';
 
@@ -354,6 +374,15 @@ const getMetadataValue = (
   }
 
   return undefined;
+};
+
+const getRequiredMetadataValue = (
+  session: StripeCheckoutSession,
+  keys: string[],
+): string | undefined => {
+  const value = getMetadataValue(session, keys);
+
+  return normalizeString(value) || undefined;
 };
 
 const buildNormalizedMetadataMap = (
@@ -741,10 +770,204 @@ export const createStripeOneOffGiftStaging = async (
   };
 };
 
-export const findGiftStagingBySourceFingerprint = async (
+export const updateStripeDonationFormGiftStaging = async (
+  client: CoreApiClient,
+  event: StripeCheckoutSessionCompletedEvent,
+): Promise<StripeDonationFormGiftStagingUpdateResult> => {
+  if (event.type !== 'checkout.session.completed') {
+    throw new Error(
+      'Stripe donation-form staging update only supports checkout.session.completed',
+    );
+  }
+
+  const session = event.data?.object;
+  if (!session) {
+    throw new Error(
+      'Stripe checkout.session.completed event is missing data.object',
+    );
+  }
+
+  const externalId = normalizeString(session.id);
+  const providerEventId = normalizeString(event.id);
+  const sourceFingerprint = getRequiredMetadataValue(session, [
+    'sourceFingerprint',
+  ]);
+  const metadataGiftStagingId = getRequiredMetadataValue(session, [
+    'giftStagingId',
+  ]);
+
+  if (externalId === '') {
+    throw new Error('Stripe checkout session id is required');
+  }
+
+  if (providerEventId === '') {
+    throw new Error('Stripe event id is required');
+  }
+
+  if (!sourceFingerprint) {
+    throw new Error(
+      'Stripe donation-form checkout session is missing sourceFingerprint metadata',
+    );
+  }
+
+  const existingGiftStaging =
+    (metadataGiftStagingId
+      ? await findGiftStagingById(client, metadataGiftStagingId)
+      : null) ??
+    (await findGiftStagingRecordBySourceFingerprint(client, sourceFingerprint));
+
+  if (!existingGiftStaging) {
+    return {
+      updated: false,
+      reason: 'MISSING_PREPAYMENT_GIFT_STAGING',
+      sourceFingerprint,
+      externalId,
+      providerEventId,
+    };
+  }
+
+  const providerPaymentId = getProviderPaymentId(session.payment_intent);
+  const paymentProviderCustomerId = getStripeObjectId(session.customer);
+  const providerAgreementId = getStripeObjectId(session.subscription);
+  const intervalEvidence = getSubscriptionIntervalEvidence(session.subscription);
+  const normalizedMetadata = buildNormalizedMetadataMap(session.metadata);
+  const donorMailingAddress = buildDonorMailingAddress(
+    session.customer_details?.address,
+  );
+  const donorName = normalizeString(session.customer_details?.name);
+  const donorEmail = normalizeString(session.customer_details?.email);
+  const donorPhone = normalizeString(session.customer_details?.phone);
+  const giftDateSource = session.created ?? event.created;
+  const webhookProviderEvidence = buildRawProviderEvidence({
+    eventType: event.type,
+    checkoutSessionId: externalId,
+    ...(paymentProviderCustomerId
+      ? { customerId: paymentProviderCustomerId }
+      : {}),
+    ...(providerPaymentId ? { paymentIntentId: providerPaymentId } : {}),
+    ...(providerAgreementId ? { subscriptionId: providerAgreementId } : {}),
+    donorName,
+    donorEmail,
+    donorPhone,
+    donorMailingAddress,
+    ...(normalizedMetadata ? { metadata: normalizedMetadata } : {}),
+    ...(intervalEvidence.providerIntervalUnit
+      ? { providerIntervalUnit: intervalEvidence.providerIntervalUnit }
+      : {}),
+    ...(typeof intervalEvidence.providerIntervalCount === 'number'
+      ? { providerIntervalCount: intervalEvidence.providerIntervalCount }
+      : {}),
+  });
+
+  await client.mutation({
+    updateGiftStaging: {
+      __args: {
+        id: existingGiftStaging.id,
+        data: {
+          externalId,
+          providerEventId,
+          provider: STRIPE_PROVIDER,
+          ...(providerPaymentId ? { providerPaymentId } : {}),
+          ...(paymentProviderCustomerId
+            ? { paymentProviderCustomerId }
+            : {}),
+          ...(providerAgreementId ? { providerAgreementId } : {}),
+          ...(intervalEvidence.providerIntervalUnit
+            ? { providerIntervalUnit: intervalEvidence.providerIntervalUnit }
+            : {}),
+          ...(typeof intervalEvidence.providerIntervalCount === 'number'
+            ? { providerIntervalCount: intervalEvidence.providerIntervalCount }
+            : {}),
+          ...(typeof giftDateSource === 'number' && giftDateSource > 0
+            ? { giftDate: formatUnixDate(giftDateSource) }
+            : {}),
+          paymentState: 'PAYMENT_CONFIRMED',
+          rawProviderEvidence: mergeDonationFormRawProviderEvidence({
+            existing: existingGiftStaging.rawProviderEvidence ?? undefined,
+            webhookEvidence: webhookProviderEvidence,
+          }),
+        },
+      },
+      id: true,
+    },
+  } as any);
+
+  return {
+    updated: true,
+    giftStagingId: existingGiftStaging.id,
+    sourceFingerprint,
+    externalId,
+  };
+};
+
+const mergeDonationFormRawProviderEvidence = ({
+  existing,
+  webhookEvidence,
+}: {
+  existing?: Record<string, unknown>;
+  webhookEvidence: RawProviderEvidence;
+}): Record<string, unknown> => ({
+  ...(existing ?? {}),
+  ...webhookEvidence,
+  paymentLifecycle: 'PAYMENT_CONFIRMED',
+  ...(existing?.submittedGiftAid &&
+  !('submittedGiftAid' in webhookEvidence)
+    ? {
+        submittedGiftAid: existing.submittedGiftAid,
+      }
+    : {}),
+  ...(existing?.attribution && !('attribution' in webhookEvidence)
+    ? {
+        attribution: existing.attribution,
+      }
+    : {}),
+});
+
+export const findGiftStagingById = async (
+  client: CoreApiClient,
+  giftStagingId: string,
+): Promise<GiftStagingLookupRecord | null> => {
+  const normalized = normalizeString(giftStagingId);
+
+  if (normalized === '') {
+    throw new Error('giftStagingId is required');
+  }
+
+  const result = await client.query({
+    giftStaging: {
+      __args: {
+        filter: {
+          id: {
+            eq: normalized,
+          },
+        },
+      },
+      id: true,
+      rawProviderEvidence: true,
+    },
+  } as any);
+
+  const record = result?.giftStaging;
+
+  if (typeof record?.id !== 'string' || record.id === '') {
+    return null;
+  }
+
+  return {
+    id: record.id,
+    rawProviderEvidence:
+      record.rawProviderEvidence &&
+      typeof record.rawProviderEvidence === 'object' &&
+      !Array.isArray(record.rawProviderEvidence)
+        ? (record.rawProviderEvidence as Record<string, unknown>)
+        : undefined,
+  };
+};
+
+export const findGiftStagingRecordBySourceFingerprint = async (
   client: CoreApiClient,
   sourceFingerprint: string,
-): Promise<string | null> => {
+): Promise<GiftStagingLookupRecord | null> => {
   const normalized = normalizeString(sourceFingerprint);
 
   if (normalized === '') {
@@ -764,12 +987,37 @@ export const findGiftStagingBySourceFingerprint = async (
       edges: {
         node: {
           id: true,
+          rawProviderEvidence: true,
         },
       },
     },
   } as any);
 
-  const recordId = result?.giftStagings?.edges?.[0]?.node?.id;
+  const record = result?.giftStagings?.edges?.[0]?.node;
 
-  return typeof recordId === 'string' && recordId !== '' ? recordId : null;
+  if (typeof record?.id !== 'string' || record.id === '') {
+    return null;
+  }
+
+  return {
+    id: record.id,
+    rawProviderEvidence:
+      record.rawProviderEvidence &&
+      typeof record.rawProviderEvidence === 'object' &&
+      !Array.isArray(record.rawProviderEvidence)
+        ? (record.rawProviderEvidence as Record<string, unknown>)
+        : undefined,
+  };
+};
+
+export const findGiftStagingBySourceFingerprint = async (
+  client: CoreApiClient,
+  sourceFingerprint: string,
+): Promise<string | null> => {
+  const record = await findGiftStagingRecordBySourceFingerprint(
+    client,
+    sourceFingerprint,
+  );
+
+  return record?.id ?? null;
 };

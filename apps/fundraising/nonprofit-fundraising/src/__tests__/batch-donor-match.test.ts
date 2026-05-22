@@ -14,6 +14,7 @@ describe('batch donor match', () => {
         donorLastName: 'Lovelace',
         donorEmail: 'ada@example.com',
         donorResolutionState: 'UNREVIEWED',
+        paymentState: null,
         processingStatus: 'NOT_PROCESSED',
         donor: null,
       },
@@ -23,6 +24,7 @@ describe('batch donor match', () => {
         donorLastName: 'Lovelace',
         donorEmail: 'ada@example.com',
         donorResolutionState: 'UNREVIEWED',
+        paymentState: null,
         processingStatus: 'NOT_PROCESSED',
         donor: null,
       },
@@ -32,6 +34,7 @@ describe('batch donor match', () => {
         donorLastName: 'Lovelace',
         donorEmail: 'other@example.com',
         donorResolutionState: 'UNREVIEWED',
+        paymentState: null,
         processingStatus: 'NOT_PROCESSED',
         donor: null,
       },
@@ -128,6 +131,7 @@ describe('batch donor match', () => {
         donorLastName: 'Lovelace',
         donorEmail: 'ada@example.com',
         donorResolutionState: 'UNREVIEWED',
+        paymentState: null,
         processingStatus: 'NOT_PROCESSED',
         donor: null,
       }),
@@ -140,9 +144,25 @@ describe('batch donor match', () => {
         donorLastName: 'Lovelace',
         donorEmail: '',
         donorResolutionState: 'UNREVIEWED',
+        paymentState: null,
         processingStatus: 'NOT_PROCESSED',
         donor: null,
       }),
     ).toBe(true);
+  });
+
+  it('does not evaluate rows that are still awaiting payment confirmation', () => {
+    expect(
+      canEvaluateBatchDonorMatchRow({
+        id: 'row_3',
+        donorFirstName: 'Ada',
+        donorLastName: 'Lovelace',
+        donorEmail: 'ada@example.com',
+        donorResolutionState: 'UNREVIEWED',
+        paymentState: 'AWAITING_PAYMENT',
+        processingStatus: 'NOT_PROCESSED',
+        donor: null,
+      }),
+    ).toBe(false);
   });
 });

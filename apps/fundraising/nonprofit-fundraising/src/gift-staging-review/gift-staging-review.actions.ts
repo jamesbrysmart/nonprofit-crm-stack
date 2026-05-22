@@ -51,6 +51,7 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
         id: true,
       },
       giftDate: true,
+      paymentState: true,
       processingStatus: true,
       provider: true,
       providerAgreementId: true,
@@ -87,6 +88,7 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
           donorResolutionState?: string | null;
           donor?: { id?: string | null } | null;
           giftDate?: string | null;
+          paymentState?: string | null;
           processingStatus?: string | null;
           provider?: string | null;
           providerAgreementId?: string | null;
@@ -121,6 +123,7 @@ const evaluateGiftReadyStatus = async ({
     donorResolutionState?: string | null;
     donor?: { id?: string | null } | null;
     giftDate?: string | null;
+    paymentState?: string | null;
     processingStatus?: string | null;
     provider?: string | null;
     providerAgreementId?: string | null;
@@ -146,6 +149,7 @@ const evaluateGiftReadyStatus = async ({
       donorLastName: row.donorLastName ?? null,
       donorResolutionState: row.donorResolutionState ?? null,
       giftDate: row.giftDate ?? null,
+      paymentState: row.paymentState ?? null,
       processingStatus: row.processingStatus ?? null,
       provider: row.provider ?? null,
       providerAgreementId: row.providerAgreementId ?? null,

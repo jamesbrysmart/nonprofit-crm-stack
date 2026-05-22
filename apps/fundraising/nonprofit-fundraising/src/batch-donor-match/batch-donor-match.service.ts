@@ -5,6 +5,7 @@ import {
   loadPeopleByPrimaryEmails,
 } from 'src/donor-resolution/donor-creation-viability';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
+import { isPaymentConfirmedOrNotRequired } from 'src/gift-staging-review/gift-staging-processability';
 import {
   determineBatchDonorMatchOutcome,
   groupRowsForBatchDonorMatch,
@@ -151,6 +152,7 @@ export const runDonorMatchOnRows = async (
   return {
     totalCandidateRows: rows.filter(
       (row) =>
+        isPaymentConfirmedOrNotRequired(row) &&
         typeof row.processingStatus === 'string'
           ? row.processingStatus.trim() !== 'PROCESSED' &&
             row.donorResolutionState?.trim() === 'UNREVIEWED'

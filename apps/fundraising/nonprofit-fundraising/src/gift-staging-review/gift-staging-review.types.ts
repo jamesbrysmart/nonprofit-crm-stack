@@ -21,6 +21,12 @@ export type ProcessingStatus =
   | 'PROCESSED'
   | 'PROCESS_FAILED';
 
+export type PaymentState =
+  | 'AWAITING_PAYMENT'
+  | 'PAYMENT_CONFIRMED'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_EXPIRED';
+
 export type StoredGiftStagingRecord = {
   id: string;
   name: string;
@@ -63,6 +69,7 @@ export type StoredGiftStagingRecord = {
   donorResolutionState: string | null;
   donor: PersonSummary | null;
   giftReadyStatus: GiftReadyStatus | null;
+  paymentState: PaymentState | null;
   processingStatus: string | null;
   errorDetail: string | null;
   giftAidRequested: boolean | null;
@@ -144,6 +151,7 @@ export type GiftStagingReviewRecord = {
   linkedDonor: PersonSummary | null;
   linkedDonorName: string;
   giftReadyStatus: GiftReadyStatus;
+  paymentState: PaymentState | null;
   processingStatus: ProcessingStatus;
   errorDetail: string;
   giftAidRequested: boolean;

@@ -2,6 +2,7 @@ import type {
   DerivedReviewState,
   DonorResolution,
   GiftStagingReviewRecord,
+  PaymentState,
   ProcessingStatus,
   StoredGiftStagingRecord,
 } from './gift-staging-review.types';
@@ -107,6 +108,20 @@ const mapProcessingStatus = (
   }
 };
 
+const mapPaymentState = (
+  storedValue: string | null | undefined,
+): PaymentState | null => {
+  switch (storedValue) {
+    case 'AWAITING_PAYMENT':
+    case 'PAYMENT_CONFIRMED':
+    case 'PAYMENT_FAILED':
+    case 'PAYMENT_EXPIRED':
+      return storedValue;
+    default:
+      return null;
+  }
+};
+
 export const buildGiftStagingReviewRecord = (
   stored: StoredGiftStagingRecord,
 ): GiftStagingReviewRecord => {
@@ -182,6 +197,7 @@ export const buildGiftStagingReviewRecord = (
     linkedDonor,
     linkedDonorName: buildPersonDisplayName(linkedDonor),
     giftReadyStatus: normalizeGiftReadyStatus(stored.giftReadyStatus),
+    paymentState: mapPaymentState(stored.paymentState),
     processingStatus: mapProcessingStatus(stored.processingStatus),
     errorDetail: coalesceString(stored.errorDetail),
     giftAidRequested: stored.giftAidRequested ?? false,

@@ -1,5 +1,6 @@
 type ProcessabilityInput = {
   processingStatus: string | null | undefined;
+  paymentState?: string | null | undefined;
   donorResolutionState: string | null | undefined;
   donorFirstName?: string | null | undefined;
   donorLastName?: string | null | undefined;
@@ -19,9 +20,18 @@ export const hasLinkedDonorForProcessing = (
   input: Pick<ProcessabilityInput, 'linkedDonorId'>,
 ) => normalizeString(input.linkedDonorId) !== '';
 
+export const isPaymentConfirmedOrNotRequired = (
+  input: Pick<ProcessabilityInput, 'paymentState'>,
+) => {
+  const paymentState = normalizeString(input.paymentState).toUpperCase();
+
+  return paymentState === '' || paymentState === 'PAYMENT_CONFIRMED';
+};
+
 export const isGiftStagingProcessable = (input: ProcessabilityInput) => {
   return Boolean(
     input.processingStatus !== 'PROCESSED' &&
+      isPaymentConfirmedOrNotRequired(input) &&
       input.donorResolutionState !== 'AMBIGUOUS' &&
       (hasLinkedDonorForProcessing(input) ||
         hasSufficientDonorEvidenceForNewDonor(input)),

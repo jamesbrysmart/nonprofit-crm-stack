@@ -117,6 +117,44 @@ describe('handle-public-stripe-webhook', () => {
       restoreSecret(previousSecret);
     }
   });
+
+  it('logs an explicit operational error when Stripe confirms payment but the pre-payment staging row is missing', async () => {
+    const routerResult: stripeEventRouter.StripeEventRoutingResult = {
+      action: 'DONATION_FORM_GIFT_STAGING_MISSING',
+      result: {
+        updated: false,
+        reason: 'MISSING_PREPAYMENT_GIFT_STAGING',
+        sourceFingerprint: 'dfs_missing_public_test',
+        externalId: 'cs_public_test',
+        providerEventId: 'evt_public_test',
+      },
+    };
+    vi.spyOn(stripeEventRouter, 'routeTrustedStripeEvent').mockResolvedValue(
+      routerResult,
+    );
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const previousSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_public_test';
+
+    try {
+      const response = await publicStripeWebhookHandler(
+        buildCheckoutSessionEvent(),
+      );
+
+      expect(response).toEqual({
+        received: true,
+        ...routerResult,
+      } satisfies PublicStripeWebhookResponse);
+      expect(errorSpy).toHaveBeenCalledOnce();
+      expect(errorSpy.mock.calls[0]?.[0]).toContain(
+        'stripe_webhook_missing_prepayment_gift_staging',
+      );
+    } finally {
+      errorSpy.mockRestore();
+      restoreSecret(previousSecret);
+    }
+  });
 });
 
 function createStripeSignature(rawBody: string) {

@@ -5,7 +5,10 @@ import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarati
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
-import { hasLinkedDonorForProcessing } from 'src/gift-staging-review/gift-staging-processability';
+import {
+  hasLinkedDonorForProcessing,
+  isPaymentConfirmedOrNotRequired,
+} from 'src/gift-staging-review/gift-staging-processability';
 import {
   applyLinkedDonorEmailUpdates,
   buildGiftPayloadFromRow,
@@ -416,7 +419,10 @@ export const persistBatchRowWritebacks = async (
 };
 
 export const canProcessBatchRow = (row: BatchProcessingRow) => {
-  return classifyBatchPreflight(row).category === 'READY';
+  return (
+    isPaymentConfirmedOrNotRequired(row) &&
+    classifyBatchPreflight(row).category === 'READY'
+  );
 };
 
 export const getBatchProcessingLimits = () => {

@@ -1,7 +1,9 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   createStripeOneOffGiftStaging,
+  updateStripeDonationFormGiftStaging,
   type StripeCheckoutSessionCompletedEvent,
+  type StripeDonationFormGiftStagingUpdateResult,
   type StripeOneOffGiftStagingResult,
 } from 'src/stripe/stripe-one-off-staging';
 import {
@@ -15,6 +17,7 @@ import {
 type StripeObjectRef = string | { id?: string | null } | null | undefined;
 
 type StripeCheckoutSessionLike = {
+  metadata?: Record<string, string | null | undefined> | null;
   subscription?: StripeObjectRef;
 };
 
@@ -35,6 +38,12 @@ export type StripeEventRoutingResult =
   | {
       action: 'CREATE_ONE_OFF_GIFT_STAGING';
       result: StripeOneOffGiftStagingResult;
+    }
+  | {
+      action:
+        | 'UPDATE_DONATION_FORM_GIFT_STAGING'
+        | 'DONATION_FORM_GIFT_STAGING_MISSING';
+      result: StripeDonationFormGiftStagingUpdateResult;
     }
   | {
       action: 'CREATE_RECURRING_GIFT';
@@ -67,6 +76,9 @@ const getStripeObjectId = (value: StripeObjectRef): string | null => {
 const hasStripeSubscription = (event: TrustedStripeEvent): boolean =>
   getStripeObjectId(event.data?.object?.subscription) !== null;
 
+const isDonationFormCheckout = (event: TrustedStripeEvent): boolean =>
+  normalizeString(event.data?.object?.metadata?.sourceFingerprint) !== '';
+
 export const routeTrustedStripeEvent = async (
   client: CoreApiClient,
   event: TrustedStripeEvent,
@@ -76,6 +88,20 @@ export const routeTrustedStripeEvent = async (
       action: 'IGNORED',
       reason: 'UNSUPPORTED_EVENT_TYPE',
       eventType: normalizeString(event.type) || null,
+    };
+  }
+
+  if (isDonationFormCheckout(event)) {
+    const result = await updateStripeDonationFormGiftStaging(
+      client,
+      event as StripeCheckoutSessionCompletedEvent,
+    );
+
+    return {
+      action: result.updated
+        ? 'UPDATE_DONATION_FORM_GIFT_STAGING'
+        : 'DONATION_FORM_GIFT_STAGING_MISSING',
+      result,
     };
   }
 

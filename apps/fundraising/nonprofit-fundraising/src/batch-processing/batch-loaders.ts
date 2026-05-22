@@ -107,6 +107,7 @@ export const loadBatchProcessingContext = async (
             },
           },
           giftReadyStatus: true,
+          paymentState: true,
           processingStatus: true,
           errorDetail: true,
           giftAidRequested: true,
@@ -172,6 +173,7 @@ export const loadBatchDonorMatchContext = async (
           donorLastName: true,
           donorEmail: true,
           donorResolutionState: true,
+          paymentState: true,
           processingStatus: true,
           donor: {
             id: true,
@@ -207,6 +209,7 @@ export const loadGiftStagingRowsForDonorMatch = async (
           donorLastName: true,
           donorEmail: true,
           donorResolutionState: true,
+          paymentState: true,
           processingStatus: true,
           donor: {
             id: true,

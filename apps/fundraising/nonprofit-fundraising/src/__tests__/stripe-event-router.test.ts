@@ -46,6 +46,76 @@ describe('routeTrustedStripeEvent', () => {
     expect(recurringSpy).not.toHaveBeenCalled();
   });
 
+  it('routes donation-form checkout sessions to update the existing gift staging row', async () => {
+    const updateResult = {
+      updated: true,
+      giftStagingId: 'gift-staging-donation-form',
+      sourceFingerprint: 'dfs_router_unit',
+      externalId: 'cs_router_unit',
+    } as const;
+    const updateSpy = vi
+      .spyOn(oneOffStaging, 'updateStripeDonationFormGiftStaging')
+      .mockResolvedValue(updateResult);
+    const oneOffSpy = vi.spyOn(oneOffStaging, 'createStripeOneOffGiftStaging');
+
+    const result = await routeTrustedStripeEvent(client, {
+      id: 'evt_router_unit',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_router_unit',
+          metadata: {
+            sourceFingerprint: 'dfs_router_unit',
+          },
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      action: 'UPDATE_DONATION_FORM_GIFT_STAGING',
+      result: updateResult,
+    });
+    expect(updateSpy).toHaveBeenCalledOnce();
+    expect(oneOffSpy).not.toHaveBeenCalled();
+  });
+
+  it('routes recurring donation-form checkout sessions to update the existing gift staging row before recurring fulfillment logic', async () => {
+    const updateResult = {
+      updated: true,
+      giftStagingId: 'gift-staging-donation-form-recurring',
+      sourceFingerprint: 'dfs_router_recurring',
+      externalId: 'cs_router_unit',
+    } as const;
+    const updateSpy = vi
+      .spyOn(oneOffStaging, 'updateStripeDonationFormGiftStaging')
+      .mockResolvedValue(updateResult);
+    const recurringSpy = vi.spyOn(
+      recurringFulfillment,
+      'createStripeRecurringGiftForConfidentMatch',
+    );
+
+    const result = await routeTrustedStripeEvent(client, {
+      id: 'evt_router_unit',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_router_unit',
+          subscription: 'sub_router_unit',
+          metadata: {
+            sourceFingerprint: 'dfs_router_recurring',
+          },
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      action: 'UPDATE_DONATION_FORM_GIFT_STAGING',
+      result: updateResult,
+    });
+    expect(updateSpy).toHaveBeenCalledOnce();
+    expect(recurringSpy).not.toHaveBeenCalled();
+  });
+
   it('routes matched checkout.session.completed subscriptions to recurring fulfillment', async () => {
     const recurringResult = {
       created: true,

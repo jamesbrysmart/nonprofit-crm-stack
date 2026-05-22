@@ -35,6 +35,7 @@ const buildRow = (
   fund: null,
   appeal: null,
   giftReadyStatus: 'NEEDS_REVIEW',
+  paymentState: null,
   processingStatus: 'NOT_PROCESSED',
   errorDetail: null,
   giftAidRequested: null,

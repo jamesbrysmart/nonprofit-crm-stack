@@ -2868,6 +2868,7 @@ __metadata:
     oxlint: "npm:^0.16.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
+    stripe: "npm:22.1.1"
     twenty-client-sdk: "npm:2.5.0"
     twenty-sdk: "npm:2.5.0"
     typescript: "npm:^5.9.3"
@@ -3652,6 +3653,18 @@ __metadata:
   dependencies:
     js-tokens: "npm:^9.0.1"
   checksum: 10c0/50918f669915d9ad0fe4b7599902b735f853f2201c97791ead00104a654259c0c61bc2bc8fa3db05109339b61f4cf09e47b94ecc874ffbd0e013965223893af8
+  languageName: node
+  linkType: hard
+
+"stripe@npm:22.1.1":
+  version: 22.1.1
+  resolution: "stripe@npm:22.1.1"
+  peerDependencies:
+    "@types/node": ">=18"
+  peerDependenciesMeta:
+    "@types/node":
+      optional: true
+  checksum: 10c0/4c3c313ed87d2fc36d758d8b5f4966ab8182aee30ce60eb2114a21a10c622dbaad3aeb74d0f0a97131a04b07f9d4a37b8d85369e7623d35fe5298e3bcbd8bdab
   languageName: node
   linkType: hard
 

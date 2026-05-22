@@ -42,5 +42,29 @@ export default defineApplication({
       value: 'mock_success',
       isSecret: false,
     },
+    HMRC_CHARITIES_CONFIG_JSON: {
+      universalIdentifier: '44083984-b211-4232-aee7-a94d9c65f2da',
+      description:
+        'Workspace-level HMRC charity configuration payload used for Gift Aid submission routing.',
+      isSecret: true,
+    },
+    STRIPE_WEBHOOK_SECRET: {
+      universalIdentifier: '7cb88acf-6d52-44cf-9620-e69e992934f3',
+      description:
+        'Stripe webhook signing secret used to verify inbound public webhook requests.',
+      isSecret: true,
+    },
+    STRIPE_SECRET_KEY: {
+      universalIdentifier: '522c09cb-c02b-466f-b064-968220295bc3',
+      description:
+        'Stripe API secret key used for server-side Stripe calls in the fundraising app.',
+      isSecret: true,
+    },
+    STRIPE_PUBLISHABLE_KEY: {
+      universalIdentifier: '8dbbe9cc-a01d-41be-abcb-2ef59e4ad875',
+      description:
+        'Stripe publishable key exposed to the public donation runtime for Payment Element card collection.',
+      isSecret: false,
+    },
   },
 });

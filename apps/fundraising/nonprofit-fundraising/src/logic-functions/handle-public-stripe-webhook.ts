@@ -75,6 +75,19 @@ export const publicStripeWebhookHandler = async (
 
   const result = await routeTrustedStripeEvent(new CoreApiClient(), body);
 
+  if (result.action === 'DONATION_FORM_GIFT_STAGING_MISSING') {
+    console.error(
+      JSON.stringify({
+        event: 'stripe_webhook_missing_prepayment_gift_staging',
+        eventId: verification.eventId,
+        eventType: verification.eventType,
+        sourceFingerprint: result.result.sourceFingerprint,
+        checkoutSessionId: result.result.externalId,
+        providerEventId: result.result.providerEventId,
+      }),
+    );
+  }
+
   console.log(
     JSON.stringify({
       event: 'stripe_webhook_processed',

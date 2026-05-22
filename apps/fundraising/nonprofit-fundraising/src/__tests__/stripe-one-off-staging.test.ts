@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { CoreApiClient } from 'twenty-client-sdk/core';
 
 import {
   buildStripeOneOffGiftStagingInput,
+  updateStripeDonationFormGiftStaging,
   type StripeCheckoutSessionCompletedEvent,
 } from 'src/stripe/stripe-one-off-staging';
 
@@ -33,6 +35,213 @@ const buildEvent = (
     },
   },
   ...overrides,
+});
+
+describe('updateStripeDonationFormGiftStaging', () => {
+  it('merges webhook evidence onto existing pre-payment raw provider evidence', async () => {
+    const query = vi
+      .fn()
+      .mockResolvedValueOnce({
+        giftStaging: {
+          id: 'gift-staging-prepayment',
+          rawProviderEvidence: {
+            provider: 'STRIPE',
+            flow: 'DONATION_FORM',
+            paymentLifecycle: 'AWAITING_PAYMENT',
+            attribution: {
+              referrer: 'https://example.org/campaign',
+            },
+            submittedGiftAid: {
+              requested: true,
+              declarationSource: 'donation_form_embed',
+            },
+          },
+        },
+      });
+    const mutation = vi.fn().mockResolvedValue({
+      updateGiftStaging: {
+        id: 'gift-staging-prepayment',
+      },
+    });
+    const client = {
+      query,
+      mutation,
+    } as unknown as CoreApiClient;
+
+    const result = await updateStripeDonationFormGiftStaging(client, {
+      id: 'evt_form_complete',
+      type: 'checkout.session.completed',
+      created: 1777198422,
+      data: {
+        object: {
+          id: 'cs_form_complete',
+          amount_total: 2500,
+          currency: 'gbp',
+          created: 1777198410,
+          customer: 'cus_form_complete',
+          customer_details: {
+            email: 'ada@example.com',
+            name: 'Ada Lovelace',
+          },
+          payment_intent: 'pi_form_complete',
+          metadata: {
+            sourceFingerprint: 'dfs_form_complete',
+            giftStagingId: 'gift-staging-prepayment',
+          },
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      updated: true,
+      giftStagingId: 'gift-staging-prepayment',
+      sourceFingerprint: 'dfs_form_complete',
+      externalId: 'cs_form_complete',
+    });
+    expect(mutation).toHaveBeenCalledOnce();
+    expect(mutation.mock.calls[0]?.[0]).toEqual({
+      updateGiftStaging: {
+        __args: {
+          id: 'gift-staging-prepayment',
+          data: {
+            externalId: 'cs_form_complete',
+            providerEventId: 'evt_form_complete',
+            provider: 'STRIPE',
+            providerPaymentId: 'pi_form_complete',
+            paymentProviderCustomerId: 'cus_form_complete',
+            giftDate: '2026-04-26',
+            paymentState: 'PAYMENT_CONFIRMED',
+            rawProviderEvidence: {
+              provider: 'STRIPE',
+              flow: 'DONATION_FORM',
+              paymentLifecycle: 'PAYMENT_CONFIRMED',
+              eventType: 'checkout.session.completed',
+              checkoutSessionId: 'cs_form_complete',
+              customerId: 'cus_form_complete',
+              paymentIntentId: 'pi_form_complete',
+              metadata: {
+                sourceFingerprint: 'dfs_form_complete',
+                giftStagingId: 'gift-staging-prepayment',
+              },
+              customerDetails: {
+                name: 'Ada Lovelace',
+                email: 'ada@example.com',
+              },
+              attribution: {
+                referrer: 'https://example.org/campaign',
+              },
+              submittedGiftAid: {
+                requested: true,
+                declarationSource: 'donation_form_embed',
+              },
+            },
+          },
+        },
+        id: true,
+      },
+    });
+  });
+
+  it('persists recurring agreement evidence onto the existing donation-form staging row', async () => {
+    const query = vi.fn().mockResolvedValueOnce({
+      giftStaging: {
+        id: 'gift-staging-recurring',
+        rawProviderEvidence: {
+          provider: 'STRIPE',
+          flow: 'DONATION_FORM',
+          paymentLifecycle: 'AWAITING_PAYMENT',
+          donationType: 'RECURRING',
+          recurring: {
+            intervalUnit: 'month',
+            intervalCount: 1,
+          },
+        },
+      },
+    });
+    const mutation = vi.fn().mockResolvedValue({
+      updateGiftStaging: {
+        id: 'gift-staging-recurring',
+      },
+    });
+    const client = {
+      query,
+      mutation,
+    } as unknown as CoreApiClient;
+
+    const result = await updateStripeDonationFormGiftStaging(client, {
+      id: 'evt_form_recurring_complete',
+      type: 'checkout.session.completed',
+      created: 1777198422,
+      data: {
+        object: {
+          id: 'cs_form_recurring_complete',
+          amount_total: 2500,
+          currency: 'gbp',
+          created: 1777198410,
+          customer: 'cus_form_recurring_complete',
+          customer_details: {
+            email: 'ada@example.com',
+            name: 'Ada Lovelace',
+          },
+          payment_intent: 'pi_form_recurring_complete',
+          subscription: 'sub_form_recurring_complete',
+          metadata: {
+            sourceFingerprint: 'dfs_form_recurring_complete',
+            giftStagingId: 'gift-staging-recurring',
+          },
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      updated: true,
+      giftStagingId: 'gift-staging-recurring',
+      sourceFingerprint: 'dfs_form_recurring_complete',
+      externalId: 'cs_form_recurring_complete',
+    });
+    expect(mutation).toHaveBeenCalledOnce();
+    expect(mutation.mock.calls[0]?.[0]).toEqual({
+      updateGiftStaging: {
+        __args: {
+          id: 'gift-staging-recurring',
+          data: {
+            externalId: 'cs_form_recurring_complete',
+            providerEventId: 'evt_form_recurring_complete',
+            provider: 'STRIPE',
+            providerPaymentId: 'pi_form_recurring_complete',
+            paymentProviderCustomerId: 'cus_form_recurring_complete',
+            providerAgreementId: 'sub_form_recurring_complete',
+            giftDate: '2026-04-26',
+            paymentState: 'PAYMENT_CONFIRMED',
+            rawProviderEvidence: {
+              provider: 'STRIPE',
+              flow: 'DONATION_FORM',
+              paymentLifecycle: 'PAYMENT_CONFIRMED',
+              donationType: 'RECURRING',
+              recurring: {
+                intervalUnit: 'month',
+                intervalCount: 1,
+              },
+              eventType: 'checkout.session.completed',
+              checkoutSessionId: 'cs_form_recurring_complete',
+              customerId: 'cus_form_recurring_complete',
+              paymentIntentId: 'pi_form_recurring_complete',
+              subscriptionId: 'sub_form_recurring_complete',
+              metadata: {
+                sourceFingerprint: 'dfs_form_recurring_complete',
+                giftStagingId: 'gift-staging-recurring',
+              },
+              customerDetails: {
+                name: 'Ada Lovelace',
+                email: 'ada@example.com',
+              },
+            },
+          },
+        },
+        id: true,
+      },
+    });
+  });
 });
 
 describe('buildStripeOneOffGiftStagingInput', () => {

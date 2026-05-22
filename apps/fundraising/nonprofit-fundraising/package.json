@@ -19,6 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "stripe": "22.1.1",
     "twenty-client-sdk": "2.5.0",
     "twenty-sdk": "2.5.0"
   },

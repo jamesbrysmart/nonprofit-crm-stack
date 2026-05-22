@@ -65,6 +65,7 @@ const loadStoredRecord = async (
         },
       },
       giftReadyStatus: true,
+      paymentState: true,
       processingStatus: true,
       errorDetail: true,
       giftAidRequested: true,

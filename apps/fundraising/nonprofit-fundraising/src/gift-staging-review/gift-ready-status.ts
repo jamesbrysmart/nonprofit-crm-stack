@@ -8,6 +8,7 @@ import {
   loadPeopleByPrimaryEmails,
   type PeopleByEmailMap,
 } from 'src/donor-resolution/donor-creation-viability';
+import { isPaymentConfirmedOrNotRequired } from './gift-staging-processability';
 
 export type GiftReadyStatus = 'NEEDS_REVIEW' | 'READY_TO_PROCESS';
 
@@ -29,6 +30,7 @@ type GiftReadyRow = {
   donorLastName?: string | null;
   donorResolutionState?: string | null;
   giftDate?: string | null;
+  paymentState?: string | null;
   processingStatus?: string | null;
   provider?: string | null;
   providerAgreementId?: string | null;
@@ -91,7 +93,9 @@ export const evaluateGiftReadyRow = ({
 
   return {
     giftReadyStatus:
-      preflight.category === 'READY' && !hasPrimaryEmailConflict
+      preflight.category === 'READY' &&
+      isPaymentConfirmedOrNotRequired({ paymentState: row.paymentState }) &&
+      !hasPrimaryEmailConflict
         ? 'READY_TO_PROCESS'
         : 'NEEDS_REVIEW',
     preflight,

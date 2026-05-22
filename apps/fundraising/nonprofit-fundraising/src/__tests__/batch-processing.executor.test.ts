@@ -83,6 +83,7 @@ const buildProcessingRow = (
   donorResolutionState: 'UNREVIEWED',
   donor: null,
   giftReadyStatus: 'READY_TO_PROCESS',
+  paymentState: null,
   processingStatus: 'NOT_PROCESSED',
   errorDetail: null,
   giftAidRequested: false,
@@ -208,5 +209,27 @@ describe('canProcessBatchRow', () => {
         }),
       ),
     ).toBe(false);
+  });
+
+  it('blocks a payment-gated row until payment is confirmed', () => {
+    expect(
+      canProcessBatchRow(
+        buildProcessingRow({
+          donorResolutionState: 'CONFIRMED',
+          donor: { id: 'person_1' },
+          paymentState: 'AWAITING_PAYMENT',
+        }),
+      ),
+    ).toBe(false);
+
+    expect(
+      canProcessBatchRow(
+        buildProcessingRow({
+          donorResolutionState: 'CONFIRMED',
+          donor: { id: 'person_1' },
+          paymentState: 'PAYMENT_CONFIRMED',
+        }),
+      ),
+    ).toBe(true);
   });
 });

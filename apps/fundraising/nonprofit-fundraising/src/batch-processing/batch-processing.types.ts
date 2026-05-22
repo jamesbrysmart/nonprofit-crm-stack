@@ -11,6 +11,12 @@ export type GiftStagingProcessingStatus =
   | 'PROCESSED'
   | 'PROCESS_FAILED';
 
+export type GiftStagingPaymentState =
+  | 'AWAITING_PAYMENT'
+  | 'PAYMENT_CONFIRMED'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_EXPIRED';
+
 export type BatchSummaryRecord = {
   id: string;
   name: string;
@@ -86,6 +92,7 @@ export type BatchProcessingRow = {
     } | null;
   } | null;
   giftReadyStatus: GiftReadyStatus | null;
+  paymentState: GiftStagingPaymentState | null;
   processingStatus: string | null;
   errorDetail: string | null;
   giftAidRequested: boolean | null;

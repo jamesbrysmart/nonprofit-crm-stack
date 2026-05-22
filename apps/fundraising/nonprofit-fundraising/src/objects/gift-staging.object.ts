@@ -72,6 +72,9 @@ export const GIFT_STAGING_GIFT_READY_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_PROCESSING_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
   'ff99598e-8d08-436f-952c-ba295af9db28';
 
+export const GIFT_STAGING_PAYMENT_STATE_FIELD_UNIVERSAL_IDENTIFIER =
+  '92523622-da60-4241-841b-2ddf3c033269';
+
 export const GIFT_STAGING_ERROR_DETAIL_FIELD_UNIVERSAL_IDENTIFIER =
   'add47f09-aa1d-4038-bbc1-63ac4186ab92';
 
@@ -92,6 +95,12 @@ export const GIFT_STAGING_GIFT_AID_DECLARATION_SOURCE_FIELD_UNIVERSAL_IDENTIFIER
 
 export const GIFT_STAGING_GIFT_AID_TEXT_VERSION_FIELD_UNIVERSAL_IDENTIFIER =
   '44188431-92b9-43a1-8504-a2c608c70c78';
+
+export const GIFT_STAGING_DONATION_FORM_ID_FIELD_UNIVERSAL_IDENTIFIER =
+  '3a8c740f-c22d-4ffb-89ad-c7ad6ecaf0a5';
+
+export const GIFT_STAGING_DONATION_FORM_PUBLISHED_VERSION_FIELD_UNIVERSAL_IDENTIFIER =
+  '52919549-c4b4-40f8-988f-97a1db0e260a';
 
 export const GIFT_STAGING_RAW_PROVIDER_EVIDENCE_FIELD_UNIVERSAL_IDENTIFIER =
   '6af7e0fd-147d-4082-a1cb-79f0ffdf2227';
@@ -430,6 +439,47 @@ export default defineObject({
       ],
     },
     {
+      universalIdentifier: GIFT_STAGING_PAYMENT_STATE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'paymentState',
+      label: 'Payment state',
+      description:
+        'Payment-verification lifecycle for channels that require provider confirmation before gift processing',
+      icon: 'IconCreditCardPay',
+      isNullable: true,
+      defaultValue: null,
+      options: [
+        {
+          id: 'e64fd42d-cef9-4d34-902f-9d7326cc5968',
+          value: 'AWAITING_PAYMENT',
+          label: 'Awaiting payment',
+          position: 0,
+          color: 'yellow',
+        },
+        {
+          id: 'ed8a2a39-d227-43fe-9464-7f10c89c1fd1',
+          value: 'PAYMENT_CONFIRMED',
+          label: 'Payment confirmed',
+          position: 1,
+          color: 'green',
+        },
+        {
+          id: 'a1f5448e-3ef2-42dc-8854-ab779eecab6d',
+          value: 'PAYMENT_FAILED',
+          label: 'Payment failed',
+          position: 2,
+          color: 'red',
+        },
+        {
+          id: '86e7b8d1-ec8e-4bfa-8a6f-55e5f8966c55',
+          value: 'PAYMENT_EXPIRED',
+          label: 'Payment expired',
+          position: 3,
+          color: 'gray',
+        },
+      ],
+    },
+    {
       universalIdentifier: GIFT_STAGING_ERROR_DETAIL_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.TEXT,
       name: 'errorDetail',
@@ -501,6 +551,29 @@ export default defineObject({
       label: 'Gift Aid text version',
       description: 'Declaration wording or version captured during intake',
       icon: 'IconTextCaption',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_DONATION_FORM_ID_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'donationFormId',
+      label: 'Donation form ID',
+      description: 'Originating donation form record when this row came from a published embedded donation form',
+      icon: 'IconForms',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_DONATION_FORM_PUBLISHED_VERSION_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'donationFormPublishedVersion',
+      label: 'Donation form published version',
+      description:
+        'Published donor-facing donation form configuration version used when this staged row was submitted',
+      icon: 'IconVersions',
       isNullable: true,
       defaultValue: null,
     },

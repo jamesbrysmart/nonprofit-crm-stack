@@ -6,6 +6,7 @@ export type BatchDonorMatchRow = {
   donorLastName: string | null;
   donorEmail: string | null;
   donorResolutionState: string | null;
+  paymentState: string | null;
   processingStatus: string | null;
   donor?: {
     id?: string | null;
