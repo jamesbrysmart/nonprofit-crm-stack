@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Example Charity Appeal</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.5 "Instrument Sans", "Inter", system-ui, sans-serif;
+        color: #1f2933;
+        background: linear-gradient(180deg, #f5f8fb 0%, #ffffff 100%);
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 48px 20px 80px;
+        display: grid;
+        gap: 32px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 12px;
+      }
+
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #0d7a5f;
+        font-weight: 700;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 48px;
+        line-height: 1;
+      }
+
+      p {
+        margin: 0;
+        max-width: 60ch;
+        color: #52606d;
+      }
+
+      .panel {
+        border: 1px solid #d8e1ea;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        padding: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="eyebrow">Example charity page</div>
+        <h1>Support the spring appeal</h1>
+        <p>
+          This page represents a charity-owned website with the embeddable
+          donation form pasted into it.
+        </p>
+      </section>
+
+      <section class="panel">
+        <iframe
+          src="http://localhost:2020/s/donation-forms/embed-frame?publicId=df_610b2c7dbed346be"
+          title="Donation form"
+          loading="lazy"
+          allow="payment *"
+          style="
+            width: 100%;
+            min-height: 1180px;
+            border: 0;
+            background: transparent;
+          "
+        ></iframe>
+      </section>
+    </main>
+  </body>
+</html>

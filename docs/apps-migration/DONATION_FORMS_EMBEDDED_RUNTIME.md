@@ -2,7 +2,7 @@
 
 This note captures the current preferred lean architecture for embeddable donation forms based on what we know now.
 
-It is a working product/architecture direction, not a locked implementation decision. Anything outside the normal Twenty UI, especially embed runtime behavior, iframe/script behavior, public config loading, Checkout Session creation, temporary submission snapshots, and webhook handoff, should be treated as implementation experimentation.
+It is a working product/architecture direction, not a locked implementation decision. Anything outside the normal Twenty UI, especially embed runtime behavior, iframe/script behavior, public config loading, Checkout Session creation, pre-payment staging behavior, and webhook handoff, should be treated as implementation experimentation.
 
 The aim is to discover the cleanest way to create a polished donor experience with the least necessary architecture. If Twenty's app/runtime supports that cleanly, we should use it. If we hit limits around public UX, embed behavior, reliability, anti-abuse, or runtime constraints, we should preserve the option to move parts of the public donor journey into a companion runtime later.
 
@@ -10,7 +10,7 @@ The stable product principles are more important than the exact runtime location
 
 - the public donor journey should be polished
 - Twenty should own the fundraising record
-- `GiftStaging` should remain the first durable CRM intake record after verified payment
+- `GiftStaging` should remain the first durable CRM intake record for donation intake, with processing blocked until payment is verified where the source/payment flow requires it
 - `DonationForm` should remain the only new first-class CRM product object for v1 unless later evidence strongly justifies more
 
 ## 1. Purpose and product framing
@@ -41,7 +41,7 @@ In this note, "public runtime" is a logical boundary first, not necessarily a se
 The core CRM/data-model principle for v1 is:
 
 - `DonationForm` is the only new first-class CRM product object
-- `GiftStaging` remains the first durable CRM intake record after verified payment
+- `GiftStaging` remains the first durable CRM intake record
 - existing downstream objects continue to own final fundraising meaning:
   - `Gift`
   - `RecurringAgreement`
@@ -58,6 +58,18 @@ The following are explicitly not first-class CRM objects in v1:
 
 Those concepts may still exist as technical/runtime state, but not as CRM product objects.
 
+Broader intake framing:
+
+- `DonationForm` is the first owned donation-intake surface we control end to end, not the only intake shape we expect long term
+- the wider target pattern is source adapter -> `GiftStaging` -> review/processing -> canonical fundraising records
+- source adapters may differ in when staging becomes durable:
+  - our own `DonationForm` creates `GiftStaging` before payment confirmation because we need to preserve donor, Gift Aid, attribution, and published-form evidence before Stripe confirms payment
+  - some third-party sources may only emit completed donation records, so staging will be created after a platform-completed event
+  - some sources may expose a richer lifecycle where staging can begin before final payment confirmation
+  - some sources may require reconciliation between platform donation data and later provider/payout evidence before staging can be treated as complete
+- payment-provider data, including Stripe data, should remain evidence about the donation, not canonical donation truth
+- this means future sources such as JustGiving, Raisely, Beacon, Donorbox, Givebutter, imports, or other fundraising tools may reuse the same staging/processing model while differing in exact intake timing and reconciliation needs
+
 ## 2. Agreed high-level lifecycle
 
 The agreed lean runtime flow is:
@@ -67,19 +79,26 @@ The agreed lean runtime flow is:
 3. Charity user publishes the form.
 4. Twenty validates publishability and exposes a publish-safe config plus a stable published version token.
 5. Charity user copies an embed snippet.
-6. The embed snippet loads a small script that mounts an iframe-based public runtime on the charity website.
-7. The public runtime loads the published `DonationForm` config.
+6. The embed snippet is a plain iframe pointing at a public Twenty route for the donation runtime.
+7. The iframe runtime loads the published `DonationForm` config.
 8. The donor fills the form.
 9. On submit, a Twenty app route validates the payload against the published `DonationForm`.
-10. The route stores a temporary submission snapshot with TTL.
-11. The route creates a Stripe Checkout Session with minimal correlation metadata.
-12. The donor completes payment in Stripe Checkout.
+10. The route creates `GiftStaging` in a non-processable pre-payment state.
+11. The route creates the Stripe payment session with minimal correlation metadata.
+12. The donor completes card payment through Stripe Payment Element inside the iframe donation form.
 13. The existing app-side Stripe webhook route verifies the raw body and Stripe signature.
-14. The webhook combines verified Stripe evidence with the temporary submission snapshot.
-15. `GiftStaging` is created or upserted.
+14. The webhook finds and updates the existing `GiftStaging` row using provider correlation.
+15. `GiftStaging` moves to confirmed-payment state and remains the record that later processing works from.
 16. Existing processing creates or links `Gift`, `RecurringAgreement`, Gift Aid outcomes, and attribution outcomes.
 
 This keeps the donor journey public-facing and payment-driven while keeping fundraising meaning inside Twenty.
+
+Current spike preference:
+
+- static `public-assets` are not the right browser runtime surface for HTML/JS delivery in this use case
+- route-served iframe HTML is the preferred embed surface for the current mostly Twenty-native baseline
+- iframe + Payment Element is currently the strongest within-Twenty baseline for the one-off donation form
+- direct-DOM charity-page mounting remains a documented explored path, not the active implementation direction
 
 ## 3. DonationForm object
 
@@ -125,6 +144,7 @@ The current lean proposal is to add only the explicit fields that clearly earn t
 
 - `donationFormId`
 - `donationFormPublishedVersion`
+- one explicit payment/intake lifecycle field so pre-payment state does not overload `processingStatus` or `giftReadyStatus`
 
 `donationFormPublishedVersion` is the current preferred field name because it most clearly describes the donor-facing published configuration in effect at payment time.
 
@@ -136,38 +156,32 @@ Everything else should default to existing fields, `rawProviderEvidence`, `provi
 - finance or reporting
 - user/admin display
 
-## 5. Temporary submission snapshot
+## 5. Pre-payment GiftStaging
 
-The temporary submission snapshot is infrastructure, not a CRM product object.
+The current preferred lean direction is to use `GiftStaging` itself as the pre-payment handoff record.
 
-Its purpose is to:
+That means:
 
-- bridge form submit -> Stripe Checkout -> webhook
-- preserve trusted donor-submitted evidence before redirect
-- avoid creating CRM records for abandoned checkouts
-- avoid stuffing full intake evidence into Stripe metadata
-- avoid relying on browser state after redirect
+- create `GiftStaging` on validated submit
+- keep it non-processable until payment is verified
+- store donor, form, Gift Aid, attribution, and correlation evidence there
+- create Stripe Checkout
+- update the same row when the verified webhook arrives
 
-The temporary snapshot should include:
+This is preferred over a hidden temporary store because it keeps the model leaner and uses the existing uncommitted donation-intake object instead of creating staging under another name.
 
-- `donationFormId`
-- published config version
-- server-validated amount, currency, and frequency
-- donor evidence
-- Gift Aid selection, wording version, and declaration context
-- attribution, referrer, UTM, and embed context
-- `sourceFingerprint` or equivalent correlation key
-- Checkout Session ID
-- workspace/provider reference if needed
+This should be treated as the owned-source variant of a broader intake model, not a DonationForm-only rule. Other donation sources may create `GiftStaging`:
 
-Reliability notes:
+- before payment confirmation, if they expose donor intent and we need to preserve evidence before the provider confirms payment
+- only after a completed donation event, if that is the first durable source signal available
+- or during reconciliation, if the source/platform and payment/payout evidence arrive separately
 
-- this should be persistent enough for realistic webhook timing and should not depend on fragile in-memory-only state
-- TTL should align with Stripe Checkout expiry plus a sensible operational buffer
-- Stripe metadata should still carry enough minimal correlation data to avoid silent loss
-- if the snapshot is missing when the webhook arrives, that should produce an explicit operational error or review path, not silent failure
-- if Stripe confirms a successful payment but the snapshot is missing, the Stripe event and payment evidence must still be preserved and surfaced for operational review rather than silently dropped
-- the exact implementation of the temporary store, TTL, and persistence mechanism remains open and should be tested
+Guardrails:
+
+- do not overload `processingStatus` or `giftReadyStatus` to mean awaiting payment
+- pending-payment rows must be excluded from normal gift review, donor matching, processing queues, counts, and batch operations by default
+- processing must never create a `Gift` unless payment has been verified
+- if Stripe confirms payment but the expected pre-payment staging row cannot be found, the Stripe event/payment evidence must still be preserved and surfaced for operational review rather than silently dropped
 
 ## 6. Stripe/session creation
 
@@ -176,13 +190,48 @@ The v1 tactical approach is:
 - the public embed submits to a Twenty app route to create the Checkout Session
 - the route loads the published `DonationForm`
 - the route validates trusted values server-side
-- the route stores the temporary submission snapshot
-- the route creates the Stripe Checkout Session using workspace/provider configuration
+- the route creates pre-payment `GiftStaging`
+- the route creates the Stripe payment session using workspace/provider configuration
 - the route writes only minimal correlation metadata into Stripe
+- for the current spike baseline, the route-served iframe mounts Stripe Payment Element inside the donation journey so the donor stays within the charity-owned form
+
+Current spike caveat:
+
+- iframe + Payment Element is now the strongest within-Twenty baseline for the one-off donation form spike
+- hosted Stripe Checkout remains a documented seam-validation path only, not the active product baseline
+- before productising the feature, pre-productisation checks still remain around 3DS/authentication, wallets, mobile behaviour, and real CMS compatibility
+
+Current spike findings:
+
+- hosted Stripe Checkout proved the backend seam, but not the target embedded UX
+- Stripe Embedded Checkout worked in a direct-DOM charity-page experiment while preserving the same `GiftStaging` `AWAITING_PAYMENT -> PAYMENT_CONFIRMED` lifecycle
+- Payment Element / Elements also worked in a direct-DOM charity-page experiment while preserving the same `GiftStaging` `AWAITING_PAYMENT -> PAYMENT_CONFIRMED` lifecycle
+- route-served iframe + Payment Element also worked while preserving the same `GiftStaging` `AWAITING_PAYMENT -> PAYMENT_CONFIRMED` lifecycle
+- hosted Stripe Checkout should be treated as a proven spike path and possible contingency only if Payment Element later proves unsuitable, not as an active product fallback by default
+- Embedded Checkout remains technically promising, but still feels more like a Stripe-managed checkout block inside the donation journey
+- Payment Element currently looks closest to a cohesive charity donation form and should be treated as the working baseline for the target donor experience, subject to embed feasibility
+- Twenty-served direct-DOM script delivery is not a clean active path in the current app framework, so the direct-DOM learnings should remain documentary rather than product-facing for now
+
+Current productisation finding:
+
+- for the current payment UX spike, continue using app/env-configured Stripe keys:
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_PUBLISHABLE_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+- do not build Stripe Connect or provider settings UI yet
+- Twenty app Connections look like the likely foundation for a future "Connect Stripe" flow
+- they may solve the per-workspace OAuth / connected-account layer
+- they probably do not, by themselves, solve the full DonationForm provider-config model:
+  - selected Stripe account
+  - test/live mode handling
+  - public runtime publishable config
+  - webhook/account routing
+  - connection health state
+  - admin UX around connect/reconnect/disconnect
 
 Sequencing guardrail:
 
-- the Checkout redirect or URL should not be returned to the donor until the temporary snapshot and correlation metadata are safely persisted or otherwise recoverable
+- the payment UI must not be mounted for the donor until the pre-payment staging row and correlation metadata are safely persisted or otherwise recoverable
 
 This route should remain a clean boundary:
 
@@ -199,9 +248,9 @@ The webhook flow is:
 
 1. verify raw body and Stripe signature
 2. route relevant Stripe events through the event router
-3. map Stripe payment facts into canonical staging input
-4. merge those facts with the temporary submission snapshot
-5. create or upsert `GiftStaging`
+3. find the pre-payment staging row using correlation data
+4. add Stripe payment/provider evidence
+5. transition payment/intake state so normal readiness/processing can continue
 6. run existing staging processing
 
 Dedupe and idempotency should rely on the current evidence-first approach, including:
@@ -221,11 +270,11 @@ Repeated webhooks must no-op or update existing staging records, not create dupl
   - publish or session creation should fail explicitly rather than producing broken donor flows
 
 - **Donor abandons Checkout**
-  - no CRM record is created in v1
-  - abandoned state remains runtime/provider-side only
+  - a pre-payment staging row may exist
+  - it should remain excluded from normal queues and can be expired/cleaned up later
 
 - **Payment fails**
-  - no `GiftStaging` row is required in v1 unless later operational needs justify it
+  - the pre-payment staging row should remain operationally quiet and non-processable
 
 - **Webhook arrives twice**
   - dedupe and idempotency must ensure replay is a no-op or update
@@ -233,7 +282,7 @@ Repeated webhooks must no-op or update existing staging records, not create dupl
 - **Webhook succeeds but staging/processing fails**
   - the staging row should remain visible with an operational error or review state
 
-- **Temporary submission snapshot missing or expired**
+- **Expected pre-payment staging row missing or unrecoverable**
   - this should be surfaced as an explicit operational error or review case
   - it should never silently lose a successful payment
 
@@ -264,6 +313,7 @@ These may become relevant later, but they are intentionally out of scope for the
 Remaining genuine questions:
 
 - exact `DonationForm` field vs config JSON split
-- temporary submission store implementation choice and TTL
+- exact name and options for the pre-payment `GiftStaging` lifecycle field
 - whether Checkout Session ID can remain in evidence JSON / raw payload or later proves necessary as an explicit `GiftStaging` field for dedupe, support search, or review filtering
-- what minimum operational visibility is needed for missing-snapshot or processing-failure cases without introducing `DonationAttempt`
+- what minimum operational visibility is needed for missing pre-payment staging rows or processing failures without introducing `DonationAttempt`
+- how strictly `rawProviderEvidence` / evidence JSON should mirror explicit `GiftStaging` lifecycle fields after payment confirmation versus remaining a more historical merged evidence snapshot
