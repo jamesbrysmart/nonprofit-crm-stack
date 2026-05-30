@@ -1,109 +1,107 @@
-# Apps Migration Docs Index
+# Fundraising App Docs Index
 
-Use this folder for fundraising-to-Twenty-app migration context, planning, and working notes.
+Use this folder for the current fundraising app, its remaining transition work away from the legacy hybrid service model, and the supporting notes that still help us reason about architecture and implementation.
 
-This folder now contains both:
+This folder is no longer just a place for “pre-migration” planning.
 
-- strategic migration docs
-- working reference notes that should evolve as implementation learning improves
+It now contains a mix of:
 
-Start here when working on migration-related product or implementation questions.
+- current app guidance
+- hardening and review notes
+- transition and retirement context
+- historical migration material that is still useful as supporting background
+
+Start here when working on fundraising app product or implementation questions.
+
+## Current Reading Order
+
+If you want the best current mental model, read in this order:
+
+- [OVERVIEW.md](docs/apps-migration/OVERVIEW.md)
+  - current app position, transition framing, and remaining boundary questions
+- [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
+  - phased production-quality implementation plan for the app that now exists as the main fundraising surface
+- [MIGRATION_WORKING_PATTERNS.md](docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
+  - current implementation patterns and cross-cutting “do not assume X” guidance
+- [TWENTY_APP_DEV_WORKFLOW.md](docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
+  - repo-local workflow guidance for current Twenty app work
 
 ## Where To Start
 
 If you need:
 
-- overall purpose and migration framing:
-  - [OVERVIEW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/OVERVIEW.md)
-- detailed product migration decisions:
-  - [PRODUCT_REVIEW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PRODUCT_REVIEW.md)
-- first pilot implementation planning:
-  - [PILOT_APP_IMPLEMENTATION_PLAN.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
+- current app framing and transition status:
+  - [OVERVIEW.md](docs/apps-migration/OVERVIEW.md)
+- detailed product decisions and what should survive from earlier implementations:
+  - [PRODUCT_REVIEW.md](docs/apps-migration/PRODUCT_REVIEW.md)
+- current implementation plan and slice ordering:
+  - [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
 - current Twenty-app runtime/layout learnings:
-  - [TWENTY_NATIVE_REFERENCE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_NATIVE_REFERENCE.md)
-    - includes native layout/runtime notes, metadata field types, field-definition patterns, and current front-component sync/runtime findings
-- source-neutral online donation intake modeling:
-  - [ONLINE_DONATION_INTAKE_CONTRACT.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_CONTRACT.md)
-- current preferred staging/intake field model and rationale:
-  - [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
-- agreed lean runtime boundary and lifecycle for embeddable donation forms:
-  - [DONATION_FORMS_EMBEDDED_RUNTIME.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/DONATION_FORMS_EMBEDDED_RUNTIME.md)
-- open app-runtime and stored-vs-derived architecture questions:
-  - [APP_RUNTIME_ARCHITECTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
+  - [TWENTY_NATIVE_REFERENCE.md](docs/apps-migration/TWENTY_NATIVE_REFERENCE.md)
+- current implementation patterns discovered during app work:
+  - [MIGRATION_WORKING_PATTERNS.md](docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
 - review framing for an evolving Twenty Apps platform:
-  - [REVIEW_POSTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
-- app hardening review rubric for current and future review passes:
-  - [APP_HARDENING_REVIEW_RUBRIC.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
-- current execution backlog from the latest app hardening review:
-  - [APP_HARDENING_BACKLOG.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_BACKLOG.md)
-- migration-wide API pressure and shared-budget constraints:
-  - [API_PRESSURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
-- evolving implementation patterns discovered during sessions:
-  - [MIGRATION_WORKING_PATTERNS.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
+  - [REVIEW_POSTURE.md](docs/apps-migration/REVIEW_POSTURE.md)
+- current technical hardening priorities:
+  - [APP_HARDENING_BACKLOG.md](docs/apps-migration/APP_HARDENING_BACKLOG.md)
+- app-runtime and stored-vs-derived architecture questions:
+  - [APP_RUNTIME_ARCHITECTURE.md](docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
+- shared API/workflow/logic-function pressure constraints:
+  - [API_PRESSURE.md](docs/apps-migration/API_PRESSURE.md)
+- source-neutral online donation intake modeling:
+  - [ONLINE_DONATION_INTAKE_CONTRACT.md](docs/apps-migration/ONLINE_DONATION_INTAKE_CONTRACT.md)
+- current preferred staging/intake field model and rationale:
+  - [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
+- current appeal child-attribution model and deferred concepts:
+  - [APPEAL_SOURCE_MODEL.md](docs/apps-migration/APPEAL_SOURCE_MODEL.md)
+- current lightweight soft-credit model and deferred concepts:
+  - [SOFT_CREDIT_MODEL.md](docs/apps-migration/SOFT_CREDIT_MODEL.md)
+- agreed lean runtime boundary and lifecycle for embeddable donation forms:
+  - [DONATION_FORMS_EMBEDDED_RUNTIME.md](docs/apps-migration/DONATION_FORMS_EMBEDDED_RUNTIME.md)
 - current UI blocks and reuse candidates:
-  - [UI_COMPONENTS_CATALOG.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/UI_COMPONENTS_CATALOG.md)
+  - [UI_COMPONENTS_CATALOG.md](docs/apps-migration/UI_COMPONENTS_CATALOG.md)
 
-## Strategic Docs
+## How To Read This Folder
 
-- [OVERVIEW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/OVERVIEW.md)
-  - high-level migration purpose, goals, principles, and related docs
-- [PRODUCT_REVIEW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PRODUCT_REVIEW.md)
-  - detailed product behavior review and migration decisions
-- [CODE_REVIEW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/CODE_REVIEW.md)
-  - code portability and migration-worthiness review
-- [UI_MIGRATION_MAP.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/UI_MIGRATION_MAP.md)
-  - mapping from existing fundraising-service UI/workflows to likely Twenty-app targets
-- [MIGRATION_SEQUENCE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/MIGRATION_SEQUENCE.md)
-  - migration ordering and dependencies
+Use these categories when deciding how much weight to give a doc.
 
-## Pilot Implementation Docs
+### Current App Guidance
 
-- [PILOT_APP_IMPLEMENTATION_PLAN.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
-  - phased implementation plan for the first production-quality pilot app
-- [TWENTY_APP_DEV_WORKFLOW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
-  - repo-local workflow notes for working on Twenty apps in `dev-stack`
-- [TWENTY_NATIVE_REFERENCE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_NATIVE_REFERENCE.md)
-  - references and observations about Twenty-native capabilities, constraints, metadata field types, field-definition patterns, and front-component runtime behavior
-- [APP_RUNTIME_ARCHITECTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
-  - exploratory runtime-boundary note for app-to-Twenty handover, update propagation, and stored-vs-derived decisions
-- [REVIEW_POSTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
-  - defines how app reviews should be framed while Twenty Apps is still evolving, including workaround policy and revisit triggers
-- [APP_HARDENING_REVIEW_RUBRIC.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
-  - practical checklist for app hardening reviews, including what to fix now versus document and watch
-- [APP_HARDENING_BACKLOG.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_BACKLOG.md)
-  - ordered hardening backlog for the current fundraising app, based on the latest review pass
-- [API_PRESSURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
-  - migration-wide note on core API limits, workflow/logic-function pressure domains, and design posture for future apps
-- [ONLINE_DONATION_INTAKE_CONTRACT.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_CONTRACT.md)
-  - source-neutral internal contract for online donation adapters feeding staging and processing
-- [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
-  - current recommended field-level interpretation of that intake contract for staging metadata
-- [DONATION_FORMS_EMBEDDED_RUNTIME.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/DONATION_FORMS_EMBEDDED_RUNTIME.md)
-  - agreed lean product/runtime note for the embeddable `DonationForm` feature
+- [OVERVIEW.md](docs/apps-migration/OVERVIEW.md)
+- [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
+- [MIGRATION_WORKING_PATTERNS.md](docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
+- [TWENTY_APP_DEV_WORKFLOW.md](docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
+- [REVIEW_POSTURE.md](docs/apps-migration/REVIEW_POSTURE.md)
+- [APP_HARDENING_REVIEW_RUBRIC.md](docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
+- [APP_HARDENING_BACKLOG.md](docs/apps-migration/APP_HARDENING_BACKLOG.md)
 
-## Working Reference Notes
+### Current Feature / Architecture Notes
 
-These are deliberately more lightweight and should be updated as we learn.
+- [ONLINE_DONATION_INTAKE_CONTRACT.md](docs/apps-migration/ONLINE_DONATION_INTAKE_CONTRACT.md)
+- [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
+- [APPEAL_SOURCE_MODEL.md](docs/apps-migration/APPEAL_SOURCE_MODEL.md)
+- [SOFT_CREDIT_MODEL.md](docs/apps-migration/SOFT_CREDIT_MODEL.md)
+- [DONATION_FORMS_EMBEDDED_RUNTIME.md](docs/apps-migration/DONATION_FORMS_EMBEDDED_RUNTIME.md)
+- [APP_RUNTIME_ARCHITECTURE.md](docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
+- [API_PRESSURE.md](docs/apps-migration/API_PRESSURE.md)
+- [TWENTY_NATIVE_REFERENCE.md](docs/apps-migration/TWENTY_NATIVE_REFERENCE.md)
 
-- [MIGRATION_WORKING_PATTERNS.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
-  - provisional patterns for UI, modeling, configurability, and migration decision-making
-- [UI_COMPONENTS_CATALOG.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/UI_COMPONENTS_CATALOG.md)
-  - current widgets/blocks, where they appear, and reuse opportunities
+### Supporting Historical Context
 
-## Historical / Feature-Specific Notes
+These remain useful, but should not make new sessions think the app is still mostly aspirational.
 
-- [STRIPE_IMPLEMENTATION_STAGES.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/STRIPE_IMPLEMENTATION_STAGES.md)
-  - Stripe-specific implementation staging notes
-- [STRIPE_WORKLOG.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/STRIPE_WORKLOG.md)
-  - Stripe-specific implementation worklog
+- [PRODUCT_REVIEW.md](docs/apps-migration/PRODUCT_REVIEW.md)
+- [CODE_REVIEW.md](docs/apps-migration/CODE_REVIEW.md)
+- [UI_MIGRATION_MAP.md](docs/apps-migration/UI_MIGRATION_MAP.md)
+- [MIGRATION_SEQUENCE.md](docs/apps-migration/MIGRATION_SEQUENCE.md)
+- [STRIPE_IMPLEMENTATION_STAGES.md](docs/apps-migration/STRIPE_IMPLEMENTATION_STAGES.md)
+- [STRIPE_WORKLOG.md](docs/apps-migration/STRIPE_WORKLOG.md)
 
 ## Maintenance Note
 
-If a migration session produces a pattern or reusable UI insight that is likely to matter again:
+When updating this folder:
 
-- add strategic decisions to the appropriate strategic doc
-- add implementation guidance to the pilot plan if it affects delivery
-- add provisional patterns to `MIGRATION_WORKING_PATTERNS.md`
-- add concrete blocks/widgets to `UI_COMPONENTS_CATALOG.md`
-
-Prefer updating existing notes over creating a new doc unless the new topic is clearly distinct.
+- keep the tense honest
+- distinguish clearly between current app reality and historical migration background
+- prefer saying “current app,” “hardening,” or “remaining transition work” where that is the real state
+- avoid phrasing that makes the app sound like a purely future plan when substantial implementation already exists

@@ -1,207 +1,153 @@
-# Fundraising To Twenty Apps Migration Overview
+# Fundraising App Overview
 
-Updated: 2026-04-06
-Status: Working guide (`stage-2`)
-Purpose: Define the overall purpose, scope, and success criteria for migrating fundraising-service functionality into Twenty apps.
+Updated: 2026-05-27
+Status: Working guide (`current app + transition`)
+Purpose: Define the current state of the fundraising app, the remaining transition work away from the legacy hybrid service model, and the principles that should guide the next implementation phases.
 
-This doc explains why the migration exists, what it is trying to achieve, and how migration decisions should be made. It is intentionally strategic rather than detailed.
+This doc is no longer just a case for starting a migration.
 
-## 1. Why This Migration Exists
+The migration is already materially underway:
 
-Moving fundraising-service functionality into Twenty apps is desirable because the current split between the service-hosted fundraising UI and the Twenty product creates unnecessary product, UX, and maintenance costs.
+- `apps/fundraising/nonprofit-fundraising` is now the main fundraising implementation surface in this repo
+- substantial workflow, metadata, UI, and integration logic already lives in the app
+- the remaining questions are mostly about hardening, completion, boundary discipline, and retirement of legacy service-era assumptions
 
-This migration is intended to:
+This doc exists to keep that framing explicit.
 
-- bring fundraising workflows closer to the main product surface,
-- reduce the amount of local-only UI and workflow structure we have to maintain separately,
-- improve consistency between Twenty-native experiences and fundraising-specific workflows,
-- create a clearer long-term home for functionality that should live as part of the platform experience.
+## 1. Current Position
 
-We are reviewing the current product and code before migrating because this should not be a blind port. The goal is to migrate the right product behavior and the right implementation assets, not simply recreate everything that exists today.
+The repo has already moved beyond “should we migrate fundraising into Twenty apps?”
 
-This remains an app-first migration conversation.
+The active position is:
 
-That does not automatically mean every execution/runtime concern will ultimately live fully inside Twenty app code. The current Gift Aid / HMRC work suggests there may be cases where a specialized external adapter or service layer remains a useful hedge, especially while the Twenty apps/runtime model is still early. That question is still unresolved and should be tested against the released framework rather than assumed in either direction.
+- the fundraising app is the primary product direction
+- Twenty should remain the main system of record and host environment
+- the legacy `fundraising-service` should now be treated as historical prior art, transitional runtime context, or an explicit exception path only where still required
 
-## 2. Goals
+That does not mean every open architecture question is settled.
+
+It does mean the default assumption for new work should be:
+
+- build or refine the app,
+- do not start from the service,
+- and do not write docs as if the app is still a hypothetical next step.
+
+## 2. Why The Transition Still Matters
+
+Even though the app is now the main implementation surface, the transition is not “done” in the operational sense.
+
+The remaining work still matters because we need to:
+
+- retire misleading service-first docs and assumptions
+- decide which remaining legacy boundaries are still justified
+- keep current app code aligned with Twenty’s evolving app/runtime contract
+- finish hardening the workflows that are already implemented
+- avoid carrying historical hybrid decisions forward just because they already exist
+
+So this is now better understood as:
+
+- a current app program with transition and retirement work,
+
+not:
+
+- an abstract pre-implementation migration exercise.
+
+## 3. What Is Already True
+
+The following should now be treated as current repo reality:
+
+- the app already owns substantial fundraising workflow behavior
+- the app already contains real metadata, front components, logic functions, and tests
+- app-specific docs are no longer just planning notes; many now describe live implementation direction
+- new sessions should expect to find significant product logic in `nonprofit-fundraising`, not be surprised by it
+
+This matters because older phrasing such as:
+
+- “moving functionality into apps”
+- “first pilot app” as if nothing meaningful exists yet
+- “review before migrating”
+
+can now create the wrong mental model if left unqualified.
+
+## 4. Current Goals
 
 Product goals:
 
-- preserve the fundraising workflows that provide real user value,
-- simplify or redesign workflows that are solving the right problem in the wrong way,
-- avoid carrying forward accidental complexity just because it already exists.
+- keep the fundraising workflows that provide real user value
+- simplify or redesign workflows where the old service-era shape was doing the right job in the wrong way
+- complete the move toward a coherent fundraising experience inside Twenty
 
 UX/UI goals:
 
-- make fundraising workflows feel more native and consistent with Twenty,
-- define the repeated UI patterns we actually want to keep,
-- improve consistency where users are doing fundamentally similar jobs.
+- make the app feel native to Twenty where native surfaces are strong
+- use custom UI where workflow-heavy fundraising tasks genuinely need it
+- avoid recreating a separate service-era shell inside the app
 
 Technical goals:
 
-- migrate reusable behavior and structure rather than accidental local implementation,
-- identify which code is worth carrying forward, which should be refactored first, and which should be left behind,
-- create a migration path that supports substantial product movement rather than isolated cleanup only.
+- keep app-owned logic and metadata boundaries clean
+- harden the implementation that already exists rather than narrating it as future intent
+- remove or quarantine legacy runtime assumptions that keep confusing new sessions
+- preserve any still-useful external/service boundary only where the app/runtime genuinely benefits from it
 
-## 3. Non-Goals
+## 5. Non-Goals
 
-- This is not a blind lift-and-shift of the current fundraising-service UI and code.
-- This is not a commitment to preserve every current workflow exactly as it exists today.
-- This is not a full product rewrite before we know what should survive the migration.
-- This is not a doc set for endlessly postponing migration behind abstract preparation work.
+- This is not a blind lift-and-shift of `fundraising-service`.
+- This is not a commitment to preserve every historical service surface.
+- This is not a full rewrite of implemented app work just because some early docs were phrased as migration notes.
+- This is not an excuse to keep legacy hybrid assumptions alive in docs once they are actively misleading.
 
-## 4. Scope Framing
+## 6. Current Scope Framing
 
-This migration includes:
+This work now includes:
 
-- workflow review,
-- repeated UI pattern review,
-- code portability review,
-- mapping current surfaces to likely Twenty-app targets,
-- sequencing the migration so larger product areas can actually move.
+- hardening the existing fundraising app
+- clarifying current versus historical architecture in docs
+- tightening app-runtime and metadata decisions where implementation is already real
+- continuing to refine the fundraising attribution model around distinct `Fund`, `Appeal`, and child `AppealSource` concepts without treating the current shape as frozen
+- deciding what remaining legacy boundaries should stay, shrink, or disappear
+- continuing feature work in the app without regressing into service-first patterns
 
-This migration does not yet imply:
+This work does not imply:
 
-- final implementation decisions for every repeated component,
-- immediate parity for every current surface,
-- that every current fundraising-service capability should survive unchanged.
+- every current implementation detail is final
+- every service-era concept should survive unchanged
+- the app must absorb every possible integration/runtime concern immediately if a narrower boundary remains cleaner for now
 
-Current planning context:
+## 7. Implementation Principles
 
-- After initial pilot scoping, the first pilot customer is expected to prioritize:
-  - donation intake,
-  - Gift Aid,
-  - recurring donations,
-  - and finance-system integration.
-- This should be treated as migration context, not as a claim that other areas are unimportant or will not migrate.
-- The practical implication is that upcoming migration decisions and sequencing should keep first-pilot fit in view, while still documenting broader product understanding where that helps later sessions.
+Use these principles for current work:
 
-## 5. Migration Principles
+- Treat the app as real implementation, not speculative migration.
+- Review and improve existing app behavior before extending it blindly.
+- Preserve user value, not historical implementation accidents.
+- Prefer Twenty-native surfaces first, but use custom app logic and UI where workflow quality depends on it.
+- Keep derived operational meaning in TypeScript unless first-class metadata is clearly justified.
+- Keep retirement pressure visible: if a legacy boundary or doc is still present, either justify it or mark it as legacy explicitly.
+- Use Twenty’s official app docs as canonical for setup/build/dev workflow; record repo-specific implications here, not duplicate setup steps.
 
-Use these principles to guide migration decisions:
+## 8. Open Questions That Still Matter
 
-- Review before porting.
-- Migrate deliberately, not mechanically.
-- Preserve user value, not implementation accidents.
-- Remove duplication where the product model is clearly shared.
-- Redesign where the current UI or code is solving the wrong problem.
-- Use Twenty as a reference and target environment, not as a template to copy blindly.
-- Validate risky assumptions before committing to large migration steps.
-- Keep the end goal in view: this work should support the real migration of the product, not just local cleanup.
-- Treat any service/edge/runtime pattern as a possible complement to app migration, not as an excuse to weaken or defer app-first product movement.
-- For Twenty app setup/build/dev flow, use Twenty's official docs as the canonical source of truth rather than copying local setup steps into this repo. Record only repo-specific constraints, observed deviations, and migration implications here.
+The open questions are now mostly about quality and boundaries, not whether the app approach is real.
 
-For the first pilot-app implementation pass, the practical posture should be:
+The most important current ones are:
 
-- architecture first,
-- high-quality code from the start,
-- careful metadata decisions alongside both,
-- and feature polish only after the core workflow model and boundaries are sound.
+- where a companion runtime or external adapter is still the right hedge for public or provider-facing flows
+- which operator-facing meanings should remain derived versus materialized into metadata
+- how far we should lean on current observed Twenty runtime behavior versus app-owned protective patterns
+- which remaining service-era assumptions can now be deleted rather than preserved as “transition context”
 
-One cross-cutting metadata question needs to stay visible during migration:
+These are implementation-shaping questions for a live app, not reasons to narrate the repo as if migration has barely begun.
 
-- when should a concept become stored metadata,
-- when should it remain derived from other facts,
-- and how do we keep that answer consistent across features rather than letting similar concepts drift into different patterns by accident?
+## 9. Recommended Reading Order
 
-Current leaning:
+For the current app and transition posture, read in this order:
 
-- prefer to minimize metadata fields unless they are clearly justified by real operational need,
-- especially where a field would otherwise become a second stored truth for something that may be better derived from existing facts.
+- [INDEX.md](docs/apps-migration/INDEX.md)
+- [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
+- [MIGRATION_WORKING_PATTERNS.md](docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
+- [TWENTY_APP_DEV_WORKFLOW.md](docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
+- [REVIEW_POSTURE.md](docs/apps-migration/REVIEW_POSTURE.md)
+- [APP_HARDENING_BACKLOG.md](docs/apps-migration/APP_HARDENING_BACKLOG.md)
 
-This is not yet a locked rule. It is a migration-wide design question we should keep revisiting as more slices are implemented and tested.
-
-Related runtime question:
-
-- how much operational meaning can remain derived at read time,
-- when should app logic materialize or coordinate that meaning,
-- and how should app-owned interpretations stay current when records can also be updated through native Twenty surfaces or other integration paths?
-
-This is not just a metadata-shape issue.
-
-It is also an app-runtime architecture question about:
-
-- where responsibility sits between front components, logic functions, and native Twenty record editing,
-- what guarantees we expect from pilot behavior versus broader production rollout,
-- and how much API pressure or reconciliation work a leaner model actually creates in practice.
-
-The current working note for that topic is:
-
-- [`APP_RUNTIME_ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
-
-Closely related cross-cutting constraint:
-
-- API pressure is now tracked in:
-  - [`API_PRESSURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
-
-That note should be used when evaluating whether an app design is operationally safe under shared Twenty API, workflow, and logic-function budgets rather than only functionally correct in isolation.
-
-Related review-framing note:
-
-- [`REVIEW_POSTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
-- [`APP_HARDENING_REVIEW_RUBRIC.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
-- [`APP_HARDENING_BACKLOG.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_BACKLOG.md)
-
-Those notes should be used when reviewing app code or local patterns so we distinguish clearly between:
-
-- documented Twenty Apps contract,
-- current observed platform behavior,
-- and provisional app-owned workarounds or patterns that should be revisited as Twenty evolves.
-
-### 5.1 Twenty App Workflow Source Of Truth
-
-For app scaffolding, setup, build, and dev workflow, treat the official Twenty docs as canonical:
-
-- `https://docs.twenty.com/developers/extend/apps/getting-started`
-- `https://docs.twenty.com/developers/extend/apps/building`
-
-Why this matters:
-
-- the Twenty app SDK and scaffolding flow are still moving quickly;
-- local hand-rolled scaffolds can create false negatives that look like platform/runtime limits;
-- migration spikes should only be interpreted as platform evidence once they are running through Twenty's current documented app workflow.
-- the Twenty CRM/runtime version and the Twenty app SDK version are separate version lines and should not be conflated when planning or diagnosing spikes.
-
-Versioning note:
-
-- The Docker/runtime version of Twenty CRM and the app-tooling version (`twenty-sdk`, `create-twenty-app`, `twenty` CLI) are different things.
-- They may move on different version lines and should be checked independently.
-
-When evaluating spikes, first identify which runtime/UI version is actually under test, then choose the corresponding app-tooling line for that release family. Do not assume the checked-out local Twenty source version is the same thing as the runtime version currently running in Docker.
-
-This doc should not duplicate step-by-step app setup instructions unless we intentionally need to document a repo-specific deviation from Twenty's process.
-
-## 6. Related Docs
-
-- [`PRODUCT_REVIEW.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PRODUCT_REVIEW.md)
-  - decides what product behavior should be preserved, simplified, redesigned, or dropped.
-- [`CODE_REVIEW.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/CODE_REVIEW.md)
-  - decides what code is worth carrying forward, what needs refactoring, and what should not be migrated as-is.
-- [`UI_MIGRATION_MAP.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/UI_MIGRATION_MAP.md)
-  - connects current workflows and patterns to likely Twenty-app migration targets.
-- [`MIGRATION_SEQUENCE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/MIGRATION_SEQUENCE.md)
-  - defines migration order, dependencies, and validation gates.
-- [`PILOT_APP_IMPLEMENTATION_PLAN.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
-  - defines the phased production-quality implementation plan for the first fundraising pilot app.
-- [`MIGRATION_WORKING_PATTERNS.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
-  - captures provisional working patterns from implementation sessions and should be updated as we learn more or find better approaches.
-- [`UI_COMPONENTS_CATALOG.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/UI_COMPONENTS_CATALOG.md)
-  - catalogs current UI components, blocks, and reuse candidates so similar functionality is easier to spot before we build it twice.
-- [`TWENTY_APP_DEV_WORKFLOW.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
-  - captures the current repo-local workflow split between Twenty app development and the integrated `dev-stack` environment.
-- [`APP_RUNTIME_ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
-  - exploratory runtime-boundary note for stored-vs-derived decisions, app-to-Twenty handover, and pilot-vs-production architecture questions.
-- [`REVIEW_POSTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
-  - defines how future app reviews should be framed while Twenty Apps is still evolving, including workaround posture and revisit triggers.
-- [`APP_HARDENING_REVIEW_RUBRIC.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_REVIEW_RUBRIC.md)
-  - practical checklist for running a high-signal app hardening review without overreacting to fast-moving Twenty platform areas.
-- [`APP_HARDENING_BACKLOG.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_HARDENING_BACKLOG.md)
-  - ordered technical hardening backlog for the current fundraising app based on the latest review pass.
-- [`API_PRESSURE.md`](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/API_PRESSURE.md)
-  - tracks migration-wide API/workflow/logic-function pressure constraints and the design posture they imply for future apps.
-- [`ARCHITECTURE.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/ARCHITECTURE.md)
-  - defines shared UI evaluation rules and current defaults.
-- [`TWENTY_APPS.md`](/home/jamesbryant/workspace/dev-stack/docs/ui/TWENTY_APPS.md)
-  - defines migration-aware UI guidance and current portability assumptions.
-- [`service-layer-integration-runtime.md`](/home/jamesbryant/workspace/dev-stack/docs/spikes/service-layer-integration-runtime.md)
-  - exploratory note on where a service/runtime layer may act as a hedge or complement while Twenty apps remain early.
+Use the older migration-review docs as supporting context, not as evidence that the app is still mostly hypothetical.

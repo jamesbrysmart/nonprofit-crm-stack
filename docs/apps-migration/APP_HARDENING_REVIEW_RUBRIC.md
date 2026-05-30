@@ -7,7 +7,7 @@ Purpose: Define how to run a high-signal hardening review of the fundraising Twe
 Use this rubric alongside:
 
 - [REVIEW_POSTURE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/REVIEW_POSTURE.md)
-- [TWENTY_EXTENSIBILITY_WATCH.md](/home/jamesbryant/workspace/dev-stack/docs/TWENTY_EXTENSIBILITY_WATCH.md)
+- [TWENTY_EXTENSIBILITY_WATCH.md](/home/jamesbryant/workspace/dev-stack/docs/TWENTY_EXTENSIBILITY_WATCH.md) for latest upstream baseline and historical drift only
 
 This rubric is for implementation and architecture review.
 
@@ -64,6 +64,11 @@ Default posture in this bucket:
 - align with current documented or clearly-emerging Twenty direction where practical,
 - document assumptions,
 - and avoid deep refactor unless the issue creates real fragility now.
+
+Important scope note:
+
+- if a platform-fit observation changes what we should do in `nonprofit-fundraising`, record that implication back into the app-review docs here in `docs/apps-migration/`
+- use the watch doc as supporting context, not as the main review output
 
 ## 4. Handling Model For Findings
 
@@ -176,6 +181,8 @@ Review questions:
 - Are we carrying app-owned workarounds that should now be revisited?
 
 Use [TWENTY_EXTENSIBILITY_WATCH.md](/home/jamesbryant/workspace/dev-stack/docs/TWENTY_EXTENSIBILITY_WATCH.md) as the filter for what is likely to move upstream.
+
+But when a conclusion becomes relevant to our app now, prefer to restate it here or in the backlog instead of leaving it only in the watch log.
 
 Priority signals:
 

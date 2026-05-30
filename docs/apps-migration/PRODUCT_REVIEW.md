@@ -2275,7 +2275,7 @@ Important modelling direction for future sessions:
   - `Fund` is the destination/designation/restriction of money,
   - `Appeal` is the fundraising effort / attribution bucket,
 - use real relations from `gift` and `giftStaging` to `Fund` and `Appeal` rather than long-lived text placeholders,
-- treat source/channel/send/page/platform detail as a likely future `AppealActivity` concern rather than the default job of appeal hierarchy,
+- treat source/channel/send/page/platform detail as a likely `AppealSource` concern rather than the default job of appeal hierarchy,
 - keep `Event` conceptually separate from `Appeal`,
 - and do not assume a generic `CampaignMember` / `AppealRecipient` model is part of the core appeal design at this stage.
 
@@ -2315,7 +2315,7 @@ Why it matters:
 Current behavior:
 
 - In `fundraising-service`, `setup-schema.mjs` provisions an `appeal` object and related solicitation/default-fund metadata as part of the current product surface.
-- In the current Twenty app, dedicated `Fund` / `Appeal` objects have not yet replaced all temporary capture patterns; some transitional fields such as free-text `gift.appealName` still exist in the app code and should be treated as migration-state compatibility rather than the target model.
+- In the current Twenty app, dedicated `Fund` / `Appeal` objects now exist and `gift` / `giftStaging` use real appeal relations rather than long-lived free-text appeal placeholders.
 - Gifts and gift-staging records need first-class appeal attribution in the target app model.
 - `fundraising-service` appeal API endpoints list, create, get, and update appeal records.
 
@@ -2324,7 +2324,7 @@ Key metadata / UI / logic:
 - Target-model direction:
   - distinct core objects for `fund` and `appeal`,
   - real relations from `gift` and `giftStaging` to `appeal`,
-  - future source/channel/execution detail likely living in a separate `AppealActivity` object rather than child appeals by default,
+  - future source/channel/execution detail likely living in a separate `AppealSource` object rather than child appeals by default,
   - no current assumption of a generic recipient/member junction model for ordinary appeals.
 - Current service metadata prior art: `appealType`, `description`, `startDate`, `endDate`.
 - Current service metadata prior art: `goalAmount`, `targetSolicitedCount`, `budgetAmount`.
@@ -2400,15 +2400,23 @@ Current behavior:
 
 - In `fundraising-service`, Manual Gift Entry exposes appeal selection through the shared `GiftDetailsForm`.
 - In `fundraising-service`, gift staging drawer detail edits expose appeal selection through the same shared `GiftDetailsForm` path.
-- In the current Twenty app, some manual gift paths still use temporary free-text `appealName` capture on `gift`; that should be treated as compatibility state during migration, not as the target attribution model.
+- In the current Twenty app, manual gift, staging, and committed-gift coding now use real appeal relations rather than free-text appeal placeholders.
+- In the current Twenty app, `AppealSource` now exists as the optional child attribution object under `Appeal`.
 - Create-gift payloads can include `appealId`.
+- Create-gift payloads can now also include `appealSourceId`.
 - Staged gift payload/update paths can include `appealId`.
+- Staged gift payload/update paths can now also include `appealSourceId`.
 - Batch processing carries staging row `appealId` into the committed gift payload.
+- Batch processing now carries `appealSourceId` through when it remains compatible with the parent appeal.
 
 Key metadata / UI / logic:
 
 - Target-model direction: gift relation to appeal / `appealId`.
+- Target-model direction: optional gift relation to appeal source / `appealSourceId`.
 - Target-model direction: staged gift relation to appeal / `appealId`.
+- Target-model direction: optional staged gift relation to appeal source / `appealSourceId`.
+- Current modelling rule: `Appeal` remains the primary attribution/reporting bucket and `AppealSource` is an optional child attribution unit beneath it.
+- Current modelling rule: selecting an `AppealSource` can populate a blank `Appeal`, but should not silently replace an already selected top-level `Appeal`.
 - UI: `GiftDetailsForm`.
 - UI: `ManualGiftEntry`.
 - UI: `DrawerDetailsSection`.
@@ -3265,7 +3273,7 @@ Current working field pattern:
   - Gift Aid claim-batch linkage
   - source/provenance/provider identifiers
 - Transitional compatibility examples to retire from the target model:
-  - legacy free-text `appealName` style capture where a real relation is the intended long-term fit
+  - legacy free-text appeal/source placeholders where real `appeal` / `appealSource` relations are the intended long-term fit
 - Future lifecycle-action territory:
   - refund
   - chargeback

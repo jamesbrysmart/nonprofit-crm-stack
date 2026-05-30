@@ -28,14 +28,17 @@ They should also ask:
 
 When reviewing app behavior or platform fit, use this order:
 
-1. Twenty Apps docs and app SDK surface
+1. current app-facing Twenty docs and app SDK surface
 2. current observed behavior in `services/twenty-core`
-3. local migration notes and app-owned patterns
+3. current app-review docs in `docs/apps-migration/`
+4. historical watch/log notes when needed
 
 Important distinction:
 
 - Twenty docs and SDK define the intended app contract.
 - `twenty-core` source helps us understand current behavior.
+- the app-review docs in `docs/apps-migration/` are where we should record current implications for `nonprofit-fundraising`
+- historical watch notes are useful for drift and chronology, but should not be the primary place to infer current app guidance
 - `twenty-core` source alone is not enough to treat a pattern as a safe long-term app contract.
 
 If docs, SDK, and observed runtime behavior disagree:
@@ -135,6 +138,25 @@ This is one reason we continue to pull and review recent Twenty code in `twenty-
 
 - not because implementation details override the docs,
 - but because platform movement is part of the architecture risk for an early app ecosystem.
+
+## 8. Where Current Guidance Should Live
+
+Use the docs in `docs/apps-migration/` for the current working position on our app.
+
+In practice:
+
+- `REVIEW_POSTURE.md` defines how to reason about findings
+- `APP_HARDENING_REVIEW_RUBRIC.md` defines what to review
+- `APP_HARDENING_BACKLOG.md` captures concrete fix-now work
+- feature/runtime notes such as donation-form or intake docs capture local implementation direction
+
+Use `docs/TWENTY_EXTENSIBILITY_WATCH.md` mainly for:
+
+- latest upstream baseline snapshots
+- version/direction drift
+- historical context when a current platform behavior is confusing
+
+Do not rely on the watch doc as the main place for current app recommendations if the same point belongs in the app-review docs more directly.
 
 The right outcome is not “no workarounds.”
 

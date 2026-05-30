@@ -229,6 +229,103 @@ Current productisation finding:
   - connection health state
   - admin UX around connect/reconnect/disconnect
 
+Stripe product-assumption check:
+
+- this fundraising app is not currently a marketplace or payout-routing platform
+- the target v1 shape is closer to:
+  - one charity workspace
+  - one charity-owned Stripe account
+  - direct charges into that charity's own Stripe account
+  - no platform fee routing
+  - no seller payout orchestration
+  - no broader Connect account-lifecycle product
+- because of that, we should distinguish three different Stripe setup models:
+
+1. direct/manual integration
+   - the workspace stores Stripe credentials directly
+   - the app uses those credentials to create Checkout Sessions, verify webhook events, and fetch payment evidence
+   - this can use full secret keys or restricted API keys
+2. plugin/extension-style "Connect Stripe" onboarding
+   - the workspace clicks a product-facing "Connect Stripe" flow
+   - the goal is cleaner onboarding and less manual secret handling
+   - the donation/webhook model can still stay workspace-local
+3. full Stripe Connect platform / marketplace architecture
+   - the product manages broader connected-account lifecycle and often centralises platform concerns such as routing, transfers, and payout responsibilities
+   - this is a larger product/architecture commitment than the current fundraising v1 needs
+
+Current preferred interpretation:
+
+- do not assume Stripe Connect platform docs are automatically the right product model for this app
+- the hardest v1 requirement is still safe direct payment + webhook handling for a charity-owned Stripe account
+- cleaner onboarding is desirable, but it should not force a platform/marketplace architecture if the product does not need one
+
+Restricted-key note:
+
+- Stripe's API key model supports restricted API keys, which can be limited to only the resources the integration needs
+- for a near-v1 charity-owned account model, restricted keys may be a better fit than OAuth/Connect if:
+  - we want to reduce blast radius
+  - we are comfortable with manual admin setup
+  - we do not yet need a polished self-serve "Connect Stripe" UX
+- webhook signing secrets remain separate from API keys and still need their own workspace-level configuration
+
+Stripe Apps note:
+
+- Stripe Apps and restricted-API-key app patterns are conceptually relevant because they model "install an integration into your own Stripe account with constrained permissions"
+- however, a Stripe App is a Stripe-Dashboard-native product surface, not a Twenty app surface
+- so the concept is useful, but it is not a direct implementation path inside Twenty today
+
+Simplest safe v1 setup:
+
+- one charity workspace uses its own Stripe account
+- workspace stores:
+  - a Stripe publishable key
+  - a Stripe restricted or secret API key for server-side calls
+  - a Stripe webhook signing secret
+- the webhook URL stays workspace-specific:
+  - `https://<workspace-domain>/s/stripe/webhook`
+- this remains the lowest-complexity model until we decide that self-serve "Connect Stripe" onboarding is important enough to justify extra integration work
+
+Near-v1 Stripe connection direction:
+
+- if we pursue a near-v1 "Connect Stripe" path, keep the current proven webhook/event model:
+  - `checkout.session.completed` for setup/agreement evidence
+  - `invoice_payment.paid` for recurring payment economics
+- treat OAuth / Twenty Connections primarily as a cleaner workspace onboarding and credential-management layer, not as a webhook architecture rewrite
+- do not assume this automatically means a full Stripe Connect platform architecture
+- prefer one workspace-shared Stripe connection per workspace
+- prefer one Stripe account per workspace for v1
+- keep workspace-specific webhook URLs for v1, for example:
+  - `https://<workspace-domain>/s/stripe/webhook`
+- keep the webhook signing secret as a workspace-scoped `applicationVariable` for now:
+  - `STRIPE_WEBHOOK_SECRET`
+- if the app remains in a direct-integration model, a restricted API key may still be the better near-term credential than OAuth
+- use app registration `serverVariables` for Stripe OAuth client credentials only if we explicitly choose the "Connect Stripe" onboarding route:
+  - `STRIPE_CLIENT_ID`
+  - `STRIPE_CLIENT_SECRET`
+- use the workspace Stripe `ConnectedAccount` for outbound Stripe API access only if that model proves compatible with the Stripe account shape we need
+- likely keep `STRIPE_PUBLISHABLE_KEY` as a workspace-scoped variable in the first OAuth-enabled cut unless we prove a cleaner way to source it from the connection model
+
+Current empirical note on Twenty Connections:
+
+- a real Stripe OAuth connection was completed successfully in app-dev
+- this proves the basic Twenty app Connection flow is viable enough to create a connected Stripe account
+- however, the current app-facing connection surface still appears generic rather than Stripe-specific:
+  - access token and scopes are the main usable fields
+  - Stripe-specific account identity such as `acct_...`, publishable-key metadata, and other provider-specific fields are not yet clearly surfaced to the app in a first-class way
+- because of that, OAuth/Connections should currently be treated as an interesting early capability rather than the v1 credential model for this app
+- recommended posture:
+  - keep the direct charity-owned key model for v1
+  - treat OAuth/Connections as a candidate to retest once Twenty app Connections have matured further
+  - revisit in a few months rather than pushing the current early surface deeper into the payment architecture
+
+This keeps the v1 design intentionally cautious:
+
+- workspace routing is still solved by the normal workspace domain/subdomain model
+- webhook verification still uses a workspace-owned secret
+- a direct restricted-key model remains a valid v1 option
+- Connections improve admin/client onboarding and reduce manual secret handling if we choose that route
+- central cross-workspace Stripe webhook routing remains out of scope unless later evidence justifies it
+
 Sequencing guardrail:
 
 - the payment UI must not be mounted for the donor until the pre-payment staging row and correlation metadata are safely persisted or otherwise recoverable
@@ -258,6 +355,25 @@ Dedupe and idempotency should rely on the current evidence-first approach, inclu
 - `providerEventId`
 - `sourceFingerprint`
 - provider payment/session/agreement identifiers as appropriate
+
+Near-v1 Stripe connection note:
+
+- if we adopt Stripe OAuth/Connections, the webhook route should stay workspace-specific rather than centralised
+- the route should continue to resolve its workspace from the normal Twenty workspace domain/subdomain context
+- verification should continue to use the workspace-owned `STRIPE_WEBHOOK_SECRET`
+- the workspace Stripe `ConnectedAccount` should only be needed after verification for outbound Stripe API lookups
+  - e.g. fetching invoice, invoice payment, payment intent, charge, or balance transaction details
+
+Local development fallback:
+
+- local app-dev can continue to use env/app-configured Stripe credentials while the OAuth/Connections path is being introduced
+- expected local values remain:
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_PUBLISHABLE_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+- local webhook testing still requires a Stripe listener forwarding to the app route, for example:
+  - `stripe listen --forward-to http://localhost:2020/s/stripe/webhook`
+- do not treat the local fallback as the desired long-term client setup UX; it is a development convenience and migration bridge
 
 Repeated webhooks must no-op or update existing staging records, not create duplicate donation meaning.
 
