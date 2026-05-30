@@ -1,10 +1,16 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   createStripeOneOffGiftStaging,
-  updateStripeDonationFormGiftStaging,
   type StripeCheckoutSessionCompletedEvent,
-  type StripeDonationFormGiftStagingUpdateResult,
   type StripeOneOffGiftStagingResult,
+} from 'src/stripe/stripe-one-off-staging';
+import {
+  updateStripeDonationFormGiftStaging,
+  updateStripeDonationFormRecurringInvoicePaymentGiftStaging,
+} from 'src/stripe/stripe-donation-form-staging';
+import type {
+  StripeDonationFormGiftStagingUpdateResult,
+  StripeInvoicePaymentPaidEvent,
 } from 'src/stripe/stripe-one-off-staging';
 import {
   createStripeRecurringGiftStagingForReview,
@@ -21,11 +27,21 @@ type StripeCheckoutSessionLike = {
   subscription?: StripeObjectRef;
 };
 
+type StripeInvoicePaymentLike = {
+  invoice?: StripeObjectRef;
+  payment?: {
+    payment_intent?: StripeObjectRef;
+  } | null;
+};
+
 export type TrustedStripeEvent = {
   id?: string;
   type?: string;
   data?: {
-    object?: StripeCheckoutSessionLike | null;
+    object?:
+      | StripeCheckoutSessionLike
+      | StripeInvoicePaymentLike
+      | null;
   } | null;
 };
 
@@ -83,6 +99,21 @@ export const routeTrustedStripeEvent = async (
   client: CoreApiClient,
   event: TrustedStripeEvent,
 ): Promise<StripeEventRoutingResult> => {
+  if (event.type === 'invoice_payment.paid') {
+    const result =
+      await updateStripeDonationFormRecurringInvoicePaymentGiftStaging(
+        client,
+        event as StripeInvoicePaymentPaidEvent,
+      );
+
+    return {
+      action: result.updated
+        ? 'UPDATE_DONATION_FORM_GIFT_STAGING'
+        : 'DONATION_FORM_GIFT_STAGING_MISSING',
+      result,
+    };
+  }
+
   if (event.type !== 'checkout.session.completed') {
     return {
       action: 'IGNORED',

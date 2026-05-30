@@ -67,20 +67,53 @@ yarn twenty exec --postInstall
 
 The seed is intended to be safe to rerun as new workflow slices are added.
 
-## Current Limitation
+## Current Configuration Note
 
-On the current Twenty app-dev upgrade line under test, secret
-`applicationVariables` appear to break app settings loading and logic-function
-startup before values can be entered in the UI.
+The application manifest currently defines both public and secret
+`applicationVariables`, including Stripe and HMRC-related settings. Treat
+`src/application-config.ts` as the current source of truth for which variables
+exist.
 
-As a temporary local workaround, the app-level secret variables for:
+If app-dev/runtime behavior around secret variables regresses on a future
+Twenty line, record that as a version-specific runtime note rather than
+assuming the variables have been removed from the manifest.
 
+## Stripe Local Dev Note
+
+The current working Stripe runtime still depends on real webhook delivery for
+payment enrichment.
+
+That means a local donation test is not complete unless Stripe events are being
+forwarded to the app-dev webhook route:
+
+```bash
+stripe listen --forward-to http://localhost:2020/s/stripe/webhook
+```
+
+Without the listener:
+
+- checkout/session creation can still succeed,
+- but one-off and recurring payment fields may remain blank because the app
+  never receives the follow-up Stripe webhook events.
+
+Current local Stripe variables remain:
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
-- `HMRC_CHARITIES_CONFIG_JSON`
 
-have been removed from the manifest. Until that upstream issue is resolved,
-expect Stripe webhook verification and HMRC submission/config-driven Gift Aid
-flows to remain unavailable in this app-dev setup.
+Current Stripe connection note:
+
+- a real app-dev Stripe OAuth connection has now been tested successfully
+- that makes Twenty Connections worth revisiting later, but not the chosen v1
+  path yet
+- current working v1 posture remains:
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_PUBLISHABLE_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+- keep local env/app-variable Stripe config in place for now
+- revisit Stripe OAuth/Connections once the Twenty app connection surface has
+  matured further and exposes a clearer Stripe-specific account model
 
 ## CRM Demo Seed
 

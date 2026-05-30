@@ -4,6 +4,8 @@ import type {
   DuplicateCheckRequest,
   DuplicateCheckResponse,
   ListAppealOptionsResponse,
+  ListAppealSourceOptionsRequest,
+  ListAppealSourceOptionsResponse,
   ListFundOptionsResponse,
   ManualGiftDuplicateCheckRequest,
   ManualGiftDuplicateCheckResponse,
@@ -71,3 +73,11 @@ export const listFundOptions = (): Promise<ListFundOptionsResponse> =>
 
 export const listAppealOptions = (): Promise<ListAppealOptionsResponse> =>
   postAppRouteJson<ListAppealOptionsResponse>('/s/appeals/options', {});
+
+export const listAppealSourceOptions = (
+  input: ListAppealSourceOptionsRequest,
+): Promise<ListAppealSourceOptionsResponse> =>
+  postAppRouteJson<ListAppealSourceOptionsResponse>(
+    '/s/appeal-sources/options',
+    input,
+  );

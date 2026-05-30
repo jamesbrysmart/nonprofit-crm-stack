@@ -39,6 +39,21 @@ export const GIFT_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER =
   '41c3ad7e-e79b-42c5-a9ce-2e6b1690d951';
 
+export const GIFT_COVERED_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '1ae071db-eb5a-4462-b57e-33518f8fa24d';
+
+export const GIFT_GROSS_PAYMENT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '73ae2947-13fa-4d03-a241-34d7f691a085';
+
+export const GIFT_PROCESSING_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  'adbc2b7f-fc1f-42d0-a312-65df8e4798b0';
+
+export const GIFT_NET_RECEIVED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '3fc4d354-b19b-4349-b3bb-a0abded2c50c';
+
+export const GIFT_PROVIDER_PAYOUT_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER =
+  'd7e6e404-0d82-4517-851c-fb2aa7e89b3b';
+
 export const GIFT_REFUNDED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
   '5ff8c4d7-cfe2-4977-bd31-9db722990e5f';
 
@@ -59,6 +74,9 @@ export const GIFT_GIFT_AID_DECISION_SOURCE_FIELD_UNIVERSAL_IDENTIFIER =
 
 export const GIFT_GIFT_AID_LAST_EVALUATED_AT_FIELD_UNIVERSAL_IDENTIFIER =
   'e2b47dd7-4de9-4dcc-8410-c19cb914196a';
+
+export const GIFT_SOFT_CREDIT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
+  '8bc39f24-223b-4496-b92d-4d1e66716f62';
 
 export default defineObject({
   universalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
@@ -186,6 +204,68 @@ export default defineObject({
       defaultValue: null,
     },
     {
+      universalIdentifier: GIFT_SOFT_CREDIT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'softCreditType',
+      label: 'Soft credit type',
+      description:
+        'Relationship recognition reason when another person or organisation should receive soft credit',
+      icon: 'IconRosetteDiscountCheck',
+      isNullable: true,
+      defaultValue: null,
+      options: [
+        {
+          id: 'd1418163-6aac-4d78-92f3-4a0fb4de1adf',
+          value: 'FUNDRAISER',
+          label: 'Fundraiser',
+          position: 0,
+          color: 'blue',
+        },
+        {
+          id: '39139ca9-a444-4c29-9230-120cc8f5e5b4',
+          value: 'INTRODUCER',
+          label: 'Introducer',
+          position: 1,
+          color: 'green',
+        },
+        {
+          id: 'e30e1880-9d3b-4523-badf-b50e90dd8efb',
+          value: 'HOST',
+          label: 'Host',
+          position: 2,
+          color: 'orange',
+        },
+        {
+          id: '2be879c3-b716-44c2-9478-fddd6160fa86',
+          value: 'MATCHER',
+          label: 'Matcher',
+          position: 3,
+          color: 'purple',
+        },
+        {
+          id: '70cf1ba0-c71a-4b0c-b27a-dd2724574edf',
+          value: 'ADVOCATE',
+          label: 'Advocate',
+          position: 4,
+          color: 'yellow',
+        },
+        {
+          id: '5a4b2f55-175f-48a6-84f7-88c01ecb3b51',
+          value: 'PARTNER',
+          label: 'Partner',
+          position: 5,
+          color: 'red',
+        },
+        {
+          id: '588dc474-9d0c-4d6c-9cf0-7fd2a7a43236',
+          value: 'OTHER',
+          label: 'Other',
+          position: 6,
+          color: 'gray',
+        },
+      ],
+    },
+    {
       universalIdentifier: GIFT_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.TEXT,
       name: 'externalId',
@@ -222,6 +302,63 @@ export default defineObject({
       label: 'Provider payment ID',
       description: 'Provider-side payment reference when available',
       icon: 'IconReceiptPound',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_COVERED_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'coveredFeeAmount',
+      label: 'Covered fees',
+      description:
+        'Donor-added amount intended to help cover processing fees when known',
+      icon: 'IconReceiptTax',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_GROSS_PAYMENT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'grossPaymentAmount',
+      label: 'Payment total',
+      description:
+        'Provider-reported total payment amount before known deductions',
+      icon: 'IconCoins',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_PROCESSING_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'processingFeeAmount',
+      label: 'Processing fees',
+      description:
+        'Known provider or platform deductions attributed to this gift',
+      icon: 'IconCreditCardRefund',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_NET_RECEIVED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'netReceivedAmount',
+      label: 'Net received',
+      description:
+        'Provider-reported net amount attributable to this gift after known deductions',
+      icon: 'IconCash',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_PROVIDER_PAYOUT_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'providerPayoutReference',
+      label: 'Payout reference',
+      description:
+        'Provider-side payout, deposit, or settlement reference when available',
+      icon: 'IconBuildingBank',
       isNullable: true,
       defaultValue: null,
     },

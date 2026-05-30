@@ -7,7 +7,7 @@ describe('stripe-route-probe', () => {
     const secret = 'whsec_test_secret';
     const rawBody =
       '{"id":"evt_test","type":"checkout.session.completed","data":{"object":{"object":"checkout.session"}}}';
-    const timestamp = 1_714_000_000;
+    const timestamp = Math.floor(Date.now() / 1000);
     const signature = `t=${timestamp},v1=${createStripeSignature({
       secret,
       rawBody,

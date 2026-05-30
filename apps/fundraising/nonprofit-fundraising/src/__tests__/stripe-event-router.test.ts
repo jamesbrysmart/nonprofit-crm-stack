@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { routeTrustedStripeEvent } from 'src/stripe/stripe-event-router';
 import * as oneOffStaging from 'src/stripe/stripe-one-off-staging';
+import * as donationFormStaging from 'src/stripe/stripe-donation-form-staging';
 import * as recurringFulfillment from 'src/stripe/stripe-recurring-fulfillment';
 
 const client = {} as CoreApiClient;
@@ -54,7 +55,7 @@ describe('routeTrustedStripeEvent', () => {
       externalId: 'cs_router_unit',
     } as const;
     const updateSpy = vi
-      .spyOn(oneOffStaging, 'updateStripeDonationFormGiftStaging')
+      .spyOn(donationFormStaging, 'updateStripeDonationFormGiftStaging')
       .mockResolvedValue(updateResult);
     const oneOffSpy = vi.spyOn(oneOffStaging, 'createStripeOneOffGiftStaging');
 
@@ -87,7 +88,7 @@ describe('routeTrustedStripeEvent', () => {
       externalId: 'cs_router_unit',
     } as const;
     const updateSpy = vi
-      .spyOn(oneOffStaging, 'updateStripeDonationFormGiftStaging')
+      .spyOn(donationFormStaging, 'updateStripeDonationFormGiftStaging')
       .mockResolvedValue(updateResult);
     const recurringSpy = vi.spyOn(
       recurringFulfillment,
@@ -114,6 +115,98 @@ describe('routeTrustedStripeEvent', () => {
     });
     expect(updateSpy).toHaveBeenCalledOnce();
     expect(recurringSpy).not.toHaveBeenCalled();
+  });
+
+  it('routes invoice_payment.paid to recurring donation-form staging update', async () => {
+    const updateResult = {
+      updated: true,
+      giftStagingId: 'gift-staging-recurring-invoice-payment',
+      sourceFingerprint: 'dfs_router_invoice_payment',
+      externalId: 'ip_router_unit',
+    } as const;
+    const invoicePaymentUpdateSpy = vi
+      .spyOn(
+        donationFormStaging,
+        'updateStripeDonationFormRecurringInvoicePaymentGiftStaging',
+      )
+      .mockResolvedValue(updateResult);
+
+    const result = await routeTrustedStripeEvent(client, {
+      id: 'evt_invoice_payment_router_unit',
+      type: 'invoice_payment.paid',
+      data: {
+        object: {
+          id: 'ip_router_unit',
+          invoice: 'in_router_unit',
+          payment: {
+            payment_intent: 'pi_router_unit',
+          },
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      action: 'UPDATE_DONATION_FORM_GIFT_STAGING',
+      result: updateResult,
+    });
+    expect(invoicePaymentUpdateSpy).toHaveBeenCalledOnce();
+  });
+
+  it('ignores invoice.paid for donation-form recurring updates now that invoice_payment.paid is canonical', async () => {
+    const result = await routeTrustedStripeEvent(client, {
+      id: 'evt_invoice_router_unit',
+      type: 'invoice.paid',
+      data: {
+        object: {
+          id: 'in_router_unit',
+          subscription: 'sub_router_unit',
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      action: 'IGNORED',
+      reason: 'UNSUPPORTED_EVENT_TYPE',
+      eventType: 'invoice.paid',
+    });
+  });
+
+  it('ignores invoice.payment_succeeded for donation-form recurring updates now that invoice_payment.paid is canonical', async () => {
+    const result = await routeTrustedStripeEvent(client, {
+      id: 'evt_invoice_payment_succeeded_router_unit',
+      type: 'invoice.payment_succeeded',
+      data: {
+        object: {
+          id: 'in_router_unit',
+          subscription: 'sub_router_unit',
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      action: 'IGNORED',
+      reason: 'UNSUPPORTED_EVENT_TYPE',
+      eventType: 'invoice.payment_succeeded',
+    });
+  });
+
+  it('ignores payment_intent.succeeded for donation-form recurring updates now that invoice_payment.paid is canonical', async () => {
+    const result = await routeTrustedStripeEvent(client, {
+      id: 'evt_payment_intent_router_unit',
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: 'pi_router_unit',
+          invoice: 'in_router_unit',
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      action: 'IGNORED',
+      reason: 'UNSUPPORTED_EVENT_TYPE',
+      eventType: 'payment_intent.succeeded',
+    });
   });
 
   it('routes matched checkout.session.completed subscriptions to recurring fulfillment', async () => {

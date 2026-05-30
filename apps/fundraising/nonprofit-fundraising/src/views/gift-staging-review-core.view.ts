@@ -1,5 +1,6 @@
 import { defineView } from 'twenty-sdk/define';
 import { APPEAL_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-gift-staging.field';
+import { APPEAL_SOURCE_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-source-on-gift-staging.field';
 import { FUND_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fund-on-gift-staging.field';
 import {
   GIFT_STAGING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
@@ -76,6 +77,16 @@ export default defineView({
       viewFieldGroupUniversalIdentifier:
         CORE_REVIEW_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 4,
+      isVisible: true,
+      size: 220,
+    },
+    {
+      universalIdentifier: '326889fe-c819-437a-a861-b56758ec0b31',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        CORE_REVIEW_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 5,
       isVisible: true,
       size: 220,
     },

@@ -88,6 +88,13 @@ const loadStoredRecord = async (
           name: true,
         },
       },
+      appealSource: {
+        id: true,
+        name: true,
+        appeal: {
+          id: true,
+        },
+      },
       fund: {
         id: true,
         name: true,

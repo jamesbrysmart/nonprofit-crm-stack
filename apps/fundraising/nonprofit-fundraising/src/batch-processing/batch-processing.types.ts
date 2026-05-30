@@ -63,22 +63,61 @@ export type BatchProcessingRow = {
   providerEventId: string | null;
   provider: string | null;
   providerPaymentId: string | null;
+  coveredFeeAmount:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
+  grossPaymentAmount:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
+  processingFeeAmount:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
+  netReceivedAmount:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
+  providerPayoutReference: string | null;
   paymentProviderCustomerId: string | null;
   providerAgreementId: string | null;
   providerIntervalUnit: string | null;
   providerIntervalCount: number | null;
   donorPhone: string | null;
+  supporterEmailOptOut: boolean | null;
   rawProviderEvidence: unknown;
   sourceAppealName: string | null;
   sourceFundName: string | null;
   donorResolutionState: string | null;
   donor: {
     id: string;
+    supporterEmailOptOut?: boolean | null;
     emails?: {
       primaryEmail?: string | null;
       additionalEmails?: string[] | null;
     } | null;
   } | null;
+  softCreditPerson?: {
+    id: string;
+    name?: {
+      firstName?: string | null;
+      lastName?: string | null;
+    } | null;
+  } | null;
+  softCreditCompany?: {
+    id: string;
+    name?: string | null;
+  } | null;
+  softCreditType?: string | null;
   fund: {
     id: string;
     name?: string | null;
@@ -89,6 +128,13 @@ export type BatchProcessingRow = {
     defaultFund?: {
       id?: string | null;
       name?: string | null;
+    } | null;
+  } | null;
+  appealSource: {
+    id: string;
+    name?: string | null;
+    appeal?: {
+      id?: string | null;
     } | null;
   } | null;
   giftReadyStatus: GiftReadyStatus | null;

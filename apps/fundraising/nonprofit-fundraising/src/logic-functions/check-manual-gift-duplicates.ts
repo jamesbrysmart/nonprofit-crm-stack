@@ -1,40 +1,17 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import type {
-  ManualGiftDonorType,
   ManualGiftDuplicateCheckRequest,
   ManualGiftDuplicateCheckResponse,
   ManualGiftDuplicateMatch,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
-
-const normalizeString = (value: string | undefined) => value?.trim() ?? '';
-
-const normalizeCurrencyCode = (currencyCode: string | undefined) =>
-  normalizeString(currencyCode).toUpperCase();
-
-const parseAmountMicros = (amountValue: string | undefined) => {
-  const parsed = Number.parseFloat(normalizeString(amountValue));
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return Math.round(parsed * 1_000_000);
-};
-
-const getDonorType = (
-  donorType: ManualGiftDonorType | undefined,
-): ManualGiftDonorType => {
-  switch (donorType) {
-    case 'COMPANY':
-      return 'COMPANY';
-    default:
-      return 'INDIVIDUAL';
-  }
-};
-
-const normalizeGiftDate = (giftDate: string | undefined) =>
-  normalizeString(giftDate);
+import {
+  getManualGiftDonorType,
+  normalizeCurrencyCode,
+  normalizeGiftDate,
+  normalizeString,
+  parseManualGiftAmountMicros,
+} from 'src/manual-gift-entry/manual-gift-normalization';
 
 const buildCommittedGiftMatches = (
   gifts:
@@ -112,12 +89,12 @@ const buildStagedGiftMatches = (
 const handler = async (
   event: RoutePayload<ManualGiftDuplicateCheckRequest>,
 ): Promise<ManualGiftDuplicateCheckResponse> => {
-  const donorType = getDonorType(event.body?.donorType);
+  const donorType = getManualGiftDonorType(event.body?.donorType);
   const selectedDonorId = normalizeString(event.body?.selectedDonorId);
   const selectedCompanyId = normalizeString(event.body?.selectedCompanyId);
   const giftDate = normalizeGiftDate(event.body?.giftDate);
   const currencyCode = normalizeCurrencyCode(event.body?.currencyCode);
-  const amountMicros = parseAmountMicros(event.body?.amountValue);
+  const amountMicros = parseManualGiftAmountMicros(event.body?.amountValue);
 
   if (
     giftDate === '' ||

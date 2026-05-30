@@ -5,6 +5,7 @@ import {
   getGiftBatchWorkflowLimitMessage,
   isGiftBatchOverWorkflowLimit,
 } from 'src/batch-processing/batch-processing.limits';
+import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import type {
   BatchGiftCodingAppealMode,
   BatchGiftCodingFundMode,
@@ -103,6 +104,29 @@ const buildNextFundId = ({
   }
 };
 
+const buildNextAppealSourceMutation = ({
+  row,
+  nextAppealId,
+}: {
+  row: BatchProcessingRow;
+  nextAppealId: string;
+}) => {
+  const currentAppealSourceId = normalizeString(row.appealSource?.id);
+  const currentAppealSourceAppealId = normalizeString(row.appealSource?.appeal?.id);
+
+  if (currentAppealSourceId === '') {
+    return {};
+  }
+
+  if (nextAppealId !== '' && currentAppealSourceAppealId === nextAppealId) {
+    return {};
+  }
+
+  return {
+    appealSourceId: null,
+  };
+};
+
 const handler = async (
   event: RoutePayload<UpdateBatchGiftCodingRequest>,
 ): Promise<UpdateBatchGiftCodingResponse> => {
@@ -166,6 +190,7 @@ const handler = async (
   let updatedRowCount = 0;
   let appealUpdatedCount = 0;
   let fundUpdatedCount = 0;
+  const writebacks: Array<{ id: string } & Record<string, unknown>> = [];
 
   for (const row of targetRows) {
     const currentAppealId = normalizeString(row.appeal?.id);
@@ -185,47 +210,22 @@ const handler = async (
 
     const appealChanged = nextAppealId !== currentAppealId;
     const fundChanged = nextFundId !== currentFundId;
+    const appealSourceMutation = buildNextAppealSourceMutation({
+      row,
+      nextAppealId,
+    });
+    const appealSourceChanged = Object.keys(appealSourceMutation).length > 0;
 
-    if (!appealChanged && !fundChanged) {
+    if (!appealChanged && !fundChanged && !appealSourceChanged) {
       continue;
     }
 
-    await client.mutation({
-      updateGiftStaging: {
-        __args: {
-          id: row.id,
-          data: {
-            ...(appealChanged
-              ? nextAppealId === ''
-                ? { appealId: null }
-                : {
-                    appeal: {
-                      connect: {
-                        where: {
-                          id: nextAppealId,
-                        },
-                      },
-                    },
-                  }
-              : {}),
-            ...(fundChanged
-              ? nextFundId === ''
-                ? { fundId: null }
-                : {
-                    fund: {
-                      connect: {
-                        where: {
-                          id: nextFundId,
-                        },
-                      },
-                    },
-                  }
-              : {}),
-          },
-        },
-        id: true,
-      },
-    } as any);
+    writebacks.push({
+      id: row.id,
+      ...(appealChanged ? { appealId: nextAppealId === '' ? null : nextAppealId } : {}),
+      ...appealSourceMutation,
+      ...(fundChanged ? { fundId: nextFundId === '' ? null : nextFundId } : {}),
+    });
 
     updatedRowCount += 1;
     if (appealChanged) {
@@ -235,6 +235,10 @@ const handler = async (
       fundUpdatedCount += 1;
     }
   }
+
+  await persistGiftStagingBatchUpserts(writebacks, {
+    allowedIds: new Set(targetRows.map((row) => row.id)),
+  });
 
   return {
     giftBatchId,

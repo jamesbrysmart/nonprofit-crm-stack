@@ -182,6 +182,8 @@ export const buildGiftStagingReviewRecord = (
     sourceFundName: coalesceString(stored.sourceFundName),
     appealId: coalesceString(stored.appeal?.id),
     appealName: coalesceString(stored.appeal?.name),
+    appealSourceId: coalesceString(stored.appealSource?.id),
+    appealSourceName: coalesceString(stored.appealSource?.name),
     appealDefaultFundId: coalesceString(stored.appeal?.defaultFund?.id),
     fundId: coalesceString(stored.fund?.id),
     fundName: coalesceString(stored.fund?.name),

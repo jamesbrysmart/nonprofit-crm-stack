@@ -96,6 +96,7 @@ export const createPerson = async ({
       emails: {
         primaryEmail: true,
       },
+      supporterEmailOptOut: true,
     },
   } as any);
 
@@ -103,6 +104,7 @@ export const createPerson = async ({
     id: string;
     name?: { firstName?: string | null; lastName?: string | null } | null;
     emails?: { primaryEmail?: string | null } | null;
+    supporterEmailOptOut?: boolean | null;
   };
 };
 
@@ -141,6 +143,7 @@ export const loadPeopleByName = async (firstName: string, lastName: string) => {
           emails: {
             primaryEmail: true,
           },
+          supporterEmailOptOut: true,
         },
       },
     },
@@ -152,6 +155,7 @@ export const loadPeopleByName = async (firstName: string, lastName: string) => {
     id: string;
     name?: { firstName?: string | null; lastName?: string | null } | null;
     emails?: { primaryEmail?: string | null } | null;
+    supporterEmailOptOut?: boolean | null;
   }>;
 };
 
@@ -244,6 +248,7 @@ export const loadGiftStagingById = async (giftStagingId: string) => {
       donorLastName: true,
       donorEmail: true,
       donorPhone: true,
+      supporterEmailOptOut: true,
       donorMailingAddress: {
         addressStreet1: true,
         addressStreet2: true,

@@ -14,17 +14,14 @@ import {
   secondaryTextStyle,
   sectionHeaderStyle,
 } from 'src/front-components/gift-staging-review-ui';
-import { getFundIdForAppealSelection } from 'src/gift-coding/gift-coding';
+import {
+  getAppealIdForAppealSourceSelection,
+  getAppealSourceIdsForAppeal,
+  getFundIdForAppealSelection,
+} from 'src/gift-coding/gift-coding';
 import { saveGiftCoding } from 'src/gift-record/gift-coding.api';
 import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
-import {
-  listAppealOptions,
-  listFundOptions,
-} from 'src/manual-gift-entry/manual-gift-entry.api';
-import type {
-  AppealSummary,
-  FundSummary,
-} from 'src/manual-gift-entry/manual-gift-entry.types';
+import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
 
 export const GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '93dc8e25-d8c5-4d41-b43b-f72bf23f1e13';
@@ -38,6 +35,10 @@ type GiftCodingRecord = {
       id?: string | null;
       name?: string | null;
     } | null;
+  } | null;
+  appealSource?: {
+    id?: string | null;
+    name?: string | null;
   } | null;
   fund?: {
     id?: string | null;
@@ -94,6 +95,10 @@ const loadGiftCodingRecord = async (
           name: true,
         },
       },
+      appealSource: {
+        id: true,
+        name: true,
+      },
       fund: {
         id: true,
         name: true,
@@ -109,17 +114,21 @@ const GiftRecordCoding = () => {
   const [record, setRecord] = useState<GiftCodingRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [appeals, setAppeals] = useState<AppealSummary[]>([]);
-  const [funds, setFunds] = useState<FundSummary[]>([]);
-  const [loadingAppeals, setLoadingAppeals] = useState(false);
-  const [loadingFunds, setLoadingFunds] = useState(false);
-  const [appealOptionsError, setAppealOptionsError] = useState<string | null>(
-    null,
-  );
-  const [fundOptionsError, setFundOptionsError] = useState<string | null>(null);
   const [selectedAppealId, setSelectedAppealId] = useState('');
+  const [selectedAppealSourceId, setSelectedAppealSourceId] = useState('');
   const [selectedFundId, setSelectedFundId] = useState('');
   const [saving, setSaving] = useState(false);
+  const {
+    appeals,
+    appealSources,
+    funds,
+    loadingAppeals,
+    loadingAppealSources,
+    loadingFunds,
+    appealOptionsError,
+    appealSourceOptionsError,
+    fundOptionsError,
+  } = useGiftCodingOptions({ selectedAppealId });
 
   useEffect(() => {
     const run = async () => {
@@ -177,73 +186,12 @@ const GiftRecordCoding = () => {
   }, [recordId]);
 
   useEffect(() => {
-    let cancelled = false;
-    setLoadingAppeals(true);
-    setAppealOptionsError(null);
-
-    void listAppealOptions()
-      .then((result) => {
-        if (!cancelled) {
-          setAppeals(result.appeals);
-        }
-      })
-      .catch((loadError) => {
-        if (!cancelled) {
-          setAppeals([]);
-          setAppealOptionsError(
-            loadError instanceof Error
-              ? loadError.message
-              : 'Unable to load appeals.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingAppeals(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingFunds(true);
-    setFundOptionsError(null);
-
-    void listFundOptions()
-      .then((result) => {
-        if (!cancelled) {
-          setFunds(result.funds);
-        }
-      })
-      .catch((loadError) => {
-        if (!cancelled) {
-          setFunds([]);
-          setFundOptionsError(
-            loadError instanceof Error ? loadError.message : 'Unable to load funds.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingFunds(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
     if (!record || saving) {
       return;
     }
 
     setSelectedAppealId(normalizeString(record.appeal?.id));
+    setSelectedAppealSourceId(normalizeString(record.appealSource?.id));
     setSelectedFundId(normalizeString(record.fund?.id));
   }, [record, saving]);
 
@@ -265,11 +213,15 @@ const GiftRecordCoding = () => {
   }
 
   const currentAppealId = normalizeString(record.appeal?.id);
+  const currentAppealSourceId = normalizeString(record.appealSource?.id);
   const currentFundId = normalizeString(record.fund?.id);
   const currentAppealName = normalizeString(record.appeal?.name);
+  const currentAppealSourceName = normalizeString(record.appealSource?.name);
   const currentFundName = normalizeString(record.fund?.name);
   const hasUnsavedChanges =
-    selectedAppealId !== currentAppealId || selectedFundId !== currentFundId;
+    selectedAppealId !== currentAppealId ||
+    selectedAppealSourceId !== currentAppealSourceId ||
+    selectedFundId !== currentFundId;
 
   const handleAppealChange = (nextAppealId: string) => {
     setSelectedAppealId(nextAppealId);
@@ -280,6 +232,32 @@ const GiftRecordCoding = () => {
         currentFundId: selectedFundId,
       }),
     );
+
+    if (selectedAppealSourceId === '') {
+      return;
+    }
+
+    const allowedSourceIds = getAppealSourceIdsForAppeal({
+      appealSources,
+      appealId: nextAppealId,
+    });
+
+    if (allowedSourceIds && !allowedSourceIds.has(selectedAppealSourceId)) {
+      setSelectedAppealSourceId('');
+    }
+  };
+
+  const handleAppealSourceChange = (nextAppealSourceId: string) => {
+    const nextAppealId = getAppealIdForAppealSourceSelection({
+      appealSources,
+      nextAppealSourceId,
+    });
+
+    if (selectedAppealId === '' && nextAppealId !== '') {
+      handleAppealChange(nextAppealId);
+    }
+
+    setSelectedAppealSourceId(nextAppealSourceId);
   };
 
   const handleSaveCoding = async () => {
@@ -289,6 +267,7 @@ const GiftRecordCoding = () => {
       await saveGiftCoding({
         giftId: recordId,
         appealId: selectedAppealId,
+        appealSourceId: selectedAppealSourceId,
         fundId: selectedFundId,
       });
       await enqueueSnackbar({
@@ -316,6 +295,9 @@ const GiftRecordCoding = () => {
           {currentAppealName !== '' ? (
             <span style={badgeStyle('success')}>Appeal set</span>
           ) : null}
+          {currentAppealSourceName !== '' ? (
+            <span style={badgeStyle('success')}>Source set</span>
+          ) : null}
           {currentFundName !== '' ? (
             <span style={badgeStyle('success')}>Fund set</span>
           ) : null}
@@ -341,6 +323,14 @@ const GiftRecordCoding = () => {
           <div style={labelStyle}>Current fund</div>
           <div style={secondaryTextStyle}>
             {currentFundName === '' ? 'No fund set.' : currentFundName}
+          </div>
+        </div>
+        <div style={compactMetaItemStyle}>
+          <div style={labelStyle}>Current appeal source</div>
+          <div style={secondaryTextStyle}>
+            {currentAppealSourceName === ''
+              ? 'No appeal source set.'
+              : currentAppealSourceName}
           </div>
         </div>
       </div>
@@ -385,6 +375,25 @@ const GiftRecordCoding = () => {
             ))}
           </select>
         </label>
+
+        <label style={{ display: 'grid', gap: '4px' }}>
+          <span style={labelStyle}>Appeal source</span>
+          <select
+            style={inputStyle}
+            value={selectedAppealSourceId}
+            onChange={(event) =>
+              handleAppealSourceChange(getInputEventValue(event))
+            }
+            disabled={saving || loadingAppealSources}
+          >
+            <option value="">No appeal source</option>
+            {appealSources.map((appealSource) => (
+              <option key={appealSource.id} value={appealSource.id}>
+                {appealSource.name ?? 'Unnamed appeal source'}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {selectedAppeal?.defaultFund?.name ? (
@@ -397,10 +406,13 @@ const GiftRecordCoding = () => {
         </div>
       ) : null}
 
-      {appealOptionsError || fundOptionsError ? (
+      {appealOptionsError || appealSourceOptionsError || fundOptionsError ? (
         <div style={compactDividerSectionStyle}>
           {appealOptionsError ? (
             <div style={secondaryTextStyle}>{appealOptionsError}</div>
+          ) : null}
+          {appealSourceOptionsError ? (
+            <div style={secondaryTextStyle}>{appealSourceOptionsError}</div>
           ) : null}
           {fundOptionsError ? (
             <div style={secondaryTextStyle}>{fundOptionsError}</div>

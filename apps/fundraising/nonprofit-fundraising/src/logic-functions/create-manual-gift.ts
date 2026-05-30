@@ -7,228 +7,45 @@ import { recomputeDonorRollups } from 'src/donor-rollups/donor-rollups';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
+import { resolveAppealSourceSelection } from 'src/appeal-sources/appeal-source-integrity';
+import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
 import type {
   ManualGiftCompanyChoice,
-  ManualGiftDonorType,
   ManualGiftDonorChoice,
   ManualGiftEntryRequest,
-  ManualGiftPaymentType,
   ManualGiftEntryResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
-import type { MailingAddressEvidence } from 'src/gift-aid/gift-aid.types';
-
-const normalizeString = (value: string | undefined) => value?.trim() ?? '';
-
-const getDonorType = (
-  donorType: ManualGiftDonorType | undefined,
-): ManualGiftDonorType => {
-  switch (donorType) {
-    case 'INDIVIDUAL':
-    case 'COMPANY':
-      return donorType;
-    default:
-      return 'INDIVIDUAL';
-  }
-};
-
-const parseAmountMicros = (amountValue: string) => {
-  const parsed = Number.parseFloat(amountValue);
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error('Amount must be a positive number');
-  }
-
-  return Math.round(parsed * 1_000_000);
-};
-
-const normalizeCurrencyCode = (currencyCode: string | undefined) => {
-  const trimmed = normalizeString(currencyCode).toUpperCase();
-
-  if (trimmed === '') {
-    throw new Error('Currency is required');
-  }
-
-  return trimmed;
-};
-
-const normalizeGiftDate = (giftDate: string) => {
-  const trimmed = normalizeString(giftDate);
-
-  if (trimmed === '') {
-    throw new Error('Gift date is required');
-  }
-
-  return trimmed;
-};
-
-const getDonorChoice = (
-  donorChoice: ManualGiftDonorChoice | undefined,
-): ManualGiftDonorChoice => {
-  if (donorChoice === 'USE_EXISTING' || donorChoice === 'CREATE_NEW') {
-    return donorChoice;
-  }
-
-  throw new Error(
-    'Choose whether to use an existing donor or create a new donor before saving.',
-  );
-};
-
-const getCompanyChoice = (
-  companyChoice: ManualGiftCompanyChoice | undefined,
-): ManualGiftCompanyChoice => {
-  if (companyChoice === 'USE_EXISTING' || companyChoice === 'CREATE_NEW') {
-    return companyChoice;
-  }
-
-  throw new Error(
-    'Choose whether to use an existing company or create a new company before saving.',
-  );
-};
-
-const getPaymentType = (
-  paymentType: ManualGiftEntryRequest['paymentType'],
-): ManualGiftPaymentType => {
-  switch (paymentType) {
-    case 'CARD':
-    case 'DIRECT_DEBIT':
-    case 'BANK_TRANSFER':
-    case 'CASH':
-    case 'CHEQUE':
-    case 'OTHER':
-      return paymentType;
-    default:
-      throw new Error('Payment type is required');
-  }
-};
-
-const normalizeMailingAddress = (
-  mailingAddress: MailingAddressEvidence | null | undefined,
-) => {
-  if (!mailingAddress) {
-    return null;
-  }
-
-  const normalized = {
-    ...(normalizeString(mailingAddress.addressStreet1) !== ''
-      ? { addressStreet1: normalizeString(mailingAddress.addressStreet1) }
-      : {}),
-    ...(normalizeString(mailingAddress.addressStreet2) !== ''
-      ? { addressStreet2: normalizeString(mailingAddress.addressStreet2) }
-      : {}),
-    ...(normalizeString(mailingAddress.addressCity) !== ''
-      ? { addressCity: normalizeString(mailingAddress.addressCity) }
-      : {}),
-    ...(normalizeString(mailingAddress.addressState) !== ''
-      ? { addressState: normalizeString(mailingAddress.addressState) }
-      : {}),
-    ...(normalizeString(mailingAddress.addressPostcode) !== ''
-      ? { addressPostcode: normalizeString(mailingAddress.addressPostcode) }
-      : {}),
-    ...(normalizeString(mailingAddress.addressCountry) !== ''
-      ? {
-          addressCountry: normalizeString(
-            mailingAddress.addressCountry,
-          ).toUpperCase(),
-        }
-      : {}),
-  };
-
-  return Object.keys(normalized).length === 0 ? null : normalized;
-};
-
-const buildGiftPayload = (args: {
-  body: ManualGiftEntryRequest;
-  donorType: ManualGiftDonorType;
-  donorId?: string | null;
-  companyId?: string | null;
-}) => {
-  const { body, donorType, donorId, companyId } = args;
-  const donorFirstName = normalizeString(body.donorFirstName);
-  const donorLastName = normalizeString(body.donorLastName);
-  const donorEmail = normalizeString(body.donorEmail);
-  const companyName = normalizeString(body.companyName);
-
-  if (donorType === 'INDIVIDUAL') {
-    if (donorFirstName === '' || donorLastName === '') {
-      throw new Error('Donor first name and last name are required');
-    }
-  } else if (companyName === '') {
-    throw new Error('Company name is required');
-  }
-
-  return {
-    // Manual entry bypasses staging by default because this is the trusted
-    // operator path in the product model.
-    name:
-      donorType === 'INDIVIDUAL'
-        ? `Gift from ${donorFirstName} ${donorLastName}`.trim()
-        : `Gift from ${companyName}`,
-    amount: {
-      currencyCode: normalizeCurrencyCode(body.currencyCode),
-      amountMicros: parseAmountMicros(normalizeString(body.amountValue)),
-    },
-    giftDate: normalizeGiftDate(normalizeString(body.giftDate)),
-    ...(donorType === 'INDIVIDUAL'
-      ? {
-          donorFirstName,
-          donorLastName,
-          donorId,
-        }
-      : {}),
-    paymentType: getPaymentType(body.paymentType),
-    ...(donorType === 'INDIVIDUAL' && donorEmail !== ''
-      ? { donorEmail }
-      : {}),
-    ...(donorType === 'COMPANY' && companyName !== '' ? { companyName } : {}),
-    ...(donorType === 'COMPANY' && companyId ? { companyId } : {}),
-    giftAidRequested:
-      donorType === 'INDIVIDUAL' ? (body.giftAidRequested ?? null) : null,
-    giftAidDeclarationCaptured:
-      donorType === 'INDIVIDUAL'
-        ? (body.giftAidDeclarationCaptured ?? null)
-        : null,
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidDeclarationDate) !== ''
-      ? { giftAidDeclarationDate: normalizeString(body.giftAidDeclarationDate) }
-      : {}),
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidCoverageScope) !== ''
-      ? { giftAidCoverageScope: normalizeString(body.giftAidCoverageScope) }
-      : {}),
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidDeclarationSource) !== ''
-      ? {
-          giftAidDeclarationSource: normalizeString(
-            body.giftAidDeclarationSource,
-          ),
-        }
-      : {}),
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidTextVersion) !== ''
-      ? { giftAidTextVersion: normalizeString(body.giftAidTextVersion) }
-      : {}),
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidDeclarationId) !== ''
-      ? { giftAidDeclarationId: normalizeString(body.giftAidDeclarationId) }
-      : {}),
-    ...(normalizeString(body.selectedRecurringAgreementId) !== ''
-      ? {
-          recurringAgreementId: normalizeString(
-            body.selectedRecurringAgreementId,
-          ),
-        }
-      : {}),
-  };
-};
+import {
+  getManualGiftCompanyChoice,
+  getManualGiftDonorChoice,
+  getManualGiftDonorType,
+  normalizeManualGiftMailingAddress,
+  normalizeRequiredGiftDate,
+  normalizeString,
+} from 'src/manual-gift-entry/manual-gift-normalization';
+import { buildManualGiftPayload } from 'src/manual-gift-entry/manual-gift-payload';
 
 const resolveAppealAndFundSelection = async (
   client: CoreApiClient,
   body: ManualGiftEntryRequest,
 ) => {
-  const appealId = normalizeString(body.selectedAppealId);
+  const selectedAppealSourceId = normalizeString(body.selectedAppealSourceId);
+  const {
+    appealId,
+    appealDefaultFundId,
+    appealSourceId,
+  } = await resolveAppealSourceSelection({
+    client,
+    appealId: normalizeString(body.selectedAppealId),
+    appealSourceId: selectedAppealSourceId,
+  });
   let fundId = normalizeString(body.selectedFundId);
 
-  if (appealId !== '' && fundId === '') {
+  if (fundId === '' && appealDefaultFundId !== '') {
+    fundId = appealDefaultFundId;
+  }
+
+  if (appealId !== '' && fundId === '' && appealSourceId === '') {
     const result = await client.query({
       appeal: {
         __args: {
@@ -259,6 +76,7 @@ const resolveAppealAndFundSelection = async (
 
   return {
     appealId,
+    appealSourceId,
     fundId,
   };
 };
@@ -270,7 +88,9 @@ const ensurePersonForManualGift = async (
   const donorFirstName = normalizeString(body.donorFirstName);
   const donorLastName = normalizeString(body.donorLastName);
   const donorEmail = normalizeString(body.donorEmail);
-  const donorMailingAddress = normalizeMailingAddress(body.donorMailingAddress);
+  const donorMailingAddress = normalizeManualGiftMailingAddress(
+    body.donorMailingAddress,
+  );
 
   const result = await client.mutation({
     createPerson: {
@@ -373,12 +193,16 @@ const handler = async (
   event: RoutePayload<ManualGiftEntryRequest>,
 ): Promise<ManualGiftEntryResponse> => {
   const body = event.body ?? ({} as ManualGiftEntryRequest);
-  const donorType = getDonorType(body.donorType);
+  const donorType = getManualGiftDonorType(body.donorType);
   const client = new CoreApiClient();
   const donorChoice =
-    donorType === 'INDIVIDUAL' ? getDonorChoice(body.donorChoice) : null;
+    donorType === 'INDIVIDUAL'
+      ? getManualGiftDonorChoice(body.donorChoice)
+      : null;
   const companyChoice =
-    donorType === 'COMPANY' ? getCompanyChoice(body.companyChoice) : null;
+    donorType === 'COMPANY'
+      ? getManualGiftCompanyChoice(body.companyChoice)
+      : null;
   const donorId =
     donorType === 'INDIVIDUAL'
       ? await resolveIndividualDonorId(client, body, donorChoice)
@@ -403,7 +227,7 @@ const handler = async (
         };
   const evaluatedGiftPayload = await applyGiftAidMetadata(
     giftAidDeclarationService,
-    buildGiftPayload({
+    buildManualGiftPayload({
       body: giftAidInput,
       donorType,
       donorId,
@@ -415,7 +239,13 @@ const handler = async (
   const recurringAgreementId = normalizeString(
     evaluatedGiftPayload.recurringAgreementId as string | undefined,
   );
-  const { appealId, fundId } = await resolveAppealAndFundSelection(client, body);
+  const { appealId, appealSourceId, fundId } =
+    await resolveAppealAndFundSelection(client, body);
+  const softCreditSelection = resolveSoftCreditSelection({
+    softCreditPersonId: body.selectedSoftCreditPersonId,
+    softCreditCompanyId: body.selectedSoftCreditCompanyId,
+    softCreditType: body.selectedSoftCreditType,
+  });
   const opportunityId = normalizeString(
     body.selectedOpportunityId as string | undefined,
   );
@@ -475,6 +305,17 @@ const handler = async (
                 },
               }
             : {}),
+          ...(appealSourceId !== ''
+            ? {
+                appealSource: {
+                  connect: {
+                    where: {
+                      id: appealSourceId,
+                    },
+                  },
+                },
+              }
+            : {}),
           ...(fundId !== ''
             ? {
                 fund: {
@@ -484,6 +325,35 @@ const handler = async (
                     },
                   },
                 },
+              }
+            : {}),
+          ...(softCreditSelection.mode === 'set' &&
+          softCreditSelection.softCreditPersonId !== ''
+            ? {
+                softCreditPerson: {
+                  connect: {
+                    where: {
+                      id: softCreditSelection.softCreditPersonId,
+                    },
+                  },
+                },
+              }
+            : {}),
+          ...(softCreditSelection.mode === 'set' &&
+          softCreditSelection.softCreditCompanyId !== ''
+            ? {
+                softCreditCompany: {
+                  connect: {
+                    where: {
+                      id: softCreditSelection.softCreditCompanyId,
+                    },
+                  },
+                },
+              }
+            : {}),
+          ...(softCreditSelection.mode === 'set'
+            ? {
+                softCreditType: softCreditSelection.softCreditType,
               }
             : {}),
           ...(declarationId !== ''
@@ -534,7 +404,7 @@ const handler = async (
     await advanceRecurringAgreementExpectation(
       client,
       recurringAgreementId,
-      normalizeGiftDate(normalizeString(body.giftDate)),
+      normalizeRequiredGiftDate(body.giftDate),
     );
   }
 

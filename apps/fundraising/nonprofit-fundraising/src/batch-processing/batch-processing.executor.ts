@@ -11,6 +11,7 @@ import {
 } from 'src/gift-staging-review/gift-staging-processability';
 import {
   applyLinkedDonorEmailUpdates,
+  applyLinkedDonorSupporterEmailOptOutUpdates,
   buildGiftPayloadFromRow,
   createGiftViaRowFallback,
   normalizeString,
@@ -28,7 +29,9 @@ import {
 import type { BatchProcessingRow } from './batch-processing.types';
 
 export {
+  buildNewPersonCreateData,
   deriveLinkedDonorEmailUpdate,
+  deriveLinkedDonorSupporterEmailOptOutUpdate,
   deriveRecurringCadenceFromProviderEvidence,
 } from './batch-processing.executor.support';
 
@@ -103,6 +106,10 @@ const createBatchGiftChunk = async (
 
   const client = new CoreApiClient();
   await applyLinkedDonorEmailUpdates(
+    client,
+    entries.map((entry) => entry.row),
+  );
+  await applyLinkedDonorSupporterEmailOptOutUpdates(
     client,
     entries.map((entry) => entry.row),
   );

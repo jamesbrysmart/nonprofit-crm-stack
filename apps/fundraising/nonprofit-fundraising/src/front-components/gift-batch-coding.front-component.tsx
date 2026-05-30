@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
 import { Button } from 'twenty-sdk/ui';
@@ -21,14 +21,7 @@ import {
 } from 'src/front-components/gift-staging-review-ui';
 import { useGiftBatchReview } from 'src/gift-batch-review/use-gift-batch-review';
 import { broadcastGiftBatchInvalidated } from 'src/gift-batch-review/gift-batch-sync';
-import {
-  listAppealOptions,
-  listFundOptions,
-} from 'src/manual-gift-entry/manual-gift-entry.api';
-import type {
-  AppealSummary,
-  FundSummary,
-} from 'src/manual-gift-entry/manual-gift-entry.types';
+import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
 
 export const GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'df218c63-9ad9-4fc2-afca-cd120791befa';
@@ -103,14 +96,6 @@ const getFundModeLabel = (mode: BatchGiftCodingFundMode) => {
 const GiftBatchCoding = () => {
   const recordId = useRecordId();
   const { record, loading, error } = useGiftBatchReview(recordId);
-  const [appeals, setAppeals] = useState<AppealSummary[]>([]);
-  const [funds, setFunds] = useState<FundSummary[]>([]);
-  const [loadingAppeals, setLoadingAppeals] = useState(false);
-  const [loadingFunds, setLoadingFunds] = useState(false);
-  const [appealOptionsError, setAppealOptionsError] = useState<string | null>(
-    null,
-  );
-  const [fundOptionsError, setFundOptionsError] = useState<string | null>(null);
   const [appealMode, setAppealMode] =
     useState<BatchGiftCodingAppealMode>('LEAVE_UNCHANGED');
   const [fundMode, setFundMode] =
@@ -118,68 +103,14 @@ const GiftBatchCoding = () => {
   const [selectedAppealId, setSelectedAppealId] = useState('');
   const [selectedFundId, setSelectedFundId] = useState('');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingAppeals(true);
-    setAppealOptionsError(null);
-
-    void listAppealOptions()
-      .then((result) => {
-        if (!cancelled) {
-          setAppeals(result.appeals);
-        }
-      })
-      .catch((loadError) => {
-        if (!cancelled) {
-          setAppeals([]);
-          setAppealOptionsError(
-            loadError instanceof Error
-              ? loadError.message
-              : 'Unable to load appeals.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingAppeals(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingFunds(true);
-    setFundOptionsError(null);
-
-    void listFundOptions()
-      .then((result) => {
-        if (!cancelled) {
-          setFunds(result.funds);
-        }
-      })
-      .catch((loadError) => {
-        if (!cancelled) {
-          setFunds([]);
-          setFundOptionsError(
-            loadError instanceof Error ? loadError.message : 'Unable to load funds.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingFunds(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    appeals,
+    funds,
+    loadingAppeals,
+    loadingFunds,
+    appealOptionsError,
+    fundOptionsError,
+  } = useGiftCodingOptions({ includeAppealSources: false });
 
   const selectedAppeal = useMemo(
     () => appeals.find((appeal) => appeal.id === selectedAppealId) ?? null,

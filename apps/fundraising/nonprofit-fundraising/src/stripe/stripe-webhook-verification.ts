@@ -4,6 +4,8 @@ import type { RoutePayload } from 'twenty-sdk/define';
 const normalizeString = (value: string | null | undefined): string =>
   value?.trim() ?? '';
 
+const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
+
 const parseStripeSignatureHeader = (
   headerValue: string | null,
 ): { timestamp: number | null; signatures: string[] } => {
@@ -99,6 +101,7 @@ export type StripeWebhookVerificationResult =
         | 'missing_signature_timestamp'
         | 'missing_v1_signature'
         | 'missing_verification_payload'
+        | 'signature_timestamp_outside_tolerance'
         | 'signature_mismatch';
       eventId: string | null;
       eventType: string | null;
@@ -143,6 +146,20 @@ export const verifyStripeWebhookEvent = (
       eventId,
       eventType,
       stripeSignatureTimestamp: null,
+    };
+  }
+
+  const currentTimestampSeconds = Math.floor(Date.now() / 1000);
+  if (
+    Math.abs(currentTimestampSeconds - timestamp) >
+    STRIPE_SIGNATURE_TOLERANCE_SECONDS
+  ) {
+    return {
+      ok: false,
+      reason: 'signature_timestamp_outside_tolerance',
+      eventId,
+      eventType,
+      stripeSignatureTimestamp: timestamp,
     };
   }
 

@@ -21,6 +21,7 @@ const baseRequest: CreateDonationFormCheckoutSessionRequest = {
   donorFirstName: 'Ada',
   donorLastName: 'Lovelace',
   donorEmail: 'ada@example.org',
+  supporterEmailOptOut: true,
   donorMailingAddress: {
     addressStreet1: '12 Test Street',
     addressCity: 'London',
@@ -37,6 +38,8 @@ const baseRequest: CreateDonationFormCheckoutSessionRequest = {
 };
 
 describe('createDonationFormCheckoutSessionWithDependencies', () => {
+  process.env.TWENTY_API_URL = 'https://twenty.example.test';
+
   it('creates pre-payment gift staging before secure payment fields load and persists correlation metadata', async () => {
     const mutationCalls: Array<unknown> = [];
     const stripeSessionCreator = {
@@ -59,7 +62,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             description: 'A one-off donation',
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
-            successUrl: 'https://charity.example.org/thanks',
+            thankYouMessage: 'Thanks for your donation.',
             giftAidEnabled: true,
             giftAidTextVersion: 'ga-2026-05',
             sourceAppealName: 'Spring Appeal',
@@ -86,6 +89,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             'donation_form_embed',
           );
           expect(createArgs.giftAidTextVersion).toBe('ga-2026-05');
+          expect(createArgs.supporterEmailOptOut).toBe(true);
           return {
             createGiftStaging: {
               id: 'stg_elements_123',
@@ -101,6 +105,9 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
         );
         expect(updateArgs.data.rawProviderEvidence.metadata.giftStagingId).toBe(
           'stg_elements_123',
+        );
+        expect(updateArgs.data.rawProviderEvidence.supporterEmailOptOut).toBe(
+          true,
         );
         expect(
           updateArgs.data.rawProviderEvidence.metadata.sourceFingerprint,
@@ -149,7 +156,9 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
     expect(checkoutInput.metadata.giftAidDeclarationDate).toBe('2026-05-20');
     expect(checkoutInput.ui_mode).toBe('elements');
     expect(checkoutInput.payment_method_types).toEqual(['card']);
-    expect(checkoutInput.return_url).toBe('https://charity.example.org/thanks');
+    expect(checkoutInput.return_url).toBe(
+      'https://twenty.example.test/s/donation-forms/embed-frame?publicId=df_public_123',
+    );
     expect(checkoutInput.redirect_on_completion).toBeUndefined();
     expect(checkoutInput.success_url).toBeUndefined();
     expect(checkoutInput.cancel_url).toBeUndefined();
@@ -168,7 +177,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
           publishedConfig: {
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
-            successUrl: 'https://charity.example.org/thanks',
+            thankYouMessage: 'Thanks for your donation.',
           },
         },
       }),
@@ -239,7 +248,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
           publishedConfig: {
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
-            successUrl: 'https://charity.example.org/thanks',
+            thankYouMessage: 'Thanks for your donation.',
             giftAidEnabled: true,
           },
         },
@@ -285,7 +294,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
           publishedConfig: {
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
-            successUrl: 'https://charity.example.org/thanks',
+            thankYouMessage: 'Thanks for your donation.',
             giftAidEnabled: true,
           },
         },
@@ -341,7 +350,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             description: 'A monthly donation',
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
-            successUrl: 'https://charity.example.org/thanks',
+            thankYouMessage: 'Thanks for your donation.',
             giftAidEnabled: false,
           },
         },
@@ -430,7 +439,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             title: 'Support our work',
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
-            successUrl: 'https://charity.example.org/thanks',
+            thankYouMessage: 'Thanks for your donation.',
           },
         },
       }),
@@ -481,7 +490,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             mode: 'ONE_OFF',
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
-            successUrl: 'https://charity.example.org/thanks',
+            thankYouMessage: 'Thanks for your donation.',
           },
         },
       }),

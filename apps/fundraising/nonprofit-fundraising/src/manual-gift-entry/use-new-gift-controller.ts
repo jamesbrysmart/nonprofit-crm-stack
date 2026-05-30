@@ -5,16 +5,12 @@ import {
   checkDonorDuplicates,
   checkManualGiftDuplicates,
   createManualGift,
-  listAppealOptions,
-  listFundOptions,
   searchOpportunities,
   searchRecurringAgreements,
 } from './manual-gift-entry.api';
 import type {
-  AppealSummary,
   CompanyDuplicateCheckResponse,
   DuplicateCheckResponse,
-  FundSummary,
   ManualGiftCompanyChoice,
   ManualGiftDonorChoice,
   ManualGiftDonorType,
@@ -29,7 +25,12 @@ import {
   findSelectedDonor,
   normalizeName,
 } from './new-gift-support';
-import { getFundIdForAppealSelection } from 'src/gift-coding/gift-coding';
+import {
+  getAppealIdForAppealSourceSelection,
+  getAppealSourceIdsForAppeal,
+  getFundIdForAppealSelection,
+} from 'src/gift-coding/gift-coding';
+import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
 
 export const useNewGiftController = () => {
   const [donorType, setDonorType] =
@@ -43,16 +44,20 @@ export const useNewGiftController = () => {
   const [paymentType, setPaymentType] =
     useState<ManualGiftPaymentType>('BANK_TRANSFER');
   const [giftDate, setGiftDate] = useState('');
-  const [fundOptions, setFundOptions] = useState<FundSummary[]>([]);
-  const [appealOptions, setAppealOptions] = useState<AppealSummary[]>([]);
   const [selectedFundId, setSelectedFundId] = useState('');
   const [selectedAppealId, setSelectedAppealId] = useState('');
-  const [loadingFundOptions, setLoadingFundOptions] = useState(false);
-  const [loadingAppealOptions, setLoadingAppealOptions] = useState(false);
-  const [fundOptionsError, setFundOptionsError] = useState<string | null>(null);
-  const [appealOptionsError, setAppealOptionsError] = useState<string | null>(
-    null,
-  );
+  const [selectedAppealSourceId, setSelectedAppealSourceId] = useState('');
+  const {
+    appeals: appealOptions,
+    appealSources: appealSourceOptions,
+    funds: fundOptions,
+    loadingAppeals: loadingAppealOptions,
+    loadingAppealSources: loadingAppealSourceOptions,
+    loadingFunds: loadingFundOptions,
+    appealOptionsError,
+    appealSourceOptionsError,
+    fundOptionsError,
+  } = useGiftCodingOptions({ selectedAppealId });
   const [includeDonorAddress, setIncludeDonorAddress] = useState(false);
   const [addressStreet1, setAddressStreet1] = useState('');
   const [addressStreet2, setAddressStreet2] = useState('');
@@ -131,68 +136,6 @@ export const useNewGiftController = () => {
   ]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    setLoadingFundOptions(true);
-    setFundOptionsError(null);
-
-    void listFundOptions()
-      .then((result) => {
-        if (!cancelled) {
-          setFundOptions(result.funds);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setFundOptions([]);
-          setFundOptionsError(
-            error instanceof Error ? error.message : 'Unable to load funds.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingFundOptions(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    setLoadingAppealOptions(true);
-    setAppealOptionsError(null);
-
-    void listAppealOptions()
-      .then((result) => {
-        if (!cancelled) {
-          setAppealOptions(result.appeals);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setAppealOptions([]);
-          setAppealOptionsError(
-            error instanceof Error ? error.message : 'Unable to load appeals.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingAppealOptions(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
     if (selectedAppealId === '') {
       return;
     }
@@ -207,6 +150,21 @@ export const useNewGiftController = () => {
       setSelectedFundId(nextFundId);
     }
   }, [appealOptions, selectedAppealId, selectedFundId]);
+
+  useEffect(() => {
+    if (selectedAppealSourceId === '') {
+      return;
+    }
+
+    const allowedSourceIds = getAppealSourceIdsForAppeal({
+      appealSources: appealSourceOptions,
+      appealId: selectedAppealId,
+    });
+
+    if (allowedSourceIds && !allowedSourceIds.has(selectedAppealSourceId)) {
+      setSelectedAppealSourceId('');
+    }
+  }, [appealSourceOptions, selectedAppealId, selectedAppealSourceId]);
 
   const trimmedFirstName = normalizeName(donorFirstName);
   const trimmedLastName = normalizeName(donorLastName);
@@ -507,6 +465,7 @@ export const useNewGiftController = () => {
         giftDate: giftDate.trim(),
         ...(selectedFundId !== '' ? { selectedFundId } : {}),
         ...(selectedAppealId !== '' ? { selectedAppealId } : {}),
+        ...(selectedAppealSourceId !== '' ? { selectedAppealSourceId } : {}),
         ...(donorType === 'INDIVIDUAL'
           ? {
               giftAidRequested,
@@ -644,6 +603,43 @@ export const useNewGiftController = () => {
     }
   };
 
+  const handleAppealChange = (nextAppealId: string) => {
+    setSelectedAppealId(nextAppealId);
+    setSelectedFundId(
+      getFundIdForAppealSelection({
+        appeals: appealOptions,
+        nextAppealId,
+        currentFundId: selectedFundId,
+      }),
+    );
+
+    if (selectedAppealSourceId === '') {
+      return;
+    }
+
+    const allowedSourceIds = getAppealSourceIdsForAppeal({
+      appealSources: appealSourceOptions,
+      appealId: nextAppealId,
+    });
+
+    if (allowedSourceIds && !allowedSourceIds.has(selectedAppealSourceId)) {
+      setSelectedAppealSourceId('');
+    }
+  };
+
+  const handleAppealSourceChange = (nextAppealSourceId: string) => {
+    const nextAppealId = getAppealIdForAppealSourceSelection({
+      appealSources: appealSourceOptions,
+      nextAppealSourceId,
+    });
+
+    if (selectedAppealId === '' && nextAppealId !== '') {
+      handleAppealChange(nextAppealId);
+    }
+
+    setSelectedAppealSourceId(nextAppealSourceId);
+  };
+
   return {
     donorType,
     setDonorType,
@@ -665,14 +661,19 @@ export const useNewGiftController = () => {
     setGiftDate,
     fundOptions,
     appealOptions,
+    appealSourceOptions,
     selectedFundId,
     setSelectedFundId,
     selectedAppealId,
-    setSelectedAppealId,
+    setSelectedAppealId: handleAppealChange,
+    selectedAppealSourceId,
+    setSelectedAppealSourceId: handleAppealSourceChange,
     loadingFundOptions,
     loadingAppealOptions,
+    loadingAppealSourceOptions,
     fundOptionsError,
     appealOptionsError,
+    appealSourceOptionsError,
     includeDonorAddress,
     setIncludeDonorAddress,
     addressStreet1,

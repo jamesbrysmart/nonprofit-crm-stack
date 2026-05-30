@@ -2,6 +2,7 @@ import type {
   GiftAidCaptureInput,
   MailingAddressEvidence,
 } from 'src/gift-aid/gift-aid.types';
+import type { SoftCreditType } from 'src/soft-credits/soft-credit-integrity';
 
 export type PersonSummary = {
   id: string;
@@ -42,6 +43,21 @@ export type AppealSummary = {
   defaultFund?: {
     id?: string | null;
     name?: string | null;
+  } | null;
+};
+
+export type AppealSourceSummary = {
+  id: string;
+  name?: string | null;
+  status?: string | null;
+  sourceType?: string | null;
+  appeal?: {
+    id?: string | null;
+    name?: string | null;
+    defaultFund?: {
+      id?: string | null;
+      name?: string | null;
+    } | null;
   } | null;
 };
 
@@ -98,6 +114,10 @@ export type ManualGiftEntryRequest = GiftAidCaptureInput & {
   giftDate?: string;
   selectedFundId?: string;
   selectedAppealId?: string;
+  selectedAppealSourceId?: string;
+  selectedSoftCreditPersonId?: string;
+  selectedSoftCreditCompanyId?: string;
+  selectedSoftCreditType?: SoftCreditType;
   selectedOpportunityId?: string;
   donorChoice?: ManualGiftDonorChoice;
   selectedDonorId?: string;
@@ -131,6 +151,14 @@ export type ListFundOptionsResponse = {
 
 export type ListAppealOptionsResponse = {
   appeals: AppealSummary[];
+};
+
+export type ListAppealSourceOptionsRequest = {
+  appealId?: string;
+};
+
+export type ListAppealSourceOptionsResponse = {
+  appealSources: AppealSourceSummary[];
 };
 
 export type ManualGiftDuplicateCheckRequest = {

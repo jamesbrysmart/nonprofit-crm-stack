@@ -33,6 +33,21 @@ export const GIFT_STAGING_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER =
   'a3e18807-c5e7-46d2-b76f-c70ecb3c8866';
 
+export const GIFT_STAGING_COVERED_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  'd4beef84-2ff6-404f-918e-384ddc09d269';
+
+export const GIFT_STAGING_GROSS_PAYMENT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '0085ea8a-fc5b-4d4c-abfd-ea0fd0120f38';
+
+export const GIFT_STAGING_PROCESSING_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '2f863474-eefd-4b44-a0b8-6f838ddb3767';
+
+export const GIFT_STAGING_NET_RECEIVED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '785367d0-b436-4e54-b463-ab4853792b51';
+
+export const GIFT_STAGING_PROVIDER_PAYOUT_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER =
+  '70f7124b-10b4-4a19-8a4f-6c6cbc249fae';
+
 export const GIFT_STAGING_PAYMENT_PROVIDER_CUSTOMER_ID_FIELD_UNIVERSAL_IDENTIFIER =
   'a8ca5ce4-a49b-4825-b8c1-4a4f50e41f5e';
 
@@ -59,6 +74,9 @@ export const GIFT_STAGING_DONOR_PHONE_FIELD_UNIVERSAL_IDENTIFIER =
 
 export const GIFT_STAGING_DONOR_MAILING_ADDRESS_FIELD_UNIVERSAL_IDENTIFIER =
   '7e92406a-8a2f-48d0-91d3-64db0b0be2d2';
+
+export const GIFT_STAGING_SUPPORTER_EMAIL_OPT_OUT_FIELD_UNIVERSAL_IDENTIFIER =
+  'ba57a628-a226-4d08-8e34-fd1e1e974bb5';
 
 export const GIFT_STAGING_DONOR_RESOLUTION_STATE_FIELD_UNIVERSAL_IDENTIFIER =
   '0d638f6a-901f-4974-85f6-bfda935c17f9';
@@ -110,6 +128,9 @@ export const GIFT_STAGING_SOURCE_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER =
 
 export const GIFT_STAGING_SOURCE_FUND_NAME_FIELD_UNIVERSAL_IDENTIFIER =
   '7932f2e6-e1d2-4693-966c-cfed8dc09102';
+
+export const GIFT_STAGING_SOFT_CREDIT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
+  'ac7af6e3-ed66-4e8a-ae0e-4ebac53d25b7';
 
 export default defineObject({
   universalIdentifier: GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
@@ -238,6 +259,66 @@ export default defineObject({
     },
     {
       universalIdentifier:
+        GIFT_STAGING_COVERED_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'coveredFeeAmount',
+      label: 'Covered fees',
+      description:
+        'Donor-added amount intended to help cover processing fees when known',
+      icon: 'IconReceiptTax',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_GROSS_PAYMENT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'grossPaymentAmount',
+      label: 'Payment total',
+      description:
+        'Provider-reported total payment amount before known deductions',
+      icon: 'IconCoins',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_PROCESSING_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'processingFeeAmount',
+      label: 'Processing fees',
+      description:
+        'Known provider or platform deductions attributed to this staged gift',
+      icon: 'IconCreditCardRefund',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_NET_RECEIVED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'netReceivedAmount',
+      label: 'Net received',
+      description:
+        'Provider-reported net amount attributable to this staged gift after known deductions',
+      icon: 'IconCash',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_PROVIDER_PAYOUT_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'providerPayoutReference',
+      label: 'Payout reference',
+      description:
+        'Provider-side payout, deposit, or settlement reference when available',
+      icon: 'IconBuildingBank',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
         GIFT_STAGING_PAYMENT_PROVIDER_CUSTOMER_ID_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.TEXT,
       name: 'paymentProviderCustomerId',
@@ -328,6 +409,81 @@ export default defineObject({
       label: 'Donor mailing address',
       description: 'Incoming donor mailing address evidence from intake',
       icon: 'IconMapPin',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_SOFT_CREDIT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'softCreditType',
+      label: 'Soft credit type',
+      description:
+        'Relationship recognition reason when another person or organisation should receive soft credit',
+      icon: 'IconRosetteDiscountCheck',
+      isNullable: true,
+      defaultValue: null,
+      options: [
+        {
+          id: '00aaf6f9-5591-41a8-90f6-86c1e8dcf60d',
+          value: 'FUNDRAISER',
+          label: 'Fundraiser',
+          position: 0,
+          color: 'blue',
+        },
+        {
+          id: '52c11636-a42f-4f9d-b1a6-f797d0a11c77',
+          value: 'INTRODUCER',
+          label: 'Introducer',
+          position: 1,
+          color: 'green',
+        },
+        {
+          id: '8c126f48-7ca5-4643-aa8f-445fcbf41756',
+          value: 'HOST',
+          label: 'Host',
+          position: 2,
+          color: 'orange',
+        },
+        {
+          id: 'f770ad80-8fe0-4e48-834b-a15f154a6547',
+          value: 'MATCHER',
+          label: 'Matcher',
+          position: 3,
+          color: 'purple',
+        },
+        {
+          id: '4ee30621-7d95-435f-8b9d-c10d75323285',
+          value: 'ADVOCATE',
+          label: 'Advocate',
+          position: 4,
+          color: 'yellow',
+        },
+        {
+          id: '6136f581-69e5-42d0-b956-38457f22b420',
+          value: 'PARTNER',
+          label: 'Partner',
+          position: 5,
+          color: 'red',
+        },
+        {
+          id: '185f5d81-a7f6-4349-a6b4-17fe16aabdac',
+          value: 'OTHER',
+          label: 'Other',
+          position: 6,
+          color: 'gray',
+        },
+      ],
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_SUPPORTER_EMAIL_OPT_OUT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.BOOLEAN,
+      name: 'supporterEmailOptOut',
+      label: 'Supporter email opt-out',
+      description:
+        'Express request not to receive supporter emails such as appeals, newsletters, and campaign updates',
+      icon: 'IconMailOff',
       isNullable: true,
       defaultValue: null,
     },

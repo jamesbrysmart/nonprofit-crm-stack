@@ -1,5 +1,6 @@
 import { defineView } from 'twenty-sdk/define';
 import { APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-gift.field';
+import { APPEAL_SOURCE_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-source-on-gift.field';
 import { COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/company-on-gift.field';
 import { DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/donor-on-gift.field';
 import { FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fund-on-gift.field';
@@ -93,6 +94,16 @@ export default defineView({
       viewFieldGroupUniversalIdentifier:
         GIFT_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 6,
+      isVisible: true,
+      size: 220,
+    },
+    {
+      universalIdentifier: 'cf977ce5-9818-4cfb-9774-367213d64554',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        GIFT_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 7,
       isVisible: true,
       size: 220,
     },

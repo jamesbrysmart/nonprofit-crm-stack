@@ -5,6 +5,11 @@ import {
   type RoutePayload,
 } from 'twenty-sdk/define';
 import { buildDonationFormEmbedSnippet } from 'src/donation-forms/build-donation-form-embed-document';
+import {
+  normalizeDonationFormConfigObject,
+  normalizeDonationFormString,
+  validatePublishableDonationFormConfig,
+} from 'src/donation-forms/donation-form-config';
 
 export type PublishDonationFormRequest = {
   donationFormId?: string;
@@ -28,8 +33,7 @@ type DonationFormRecord = {
   config?: Record<string, unknown> | null;
 };
 
-const normalizeString = (value: string | null | undefined): string =>
-  value?.trim() ?? '';
+const normalizeString = normalizeDonationFormString;
 
 const buildPublicId = (): string => `df_${randomUUID().replace(/-/g, '').slice(0, 16)}`;
 
@@ -94,13 +98,11 @@ export const publishDonationFormWithClient = async (
     throw new Error('Provider config key is required before publishing');
   }
 
-  const config =
-    existing.config && typeof existing.config === 'object' && !Array.isArray(existing.config)
-      ? existing.config
-      : null;
-  if (!config) {
+  const config = normalizeDonationFormConfigObject(existing.config ?? null);
+  if (Object.keys(config).length === 0) {
     throw new Error('Donation form config is required before publishing');
   }
+  validatePublishableDonationFormConfig(config);
 
   const publicId = normalizeString(existing.publicId) || buildPublicId();
   const publishedVersion = buildPublishedVersion();

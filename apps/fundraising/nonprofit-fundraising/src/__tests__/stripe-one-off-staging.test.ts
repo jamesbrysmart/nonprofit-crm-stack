@@ -3,9 +3,13 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 
 import {
   buildStripeOneOffGiftStagingInput,
-  updateStripeDonationFormGiftStaging,
   type StripeCheckoutSessionCompletedEvent,
 } from 'src/stripe/stripe-one-off-staging';
+import {
+  updateStripeDonationFormGiftStaging,
+  updateStripeDonationFormGiftStagingWithDependencies,
+  updateStripeDonationFormRecurringInvoicePaymentGiftStagingWithDependencies,
+} from 'src/stripe/stripe-donation-form-staging';
 
 const buildEvent = (
   overrides: Partial<StripeCheckoutSessionCompletedEvent> = {},
@@ -212,11 +216,10 @@ describe('updateStripeDonationFormGiftStaging', () => {
             paymentProviderCustomerId: 'cus_form_recurring_complete',
             providerAgreementId: 'sub_form_recurring_complete',
             giftDate: '2026-04-26',
-            paymentState: 'PAYMENT_CONFIRMED',
             rawProviderEvidence: {
               provider: 'STRIPE',
               flow: 'DONATION_FORM',
-              paymentLifecycle: 'PAYMENT_CONFIRMED',
+              paymentLifecycle: 'AWAITING_PAYMENT',
               donationType: 'RECURRING',
               recurring: {
                 intervalUnit: 'month',
@@ -234,6 +237,548 @@ describe('updateStripeDonationFormGiftStaging', () => {
               customerDetails: {
                 name: 'Ada Lovelace',
                 email: 'ada@example.com',
+              },
+            },
+          },
+        },
+        id: true,
+      },
+    });
+  });
+
+  it('maps Stripe payment economics from balance transaction evidence onto the existing staging row', async () => {
+    const query = vi.fn().mockResolvedValueOnce({
+      giftStaging: {
+        id: 'gift-staging-economics',
+        rawProviderEvidence: {
+          provider: 'STRIPE',
+          flow: 'DONATION_FORM',
+          paymentLifecycle: 'AWAITING_PAYMENT',
+        },
+      },
+    });
+    const mutation = vi.fn().mockResolvedValue({
+      updateGiftStaging: {
+        id: 'gift-staging-economics',
+      },
+    });
+    const client = {
+      query,
+      mutation,
+    } as unknown as CoreApiClient;
+    const paymentEconomicsRetriever = {
+      retrievePaymentEconomics: vi.fn().mockResolvedValue({
+        paymentIntentId: 'pi_form_economics',
+        latestChargeId: 'ch_form_economics',
+        balanceTransactionId: 'txn_form_economics',
+        grossPaymentAmount: {
+          amountMicros: 25_000_000,
+          currencyCode: 'GBP',
+        },
+        processingFeeAmount: {
+          amountMicros: 500_000,
+          currencyCode: 'GBP',
+        },
+        netReceivedAmount: {
+          amountMicros: 24_500_000,
+          currencyCode: 'GBP',
+        },
+      }),
+    };
+
+    const result = await updateStripeDonationFormGiftStagingWithDependencies(
+      client,
+      {
+        id: 'evt_form_economics',
+        type: 'checkout.session.completed',
+        created: 1777198422,
+        data: {
+          object: {
+            id: 'cs_form_economics',
+            amount_total: 2500,
+            currency: 'gbp',
+            created: 1777198410,
+            customer: 'cus_form_economics',
+            customer_details: {
+              email: 'ada@example.com',
+              name: 'Ada Lovelace',
+            },
+            payment_intent: 'pi_form_economics',
+            metadata: {
+              sourceFingerprint: 'dfs_form_economics',
+              giftStagingId: 'gift-staging-economics',
+            },
+          },
+        },
+      },
+      {
+        paymentEconomicsRetriever,
+      },
+    );
+
+    expect(result).toEqual({
+      updated: true,
+      giftStagingId: 'gift-staging-economics',
+      sourceFingerprint: 'dfs_form_economics',
+      externalId: 'cs_form_economics',
+    });
+    expect(paymentEconomicsRetriever.retrievePaymentEconomics).toHaveBeenCalledOnce();
+    expect(mutation.mock.calls[0]?.[0]).toEqual({
+      updateGiftStaging: {
+        __args: {
+          id: 'gift-staging-economics',
+          data: {
+            externalId: 'cs_form_economics',
+            providerEventId: 'evt_form_economics',
+            provider: 'STRIPE',
+            providerPaymentId: 'pi_form_economics',
+            grossPaymentAmount: {
+              amountMicros: 25_000_000,
+              currencyCode: 'GBP',
+            },
+            processingFeeAmount: {
+              amountMicros: 500_000,
+              currencyCode: 'GBP',
+            },
+            netReceivedAmount: {
+              amountMicros: 24_500_000,
+              currencyCode: 'GBP',
+            },
+            paymentProviderCustomerId: 'cus_form_economics',
+            giftDate: '2026-04-26',
+            paymentState: 'PAYMENT_CONFIRMED',
+            rawProviderEvidence: {
+              provider: 'STRIPE',
+              flow: 'DONATION_FORM',
+              paymentLifecycle: 'PAYMENT_CONFIRMED',
+              eventType: 'checkout.session.completed',
+              checkoutSessionId: 'cs_form_economics',
+              customerId: 'cus_form_economics',
+              paymentIntentId: 'pi_form_economics',
+              metadata: {
+                sourceFingerprint: 'dfs_form_economics',
+                giftStagingId: 'gift-staging-economics',
+              },
+              customerDetails: {
+                name: 'Ada Lovelace',
+                email: 'ada@example.com',
+              },
+              paymentEconomics: {
+                paymentIntentId: 'pi_form_economics',
+                latestChargeId: 'ch_form_economics',
+                balanceTransactionId: 'txn_form_economics',
+                grossPaymentAmount: {
+                  amountMicros: 25_000_000,
+                  currencyCode: 'GBP',
+                },
+                processingFeeAmount: {
+                  amountMicros: 500_000,
+                  currencyCode: 'GBP',
+                },
+                netReceivedAmount: {
+                  amountMicros: 24_500_000,
+                  currencyCode: 'GBP',
+                },
+              },
+            },
+          },
+        },
+        id: true,
+      },
+    });
+  });
+
+  it('keeps confirmation flowing when Stripe payment economics are unavailable', async () => {
+    const query = vi.fn().mockResolvedValueOnce({
+      giftStaging: {
+        id: 'gift-staging-no-economics',
+        rawProviderEvidence: {
+          provider: 'STRIPE',
+          flow: 'DONATION_FORM',
+          paymentLifecycle: 'AWAITING_PAYMENT',
+        },
+      },
+    });
+    const mutation = vi.fn().mockResolvedValue({
+      updateGiftStaging: {
+        id: 'gift-staging-no-economics',
+      },
+    });
+    const client = {
+      query,
+      mutation,
+    } as unknown as CoreApiClient;
+    const paymentEconomicsRetriever = {
+      retrievePaymentEconomics: vi.fn().mockResolvedValue(null),
+    };
+
+    await updateStripeDonationFormGiftStagingWithDependencies(
+      client,
+      {
+        id: 'evt_form_no_economics',
+        type: 'checkout.session.completed',
+        created: 1777198422,
+        data: {
+          object: {
+            id: 'cs_form_no_economics',
+            amount_total: 2500,
+            currency: 'gbp',
+            created: 1777198410,
+            customer: 'cus_form_no_economics',
+            customer_details: {
+              email: 'ada@example.com',
+              name: 'Ada Lovelace',
+            },
+            payment_intent: 'pi_form_no_economics',
+            metadata: {
+              sourceFingerprint: 'dfs_form_no_economics',
+              giftStagingId: 'gift-staging-no-economics',
+            },
+          },
+        },
+      },
+      {
+        paymentEconomicsRetriever,
+      },
+    );
+
+    expect(paymentEconomicsRetriever.retrievePaymentEconomics).toHaveBeenCalledOnce();
+    const updateData = mutation.mock.calls[0]?.[0]?.updateGiftStaging?.__args?.data;
+    expect(updateData.grossPaymentAmount).toBeUndefined();
+    expect(updateData.processingFeeAmount).toBeUndefined();
+    expect(updateData.netReceivedAmount).toBeUndefined();
+  });
+
+  it('uses a two-step lifecycle for recurring donation-form Stripe payments', async () => {
+    const query = vi
+      .fn()
+      .mockResolvedValueOnce({
+        giftStaging: {
+          id: 'gift-staging-recurring-lifecycle',
+          rawProviderEvidence: {
+            provider: 'STRIPE',
+            flow: 'DONATION_FORM',
+            paymentLifecycle: 'AWAITING_PAYMENT',
+            donationType: 'RECURRING',
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        giftStaging: {
+          id: 'gift-staging-recurring-lifecycle',
+          rawProviderEvidence: {
+            provider: 'STRIPE',
+            flow: 'DONATION_FORM',
+            paymentLifecycle: 'PAYMENT_CONFIRMED',
+            donationType: 'RECURRING',
+            eventType: 'checkout.session.completed',
+            checkoutSessionId: 'cs_form_recurring_lifecycle',
+            subscriptionId: 'sub_form_recurring_lifecycle',
+          },
+        },
+      });
+    const mutation = vi
+      .fn()
+      .mockResolvedValue({ updateGiftStaging: { id: 'gift-staging-recurring-lifecycle' } });
+    const client = {
+      query,
+      mutation,
+    } as unknown as CoreApiClient;
+    const paymentEconomicsRetriever = {
+      retrievePaymentEconomics: vi.fn(),
+      retrieveInvoiceById: vi.fn().mockResolvedValue({
+        id: 'in_form_recurring_lifecycle',
+        metadata: {},
+        parent: {
+          subscription_details: {
+            metadata: {
+              sourceFingerprint: 'dfs_form_recurring_lifecycle',
+              giftStagingId: 'gift-staging-recurring-lifecycle',
+            },
+            subscription: 'sub_form_recurring_lifecycle',
+          },
+        },
+      }),
+      retrieveInvoicePaymentById: vi.fn().mockResolvedValue({
+        id: 'ip_form_recurring_lifecycle',
+        invoice: 'in_form_recurring_lifecycle',
+        payment: {
+          type: 'payment_intent',
+          payment_intent: 'pi_form_recurring_lifecycle',
+        },
+      }),
+      findSubscriptionMetadata: vi.fn(),
+      retrievePaymentEconomicsFromPaymentIntentId: vi.fn().mockResolvedValue({
+        paymentIntentId: 'pi_form_recurring_lifecycle',
+        latestChargeId: 'ch_form_recurring_lifecycle',
+        balanceTransactionId: 'txn_form_recurring_lifecycle',
+        grossPaymentAmount: {
+          amountMicros: 10_000_000,
+          currencyCode: 'GBP',
+        },
+        processingFeeAmount: {
+          amountMicros: 530_000,
+          currencyCode: 'GBP',
+        },
+        netReceivedAmount: {
+          amountMicros: 9_470_000,
+          currencyCode: 'GBP',
+        },
+      }),
+    };
+
+    await updateStripeDonationFormGiftStagingWithDependencies(
+      client,
+      {
+        id: 'evt_form_recurring_lifecycle_checkout',
+        type: 'checkout.session.completed',
+        created: 1777198422,
+        data: {
+          object: {
+            id: 'cs_form_recurring_lifecycle',
+            amount_total: 2500,
+            currency: 'gbp',
+            created: 1777198410,
+            customer: 'cus_form_recurring_lifecycle',
+            customer_details: {
+              email: 'ada@example.com',
+              name: 'Ada Lovelace',
+            },
+            payment_intent: null,
+            subscription: 'sub_form_recurring_lifecycle',
+            metadata: {
+              sourceFingerprint: 'dfs_form_recurring_lifecycle',
+              giftStagingId: 'gift-staging-recurring-lifecycle',
+            },
+          },
+        },
+      },
+      {
+        paymentEconomicsRetriever,
+      },
+    );
+
+    await updateStripeDonationFormRecurringInvoicePaymentGiftStagingWithDependencies(
+      client,
+      {
+        id: 'evt_form_recurring_lifecycle_invoice_payment',
+        type: 'invoice_payment.paid',
+        data: {
+          object: {
+            id: 'ip_form_recurring_lifecycle',
+            invoice: 'in_form_recurring_lifecycle',
+            payment: {
+              type: 'payment_intent',
+              payment_intent: 'pi_form_recurring_lifecycle',
+            },
+          },
+        },
+      },
+      {
+        paymentEconomicsRetriever,
+      },
+    );
+
+    expect(paymentEconomicsRetriever.retrievePaymentEconomics).not.toHaveBeenCalled();
+    expect(mutation).toHaveBeenCalledTimes(2);
+
+    const checkoutUpdate = mutation.mock.calls[0]?.[0]?.updateGiftStaging?.__args?.data;
+    expect(checkoutUpdate.providerAgreementId).toBe('sub_form_recurring_lifecycle');
+    expect(checkoutUpdate.providerPaymentId).toBeUndefined();
+    expect(checkoutUpdate.paymentState).toBeUndefined();
+    expect(checkoutUpdate.grossPaymentAmount).toBeUndefined();
+    expect(checkoutUpdate.processingFeeAmount).toBeUndefined();
+    expect(checkoutUpdate.netReceivedAmount).toBeUndefined();
+
+    const invoicePaymentUpdate =
+      mutation.mock.calls[1]?.[0]?.updateGiftStaging?.__args?.data;
+    expect(invoicePaymentUpdate.providerAgreementId).toBe(
+      'sub_form_recurring_lifecycle',
+    );
+    expect(invoicePaymentUpdate.paymentState).toBe('PAYMENT_CONFIRMED');
+    expect(invoicePaymentUpdate.providerPaymentId).toBe(
+      'pi_form_recurring_lifecycle',
+    );
+    expect(invoicePaymentUpdate.grossPaymentAmount).toEqual({
+      amountMicros: 10_000_000,
+      currencyCode: 'GBP',
+    });
+    expect(invoicePaymentUpdate.processingFeeAmount).toEqual({
+      amountMicros: 530_000,
+      currencyCode: 'GBP',
+    });
+    expect(invoicePaymentUpdate.netReceivedAmount).toEqual({
+      amountMicros: 9_470_000,
+      currencyCode: 'GBP',
+    });
+  });
+
+});
+
+describe('updateStripeDonationFormRecurringInvoicePaymentGiftStaging', () => {
+  it('maps recurring invoice_payment.paid economics onto the existing donation-form staging row', async () => {
+    const query = vi
+      .fn()
+      .mockResolvedValueOnce({
+        giftStaging: {
+          id: 'gift-staging-recurring-invoice-payment',
+          rawProviderEvidence: {
+            provider: 'STRIPE',
+            flow: 'DONATION_FORM',
+            paymentLifecycle: 'PAYMENT_CONFIRMED',
+          },
+        },
+      });
+    const mutation = vi.fn().mockResolvedValue({
+      updateGiftStaging: {
+        id: 'gift-staging-recurring-invoice-payment',
+      },
+    });
+    const client = {
+      query,
+      mutation,
+    } as unknown as CoreApiClient;
+    const paymentEconomicsRetriever = {
+      retrieveInvoiceById: vi.fn().mockResolvedValue({
+        id: 'in_invoice_payment',
+        metadata: {},
+        parent: {
+          subscription_details: {
+            metadata: {
+              sourceFingerprint: 'dfs_invoice_payment',
+              giftStagingId: 'gift-staging-recurring-invoice-payment',
+            },
+            subscription: 'sub_invoice_payment',
+          },
+        },
+      }),
+      retrieveInvoicePaymentById: vi.fn().mockResolvedValue({
+        id: 'ip_invoice_payment',
+        invoice: 'in_invoice_payment',
+        payment: {
+          type: 'payment_intent',
+          payment_intent: 'pi_invoice_payment_paid',
+        },
+      }),
+      findSubscriptionMetadata: vi.fn(),
+      retrievePaymentEconomicsFromPaymentIntentId: vi.fn().mockResolvedValue({
+        paymentIntentId: 'pi_invoice_payment_paid',
+        latestChargeId: 'ch_invoice_payment_paid',
+        balanceTransactionId: 'txn_invoice_payment_paid',
+        grossPaymentAmount: {
+          amountMicros: 10_000_000,
+          currencyCode: 'GBP',
+        },
+        processingFeeAmount: {
+          amountMicros: 530_000,
+          currencyCode: 'GBP',
+        },
+        netReceivedAmount: {
+          amountMicros: 9_470_000,
+          currencyCode: 'GBP',
+        },
+      }),
+    };
+
+    const result =
+      await updateStripeDonationFormRecurringInvoicePaymentGiftStagingWithDependencies(
+        client,
+        {
+          id: 'evt_invoice_payment_paid',
+          type: 'invoice_payment.paid',
+          data: {
+            object: {
+              id: 'ip_invoice_payment',
+              invoice: 'in_invoice_payment',
+              payment: {
+                type: 'payment_intent',
+                payment_intent: 'pi_invoice_payment_paid',
+              },
+            },
+          },
+        },
+        {
+          paymentEconomicsRetriever,
+        },
+      );
+
+    expect(result).toEqual({
+      updated: true,
+      giftStagingId: 'gift-staging-recurring-invoice-payment',
+      sourceFingerprint: 'dfs_invoice_payment',
+      externalId: 'ip_invoice_payment',
+    });
+    expect(paymentEconomicsRetriever.retrieveInvoicePaymentById).toHaveBeenCalledWith(
+      'ip_invoice_payment',
+    );
+    expect(paymentEconomicsRetriever.retrieveInvoiceById).toHaveBeenCalledWith(
+      'in_invoice_payment',
+    );
+    expect(
+      paymentEconomicsRetriever.retrievePaymentEconomicsFromPaymentIntentId,
+    ).toHaveBeenCalledWith('pi_invoice_payment_paid');
+    expect(mutation.mock.calls[0]?.[0]).toEqual({
+      updateGiftStaging: {
+        __args: {
+          id: 'gift-staging-recurring-invoice-payment',
+          data: {
+            providerEventId: 'evt_invoice_payment_paid',
+            provider: 'STRIPE',
+            providerAgreementId: 'sub_invoice_payment',
+            providerPaymentId: 'pi_invoice_payment_paid',
+            paymentState: 'PAYMENT_CONFIRMED',
+            grossPaymentAmount: {
+              amountMicros: 10_000_000,
+              currencyCode: 'GBP',
+            },
+            processingFeeAmount: {
+              amountMicros: 530_000,
+              currencyCode: 'GBP',
+            },
+            netReceivedAmount: {
+              amountMicros: 9_470_000,
+              currencyCode: 'GBP',
+            },
+            rawProviderEvidence: {
+              provider: 'STRIPE',
+              flow: 'DONATION_FORM',
+              paymentLifecycle: 'PAYMENT_CONFIRMED',
+              eventType: 'invoice_payment.paid',
+              invoiceId: 'in_invoice_payment',
+              sourceFingerprint: 'dfs_invoice_payment',
+              subscriptionId: 'sub_invoice_payment',
+              paymentIntentId: 'pi_invoice_payment_paid',
+              metadata: {
+                sourceFingerprint: 'dfs_invoice_payment',
+                giftStagingId: 'gift-staging-recurring-invoice-payment',
+              },
+              paymentEconomicsLookup: {
+                attempted: true,
+                path: 'invoice_payment.payment.payment_intent',
+                latestInvoiceId: 'in_invoice_payment',
+                paymentIntentId: 'pi_invoice_payment_paid',
+                paymentIntentIdFound: true,
+                latestChargeId: 'ch_invoice_payment_paid',
+                latestChargeIdFound: true,
+                balanceTransactionId: 'txn_invoice_payment_paid',
+                balanceTransactionIdFound: true,
+              },
+              paymentEconomics: {
+                paymentIntentId: 'pi_invoice_payment_paid',
+                latestChargeId: 'ch_invoice_payment_paid',
+                balanceTransactionId: 'txn_invoice_payment_paid',
+                grossPaymentAmount: {
+                  amountMicros: 10_000_000,
+                  currencyCode: 'GBP',
+                },
+                processingFeeAmount: {
+                  amountMicros: 530_000,
+                  currencyCode: 'GBP',
+                },
+                netReceivedAmount: {
+                  amountMicros: 9_470_000,
+                  currencyCode: 'GBP',
+                },
               },
             },
           },

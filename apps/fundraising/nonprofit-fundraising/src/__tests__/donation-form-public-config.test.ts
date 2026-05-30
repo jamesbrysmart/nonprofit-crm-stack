@@ -27,6 +27,8 @@ describe('publishDonationFormWithClient', () => {
           config: {
             mode: 'ONE_OFF',
             currencyCode: 'GBP',
+            amountOptions: [1000, 2500, 5000],
+            thankYouMessage: 'Thanks for supporting our work.',
           },
         },
       }),
@@ -39,6 +41,8 @@ describe('publishDonationFormWithClient', () => {
         expect(update.publishedConfig).toEqual({
           mode: 'ONE_OFF',
           currencyCode: 'GBP',
+          amountOptions: [1000, 2500, 5000],
+          thankYouMessage: 'Thanks for supporting our work.',
         });
 
         return {
@@ -79,6 +83,61 @@ describe('publishDonationFormWithClient', () => {
     await expect(
       publishDonationFormWithClient(client, 'df_123'),
     ).rejects.toThrow('Provider config key is required before publishing');
+  });
+
+  it('publishes without a success URL because embedded forms use inline thank-you copy', async () => {
+    process.env.TWENTY_API_URL = 'https://twenty.example.test';
+
+    const client = buildClient({
+      query: async () => ({
+        donationForm: {
+          id: 'df_123',
+          publicId: null,
+          paymentProvider: 'STRIPE',
+          providerConfigKey: 'stripe-default',
+          config: {
+            mode: 'ONE_OFF_AND_MONTHLY',
+            currencyCode: 'GBP',
+            amountOptions: [1000, 2500, 5000],
+            thankYouMessage: 'Thanks for giving monthly.',
+          },
+        },
+      }),
+      mutation: async () => ({
+        updateDonationForm: {
+          id: 'df_123',
+        },
+      }),
+    });
+
+    await expect(
+      publishDonationFormWithClient(client, 'df_123'),
+    ).resolves.toMatchObject({
+      donationFormId: 'df_123',
+      status: 'LIVE',
+    });
+  });
+
+  it('rejects publish when the saved config cannot accept a donation amount', async () => {
+    const client = buildClient({
+      query: async () => ({
+        donationForm: {
+          id: 'df_123',
+          paymentProvider: 'STRIPE',
+          providerConfigKey: 'stripe-default',
+          config: {
+            mode: 'ONE_OFF',
+            currencyCode: 'GBP',
+          },
+        },
+      }),
+    });
+
+    await expect(
+      publishDonationFormWithClient(client, 'df_123'),
+    ).rejects.toThrow(
+      'Donation form needs suggested amounts or a valid custom minimum before publishing',
+    );
   });
 });
 

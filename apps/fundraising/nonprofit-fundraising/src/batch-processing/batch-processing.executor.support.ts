@@ -9,6 +9,7 @@ import {
 import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
 import type { RecurringAgreementCadence } from 'src/recurring/recurring.types';
 import type { GiftReadyStatus } from 'src/gift-staging-review/gift-ready-status';
+import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
 import type { BatchProcessingRow } from './batch-processing.types';
 
 export type SuccessfulWriteback = {
@@ -57,8 +58,39 @@ export type DonorEmailsUpdate = {
   };
 };
 
+export type DonorSupporterEmailOptOutUpdate = {
+  donorId: string;
+  supporterEmailOptOut: true;
+};
+
 export const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
+
+const buildOptionalCurrencyValue = (
+  value:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null
+    | undefined,
+) => {
+  const amountMicros = value?.amountMicros;
+  const currencyCode = normalizeString(value?.currencyCode);
+
+  if (
+    typeof amountMicros !== 'number' ||
+    !Number.isFinite(amountMicros) ||
+    currencyCode === ''
+  ) {
+    return null;
+  }
+
+  return {
+    amountMicros: Math.round(amountMicros),
+    currencyCode,
+  };
+};
 
 const normalizeEmail = (value: string | null | undefined) =>
   normalizeString(value).toLowerCase();
@@ -137,8 +169,15 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
   const giftDate = normalizeString(row.giftDate);
   const explicitFundId = normalizeString(row.fund?.id);
   const appealId = normalizeString(row.appeal?.id);
+  const appealSourceId = normalizeString(row.appealSource?.id);
+  const appealSourceAppealId = normalizeString(row.appealSource?.appeal?.id);
   const defaultFundId = normalizeString(row.appeal?.defaultFund?.id);
   const fundId = explicitFundId !== '' ? explicitFundId : defaultFundId;
+  const softCreditSelection = resolveSoftCreditSelection({
+    softCreditPersonId: normalizeString(row.softCreditPerson?.id),
+    softCreditCompanyId: normalizeString(row.softCreditCompany?.id),
+    softCreditType: row.softCreditType,
+  });
 
   if (typeof amountMicros !== 'number' || !Number.isFinite(amountMicros) || amountMicros <= 0) {
     throw new Error('Row amount is not valid for batch processing');
@@ -159,6 +198,15 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
 
   if (giftDate === '') {
     throw new Error('Gift date is required for batch processing');
+  }
+
+  if (
+    appealSourceId !== '' &&
+    (appealId === '' || appealSourceAppealId === '' || appealSourceAppealId !== appealId)
+  ) {
+    throw new Error(
+      'Appeal source does not belong to the selected appeal for batch processing',
+    );
   }
 
   return {
@@ -183,9 +231,46 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
     ...(normalizeString(row.providerPaymentId) !== ''
       ? { providerPaymentId: normalizeString(row.providerPaymentId) }
       : {}),
+    ...(buildOptionalCurrencyValue(row.coveredFeeAmount)
+      ? { coveredFeeAmount: buildOptionalCurrencyValue(row.coveredFeeAmount) }
+      : {}),
+    ...(buildOptionalCurrencyValue(row.grossPaymentAmount)
+      ? {
+          grossPaymentAmount: buildOptionalCurrencyValue(
+            row.grossPaymentAmount,
+          ),
+        }
+      : {}),
+    ...(buildOptionalCurrencyValue(row.processingFeeAmount)
+      ? {
+          processingFeeAmount: buildOptionalCurrencyValue(
+            row.processingFeeAmount,
+          ),
+        }
+      : {}),
+    ...(buildOptionalCurrencyValue(row.netReceivedAmount)
+      ? {
+          netReceivedAmount: buildOptionalCurrencyValue(row.netReceivedAmount),
+        }
+      : {}),
+    ...(normalizeString(row.providerPayoutReference) !== ''
+      ? { providerPayoutReference: normalizeString(row.providerPayoutReference) }
+      : {}),
     ...(donorId !== '' ? { donorId } : {}),
     ...(appealId !== '' ? { appealId } : {}),
+    ...(appealSourceId !== '' ? { appealSourceId } : {}),
     ...(fundId !== '' ? { fundId } : {}),
+    ...(softCreditSelection.mode === 'set' &&
+    softCreditSelection.softCreditPersonId !== ''
+      ? { softCreditPersonId: softCreditSelection.softCreditPersonId }
+      : {}),
+    ...(softCreditSelection.mode === 'set' &&
+    softCreditSelection.softCreditCompanyId !== ''
+      ? { softCreditCompanyId: softCreditSelection.softCreditCompanyId }
+      : {}),
+    ...(softCreditSelection.mode === 'set'
+      ? { softCreditType: softCreditSelection.softCreditType }
+      : {}),
     giftAidRequested: row.giftAidRequested === true,
     giftAidDeclarationCaptured: row.giftAidDeclarationCaptured === true,
     ...(normalizeString(row.giftAidDeclarationDate) !== ''
@@ -255,6 +340,64 @@ export const deriveLinkedDonorEmailUpdate = (
   };
 };
 
+export const deriveLinkedDonorSupporterEmailOptOutUpdate = (
+  row: BatchProcessingRow,
+): DonorSupporterEmailOptOutUpdate | null => {
+  const donorId = normalizeString(row.donor?.id);
+
+  if (donorId === '' || row.supporterEmailOptOut !== true) {
+    return null;
+  }
+
+  // This flag is intentionally sticky. A staged false/null value never clears
+  // an existing donor opt-out, so the only write we derive here is true -> true.
+  if (row.donor?.supporterEmailOptOut === true) {
+    return null;
+  }
+
+  return {
+    donorId,
+    supporterEmailOptOut: true,
+  };
+};
+
+export const buildNewPersonCreateData = (row: BatchProcessingRow) => {
+  const donorFirstName = normalizeString(row.donorFirstName);
+  const donorLastName = normalizeString(row.donorLastName);
+  const donorEmail = normalizeString(row.donorEmail);
+  const donorMailingAddress = row.donorMailingAddress;
+
+  if (donorFirstName === '' || donorLastName === '') {
+    throw new Error(
+      'Donor first name and last name are required before processing a new donor',
+    );
+  }
+
+  return {
+    name: {
+      firstName: donorFirstName,
+      lastName: donorLastName,
+    },
+    ...(donorEmail !== ''
+      ? {
+          emails: {
+            primaryEmail: donorEmail,
+          },
+        }
+      : {}),
+    ...(donorMailingAddress
+      ? {
+          mailingAddress: donorMailingAddress,
+        }
+      : {}),
+    ...(row.supporterEmailOptOut === true
+      ? {
+          supporterEmailOptOut: true,
+        }
+      : {}),
+  };
+};
+
 export const applyLinkedDonorEmailUpdates = async (
   client: CoreApiClient,
   rows: BatchProcessingRow[],
@@ -288,42 +431,47 @@ export const applyLinkedDonorEmailUpdates = async (
   }
 };
 
+export const applyLinkedDonorSupporterEmailOptOutUpdates = async (
+  client: CoreApiClient,
+  rows: BatchProcessingRow[],
+) => {
+  for (const row of rows) {
+    const update = deriveLinkedDonorSupporterEmailOptOutUpdate(row);
+
+    if (!update) {
+      continue;
+    }
+
+    try {
+      await client.mutation({
+        updatePerson: {
+          __args: {
+            id: update.donorId,
+            data: {
+              supporterEmailOptOut: true,
+            },
+          },
+          id: true,
+        },
+      } as any);
+    } catch (error) {
+      console.warn(
+        'Non-blocking donor supporter email opt-out enrichment failed',
+        row.id,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+};
+
 const ensurePersonForRowFallback = async (
   client: CoreApiClient,
   row: BatchProcessingRow,
 ) => {
-  const donorFirstName = normalizeString(row.donorFirstName);
-  const donorLastName = normalizeString(row.donorLastName);
-  const donorEmail = normalizeString(row.donorEmail);
-  const donorMailingAddress = row.donorMailingAddress;
-
-  if (donorFirstName === '' || donorLastName === '') {
-    throw new Error(
-      'Donor first name and last name are required before processing a new donor',
-    );
-  }
-
   const result = await client.mutation({
     createPerson: {
       __args: {
-        data: {
-          name: {
-            firstName: donorFirstName,
-            lastName: donorLastName,
-          },
-          ...(donorEmail !== ''
-            ? {
-                emails: {
-                  primaryEmail: donorEmail,
-                },
-              }
-            : {}),
-          ...(donorMailingAddress
-            ? {
-                mailingAddress: donorMailingAddress,
-              }
-            : {}),
-        },
+        data: buildNewPersonCreateData(row),
       },
       id: true,
     },
@@ -513,9 +661,25 @@ export const createGiftViaRowFallback = async (
   delete createData.giftAidDeclarationId;
   delete createData.recurringAgreementId;
   const appealId = normalizeString(payload.appealId as string | undefined);
+  const appealSourceId = normalizeString(
+    payload.appealSourceId as string | undefined,
+  );
   const fundId = normalizeString(payload.fundId as string | undefined);
+  const softCreditPersonId = normalizeString(
+    payload.softCreditPersonId as string | undefined,
+  );
+  const softCreditCompanyId = normalizeString(
+    payload.softCreditCompanyId as string | undefined,
+  );
+  const softCreditType = normalizeString(
+    payload.softCreditType as string | undefined,
+  );
   delete createData.appealId;
+  delete createData.appealSourceId;
   delete createData.fundId;
+  delete createData.softCreditPersonId;
+  delete createData.softCreditCompanyId;
+  delete createData.softCreditType;
   const result = await client.mutation({
     createGift: {
       __args: {
@@ -561,6 +725,17 @@ export const createGiftViaRowFallback = async (
                 },
               }
             : {}),
+          ...(appealSourceId !== ''
+            ? {
+                appealSource: {
+                  connect: {
+                    where: {
+                      id: appealSourceId,
+                    },
+                  },
+                },
+              }
+            : {}),
           ...(fundId !== ''
             ? {
                 fund: {
@@ -570,6 +745,30 @@ export const createGiftViaRowFallback = async (
                     },
                   },
                 },
+              }
+            : {}),
+          ...(softCreditPersonId !== ''
+            ? {
+                softCreditPerson: {
+                  connect: {
+                    where: {
+                      id: softCreditPersonId,
+                    },
+                  },
+                },
+                softCreditType: softCreditType === '' ? null : softCreditType,
+              }
+            : {}),
+          ...(softCreditCompanyId !== ''
+            ? {
+                softCreditCompany: {
+                  connect: {
+                    where: {
+                      id: softCreditCompanyId,
+                    },
+                  },
+                },
+                softCreditType: softCreditType === '' ? null : softCreditType,
               }
             : {}),
         },
@@ -593,6 +792,7 @@ export const createGiftViaRowFallback = async (
   }
 
   await applyLinkedDonorEmailUpdates(client, [row]);
+  await applyLinkedDonorSupporterEmailOptOutUpdates(client, [row]);
 
   return {
     id: row.id,

@@ -7,13 +7,15 @@ import {
 } from 'src/logic-functions/handle-public-stripe-webhook';
 import * as stripeEventRouter from 'src/stripe/stripe-event-router';
 
-const buildCheckoutSessionEvent = (): RoutePayload<stripeEventRouter.TrustedStripeEvent> => {
+const buildCheckoutSessionEvent = (
+  timestamp = Math.floor(Date.now() / 1000),
+): RoutePayload<stripeEventRouter.TrustedStripeEvent> => {
   const rawBody =
     '{"id":"evt_public_test","type":"checkout.session.completed","data":{"object":{"id":"cs_public_test","subscription":"sub_public_test"}}}';
 
   return {
     headers: {
-      'stripe-signature': `t=1714000000,v1=${createStripeSignature(rawBody)}`,
+      'stripe-signature': `t=${timestamp},v1=${createStripeSignature(rawBody, timestamp)}`,
     },
     queryStringParameters: {},
     pathParameters: {},
@@ -42,7 +44,8 @@ describe('handle-public-stripe-webhook', () => {
   it('rejects invalid signatures without routing the event', async () => {
     const routeSpy = vi.spyOn(stripeEventRouter, 'routeTrustedStripeEvent');
     const event = buildCheckoutSessionEvent();
-    event.headers['stripe-signature'] = 't=1714000000,v1=bad_signature';
+    event.headers['stripe-signature'] =
+      `t=${Math.floor(Date.now() / 1000)},v1=bad_signature`;
 
     const previousSecret = process.env.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_public_test';
@@ -95,6 +98,25 @@ describe('handle-public-stripe-webhook', () => {
           },
         },
       });
+    } finally {
+      restoreSecret(previousSecret);
+    }
+  });
+
+  it('rejects correctly signed webhook requests outside the timestamp tolerance', async () => {
+    const routeSpy = vi.spyOn(stripeEventRouter, 'routeTrustedStripeEvent');
+    const staleTimestamp = Math.floor(Date.now() / 1000) - 301;
+
+    const previousSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_public_test';
+
+    try {
+      const response = await publicStripeWebhookHandler(
+        buildCheckoutSessionEvent(staleTimestamp),
+      );
+
+      expect(response).toEqual({ received: false });
+      expect(routeSpy).not.toHaveBeenCalled();
     } finally {
       restoreSecret(previousSecret);
     }
@@ -157,9 +179,9 @@ describe('handle-public-stripe-webhook', () => {
   });
 });
 
-function createStripeSignature(rawBody: string) {
+function createStripeSignature(rawBody: string, timestamp: number) {
   return createHmac('sha256', 'whsec_public_test')
-    .update(`1714000000.${rawBody}`, 'utf8')
+    .update(`${timestamp}.${rawBody}`, 'utf8')
     .digest('hex');
 }
 

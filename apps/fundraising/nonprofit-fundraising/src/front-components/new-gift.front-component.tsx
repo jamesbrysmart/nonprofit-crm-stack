@@ -69,14 +69,19 @@ const NewGift = () => {
     setGiftDate,
     fundOptions,
     appealOptions,
+    appealSourceOptions,
     selectedFundId,
     setSelectedFundId,
     selectedAppealId,
     setSelectedAppealId,
+    selectedAppealSourceId,
+    setSelectedAppealSourceId,
     loadingFundOptions,
     loadingAppealOptions,
+    loadingAppealSourceOptions,
     fundOptionsError,
     appealOptionsError,
+    appealSourceOptionsError,
     includeDonorAddress,
     setIncludeDonorAddress,
     addressStreet1,
@@ -711,6 +716,28 @@ const NewGift = () => {
             </select>
             {appealOptionsError ? (
               <span style={secondaryTextStyle}>{appealOptionsError}</span>
+            ) : null}
+          </label>
+
+          <label style={{ display: 'grid', gap: '6px' }}>
+            <span style={labelStyle}>Appeal source</span>
+            <select
+              style={inputStyle}
+              value={selectedAppealSourceId}
+              onChange={(event) =>
+                setSelectedAppealSourceId(getInputEventValue(event))
+              }
+              disabled={loadingAppealSourceOptions}
+            >
+              <option value="">No appeal source</option>
+              {appealSourceOptions.map((appealSource) => (
+                <option key={appealSource.id} value={appealSource.id}>
+                  {appealSource.name ?? 'Untitled appeal source'}
+                </option>
+              ))}
+            </select>
+            {appealSourceOptionsError ? (
+              <span style={secondaryTextStyle}>{appealSourceOptionsError}</span>
             ) : null}
           </label>
 

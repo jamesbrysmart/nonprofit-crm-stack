@@ -98,6 +98,15 @@ export type StoredGiftStagingRecord = {
         } | null;
       }
     | null;
+  appealSource:
+    | {
+        id: string;
+        name?: string | null;
+        appeal?: {
+          id?: string | null;
+        } | null;
+      }
+    | null;
   fund:
     | {
         id: string;
@@ -143,6 +152,8 @@ export type GiftStagingReviewRecord = {
   sourceFundName: string;
   appealId: string;
   appealName: string;
+  appealSourceId: string;
+  appealSourceName: string;
   appealDefaultFundId: string;
   fundId: string;
   fundName: string;
@@ -185,6 +196,7 @@ export type GiftStagingReviewData = {
 
 export type GiftCodingSelectionState = {
   appealId: string;
+  appealSourceId: string;
   fundId: string;
 };
 

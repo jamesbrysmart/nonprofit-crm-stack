@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildNewPersonCreateData,
   canProcessBatchRow,
   deriveLinkedDonorEmailUpdate,
+  deriveLinkedDonorSupporterEmailOptOutUpdate,
   deriveRecurringCadenceFromProviderEvidence,
 } from 'src/batch-processing/batch-processing.executor';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
@@ -79,6 +81,7 @@ const buildProcessingRow = (
   providerIntervalUnit: null,
   providerIntervalCount: null,
   donorPhone: null,
+  supporterEmailOptOut: null,
   rawProviderEvidence: null,
   donorResolutionState: 'UNREVIEWED',
   donor: null,
@@ -162,6 +165,95 @@ describe('deriveLinkedDonorEmailUpdate', () => {
         }),
       ),
     ).toBeNull();
+  });
+});
+
+describe('deriveLinkedDonorSupporterEmailOptOutUpdate', () => {
+  it('returns a sticky opt-out update for a linked donor when staged true', () => {
+    expect(
+      deriveLinkedDonorSupporterEmailOptOutUpdate(
+        buildProcessingRow({
+          supporterEmailOptOut: true,
+          donor: {
+            id: 'person_1',
+            supporterEmailOptOut: false,
+          },
+        }),
+      ),
+    ).toEqual({
+      donorId: 'person_1',
+      supporterEmailOptOut: true,
+    });
+  });
+
+  it('does not clear or rewrite when staged value is false, null, or already true', () => {
+    expect(
+      deriveLinkedDonorSupporterEmailOptOutUpdate(
+        buildProcessingRow({
+          supporterEmailOptOut: false,
+          donor: {
+            id: 'person_1',
+            supporterEmailOptOut: true,
+          },
+        }),
+      ),
+    ).toBeNull();
+
+    expect(
+      deriveLinkedDonorSupporterEmailOptOutUpdate(
+        buildProcessingRow({
+          supporterEmailOptOut: null,
+          donor: {
+            id: 'person_1',
+            supporterEmailOptOut: true,
+          },
+        }),
+      ),
+    ).toBeNull();
+
+    expect(
+      deriveLinkedDonorSupporterEmailOptOutUpdate(
+        buildProcessingRow({
+          supporterEmailOptOut: true,
+          donor: {
+            id: 'person_1',
+            supporterEmailOptOut: true,
+          },
+        }),
+      ),
+    ).toBeNull();
+  });
+});
+
+describe('buildNewPersonCreateData', () => {
+  it('defaults a new person to false by omitting supporterEmailOptOut unless staged true', () => {
+    expect(
+      buildNewPersonCreateData(
+        buildProcessingRow({
+          supporterEmailOptOut: null,
+        }),
+      ),
+    ).not.toHaveProperty('supporterEmailOptOut');
+
+    expect(
+      buildNewPersonCreateData(
+        buildProcessingRow({
+          supporterEmailOptOut: false,
+        }),
+      ),
+    ).not.toHaveProperty('supporterEmailOptOut');
+  });
+
+  it('sets supporterEmailOptOut for a new person when staged true', () => {
+    expect(
+      buildNewPersonCreateData(
+        buildProcessingRow({
+          supporterEmailOptOut: true,
+        }),
+      ),
+    ).toMatchObject({
+      supporterEmailOptOut: true,
+    });
   });
 });
 

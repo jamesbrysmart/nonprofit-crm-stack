@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
 import { Button } from 'twenty-sdk/ui';
-import { getFundIdForAppealSelection } from 'src/gift-coding/gift-coding';
+import {
+  getAppealIdForAppealSourceSelection,
+  getAppealSourceIdsForAppeal,
+  getFundIdForAppealSelection,
+} from 'src/gift-coding/gift-coding';
 import {
   badgeStyle,
   compactDividerSectionStyle,
@@ -18,14 +22,7 @@ import {
   saveGiftCoding,
 } from 'src/gift-staging-review/gift-staging-review.actions';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
-import {
-  listAppealOptions,
-  listFundOptions,
-} from 'src/manual-gift-entry/manual-gift-entry.api';
-import type {
-  AppealSummary,
-  FundSummary,
-} from 'src/manual-gift-entry/manual-gift-entry.types';
+import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
 
 export const GIFT_STAGING_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'ac717de2-3df8-4d25-9a84-9687c7ca081d';
@@ -61,79 +58,21 @@ const GiftStagingCoding = () => {
   const { record, loading, error, refresh } = useGiftStagingReviewRecord(
     recordId,
   );
-  const [appeals, setAppeals] = useState<AppealSummary[]>([]);
-  const [funds, setFunds] = useState<FundSummary[]>([]);
-  const [loadingAppeals, setLoadingAppeals] = useState(false);
-  const [loadingFunds, setLoadingFunds] = useState(false);
-  const [appealOptionsError, setAppealOptionsError] = useState<string | null>(
-    null,
-  );
-  const [fundOptionsError, setFundOptionsError] = useState<string | null>(null);
   const [selectedAppealId, setSelectedAppealId] = useState('');
+  const [selectedAppealSourceId, setSelectedAppealSourceId] = useState('');
   const [selectedFundId, setSelectedFundId] = useState('');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingAppeals(true);
-    setAppealOptionsError(null);
-
-    void listAppealOptions()
-      .then((result) => {
-        if (!cancelled) {
-          setAppeals(result.appeals);
-        }
-      })
-      .catch((loadError) => {
-        if (!cancelled) {
-          setAppeals([]);
-          setAppealOptionsError(
-            loadError instanceof Error
-              ? loadError.message
-              : 'Unable to load appeals.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingAppeals(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingFunds(true);
-    setFundOptionsError(null);
-
-    void listFundOptions()
-      .then((result) => {
-        if (!cancelled) {
-          setFunds(result.funds);
-        }
-      })
-      .catch((loadError) => {
-        if (!cancelled) {
-          setFunds([]);
-          setFundOptionsError(
-            loadError instanceof Error ? loadError.message : 'Unable to load funds.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingFunds(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    appeals,
+    appealSources,
+    funds,
+    loadingAppeals,
+    loadingAppealSources,
+    loadingFunds,
+    appealOptionsError,
+    appealSourceOptionsError,
+    fundOptionsError,
+  } = useGiftCodingOptions({ selectedAppealId });
 
   useEffect(() => {
     if (!record || saving) {
@@ -141,6 +80,7 @@ const GiftStagingCoding = () => {
     }
 
     setSelectedAppealId(record.appealId);
+    setSelectedAppealSourceId(record.appealSourceId);
     setSelectedFundId(record.fundId);
   }, [record, saving]);
 
@@ -163,7 +103,9 @@ const GiftStagingCoding = () => {
 
   const isProcessed = record.processingStatus === 'PROCESSED';
   const hasUnsavedChanges =
-    selectedAppealId !== record.appealId || selectedFundId !== record.fundId;
+    selectedAppealId !== record.appealId ||
+    selectedAppealSourceId !== record.appealSourceId ||
+    selectedFundId !== record.fundId;
 
   const handleAppealChange = (nextAppealId: string) => {
     setSelectedAppealId(nextAppealId);
@@ -174,6 +116,32 @@ const GiftStagingCoding = () => {
         currentFundId: selectedFundId,
       }),
     );
+
+    if (selectedAppealSourceId === '') {
+      return;
+    }
+
+    const allowedSourceIds = getAppealSourceIdsForAppeal({
+      appealSources,
+      appealId: nextAppealId,
+    });
+
+    if (allowedSourceIds && !allowedSourceIds.has(selectedAppealSourceId)) {
+      setSelectedAppealSourceId('');
+    }
+  };
+
+  const handleAppealSourceChange = (nextAppealSourceId: string) => {
+    const nextAppealId = getAppealIdForAppealSourceSelection({
+      appealSources,
+      nextAppealSourceId,
+    });
+
+    if (selectedAppealId === '' && nextAppealId !== '') {
+      handleAppealChange(nextAppealId);
+    }
+
+    setSelectedAppealSourceId(nextAppealSourceId);
   };
 
   const handleSaveCoding = async () => {
@@ -182,6 +150,7 @@ const GiftStagingCoding = () => {
     try {
       await saveGiftCoding(recordId, {
         appealId: selectedAppealId,
+        appealSourceId: selectedAppealSourceId,
         fundId: selectedFundId,
       });
       await enqueueSnackbar({
@@ -209,6 +178,9 @@ const GiftStagingCoding = () => {
           <span style={badgeStyle('neutral')}>Optional coding</span>
           {record.appealName !== '' ? (
             <span style={badgeStyle('success')}>Appeal set</span>
+          ) : null}
+          {record.appealSourceName !== '' ? (
+            <span style={badgeStyle('success')}>Source set</span>
           ) : null}
           {record.fundName !== '' ? (
             <span style={badgeStyle('success')}>Fund set</span>
@@ -241,6 +213,14 @@ const GiftStagingCoding = () => {
           <div style={labelStyle}>Current fund</div>
           <div style={secondaryTextStyle}>
             {record.fundName === '' ? 'No fund set.' : record.fundName}
+          </div>
+        </div>
+        <div style={compactMetaItemStyle}>
+          <div style={labelStyle}>Current appeal source</div>
+          <div style={secondaryTextStyle}>
+            {record.appealSourceName === ''
+              ? 'No appeal source set.'
+              : record.appealSourceName}
           </div>
         </div>
       </div>
@@ -277,6 +257,25 @@ const GiftStagingCoding = () => {
         </label>
 
         <label style={{ display: 'grid', gap: '4px' }}>
+          <span style={labelStyle}>Appeal source</span>
+          <select
+            style={inputStyle}
+            value={selectedAppealSourceId}
+            onChange={(event) =>
+              handleAppealSourceChange(getInputEventValue(event))
+            }
+            disabled={saving || isProcessed || loadingAppealSources}
+          >
+            <option value="">No appeal source</option>
+            {appealSources.map((appealSource) => (
+              <option key={appealSource.id} value={appealSource.id}>
+                {appealSource.name ?? 'Unnamed appeal source'}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: 'grid', gap: '4px' }}>
           <span style={labelStyle}>Fund</span>
           <select
             style={inputStyle}
@@ -309,10 +308,16 @@ const GiftStagingCoding = () => {
         </div>
       ) : null}
 
-      {appealOptionsError || fundOptionsError || isProcessed ? (
+      {appealOptionsError ||
+      appealSourceOptionsError ||
+      fundOptionsError ||
+      isProcessed ? (
         <div style={compactDividerSectionStyle}>
           {appealOptionsError ? (
             <div style={secondaryTextStyle}>{appealOptionsError}</div>
+          ) : null}
+          {appealSourceOptionsError ? (
+            <div style={secondaryTextStyle}>{appealSourceOptionsError}</div>
           ) : null}
           {fundOptionsError ? (
             <div style={secondaryTextStyle}>{fundOptionsError}</div>

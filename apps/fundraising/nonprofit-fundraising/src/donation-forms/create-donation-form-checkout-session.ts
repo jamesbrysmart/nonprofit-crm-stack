@@ -1,101 +1,46 @@
 import { randomUUID } from 'node:crypto';
 import type { CoreApiClient } from 'twenty-client-sdk/core';
-import Stripe from 'stripe';
 import { normalizeOnlineGiftAidEvidence } from 'src/gift-aid/online-gift-aid-evidence';
-import type { GiftAidCaptureInput } from 'src/gift-aid/gift-aid.types';
+import {
+  type DonationFormPublishedConfig,
+  normalizeDonationFormString,
+  resolveDonationFormDonationTypes,
+} from 'src/donation-forms/donation-form-config';
+import type {
+  CreateDonationFormCheckoutSessionRequest,
+  CreateDonationFormPaymentSessionResponse,
+  DonationFormCheckoutDependencyOptions,
+  DonationFormMailingAddress,
+  DonationType,
+  PublishedDonationFormForCheckout,
+  StripeSessionResult,
+} from './donation-form-checkout.types';
+import {
+  createGiftStagingRow,
+  loadPublishedDonationFormForCheckout,
+  updateGiftStagingRow,
+} from './donation-form-checkout-repository';
+import {
+  buildCheckoutMetadata,
+  buildPrePaymentRawEvidence,
+} from './donation-form-checkout-evidence';
+import {
+  buildStripeCheckoutSessionInput,
+  createStripeSessionCreator,
+  resolveStripeApiKey,
+  resolveStripePublishableKey,
+} from './donation-form-checkout-stripe';
 
-type DonationFormPublicRecord = {
-  id?: string | null;
-  publicId?: string | null;
-  status?: string | null;
-  publishedVersion?: string | null;
-  paymentProvider?: string | null;
-  providerConfigKey?: string | null;
-  publishedConfig?: Record<string, unknown> | null;
-};
-
-type DonationFormPublishedConfig = {
-  title?: string;
-  description?: string;
-  mode?: string;
-  currencyCode?: string;
-  amountOptions?: number[];
-  allowCustomAmount?: boolean;
-  minimumAmount?: number;
-  successUrl?: string;
-  cancelUrl?: string;
-  giftAidEnabled?: boolean;
-  giftAidTextVersion?: string;
-  giftAidDeclarationSource?: string;
-  sourceAppealName?: string;
-  sourceFundName?: string;
-  requireAddress?: boolean;
-  collectPhone?: boolean;
-};
-
-type DonationFormMailingAddress = {
-  addressStreet1?: string | null;
-  addressStreet2?: string | null;
-  addressCity?: string | null;
-  addressState?: string | null;
-  addressPostcode?: string | null;
-  addressCountry?: string | null;
-};
-
-export type CreateDonationFormCheckoutSessionRequest = {
-  publicId?: string;
-  donationType?: string;
-  amountMinorUnits?: number;
-  donorFirstName?: string;
-  donorLastName?: string;
-  donorEmail?: string;
-  donorPhone?: string;
-  donorMailingAddress?: DonationFormMailingAddress | null;
-  giftAidRequested?: boolean;
-  attribution?: {
-    sourceAppealName?: string;
-    sourceFundName?: string;
-    referrer?: string;
-    utm?: Record<string, string>;
-    embedContext?: Record<string, unknown>;
-  };
-};
-
-export type CreateDonationFormPaymentSessionResponse = {
-  donationFormId: string;
-  donationFormPublishedVersion: string;
-  giftStagingId: string;
-  checkoutSessionId: string;
-  checkoutSessionClientSecret: string;
-  publishableKey: string;
-  sourceFingerprint: string;
-};
-
-type StripeSessionResult = {
-  id: string;
-  url?: string | null;
-  clientSecret?: string | null;
-};
-
-type DonationType = 'ONE_OFF' | 'RECURRING';
-
-export type StripeCheckoutSessionCreator = {
-  createCheckoutSession: (
-    input: Stripe.Checkout.SessionCreateParams,
-  ) => Promise<StripeSessionResult>;
-};
-
-type DependencyOptions = {
-  stripeSessionCreator: StripeCheckoutSessionCreator;
-  now?: Date;
-  publishableKey?: string;
-};
+export type {
+  CreateDonationFormCheckoutSessionRequest,
+  CreateDonationFormPaymentSessionResponse,
+  StripeCheckoutSessionCreator,
+} from './donation-form-checkout.types';
 
 const DONATION_FORM_INTAKE_SOURCE = 'donation_form';
 const DONATION_FORM_GIFT_AID_SOURCE = 'donation_form_embed';
 
-const normalizeString = (value: string | null | undefined): string =>
-  value?.trim() ?? '';
+const normalizeString = normalizeDonationFormString;
 
 const normalizeAddress = (
   value: DonationFormMailingAddress | null | undefined,
@@ -128,80 +73,9 @@ const normalizeAddress = (
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 };
 
-const normalizeConfig = (
-  value: Record<string, unknown> | null | undefined,
-): DonationFormPublishedConfig | null => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-
-  const amountOptions = Array.isArray(value.amountOptions)
-    ? value.amountOptions.filter(
-        (entry): entry is number =>
-          typeof entry === 'number' && Number.isInteger(entry) && entry > 0,
-      )
-    : undefined;
-
-  return {
-    title: normalizeString(value.title as string | null | undefined) || undefined,
-    description:
-      normalizeString(value.description as string | null | undefined) ||
-      undefined,
-    mode: normalizeString(value.mode as string | null | undefined) || undefined,
-    currencyCode:
-      normalizeString(value.currencyCode as string | null | undefined)
-        .toUpperCase() || undefined,
-    amountOptions:
-      amountOptions && amountOptions.length > 0 ? amountOptions : undefined,
-    allowCustomAmount: value.allowCustomAmount === true,
-    minimumAmount:
-      typeof value.minimumAmount === 'number' &&
-      Number.isInteger(value.minimumAmount) &&
-      value.minimumAmount > 0
-        ? value.minimumAmount
-        : undefined,
-    successUrl:
-      normalizeString(value.successUrl as string | null | undefined) || undefined,
-    cancelUrl:
-      normalizeString(value.cancelUrl as string | null | undefined) || undefined,
-    giftAidEnabled: value.giftAidEnabled === true,
-    giftAidTextVersion:
-      normalizeString(value.giftAidTextVersion as string | null | undefined) ||
-      undefined,
-    giftAidDeclarationSource:
-      normalizeString(
-        value.giftAidDeclarationSource as string | null | undefined,
-      ) || undefined,
-    sourceAppealName:
-      normalizeString(value.sourceAppealName as string | null | undefined) ||
-      undefined,
-    sourceFundName:
-      normalizeString(value.sourceFundName as string | null | undefined) ||
-      undefined,
-    requireAddress: value.requireAddress === true,
-    collectPhone: value.collectPhone === true,
-  };
-};
-
 const resolveAllowedDonationTypes = (
   value: string | undefined,
-): DonationType[] => {
-  const normalized = normalizeString(value).toUpperCase();
-
-  if (
-    normalized === 'ONE_OFF_AND_MONTHLY' ||
-    normalized === 'MONTHLY_AND_ONE_OFF' ||
-    normalized === 'MIXED'
-  ) {
-    return ['ONE_OFF', 'RECURRING'];
-  }
-
-  if (normalized === 'RECURRING') {
-    return ['RECURRING'];
-  }
-
-  return ['ONE_OFF'];
-};
+): DonationType[] => resolveDonationFormDonationTypes(value);
 
 const resolveRequestedDonationType = ({
   configMode,
@@ -255,119 +129,6 @@ const buildGiftStagingName = ({
 const toAmountMicros = (amountMinorUnits: number): number =>
   amountMinorUnits * 10_000;
 
-const assertValidUrl = (value: string | undefined, fieldName: string): string => {
-  if (!value) {
-    throw new Error(`${fieldName} is required in the published donation form config`);
-  }
-
-  try {
-    return new URL(value).toString();
-  } catch {
-    throw new Error(`${fieldName} must be a valid URL in the published donation form config`);
-  }
-};
-
-const resolveStripeApiKey = (providerConfigKey: string): string => {
-  if (providerConfigKey !== 'stripe-default') {
-    throw new Error(
-      `Unsupported Stripe provider config key "${providerConfigKey}" in this spike`,
-    );
-  }
-
-  const apiKey = normalizeString(
-    process.env.STRIPE_SECRET_KEY ?? process.env.STRIPE_API_KEY,
-  );
-
-  if (apiKey === '') {
-    throw new Error('Stripe secret key is not configured for donation form checkout');
-  }
-
-  return apiKey;
-};
-
-const resolveStripePublishableKey = (providerConfigKey: string): string => {
-  if (providerConfigKey !== 'stripe-default') {
-    throw new Error(
-      `Unsupported Stripe provider config key "${providerConfigKey}" in this spike`,
-    );
-  }
-
-  const publishableKey = normalizeString(process.env.STRIPE_PUBLISHABLE_KEY);
-
-  if (publishableKey === '') {
-    throw new Error(
-      'Stripe publishable key is not configured for Payment Element donation forms',
-    );
-  }
-
-  return publishableKey;
-};
-
-const loadPublishedDonationFormForCheckout = async (
-  client: CoreApiClient,
-  publicId: string,
-): Promise<{
-  donationFormId: string;
-  publishedVersion: string;
-  providerConfigKey: string;
-  config: DonationFormPublishedConfig;
-}> => {
-  const result = await client.query({
-    donationForm: {
-      __args: {
-        filter: {
-          publicId: {
-            eq: publicId,
-          },
-        },
-      },
-      id: true,
-      publicId: true,
-      status: true,
-      publishedVersion: true,
-      paymentProvider: true,
-      providerConfigKey: true,
-      publishedConfig: true,
-    },
-  } as any);
-
-  const record = (result?.donationForm as DonationFormPublicRecord | null) ?? null;
-
-  if (!record?.id) {
-    throw new Error('Published donation form not found');
-  }
-
-  if (normalizeString(record.status) !== 'LIVE') {
-    throw new Error('Donation form is not live');
-  }
-
-  if (normalizeString(record.paymentProvider) !== 'STRIPE') {
-    throw new Error('Only Stripe donation forms are supported in this spike');
-  }
-
-  const publishedVersion = normalizeString(record.publishedVersion);
-  if (publishedVersion === '') {
-    throw new Error('Donation form is missing a published version');
-  }
-
-  const providerConfigKey = normalizeString(record.providerConfigKey);
-  if (providerConfigKey === '') {
-    throw new Error('Donation form is missing a provider config key');
-  }
-
-  const config = normalizeConfig(record.publishedConfig ?? null);
-  if (!config) {
-    throw new Error('Donation form is missing published config');
-  }
-
-  return {
-    donationFormId: record.id,
-    publishedVersion,
-    providerConfigKey,
-    config,
-  };
-};
-
 const validateAmountMinorUnits = ({
   amountMinorUnits,
   config,
@@ -394,190 +155,16 @@ const validateAmountMinorUnits = ({
   throw new Error('Donation amount is not allowed by the published donation form config');
 };
 
-const createGiftStagingRow = async ({
-  client,
-  input,
-}: {
-  client: CoreApiClient;
-  input: Record<string, unknown>;
-}): Promise<string> => {
-  const result = await client.mutation({
-    createGiftStaging: {
-      __args: {
-        data: input,
-      },
-      id: true,
-    },
-  } as any);
-
-  const giftStagingId = result?.createGiftStaging?.id;
-  if (typeof giftStagingId !== 'string' || giftStagingId.trim() === '') {
-    throw new Error('Create gift staging response missing id');
-  }
-
-  return giftStagingId.trim();
-};
-
-const updateGiftStagingRow = async ({
-  client,
-  giftStagingId,
-  data,
-}: {
-  client: CoreApiClient;
-  giftStagingId: string;
-  data: Record<string, unknown>;
-}): Promise<void> => {
-  await client.mutation({
-    updateGiftStaging: {
-      __args: {
-        id: giftStagingId,
-        data,
-      },
-      id: true,
-    },
-  } as any);
-};
-
-const buildPrePaymentRawEvidence = ({
-  sourceFingerprint,
-  donationFormId,
-  donationFormPublishedVersion,
-  donationType,
-  giftAidEvidence,
-  attribution,
-}: {
-  sourceFingerprint: string;
-  donationFormId: string;
-  donationFormPublishedVersion: string;
-  donationType: DonationType;
-  giftAidEvidence: GiftAidCaptureInput;
-  attribution?: CreateDonationFormCheckoutSessionRequest['attribution'];
-}) => ({
-  provider: 'STRIPE',
-  flow: 'DONATION_FORM',
-  paymentLifecycle: 'AWAITING_PAYMENT',
-  sourceFingerprint,
-  donationFormId,
-  donationFormPublishedVersion,
-  donationType,
-  ...(donationType === 'RECURRING'
-    ? {
-        recurring: {
-          intervalUnit: 'month',
-          intervalCount: 1,
-        },
-      }
-    : {}),
-  submittedGiftAid: {
-    requested: giftAidEvidence.giftAidRequested === true,
-    declarationCaptured: giftAidEvidence.giftAidDeclarationCaptured === true,
-    ...(normalizeString(giftAidEvidence.giftAidDeclarationDate)
-      ? {
-          declarationDate: normalizeString(
-            giftAidEvidence.giftAidDeclarationDate,
-          ),
-        }
-      : {}),
-    ...(normalizeString(giftAidEvidence.giftAidDeclarationSource)
-      ? {
-          declarationSource: normalizeString(
-            giftAidEvidence.giftAidDeclarationSource,
-          ),
-        }
-      : {}),
-    ...(normalizeString(giftAidEvidence.giftAidTextVersion)
-      ? { textVersion: normalizeString(giftAidEvidence.giftAidTextVersion) }
-      : {}),
-  },
-  ...(attribution
-    ? {
-        attribution: {
-          ...(normalizeString(attribution.sourceAppealName) !== ''
-            ? { sourceAppealName: normalizeString(attribution.sourceAppealName) }
-            : {}),
-          ...(normalizeString(attribution.sourceFundName) !== ''
-            ? { sourceFundName: normalizeString(attribution.sourceFundName) }
-            : {}),
-          ...(normalizeString(attribution.referrer) !== ''
-            ? { referrer: normalizeString(attribution.referrer) }
-            : {}),
-          ...(attribution.utm ? { utm: attribution.utm } : {}),
-          ...(attribution.embedContext
-            ? { embedContext: attribution.embedContext }
-            : {}),
-        },
-      }
-    : {}),
-});
-
-const buildCheckoutMetadata = ({
-  sourceFingerprint,
-  giftStagingId,
-  donationFormId,
-  donationFormPublishedVersion,
-  donationType,
-  sourceAppealName,
-  sourceFundName,
-  giftAidRequested,
-  giftAidDeclarationSource,
-  giftAidDeclarationDate,
-  giftAidTextVersion,
-}: {
-  sourceFingerprint: string;
-  giftStagingId: string;
-  donationFormId: string;
-  donationFormPublishedVersion: string;
-  donationType: DonationType;
-  sourceAppealName?: string;
-  sourceFundName?: string;
-  giftAidRequested: boolean;
-  giftAidDeclarationSource: string;
-  giftAidDeclarationDate?: string;
-  giftAidTextVersion?: string;
-}): Record<string, string> => ({
-  sourceFingerprint,
-  giftStagingId,
-  donationFormId,
-  donationFormPublishedVersion,
-  donationType,
-  giftAidRequested: giftAidRequested ? 'true' : 'false',
-  giftAidDeclarationSource,
-  ...(giftAidDeclarationDate ? { giftAidDeclarationDate } : {}),
-  ...(giftAidTextVersion ? { giftAidTextVersion } : {}),
-  ...(sourceAppealName ? { sourceAppealName } : {}),
-  ...(sourceFundName ? { sourceFundName } : {}),
-});
-
-const createStripeSessionCreator = (
-  stripeApiKey: string,
-): StripeCheckoutSessionCreator => {
-  const stripe = new Stripe(stripeApiKey);
-
-  return {
-    createCheckoutSession: async (input) => {
-      const session = await stripe.checkout.sessions.create(input);
-
-      if (normalizeString(session.id) === '') {
-        throw new Error('Stripe checkout session response missing id');
-      }
-
-      return {
-        id: session.id,
-        url: session.url,
-        clientSecret: session.client_secret,
-      };
-    },
-  };
-};
-
 const createDonationFormPaymentSessionBase = async ({
   client,
   request,
   dependencies,
+  publishedForm,
 }: {
   client: CoreApiClient;
   request: CreateDonationFormCheckoutSessionRequest;
-  dependencies: DependencyOptions;
+  dependencies: DonationFormCheckoutDependencyOptions;
+  publishedForm?: PublishedDonationFormForCheckout;
 }): Promise<{
   donationFormId: string;
   donationFormPublishedVersion: string;
@@ -603,7 +190,8 @@ const createDonationFormPaymentSessionBase = async ({
     throw new Error('Donor email is required');
   }
 
-  const published = await loadPublishedDonationFormForCheckout(client, publicId);
+  const published =
+    publishedForm ?? (await loadPublishedDonationFormForCheckout(client, publicId));
   const config = published.config;
   const donationType = resolveRequestedDonationType({
     configMode: config.mode,
@@ -623,6 +211,7 @@ const createDonationFormPaymentSessionBase = async ({
   const donorMailingAddress = normalizeAddress(request.donorMailingAddress);
   const sourceFingerprint = buildSourceFingerprint();
   const giftAidRequested = config.giftAidEnabled === true && request.giftAidRequested === true;
+  const supporterEmailOptOut = request.supporterEmailOptOut === true;
   const giftAidDeclarationSource =
     normalizeString(config.giftAidDeclarationSource) ||
     DONATION_FORM_GIFT_AID_SOURCE;
@@ -683,6 +272,7 @@ const createDonationFormPaymentSessionBase = async ({
         ? { donorPhone: normalizeString(request.donorPhone) }
         : {}),
       ...(donorMailingAddress ? { donorMailingAddress } : {}),
+      supporterEmailOptOut,
       donorResolutionState: 'UNREVIEWED',
       giftReadyStatus: 'NEEDS_REVIEW',
       processingStatus: 'NOT_PROCESSED',
@@ -732,6 +322,7 @@ const createDonationFormPaymentSessionBase = async ({
         donationFormPublishedVersion: published.publishedVersion,
         donationType,
         giftAidEvidence,
+        supporterEmailOptOut,
         attribution: request.attribution,
       }),
     },
@@ -754,45 +345,15 @@ const createDonationFormPaymentSessionBase = async ({
     giftAidTextVersion,
   });
 
-  const checkoutSessionInput: Stripe.Checkout.SessionCreateParams = {
-    mode: donationType === 'RECURRING' ? 'subscription' : 'payment',
-    customer_email: donorEmail,
-    billing_address_collection:
-      config.requireAddress === true ? 'required' : 'auto',
-    phone_number_collection: {
-      enabled: config.collectPhone === true,
-    },
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: currencyCode,
-          unit_amount: amountMinorUnits,
-          ...(donationType === 'RECURRING'
-            ? {
-                recurring: {
-                  interval: 'month',
-                },
-              }
-            : {}),
-          product_data: {
-            name:
-              normalizeString(config.title) ||
-              (donationType === 'RECURRING' ? 'Monthly donation' : 'Donation'),
-            ...(normalizeString(config.description) !== ''
-              ? { description: normalizeString(config.description) }
-              : {}),
-          },
-        },
-      },
-    ],
+  const checkoutSessionInput = buildStripeCheckoutSessionInput({
+    published,
+    donationType,
+    donorEmail,
+    currencyCode,
+    amountMinorUnits,
     metadata,
-    client_reference_id: sourceFingerprint,
-  };
-
-  checkoutSessionInput.ui_mode = 'elements';
-  checkoutSessionInput.payment_method_types = ['card'];
-  checkoutSessionInput.return_url = assertValidUrl(config.successUrl, 'successUrl');
+    sourceFingerprint,
+  });
 
   const checkoutSession =
     await dependencies.stripeSessionCreator.createCheckoutSession(
@@ -812,6 +373,7 @@ const createDonationFormPaymentSessionBase = async ({
             donationFormPublishedVersion: published.publishedVersion,
             donationType,
             giftAidEvidence,
+            supporterEmailOptOut,
             attribution: request.attribution,
           }),
           checkoutSessionId: checkoutSession.id,
@@ -844,10 +406,12 @@ export const createDonationFormCheckoutSessionWithDependencies = async ({
   client,
   request,
   dependencies,
+  publishedForm,
 }: {
   client: CoreApiClient;
   request: CreateDonationFormCheckoutSessionRequest;
-  dependencies: DependencyOptions;
+  dependencies: DonationFormCheckoutDependencyOptions;
+  publishedForm?: PublishedDonationFormForCheckout;
 }): Promise<CreateDonationFormPaymentSessionResponse> => {
   const publishableKey = normalizeString(dependencies.publishableKey);
   if (publishableKey === '') {
@@ -860,6 +424,7 @@ export const createDonationFormCheckoutSessionWithDependencies = async ({
     client,
     request,
     dependencies,
+    publishedForm,
   });
 
   const checkoutSessionClientSecret = normalizeString(
@@ -895,7 +460,7 @@ export const createDonationFormCheckoutSession = async ({
   }
 
   const published = await loadPublishedDonationFormForCheckout(client, publicId);
-  const stripeApiKey = resolveStripeApiKey(published.providerConfigKey);
+  const stripeApiKey = await resolveStripeApiKey(published.providerConfigKey);
   const publishableKey = resolveStripePublishableKey(published.providerConfigKey);
 
   return createDonationFormCheckoutSessionWithDependencies({
@@ -905,5 +470,6 @@ export const createDonationFormCheckoutSession = async ({
       stripeSessionCreator: createStripeSessionCreator(stripeApiKey),
       publishableKey,
     },
+    publishedForm: published,
   });
 };

@@ -9,6 +9,8 @@ import {
   type GiftReadyStatus,
 } from './gift-ready-status';
 import { broadcastGiftStagingRecordInvalidated } from './gift-staging-record-sync';
+import { resolveAppealSourceSelection } from 'src/appeal-sources/appeal-source-integrity';
+import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
 
 const updateGiftStaging = async (
   recordId: string,
@@ -62,6 +64,9 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
       appeal: {
         id: true,
       },
+      appealSource: {
+        id: true,
+      },
       fund: {
         id: true,
       },
@@ -97,6 +102,7 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
           sourceAppealName?: string | null;
           sourceFundName?: string | null;
           appeal?: { id?: string | null } | null;
+          appealSource?: { id?: string | null } | null;
           fund?: { id?: string | null } | null;
           recurringAgreement?: { id?: string | null } | null;
         }
@@ -132,6 +138,7 @@ const evaluateGiftReadyStatus = async ({
     sourceAppealName?: string | null;
     sourceFundName?: string | null;
     appeal?: { id?: string | null } | null;
+    appealSource?: { id?: string | null } | null;
     fund?: { id?: string | null } | null;
     recurringAgreement?: { id?: string | null } | null;
   };
@@ -281,11 +288,30 @@ export const saveGiftCoding = async (
   recordId: string,
   coding: {
     appealId: string;
+    appealSourceId: string;
     fundId: string;
+    softCreditPersonId?: string;
+    softCreditCompanyId?: string;
+    softCreditType?: string;
   },
 ) => {
-  const appealId = coding.appealId.trim();
-  const fundId = coding.fundId.trim();
+  const client = new CoreApiClient();
+  const {
+    appealId,
+    appealSourceId,
+    appealDefaultFundId,
+  } = await resolveAppealSourceSelection({
+    client,
+    appealId: coding.appealId.trim(),
+    appealSourceId: coding.appealSourceId.trim(),
+  });
+  const softCreditSelection = resolveSoftCreditSelection({
+    softCreditPersonId: coding.softCreditPersonId,
+    softCreditCompanyId: coding.softCreditCompanyId,
+    softCreditType: coding.softCreditType,
+    treatUndefinedAsUnchanged: true,
+  });
+  const fundId = coding.fundId.trim() === '' ? appealDefaultFundId : coding.fundId.trim();
 
   return updateGiftStaging(recordId, {
     ...(appealId !== ''
@@ -301,6 +327,19 @@ export const saveGiftCoding = async (
       : {
           appealId: null,
         }),
+    ...(appealSourceId !== ''
+      ? {
+          appealSource: {
+            connect: {
+              where: {
+                id: appealSourceId,
+              },
+            },
+          },
+        }
+      : {
+          appealSourceId: null,
+        }),
     ...(fundId !== ''
       ? {
           fund: {
@@ -310,9 +349,44 @@ export const saveGiftCoding = async (
               },
             },
           },
+          }
+        : {
+            fundId: null,
+          }),
+    ...(softCreditSelection.mode === 'set' &&
+    softCreditSelection.softCreditPersonId !== ''
+      ? {
+          softCreditPerson: {
+            connect: {
+              where: {
+                id: softCreditSelection.softCreditPersonId,
+              },
+            },
+          },
+          softCreditCompanyId: null,
+          softCreditType: softCreditSelection.softCreditType,
         }
-      : {
-          fundId: null,
-        }),
+      : {}),
+    ...(softCreditSelection.mode === 'set' &&
+    softCreditSelection.softCreditCompanyId !== ''
+      ? {
+          softCreditCompany: {
+            connect: {
+              where: {
+                id: softCreditSelection.softCreditCompanyId,
+              },
+            },
+          },
+          softCreditPersonId: null,
+          softCreditType: softCreditSelection.softCreditType,
+        }
+      : {}),
+    ...(softCreditSelection.mode === 'clear'
+      ? {
+          softCreditPersonId: null,
+          softCreditCompanyId: null,
+          softCreditType: null,
+        }
+      : {}),
   });
 };

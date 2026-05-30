@@ -78,22 +78,53 @@ export const loadBatchProcessingContext = async (
           providerEventId: true,
           provider: true,
           providerPaymentId: true,
+          coveredFeeAmount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
+          grossPaymentAmount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
+          processingFeeAmount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
+          netReceivedAmount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
+          providerPayoutReference: true,
           paymentProviderCustomerId: true,
           providerAgreementId: true,
           providerIntervalUnit: true,
           providerIntervalCount: true,
           donorPhone: true,
+          supporterEmailOptOut: true,
           rawProviderEvidence: true,
           sourceAppealName: true,
           sourceFundName: true,
           donorResolutionState: true,
           donor: {
             id: true,
+            supporterEmailOptOut: true,
             emails: {
               primaryEmail: true,
               additionalEmails: true,
             },
           },
+          softCreditPerson: {
+            id: true,
+            name: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          softCreditCompany: {
+            id: true,
+            name: true,
+          },
+          softCreditType: true,
           fund: {
             id: true,
             name: true,
@@ -104,6 +135,13 @@ export const loadBatchProcessingContext = async (
             defaultFund: {
               id: true,
               name: true,
+            },
+          },
+          appealSource: {
+            id: true,
+            name: true,
+            appeal: {
+              id: true,
             },
           },
           giftReadyStatus: true,
@@ -267,17 +305,31 @@ export const loadGiftStagingRowsForProcessing = async (
           providerIntervalUnit: true,
           providerIntervalCount: true,
           donorPhone: true,
+          supporterEmailOptOut: true,
           rawProviderEvidence: true,
           sourceAppealName: true,
           sourceFundName: true,
           donorResolutionState: true,
           donor: {
             id: true,
+            supporterEmailOptOut: true,
             emails: {
               primaryEmail: true,
               additionalEmails: true,
             },
           },
+          softCreditPerson: {
+            id: true,
+            name: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          softCreditCompany: {
+            id: true,
+            name: true,
+          },
+          softCreditType: true,
           fund: {
             id: true,
             name: true,
@@ -288,6 +340,13 @@ export const loadGiftStagingRowsForProcessing = async (
             defaultFund: {
               id: true,
               name: true,
+            },
+          },
+          appealSource: {
+            id: true,
+            name: true,
+            appeal: {
+              id: true,
             },
           },
           giftReadyStatus: true,
