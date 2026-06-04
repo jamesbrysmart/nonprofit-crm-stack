@@ -18,7 +18,7 @@ export const APPEAL_SOURCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER =
 export const APPEAL_SOURCE_SOURCE_CODE_FIELD_UNIVERSAL_IDENTIFIER =
   'cb7ca435-5ad2-45a0-93d1-feeeb7044739';
 
-export const APPEAL_SOURCE_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER =
+export const APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER =
   '3940b15f-a96b-4bcc-a08c-b839a255b4c1';
 
 export const APPEAL_SOURCE_PLATFORM_FIELD_UNIVERSAL_IDENTIFIER =
@@ -215,12 +215,12 @@ export default defineObject({
     },
     {
       universalIdentifier:
-        APPEAL_SOURCE_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.TEXT,
-      name: 'externalReference',
-      label: 'External reference',
+      name: 'externalId',
+      label: 'External ID',
       description:
-        'External page, route, or source identifier in a platform or partner system.',
+        'Stable external page, route, or source identifier in a platform or partner system.',
       icon: 'IconExternalLink',
       isNullable: true,
       defaultValue: null,

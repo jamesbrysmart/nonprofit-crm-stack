@@ -1,8 +1,10 @@
 import { defineView } from 'twenty-sdk/define';
 import { APPEAL_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-appeal-source.field';
+import { FUNDRAISER_COMPANY_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fundraiser-company-on-appeal-source.field';
+import { FUNDRAISER_PERSON_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fundraiser-person-on-appeal-source.field';
 import {
   APPEAL_SOURCE_AUDIENCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
-  APPEAL_SOURCE_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_PLATFORM_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_SOURCE_CODE_FIELD_UNIVERSAL_IDENTIFIER,
@@ -85,10 +87,30 @@ export default defineView({
     {
       universalIdentifier: '4ad547aa-0470-4ce3-a88f-4087133737c8',
       fieldMetadataUniversalIdentifier:
-        APPEAL_SOURCE_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 5,
+      isVisible: true,
+      size: 220,
+    },
+    {
+      universalIdentifier: 'ac6381c1-4ec2-4776-8f7a-c81fb6fd89d7',
+      fieldMetadataUniversalIdentifier:
+        FUNDRAISER_PERSON_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 6,
+      isVisible: true,
+      size: 220,
+    },
+    {
+      universalIdentifier: 'adfe5b18-372c-41a9-af66-af32b62e03bb',
+      fieldMetadataUniversalIdentifier:
+        FUNDRAISER_COMPANY_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 7,
       isVisible: true,
       size: 220,
     },
@@ -98,7 +120,7 @@ export default defineView({
         APPEAL_SOURCE_AUDIENCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 6,
+      position: 8,
       isVisible: true,
       size: 280,
     },

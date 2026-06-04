@@ -22,6 +22,7 @@ import {
 import { saveGiftCoding } from 'src/gift-record/gift-coding.api';
 import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
+import type { AppealSourceSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
 
 export const GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '93dc8e25-d8c5-4d41-b43b-f72bf23f1e13';
@@ -44,6 +45,21 @@ type GiftCodingRecord = {
     id?: string | null;
     name?: string | null;
   } | null;
+  softCreditPerson?: {
+    id?: string | null;
+    name?: {
+      firstName?: string | null;
+      lastName?: string | null;
+    } | null;
+    emails?: {
+      primaryEmail?: string | null;
+    } | null;
+  } | null;
+  softCreditCompany?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+  softCreditType?: string | null;
 };
 
 const normalizeString = (value: string | null | undefined) =>
@@ -70,6 +86,50 @@ const getInputEventValue = (event: unknown) => {
     'value' in event.target
   ) {
     return String(event.target.value ?? '');
+  }
+
+  return '';
+};
+
+const buildPersonDisplayName = (
+  person: AppealSourceSummary['fundraiserPerson'],
+) => {
+  if (!person) {
+    return '';
+  }
+
+  const firstName = normalizeString(person.name?.firstName);
+  const lastName = normalizeString(person.name?.lastName);
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName !== '') {
+    return fullName;
+  }
+
+  return normalizeString(person.emails?.primaryEmail);
+};
+
+const getDerivedSoftCreditLabel = (
+  appealSource: AppealSourceSummary | null,
+) => {
+  if (!appealSource) {
+    return '';
+  }
+
+  const fundraiserPersonName = buildPersonDisplayName(
+    appealSource.fundraiserPerson,
+  );
+
+  if (fundraiserPersonName !== '') {
+    return `Fundraiser: ${fundraiserPersonName}`;
+  }
+
+  const fundraiserCompanyName = normalizeString(
+    appealSource.fundraiserCompany?.name,
+  );
+
+  if (fundraiserCompanyName !== '') {
+    return `Fundraiser: ${fundraiserCompanyName}`;
   }
 
   return '';
@@ -103,6 +163,21 @@ const loadGiftCodingRecord = async (
         id: true,
         name: true,
       },
+      softCreditPerson: {
+        id: true,
+        name: {
+          firstName: true,
+          lastName: true,
+        },
+        emails: {
+          primaryEmail: true,
+        },
+      },
+      softCreditCompany: {
+        id: true,
+        name: true,
+      },
+      softCreditType: true,
     },
   } as any);
 
@@ -199,6 +274,13 @@ const GiftRecordCoding = () => {
     () => appeals.find((appeal) => appeal.id === selectedAppealId) ?? null,
     [appeals, selectedAppealId],
   );
+  const selectedAppealSource = useMemo(
+    () =>
+      appealSources.find(
+        (appealSource) => appealSource.id === selectedAppealSourceId,
+      ) ?? null,
+    [appealSources, selectedAppealSourceId],
+  );
 
   if (loading) {
     return <div style={secondaryTextStyle}>Loading gift coding...</div>;
@@ -218,6 +300,19 @@ const GiftRecordCoding = () => {
   const currentAppealName = normalizeString(record.appeal?.name);
   const currentAppealSourceName = normalizeString(record.appealSource?.name);
   const currentFundName = normalizeString(record.fund?.name);
+  const currentSoftCreditPersonName = buildPersonDisplayName(
+    record.softCreditPerson,
+  );
+  const currentSoftCreditCompanyName = normalizeString(
+    record.softCreditCompany?.name,
+  );
+  const currentSoftCreditLabel =
+    currentSoftCreditPersonName !== ''
+      ? `Fundraiser: ${currentSoftCreditPersonName}`
+      : currentSoftCreditCompanyName !== ''
+        ? `Fundraiser: ${currentSoftCreditCompanyName}`
+        : '';
+  const derivedSoftCreditLabel = getDerivedSoftCreditLabel(selectedAppealSource);
   const hasUnsavedChanges =
     selectedAppealId !== currentAppealId ||
     selectedAppealSourceId !== currentAppealSourceId ||
@@ -333,6 +428,14 @@ const GiftRecordCoding = () => {
               : currentAppealSourceName}
           </div>
         </div>
+        <div style={compactMetaItemStyle}>
+          <div style={labelStyle}>Current soft credit</div>
+          <div style={secondaryTextStyle}>
+            {currentSoftCreditLabel === ''
+              ? 'No soft credit set.'
+              : currentSoftCreditLabel}
+          </div>
+        </div>
       </div>
 
       <div
@@ -405,6 +508,17 @@ const GiftRecordCoding = () => {
           </div>
         </div>
       ) : null}
+
+      <div style={compactDividerSectionStyle}>
+        <div style={labelStyle}>Soft credit</div>
+        <div style={secondaryTextStyle}>
+          {derivedSoftCreditLabel !== ''
+            ? `${derivedSoftCreditLabel}. Derived from the selected appeal source.`
+            : selectedAppealSourceId !== ''
+              ? 'No fundraiser soft credit will be derived from the selected appeal source.'
+              : 'Select an appeal source with a linked fundraiser to derive soft credit.'}
+        </div>
+      </div>
 
       {appealOptionsError || appealSourceOptionsError || fundOptionsError ? (
         <div style={compactDividerSectionStyle}>

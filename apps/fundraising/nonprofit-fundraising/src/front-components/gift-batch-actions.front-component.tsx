@@ -13,7 +13,6 @@ import {
   processBatch,
   runBatchDonorMatch,
 } from 'src/batch-processing/batch-processing.api';
-import { MAX_GIFT_BATCH_ITEMS } from 'src/batch-processing/batch-processing.limits';
 import type {
   CheckBatchResponse,
   ProcessBatchResponse,
@@ -205,9 +204,6 @@ const GiftBatchActions = () => {
         {isOverWorkflowLimit
           ? record.workflowLimitMessage
           : 'Run donor match first, then check the batch before processing the rows that are ready.'}
-      </div>
-      <div style={secondaryTextStyle}>
-        Pilot limit: maximum {MAX_GIFT_BATCH_ITEMS} donations per batch.
       </div>
 
       <div style={actionRowStyle}>

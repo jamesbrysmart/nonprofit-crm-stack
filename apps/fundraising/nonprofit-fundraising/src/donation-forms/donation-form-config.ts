@@ -19,10 +19,30 @@ export type DonationFormPublishedConfig = {
   giftAidEnabled?: boolean;
   giftAidTextVersion?: string;
   giftAidDeclarationSource?: string;
+  defaultAppeal?: DonationFormConfiguredAppeal;
+  defaultFund?: DonationFormConfiguredFund;
+  defaultAppealSource?: DonationFormConfiguredAppealSource;
   sourceAppealName?: string;
   sourceFundName?: string;
   requireAddress?: boolean;
   collectPhone?: boolean;
+};
+
+export type DonationFormConfiguredFund = {
+  id: string;
+  name?: string;
+};
+
+export type DonationFormConfiguredAppeal = {
+  id: string;
+  name?: string;
+  defaultFund?: DonationFormConfiguredFund | null;
+};
+
+export type DonationFormConfiguredAppealSource = {
+  id: string;
+  name?: string;
+  appeal?: DonationFormConfiguredAppeal | null;
 };
 
 export const normalizeDonationFormString = (
@@ -41,6 +61,89 @@ export const normalizeDonationFormAmountOptions = (value: unknown): number[] =>
           typeof entry === 'number' && Number.isInteger(entry) && entry > 0,
       )
     : [];
+
+const normalizeDonationFormConfiguredFund = (
+  value: unknown,
+): DonationFormConfiguredFund | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const id = normalizeDonationFormString(
+    (value as { id?: string | null }).id,
+  );
+
+  if (id === '') {
+    return undefined;
+  }
+
+  const name = normalizeDonationFormString(
+    (value as { name?: string | null }).name,
+  );
+
+  return {
+    id,
+    ...(name !== '' ? { name } : {}),
+  };
+};
+
+const normalizeDonationFormConfiguredAppeal = (
+  value: unknown,
+): DonationFormConfiguredAppeal | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const id = normalizeDonationFormString(
+    (value as { id?: string | null }).id,
+  );
+
+  if (id === '') {
+    return undefined;
+  }
+
+  const name = normalizeDonationFormString(
+    (value as { name?: string | null }).name,
+  );
+  const defaultFund = normalizeDonationFormConfiguredFund(
+    (value as { defaultFund?: unknown }).defaultFund,
+  );
+
+  return {
+    id,
+    ...(name !== '' ? { name } : {}),
+    ...(defaultFund ? { defaultFund } : {}),
+  };
+};
+
+const normalizeDonationFormConfiguredAppealSource = (
+  value: unknown,
+): DonationFormConfiguredAppealSource | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const id = normalizeDonationFormString(
+    (value as { id?: string | null }).id,
+  );
+
+  if (id === '') {
+    return undefined;
+  }
+
+  const name = normalizeDonationFormString(
+    (value as { name?: string | null }).name,
+  );
+  const appeal = normalizeDonationFormConfiguredAppeal(
+    (value as { appeal?: unknown }).appeal,
+  );
+
+  return {
+    id,
+    ...(name !== '' ? { name } : {}),
+    ...(appeal ? { appeal } : {}),
+  };
+};
 
 export const normalizeDonationFormMode = (value: unknown): DonationFormMode => {
   const normalized = normalizeDonationFormString(
@@ -102,6 +205,13 @@ export const normalizeDonationFormPublishedConfig = (
   }
 
   const amountOptions = normalizeDonationFormAmountOptions(config.amountOptions);
+  const defaultAppeal = normalizeDonationFormConfiguredAppeal(
+    config.defaultAppeal,
+  );
+  const defaultFund = normalizeDonationFormConfiguredFund(config.defaultFund);
+  const defaultAppealSource = normalizeDonationFormConfiguredAppealSource(
+    config.defaultAppealSource,
+  );
 
   return {
     title:
@@ -147,6 +257,9 @@ export const normalizeDonationFormPublishedConfig = (
       normalizeDonationFormString(
         config.giftAidDeclarationSource as string | null | undefined,
       ) || undefined,
+    ...(defaultAppeal ? { defaultAppeal } : {}),
+    ...(defaultFund ? { defaultFund } : {}),
+    ...(defaultAppealSource ? { defaultAppealSource } : {}),
     sourceAppealName:
       normalizeDonationFormString(
         config.sourceAppealName as string | null | undefined,

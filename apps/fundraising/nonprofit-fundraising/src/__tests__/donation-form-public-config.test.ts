@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CoreApiClient } from 'twenty-client-sdk/core';
+import { loadPublishedDonationFormForCheckout } from 'src/donation-forms/donation-form-checkout-repository';
 import { loadPublicDonationFormConfigWithClient } from 'src/logic-functions/get-public-donation-form-config';
 import { publishDonationFormWithClient } from 'src/logic-functions/publish-donation-form';
 
@@ -29,6 +30,26 @@ describe('publishDonationFormWithClient', () => {
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
             thankYouMessage: 'Thanks for supporting our work.',
+            defaultAppeal: {
+              id: 'apl_123',
+              name: 'Spring Appeal',
+              defaultFund: {
+                id: 'fund_123',
+                name: 'General Fund',
+              },
+            },
+            defaultAppealSource: {
+              id: 'src_123',
+              name: 'Website Donation Page',
+              appeal: {
+                id: 'apl_123',
+                name: 'Spring Appeal',
+                defaultFund: {
+                  id: 'fund_123',
+                  name: 'General Fund',
+                },
+              },
+            },
           },
         },
       }),
@@ -43,6 +64,26 @@ describe('publishDonationFormWithClient', () => {
           currencyCode: 'GBP',
           amountOptions: [1000, 2500, 5000],
           thankYouMessage: 'Thanks for supporting our work.',
+          defaultAppeal: {
+            id: 'apl_123',
+            name: 'Spring Appeal',
+            defaultFund: {
+              id: 'fund_123',
+              name: 'General Fund',
+            },
+          },
+          defaultAppealSource: {
+            id: 'src_123',
+            name: 'Website Donation Page',
+            appeal: {
+              id: 'apl_123',
+              name: 'Spring Appeal',
+              defaultFund: {
+                id: 'fund_123',
+                name: 'General Fund',
+              },
+            },
+          },
         });
 
         return {
@@ -66,23 +107,40 @@ describe('publishDonationFormWithClient', () => {
     expect(result.embedSnippet).toContain('allow="payment *"');
   });
 
-  it('rejects publish when provider config key is missing', async () => {
+  it('falls back to the default Stripe provider config key when missing', async () => {
     const client = buildClient({
       query: async () => ({
         donationForm: {
           id: 'df_123',
+          publicId: null,
           paymentProvider: 'STRIPE',
           providerConfigKey: null,
           config: {
             mode: 'ONE_OFF',
+            currencyCode: 'GBP',
+            amountOptions: [1000, 2500, 5000],
           },
         },
       }),
+      mutation: async (input) => {
+        const update = (input as any)?.updateDonationForm?.__args?.data;
+
+        expect(update.providerConfigKey).toBe('stripe-default');
+
+        return {
+          updateDonationForm: {
+            id: 'df_123',
+          },
+        };
+      },
     });
 
     await expect(
       publishDonationFormWithClient(client, 'df_123'),
-    ).rejects.toThrow('Provider config key is required before publishing');
+    ).resolves.toMatchObject({
+      donationFormId: 'df_123',
+      status: 'LIVE',
+    });
   });
 
   it('publishes without a success URL because embedded forms use inline thank-you copy', async () => {
@@ -200,6 +258,35 @@ describe('loadPublicDonationFormConfigWithClient', () => {
     ).resolves.toEqual({
       ok: false,
       reason: 'not_live',
+    });
+  });
+});
+
+describe('loadPublishedDonationFormForCheckout', () => {
+  it('falls back to the default Stripe provider config key when the field is blank', async () => {
+    const client = buildClient({
+      query: async () => ({
+        donationForm: {
+          id: 'df_123',
+          publicId: 'df_public_123',
+          status: 'LIVE',
+          publishedVersion: 'pub_2026-05-20_test',
+          paymentProvider: 'STRIPE',
+          providerConfigKey: null,
+          publishedConfig: {
+            mode: 'ONE_OFF',
+            currencyCode: 'GBP',
+            amountOptions: [1000, 2500, 5000],
+          },
+        },
+      }),
+    });
+
+    await expect(
+      loadPublishedDonationFormForCheckout(client, 'df_public_123'),
+    ).resolves.toMatchObject({
+      donationFormId: 'df_123',
+      providerConfigKey: 'stripe-default',
     });
   });
 });

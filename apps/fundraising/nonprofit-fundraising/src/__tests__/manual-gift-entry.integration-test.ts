@@ -192,6 +192,65 @@ describe('Manual gift entry routes', () => {
     expect(currentDraft?.id).toBe(gift?.giftAidClaimBatch?.id);
   });
 
+  it('should not mark a gift in kind as claimable even when the donor already has a declaration', async () => {
+    const suffix = `${Date.now()}-gift-in-kind`;
+    const donorFirstName = `Iris${suffix}`;
+    const donorLastName = 'Murdoch';
+    const donorEmail = `iris.${suffix}@example.org`;
+
+    const donationResponse = await callAppRoute<ManualGiftEntryResponse>(
+      '/s/manual-gift-entry/create-gift',
+      {
+        donorFirstName,
+        donorLastName,
+        donorEmail,
+        amountValue: '20.00',
+        currencyCode: 'GBP',
+        paymentType: 'BANK_TRANSFER',
+        giftDate: '2026-04-22',
+        giftAidRequested: true,
+        giftAidDeclarationCaptured: true,
+        giftAidDeclarationDate: '2026-04-22',
+        giftAidCoverageScope: 'past_and_future',
+        giftAidDeclarationSource: 'manual_entry',
+        giftAidTextVersion: 'v1',
+        donorChoice: 'CREATE_NEW',
+      },
+    );
+
+    const donationGift = await loadGiftById(donationResponse.giftId);
+    expect(donationGift?.giftAidStatus).toBe('CLAIMABLE');
+    expect(donationGift?.donor?.id).toBeTruthy();
+
+    const donorId = donationGift?.donor?.id ?? '';
+    const inKindResponse = await callAppRoute<ManualGiftEntryResponse>(
+      '/s/manual-gift-entry/create-gift',
+      {
+        donorFirstName,
+        donorLastName,
+        donorEmail,
+        amountValue: '150.00',
+        currencyCode: 'GBP',
+        paymentType: 'OTHER',
+        giftDate: '2026-04-23',
+        donorChoice: 'USE_EXISTING',
+        selectedDonorId: donorId,
+        giftType: 'GIFT_IN_KIND',
+        description: 'Donated artwork for spring auction',
+      },
+    );
+
+    const inKindGift = await loadGiftById(inKindResponse.giftId);
+    const declarations = await loadGiftAidDeclarationsForPerson(donorId);
+
+    expect(inKindGift?.giftType).toBe('GIFT_IN_KIND');
+    expect(inKindGift?.giftAidStatus).toBe('NOT_CLAIMABLE');
+    expect(inKindGift?.giftAidReasonCode).toBe('gift_type_not_eligible');
+    expect(inKindGift?.giftAidDeclaration?.id ?? null).toBeNull();
+    expect(inKindGift?.giftAidClaimBatch?.id ?? null).toBeNull();
+    expect(declarations).toHaveLength(1);
+  });
+
   it('should link a manually entered gift to an existing recurring agreement', async () => {
     const suffix = `${Date.now()}-recurring`;
     const donorFirstName = `Nina${suffix}`;

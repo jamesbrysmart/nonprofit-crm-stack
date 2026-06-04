@@ -51,6 +51,20 @@ export type AppealSourceSummary = {
   name?: string | null;
   status?: string | null;
   sourceType?: string | null;
+  fundraiserPerson?: {
+    id?: string | null;
+    name?: {
+      firstName?: string | null;
+      lastName?: string | null;
+    } | null;
+    emails?: {
+      primaryEmail?: string | null;
+    } | null;
+  } | null;
+  fundraiserCompany?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
   appeal?: {
     id?: string | null;
     name?: string | null;
@@ -101,6 +115,12 @@ export type ManualGiftPaymentType =
   | 'CHEQUE'
   | 'OTHER';
 
+export type ManualGiftType =
+  | 'DONATION'
+  | 'GRANT'
+  | 'SPONSORSHIP'
+  | 'GIFT_IN_KIND';
+
 export type ManualGiftEntryRequest = GiftAidCaptureInput & {
   donorType?: ManualGiftDonorType;
   donorFirstName?: string;
@@ -108,6 +128,8 @@ export type ManualGiftEntryRequest = GiftAidCaptureInput & {
   donorEmail?: string;
   donorMailingAddress?: MailingAddressEvidence | null;
   companyName?: string;
+  giftType?: ManualGiftType;
+  description?: string;
   amountValue?: string;
   currencyCode?: string;
   paymentType?: ManualGiftPaymentType;

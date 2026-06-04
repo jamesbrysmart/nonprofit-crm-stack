@@ -73,6 +73,12 @@ export const inputStyle: CSSProperties = {
   boxSizing: 'border-box',
 };
 
+export const textareaStyle: CSSProperties = {
+  ...inputStyle,
+  minHeight: '96px',
+  resize: 'vertical',
+};
+
 export const subtlePanelStyle: CSSProperties = {
   border: '1px solid #d8dee4',
   borderRadius: '6px',
@@ -104,6 +110,26 @@ export const badgeStyle = (
         ? '#7c5700'
         : '#57606a',
 });
+
+export const pillButtonStyle = (selected: boolean): CSSProperties => ({
+  border: selected ? '1px solid #0d7a5f' : '1px solid #d0d7de',
+  background: selected ? '#e9f6f2' : '#ffffff',
+  color: selected ? '#0d7a5f' : '#1f2328',
+  borderRadius: '999px',
+  padding: '8px 12px',
+  fontSize: '14px',
+  fontWeight: 600,
+  cursor: 'pointer',
+});
+
+export const signalPillStyle: CSSProperties = {
+  ...secondaryTextStyle,
+  fontSize: '13px',
+  padding: '4px 10px',
+  borderRadius: '999px',
+  background: '#ffffff',
+  border: '1px solid #d8dee4',
+};
 
 export const choiceButtonStyle = (selected: boolean): CSSProperties => ({
   width: '100%',
@@ -178,4 +204,30 @@ export const compactMetaItemStyle: CSSProperties = {
 export const compactValueStyle: CSSProperties = {
   ...valueStyle,
   fontSize: '14px',
+};
+
+export const panelStyle: CSSProperties = {
+  ...cardStyle,
+  display: 'grid',
+  gap: '16px',
+};
+
+export const linkStyle: CSSProperties = {
+  color: '#0969da',
+  fontSize: '14px',
+  fontWeight: 600,
+  textDecoration: 'none',
+};
+
+export const codeBlockStyle: CSSProperties = {
+  margin: 0,
+  padding: '10px 12px',
+  borderRadius: '6px',
+  border: '1px solid #d8dee4',
+  background: '#f6f8fa',
+  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  fontSize: '12px',
+  lineHeight: 1.5,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
 };

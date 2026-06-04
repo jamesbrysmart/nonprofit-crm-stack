@@ -65,7 +65,26 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             thankYouMessage: 'Thanks for your donation.',
             giftAidEnabled: true,
             giftAidTextVersion: 'ga-2026-05',
-            sourceAppealName: 'Spring Appeal',
+            defaultAppeal: {
+              id: 'apl_123',
+              name: 'Spring Appeal',
+              defaultFund: {
+                id: 'fund_123',
+                name: 'General Fund',
+              },
+            },
+            defaultAppealSource: {
+              id: 'src_123',
+              name: 'Website Donation Page',
+              appeal: {
+                id: 'apl_123',
+                name: 'Spring Appeal',
+                defaultFund: {
+                  id: 'fund_123',
+                  name: 'General Fund',
+                },
+              },
+            },
           },
         },
       }),
@@ -82,6 +101,10 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             currencyCode: 'GBP',
             amountMicros: 25_000_000,
           });
+          expect(createArgs.paymentType).toBe('CARD');
+          expect(createArgs.appeal.connect.where.id).toBe('apl_123');
+          expect(createArgs.appealSource.connect.where.id).toBe('src_123');
+          expect(createArgs.fund.connect.where.id).toBe('fund_123');
           expect(createArgs.giftAidRequested).toBe(true);
           expect(createArgs.giftAidDeclarationCaptured).toBe(true);
           expect(createArgs.giftAidDeclarationDate).toBe('2026-05-20');
@@ -181,6 +204,20 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
           },
         },
       }),
+      mutation: async (input) => {
+        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
+        if (createArgs) {
+          expect(createArgs.giftAidRequested).toBe(true);
+          expect(createArgs.giftAidDeclarationCaptured).toBe(false);
+          return { createGiftStaging: { id: 'stg_giftaid_no_address_123' } };
+        }
+
+        return {
+          updateGiftStaging: {
+            id: 'stg_giftaid_no_address_123',
+          },
+        };
+      },
     });
 
     await expect(
@@ -218,6 +255,20 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
           },
         },
       }),
+      mutation: async (input) => {
+        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
+        if (createArgs) {
+          expect(createArgs.giftAidRequested).toBe(true);
+          expect(createArgs.giftAidDeclarationCaptured).toBe(false);
+          return { createGiftStaging: { id: 'stg_giftaid_no_address_123' } };
+        }
+
+        return {
+          updateGiftStaging: {
+            id: 'stg_giftaid_no_address_123',
+          },
+        };
+      },
     });
 
     await expect(
@@ -235,7 +286,13 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
     );
   });
 
-  it('requires donor home address evidence before accepting a Gift Aid declaration', async () => {
+  it('does not block payment when Gift Aid is requested without a donor address', async () => {
+    const stripeSessionCreator = {
+      createCheckoutSession: vi.fn().mockResolvedValue({
+        id: 'cs_elements_giftaid_no_address_123',
+        clientSecret: 'cs_secret_elements_giftaid_no_address_123',
+      }),
+    };
     const client = buildClient({
       query: async () => ({
         donationForm: {
@@ -253,6 +310,24 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
           },
         },
       }),
+      mutation: async (input) => {
+        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
+        if (createArgs) {
+          expect(createArgs.giftAidRequested).toBe(true);
+          expect(createArgs.giftAidDeclarationCaptured).toBe(false);
+          return {
+            createGiftStaging: {
+              id: 'stg_giftaid_no_address_123',
+            },
+          };
+        }
+
+        return {
+          updateGiftStaging: {
+            id: 'stg_giftaid_no_address_123',
+          },
+        };
+      },
     });
 
     await expect(
@@ -263,19 +338,17 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
           donorMailingAddress: undefined,
         },
         dependencies: {
-          stripeSessionCreator: {
-            createCheckoutSession: vi.fn(),
-          },
+          stripeSessionCreator,
           publishableKey: 'pk_test_elements_123',
           now: new Date('2026-05-20T12:34:56.000Z'),
         },
       }),
-    ).rejects.toThrow(
-      'Gift Aid requires the donor home address to be completed before payment.',
-    );
+    ).resolves.toMatchObject({
+      checkoutSessionId: 'cs_elements_giftaid_no_address_123',
+    });
   });
 
-  it('does not make Stripe billing address mandatory solely because Gift Aid is selected', async () => {
+  it('does not send Stripe-specific address or phone collection settings from donor CRM capture fields', async () => {
     const stripeSessionCreator = {
       createCheckoutSession: vi.fn().mockResolvedValue({
         id: 'cs_elements_giftaid_123',
@@ -302,6 +375,8 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
       mutation: async (input) => {
         const createArgs = (input as any)?.createGiftStaging?.__args?.data;
         if (createArgs) {
+          expect(createArgs.giftAidRequested).toBe(true);
+          expect(createArgs.giftAidDeclarationCaptured).toBe(true);
           return { createGiftStaging: { id: 'stg_giftaid_123' } };
         }
 
@@ -325,7 +400,8 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
 
     const checkoutInput = stripeSessionCreator.createCheckoutSession.mock
       .calls[0]?.[0];
-    expect(checkoutInput.billing_address_collection).toBe('auto');
+    expect(checkoutInput.billing_address_collection).toBeUndefined();
+    expect(checkoutInput.phone_number_collection).toBeUndefined();
   });
 
   it('creates a monthly recurring subscription-mode payment session when the published form is recurring', async () => {

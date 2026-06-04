@@ -10,6 +10,7 @@ import {
   normalizeDonationFormString,
   validatePublishableDonationFormConfig,
 } from 'src/donation-forms/donation-form-config';
+import { resolveStripeProviderConfigKey } from 'src/donation-forms/donation-form-checkout-stripe';
 
 export type PublishDonationFormRequest = {
   donationFormId?: string;
@@ -93,10 +94,7 @@ export const publishDonationFormWithClient = async (
     throw new Error('Only Stripe donation forms can be published in this spike');
   }
 
-  const providerConfigKey = normalizeString(existing.providerConfigKey);
-  if (providerConfigKey === '') {
-    throw new Error('Provider config key is required before publishing');
-  }
+  const providerConfigKey = resolveStripeProviderConfigKey(existing.providerConfigKey);
 
   const config = normalizeDonationFormConfigObject(existing.config ?? null);
   if (Object.keys(config).length === 0) {
@@ -115,6 +113,7 @@ export const publishDonationFormWithClient = async (
         data: {
           publicId,
           status: 'LIVE',
+          providerConfigKey,
           publishedVersion,
           publishedAt,
           publishedConfig: config,

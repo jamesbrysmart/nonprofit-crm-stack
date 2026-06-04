@@ -1,4 +1,4 @@
-import { defineView, ViewKey } from 'twenty-sdk/define';
+import { defineView, ViewFilterOperand, ViewKey } from 'twenty-sdk/define';
 import { DONOR_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/donor-on-gift-staging.field';
 import {
   GIFT_STAGING_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER,
@@ -14,6 +14,7 @@ import {
   GIFT_STAGING_PROCESSING_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_PAYMENT_STATE_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/objects/gift-staging.object';
 
 export const GIFT_STAGINGS_DEFAULT_VIEW_UNIVERSAL_IDENTIFIER =
@@ -26,6 +27,22 @@ export default defineView({
   icon: 'IconInbox',
   key: ViewKey.INDEX,
   position: 1,
+  filters: [
+    {
+      universalIdentifier: '8c9c8e4c-1f4f-41e2-beb4-6f744574b9b2',
+      fieldMetadataUniversalIdentifier:
+        GIFT_STAGING_PAYMENT_STATE_FIELD_UNIVERSAL_IDENTIFIER,
+      operand: ViewFilterOperand.IS_NOT,
+      value: JSON.stringify(['AWAITING_PAYMENT']),
+    },
+    {
+      universalIdentifier: 'd0db8231-6106-49a5-9c6b-e572fe6ceac4',
+      fieldMetadataUniversalIdentifier:
+        GIFT_STAGING_PAYMENT_STATE_FIELD_UNIVERSAL_IDENTIFIER,
+      operand: ViewFilterOperand.IS_NOT,
+      value: JSON.stringify(['PAYMENT_EXPIRED']),
+    },
+  ],
   fields: [
     {
       universalIdentifier: '1f8f95a9-e1e0-4ca0-bfcb-b6832bbf31aa',

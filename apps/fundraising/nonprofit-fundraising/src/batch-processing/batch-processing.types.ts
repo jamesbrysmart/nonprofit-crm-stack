@@ -58,6 +58,7 @@ export type BatchProcessingRow = {
     | null;
   giftDate: string | null;
   donationType: string | null;
+  paymentType: string | null;
   externalId: string | null;
   sourceFingerprint: string | null;
   providerEventId: string | null;
@@ -95,6 +96,7 @@ export type BatchProcessingRow = {
   donorPhone: string | null;
   supporterEmailOptOut: boolean | null;
   rawProviderEvidence: unknown;
+  appealSourceExternalId: string | null;
   sourceAppealName: string | null;
   sourceFundName: string | null;
   donorResolutionState: string | null;
@@ -189,6 +191,12 @@ export type BatchGiftCodingAppealMode =
   | 'SET_ALL'
   | 'SET_WHERE_BLANK';
 
+export type BatchGiftCodingAppealSourceMode =
+  | 'LEAVE_UNCHANGED'
+  | 'CLEAR'
+  | 'SET_ALL'
+  | 'SET_WHERE_BLANK';
+
 export type BatchGiftCodingFundMode =
   | 'LEAVE_UNCHANGED'
   | 'CLEAR'
@@ -201,6 +209,8 @@ export type UpdateBatchGiftCodingRequest = {
   giftBatchId: string;
   appealMode: BatchGiftCodingAppealMode;
   selectedAppealId?: string;
+  appealSourceMode: BatchGiftCodingAppealSourceMode;
+  selectedAppealSourceId?: string;
   fundMode: BatchGiftCodingFundMode;
   selectedFundId?: string;
 };
@@ -280,5 +290,6 @@ export type UpdateBatchGiftCodingResponse = {
   targetedItemCount: number;
   updatedRowCount: number;
   appealUpdatedCount: number;
+  appealSourceUpdatedCount: number;
   fundUpdatedCount: number;
 };

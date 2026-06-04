@@ -60,6 +60,17 @@ export const applyGiftAidMetadata = async (
     return stripGiftAidCaptureFields(normalized);
   }
 
+  if (normalizeString(normalized.giftType) !== 'DONATION') {
+    return stripGiftAidCaptureFields({
+      ...normalized,
+      giftAidDeclarationId: undefined,
+      giftAidStatus: 'NOT_CLAIMABLE',
+      giftAidReasonCode: 'gift_type_not_eligible',
+      giftAidDecisionSource: 'SYSTEM',
+      giftAidLastEvaluatedAt: new Date().toISOString(),
+    });
+  }
+
   const withDeclaration =
     await declarationService.ensureGiftAidDeclarationForPayload(normalized);
   const explicitDeclarationId = normalizeString(withDeclaration.giftAidDeclarationId);

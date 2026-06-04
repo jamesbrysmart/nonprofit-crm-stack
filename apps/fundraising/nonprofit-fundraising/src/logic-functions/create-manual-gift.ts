@@ -9,6 +9,10 @@ import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
 import { resolveAppealSourceSelection } from 'src/appeal-sources/appeal-source-integrity';
 import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
+import {
+  deriveFundraiserSoftCreditSelection,
+  loadAppealSourceFundraisersById,
+} from 'src/soft-credits/fundraiser-soft-credit';
 import type {
   ManualGiftCompanyChoice,
   ManualGiftDonorChoice,
@@ -245,6 +249,19 @@ const handler = async (
     softCreditPersonId: body.selectedSoftCreditPersonId,
     softCreditCompanyId: body.selectedSoftCreditCompanyId,
     softCreditType: body.selectedSoftCreditType,
+    treatUndefinedAsUnchanged: true,
+  });
+  const appealSourceFundraisers = await loadAppealSourceFundraisersById(client, [
+    appealSourceId,
+  ]);
+  const resolvedSoftCreditSelection = deriveFundraiserSoftCreditSelection({
+    currentSoftCredit: {
+      softCreditPersonId: '',
+      softCreditCompanyId: '',
+      softCreditType: '',
+    },
+    nextAppealSourceFundraiser: appealSourceFundraisers[appealSourceId],
+    requestedSoftCreditSelection: softCreditSelection,
   });
   const opportunityId = normalizeString(
     body.selectedOpportunityId as string | undefined,
@@ -327,33 +344,33 @@ const handler = async (
                 },
               }
             : {}),
-          ...(softCreditSelection.mode === 'set' &&
-          softCreditSelection.softCreditPersonId !== ''
+          ...(resolvedSoftCreditSelection.mode === 'set' &&
+          resolvedSoftCreditSelection.softCreditPersonId !== ''
             ? {
                 softCreditPerson: {
                   connect: {
                     where: {
-                      id: softCreditSelection.softCreditPersonId,
+                      id: resolvedSoftCreditSelection.softCreditPersonId,
                     },
                   },
                 },
               }
             : {}),
-          ...(softCreditSelection.mode === 'set' &&
-          softCreditSelection.softCreditCompanyId !== ''
+          ...(resolvedSoftCreditSelection.mode === 'set' &&
+          resolvedSoftCreditSelection.softCreditCompanyId !== ''
             ? {
                 softCreditCompany: {
                   connect: {
                     where: {
-                      id: softCreditSelection.softCreditCompanyId,
+                      id: resolvedSoftCreditSelection.softCreditCompanyId,
                     },
                   },
                 },
               }
             : {}),
-          ...(softCreditSelection.mode === 'set'
+          ...(resolvedSoftCreditSelection.mode === 'set'
             ? {
-                softCreditType: softCreditSelection.softCreditType,
+                softCreditType: resolvedSoftCreditSelection.softCreditType,
               }
             : {}),
           ...(declarationId !== ''

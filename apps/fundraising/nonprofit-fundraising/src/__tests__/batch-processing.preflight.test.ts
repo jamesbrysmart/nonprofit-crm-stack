@@ -17,6 +17,7 @@ const buildRow = (
   },
   giftDate: '2026-05-12',
   donationType: null,
+  paymentType: 'CARD',
   externalId: null,
   sourceFingerprint: null,
   providerEventId: null,
@@ -27,13 +28,16 @@ const buildRow = (
   providerIntervalUnit: null,
   providerIntervalCount: null,
   donorPhone: null,
+  supporterEmailOptOut: null,
   rawProviderEvidence: null,
+  appealSourceExternalId: null,
   sourceAppealName: null,
   sourceFundName: null,
   donorResolutionState: 'UNREVIEWED',
   donor: null,
   fund: null,
   appeal: null,
+  appealSource: null,
   giftReadyStatus: 'NEEDS_REVIEW',
   paymentState: null,
   processingStatus: 'NOT_PROCESSED',
@@ -85,6 +89,19 @@ describe('classifyBatchPreflight', () => {
     });
   });
 
+  it('flags missing payment type as needs review', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          paymentType: null,
+        }),
+      ),
+    ).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['PAYMENT_TYPE_REQUIRED'],
+    });
+  });
+
   it('flags unsupported provider recurring cadence as needs review', () => {
     expect(
       classifyBatchPreflight(
@@ -102,6 +119,17 @@ describe('classifyBatchPreflight', () => {
   });
 
   it('flags unresolved source coding evidence as needs review', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          appealSourceExternalId: 'fm_123',
+        }),
+      ),
+    ).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['APPEAL_SOURCE_REVIEW_REQUIRED'],
+    });
+
     expect(
       classifyBatchPreflight(
         buildRow({
@@ -126,6 +154,22 @@ describe('classifyBatchPreflight', () => {
   });
 
   it('does not flag source coding evidence when canonical coding is already linked', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          appealSourceExternalId: 'fm_123',
+          appealSource: {
+            id: 'appeal-source-1',
+            name: 'Fundraiser page',
+            appeal: null,
+          },
+        } as Partial<BatchProcessingRow>),
+      ),
+    ).toEqual({
+      category: 'READY',
+      issueCodes: [],
+    });
+
     expect(
       classifyBatchPreflight(
         buildRow({

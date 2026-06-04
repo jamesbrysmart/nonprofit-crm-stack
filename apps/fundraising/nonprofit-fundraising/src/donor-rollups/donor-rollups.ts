@@ -19,6 +19,7 @@ type CurrencyAmount = {
 type GiftRecord = {
   id: string;
   giftDate?: string | null;
+  giftType?: string | null;
   amount?: CurrencyAmount | null;
   donor?: {
     id?: string | null;
@@ -67,6 +68,9 @@ const normalizeCurrencyCode = (value: string | null | undefined) => {
   return normalized === '' ? 'GBP' : normalized;
 };
 
+const includeInCashRollups = (giftType: string | null | undefined) =>
+  normalizeString(giftType).toUpperCase() !== 'GIFT_IN_KIND';
+
 const chunkArray = <T,>(items: T[], size: number): T[][] => {
   const chunks: T[][] = [];
 
@@ -114,7 +118,8 @@ export const computeDonorRollupSummary = (
   gifts: GiftRecord[],
   currentPerson?: PersonRollupRecord,
 ): DonorRollupSummary => {
-  const sortedByGiftDate = [...gifts].sort((left, right) =>
+  const includedGifts = gifts.filter((gift) => includeInCashRollups(gift.giftType));
+  const sortedByGiftDate = [...includedGifts].sort((left, right) =>
     normalizeString(right.giftDate).localeCompare(normalizeString(left.giftDate)),
   );
   const currencyCode =
@@ -124,13 +129,13 @@ export const computeDonorRollupSummary = (
   return {
     donorId,
     lifetimeGiftAmount: {
-      amountMicros: gifts.reduce(
+      amountMicros: includedGifts.reduce(
         (sum, gift) => sum + Math.round(gift.amount?.amountMicros ?? 0),
         0,
       ),
       currencyCode,
     },
-    lifetimeGiftCount: gifts.length,
+    lifetimeGiftCount: includedGifts.length,
     lastGiftDate: normalizeString(sortedByGiftDate[0]?.giftDate) || null,
   };
 };
@@ -201,6 +206,7 @@ const loadCommittedGiftsForDonors = async (
             node: {
               id: true,
               giftDate: true,
+              giftType: true,
               amount: {
                 amountMicros: true,
                 currencyCode: true,
@@ -265,6 +271,7 @@ const loadAllCommittedGifts = async (
           node: {
             id: true,
             giftDate: true,
+            giftType: true,
             amount: {
               amountMicros: true,
               currencyCode: true,

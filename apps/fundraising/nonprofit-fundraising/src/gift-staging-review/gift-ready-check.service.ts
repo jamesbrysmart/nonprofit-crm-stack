@@ -4,6 +4,7 @@ import {
   executeBatchGiftProcessing,
   persistBatchRowWritebacks,
 } from 'src/batch-processing/batch-processing.executor';
+import { resolveAppealSourceExternalIdsForRows } from 'src/appeal-sources/appeal-source-external-id-resolution';
 import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
@@ -22,10 +23,11 @@ export const checkGiftStagingRowsReadiness = async (
   client: CoreApiClient,
   rows: BatchProcessingRow[],
 ): Promise<GiftReadyCheckRowsResult> => {
-  const evaluations = await loadGiftReadyEvaluations(client, rows);
+  const resolvedRows = await resolveAppealSourceExternalIdsForRows(client, rows);
+  const evaluations = await loadGiftReadyEvaluations(client, resolvedRows);
   const checkedAt = new Date().toISOString();
 
-  const counts = rows.reduce(
+  const counts = resolvedRows.reduce(
     (summary, row) => {
       const evaluation = evaluations.get(row.id) ?? {
         giftReadyStatus: 'NEEDS_REVIEW' as const,
@@ -68,7 +70,7 @@ export const checkGiftStagingRowsReadiness = async (
   );
 
   await persistGiftStagingBatchUpserts(
-    rows.map((row) => ({
+    resolvedRows.map((row) => ({
       id: row.id,
       giftReadyStatus:
         row.processingStatus === 'PROCESSED' ||

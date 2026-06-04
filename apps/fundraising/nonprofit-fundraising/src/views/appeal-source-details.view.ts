@@ -1,10 +1,12 @@
 import { defineView } from 'twenty-sdk/define';
 import { APPEAL_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-appeal-source.field';
+import { FUNDRAISER_COMPANY_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fundraiser-company-on-appeal-source.field';
+import { FUNDRAISER_PERSON_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fundraiser-person-on-appeal-source.field';
 import {
   APPEAL_SOURCE_AUDIENCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_END_DATE_FIELD_UNIVERSAL_IDENTIFIER,
-  APPEAL_SOURCE_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_PLATFORM_FIELD_UNIVERSAL_IDENTIFIER,
@@ -110,7 +112,7 @@ export default defineView({
     {
       universalIdentifier: 'b1fcb3f9-b398-4b88-b291-2413e9a21583',
       fieldMetadataUniversalIdentifier:
-        APPEAL_SOURCE_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         APPEAL_SOURCE_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 7,
@@ -138,12 +140,32 @@ export default defineView({
       size: 240,
     },
     {
+      universalIdentifier: '59cd4c80-57a5-4b33-b8e0-1925c1373f97',
+      fieldMetadataUniversalIdentifier:
+        FUNDRAISER_PERSON_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_SOURCE_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 10,
+      isVisible: true,
+      size: 220,
+    },
+    {
+      universalIdentifier: 'e5fb0b82-9c66-4db5-9f51-0ab0e21d9050',
+      fieldMetadataUniversalIdentifier:
+        FUNDRAISER_COMPANY_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_SOURCE_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 11,
+      isVisible: true,
+      size: 220,
+    },
+    {
       universalIdentifier: '79b2a9cd-8da3-4a92-a672-1d176bc23598',
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_AUDIENCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         APPEAL_SOURCE_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 10,
+      position: 12,
       isVisible: true,
       size: 280,
     },
@@ -153,7 +175,7 @@ export default defineView({
         APPEAL_SOURCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
         APPEAL_SOURCE_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 11,
+      position: 13,
       isVisible: true,
       size: 320,
     },

@@ -5,8 +5,10 @@ import { buildDonationFormPreviewDocument } from 'src/donation-forms/donation-fo
 import {
   labelStyle,
   panelStackStyle,
+  pillButtonStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
+  signalPillStyle,
   valueStyle,
 } from 'src/front-components/gift-staging-review-ui';
 import {
@@ -16,7 +18,6 @@ import {
   getPreviewDonationTypeOptions,
   normalizeConfig,
   panelStyle,
-  previewControlGridStyle,
   previewFrameStyle,
   previewIframeStyle,
   previewStageStyle,
@@ -32,21 +33,6 @@ export const DONATION_FORM_PREVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'ebdb945d-16f3-4d12-87ca-29967ca8b11f';
 
 type PreviewViewportMode = 'DESKTOP' | 'MOBILE';
-
-const previewViewportButtonStyle = ({
-  active,
-}: {
-  active: boolean;
-}) => ({
-  border: active ? '1px solid #0d7a5f' : '1px solid #d0d7de',
-  background: active ? '#e9f6f2' : '#ffffff',
-  color: active ? '#0d7a5f' : '#1f2328',
-  borderRadius: '999px',
-  padding: '8px 12px',
-  fontSize: '14px',
-  fontWeight: 600,
-  cursor: 'pointer',
-});
 
 const previewControlRowStyle = {
   display: 'flex',
@@ -64,6 +50,12 @@ const previewInlineGroupStyle = {
 const previewHintStyle = {
   ...secondaryTextStyle,
   fontSize: '13px',
+};
+
+const previewNotesRowStyle = {
+  display: 'flex',
+  gap: '12px',
+  flexWrap: 'wrap' as const,
 };
 
 const DonationFormPreview = () => {
@@ -178,7 +170,7 @@ const DonationFormPreview = () => {
                         key={option}
                         type="button"
                         onClick={() => setPreviewDonationType(option)}
-                        style={previewViewportButtonStyle({ active })}
+                        style={pillButtonStyle(active)}
                       >
                         {label}
                       </button>
@@ -210,7 +202,7 @@ const DonationFormPreview = () => {
                       key={mode}
                       type="button"
                       onClick={() => setPreviewViewportMode(mode)}
-                      style={previewViewportButtonStyle({ active })}
+                      style={pillButtonStyle(active)}
                     >
                       {label}
                     </button>
@@ -228,20 +220,20 @@ const DonationFormPreview = () => {
               }}
             >
               <div style={labelStyle}>Preview notes</div>
-              <div style={previewControlGridStyle}>
-                <div style={previewHintStyle}>
+              <div style={previewNotesRowStyle}>
+                <div style={signalPillStyle}>
                   {previewAmountOptions.length > 0
                     ? `${previewAmountOptions.length} suggested amounts shown`
                     : 'No suggested amounts configured yet'}
                 </div>
-                <div style={previewHintStyle}>{previewViewportLabel}</div>
-                <div style={previewHintStyle}>
+                <div style={signalPillStyle}>{previewViewportLabel}</div>
+                <div style={signalPillStyle}>
                   {getPreviewAddressModeLabel({
                     requireAddress: savedDraftState.requireAddress,
                     giftAidEnabled: savedDraftState.giftAidEnabled,
                   })}
                 </div>
-                <div style={previewHintStyle}>
+                <div style={signalPillStyle}>
                   Primary action: {previewPrimaryButtonLabel}
                 </div>
               </div>
@@ -254,20 +246,20 @@ const DonationFormPreview = () => {
               }}
             >
               <div style={labelStyle}>Preview notes</div>
-              <div style={previewControlGridStyle}>
-                <div style={previewHintStyle}>
+              <div style={previewNotesRowStyle}>
+                <div style={signalPillStyle}>
                   {previewAmountOptions.length > 0
                     ? `${previewAmountOptions.length} suggested amounts shown`
                     : 'No suggested amounts configured yet'}
                 </div>
-                <div style={previewHintStyle}>{previewViewportLabel}</div>
-                <div style={previewHintStyle}>
+                <div style={signalPillStyle}>{previewViewportLabel}</div>
+                <div style={signalPillStyle}>
                   {getPreviewAddressModeLabel({
                     requireAddress: savedDraftState.requireAddress,
                     giftAidEnabled: savedDraftState.giftAidEnabled,
                   })}
                 </div>
-                <div style={previewHintStyle}>
+                <div style={signalPillStyle}>
                   Primary action: {previewPrimaryButtonLabel}
                 </div>
               </div>
@@ -311,7 +303,15 @@ const DonationFormPreview = () => {
           ) : null}
         </div>
 
-        <div style={previewStageStyle}>
+        <div
+          style={{
+            ...previewStageStyle,
+            border: '0',
+            background: '#f6f8fb',
+            padding: '12px 0 0',
+            borderRadius: '0',
+          }}
+        >
           <div
             style={{
               ...previewFrameStyle,

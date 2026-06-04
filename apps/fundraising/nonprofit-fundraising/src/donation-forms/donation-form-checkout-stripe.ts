@@ -8,6 +8,16 @@ import type {
 
 const normalizeString = normalizeDonationFormString;
 
+export const DEFAULT_STRIPE_PROVIDER_CONFIG_KEY = 'stripe-default';
+
+export const resolveStripeProviderConfigKey = (
+  value: string | null | undefined,
+): string => {
+  const normalized = normalizeString(value);
+
+  return normalized === '' ? DEFAULT_STRIPE_PROVIDER_CONFIG_KEY : normalized;
+};
+
 export const buildCheckoutReturnUrl = (publicId: string): string => {
   const baseUrl = process.env.TWENTY_API_URL?.trim();
 
@@ -24,7 +34,7 @@ export const buildCheckoutReturnUrl = (publicId: string): string => {
 export const resolveStripeApiKey = async (
   providerConfigKey: string,
 ): Promise<string> => {
-  if (providerConfigKey !== 'stripe-default') {
+  if (providerConfigKey !== DEFAULT_STRIPE_PROVIDER_CONFIG_KEY) {
     throw new Error(
       `Unsupported Stripe provider config key "${providerConfigKey}" in this spike`,
     );
@@ -42,7 +52,7 @@ export const resolveStripeApiKey = async (
 };
 
 export const resolveStripePublishableKey = (providerConfigKey: string): string => {
-  if (providerConfigKey !== 'stripe-default') {
+  if (providerConfigKey !== DEFAULT_STRIPE_PROVIDER_CONFIG_KEY) {
     throw new Error(
       `Unsupported Stripe provider config key "${providerConfigKey}" in this spike`,
     );
@@ -102,11 +112,6 @@ export const buildStripeCheckoutSessionInput = ({
   const checkoutSessionInput: Stripe.Checkout.SessionCreateParams = {
     mode: donationType === 'RECURRING' ? 'subscription' : 'payment',
     customer_email: donorEmail,
-    billing_address_collection:
-      config.requireAddress === true ? 'required' : 'auto',
-    phone_number_collection: {
-      enabled: config.collectPhone === true,
-    },
     line_items: [
       {
         quantity: 1,

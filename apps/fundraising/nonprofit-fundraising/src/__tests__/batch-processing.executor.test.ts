@@ -7,6 +7,7 @@ import {
   deriveLinkedDonorSupporterEmailOptOutUpdate,
   deriveRecurringCadenceFromProviderEvidence,
 } from 'src/batch-processing/batch-processing.executor';
+import { buildGiftPayloadFromRow } from 'src/batch-processing/batch-processing.executor.support';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
 
 describe('deriveRecurringCadenceFromProviderEvidence', () => {
@@ -71,6 +72,7 @@ const buildProcessingRow = (
   },
   giftDate: '2026-05-01',
   donationType: 'ONE_OFF',
+  paymentType: 'CARD',
   externalId: null,
   sourceFingerprint: null,
   providerEventId: null,
@@ -323,5 +325,31 @@ describe('canProcessBatchRow', () => {
         }),
       ),
     ).toBe(true);
+  });
+});
+
+describe('buildGiftPayloadFromRow', () => {
+  it('maps the staged payment type onto the committed gift payload', () => {
+    expect(
+      buildGiftPayloadFromRow(
+        buildProcessingRow({
+          donorResolutionState: 'CONFIRMED',
+          donor: { id: 'person_1' },
+          paymentType: 'DIRECT_DEBIT',
+        }),
+      ),
+    ).toMatchObject({
+      paymentType: 'DIRECT_DEBIT',
+    });
+  });
+
+  it('rejects rows without a payment type', () => {
+    expect(() =>
+      buildGiftPayloadFromRow(
+        buildProcessingRow({
+          paymentType: null,
+        }),
+      ),
+    ).toThrow('Payment type is required before batch processing');
   });
 });

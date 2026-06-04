@@ -5,6 +5,7 @@ import type {
   ManualGiftDonorType,
   ManualGiftEntryRequest,
   ManualGiftPaymentType,
+  ManualGiftType,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 
 export const normalizeString = (value: string | null | undefined) =>
@@ -111,6 +112,20 @@ export const getManualGiftPaymentType = (
       return paymentType;
     default:
       throw new Error('Payment type is required');
+  }
+};
+
+export const getManualGiftType = (
+  giftType: ManualGiftEntryRequest['giftType'],
+): ManualGiftType => {
+  switch (giftType) {
+    case 'DONATION':
+    case 'GRANT':
+    case 'SPONSORSHIP':
+    case 'GIFT_IN_KIND':
+      return giftType;
+    default:
+      return 'DONATION';
   }
 };
 

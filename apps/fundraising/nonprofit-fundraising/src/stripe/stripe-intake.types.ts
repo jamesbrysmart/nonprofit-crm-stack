@@ -187,6 +187,7 @@ export type StripeOneOffGiftStagingInput = {
   };
   giftDate: string;
   donationType: 'ONE_OFF' | 'RECURRING';
+  paymentType: 'CARD';
   donorFirstName: string;
   donorLastName: string;
   donorEmail?: string;

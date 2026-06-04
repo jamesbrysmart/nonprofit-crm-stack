@@ -1,9 +1,11 @@
 import type {
   DuplicateCheckResponse,
   AppealSummary,
+  CompanySummary,
   FundSummary,
   PersonSummary,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
+import type { SoftCreditType } from 'src/soft-credits/soft-credit-integrity';
 import type {
   BatchPreflightCategory,
   BatchPreflightIssueCode,
@@ -40,6 +42,7 @@ export type StoredGiftStagingRecord = {
     | null;
   giftDate: string | null;
   donationType: string | null;
+  paymentType: string | null;
   donorFirstName: string | null;
   donorLastName: string | null;
   donorEmail: string | null;
@@ -64,6 +67,7 @@ export type StoredGiftStagingRecord = {
   providerIntervalUnit: string | null;
   providerIntervalCount: number | null;
   rawProviderEvidence: unknown;
+  appealSourceExternalId: string | null;
   sourceAppealName: string | null;
   sourceFundName: string | null;
   donorResolutionState: string | null;
@@ -107,6 +111,9 @@ export type StoredGiftStagingRecord = {
         } | null;
       }
     | null;
+  softCreditPerson: PersonSummary | null;
+  softCreditCompany: CompanySummary | null;
+  softCreditType: SoftCreditType | null;
   fund:
     | {
         id: string;
@@ -134,6 +141,7 @@ export type GiftStagingReviewRecord = {
   amountDisplay: string;
   giftDate: string;
   donationType: string;
+  paymentType: string;
   donorFirstName: string;
   donorLastName: string;
   donorEmail: string;
@@ -148,6 +156,7 @@ export type GiftStagingReviewRecord = {
   providerIntervalUnit: string;
   providerIntervalCount: number | null;
   rawProviderEvidence: unknown;
+  appealSourceExternalId: string;
   sourceAppealName: string;
   sourceFundName: string;
   appealId: string;
@@ -157,6 +166,11 @@ export type GiftStagingReviewRecord = {
   appealDefaultFundId: string;
   fundId: string;
   fundName: string;
+  softCreditPersonId: string;
+  softCreditPersonName: string;
+  softCreditCompanyId: string;
+  softCreditCompanyName: string;
+  softCreditType: SoftCreditType | '';
   donorEvidenceName: string;
   donorResolution: DonorResolution;
   linkedDonor: PersonSummary | null;

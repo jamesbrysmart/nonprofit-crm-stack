@@ -121,7 +121,7 @@ export default defineObject({
         'Workspace/provider reference used to resolve the server-side payment configuration',
       icon: 'IconKey',
       isNullable: true,
-      defaultValue: null,
+      defaultValue: "'stripe-default'",
     },
     {
       universalIdentifier: DONATION_FORM_CONFIG_FIELD_UNIVERSAL_IDENTIFIER,

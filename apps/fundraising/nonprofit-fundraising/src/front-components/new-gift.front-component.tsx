@@ -5,6 +5,7 @@ import { ManualGiftEntryGiftAidSection } from 'src/manual-gift-entry/manual-gift
 import type {
   ManualGiftDuplicateMatch,
   ManualGiftPaymentType,
+  ManualGiftType,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import {
   bodyTextStyle,
@@ -47,6 +48,19 @@ export const NEW_GIFT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
 export const NEW_GIFT_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER =
   'ef13b0da-7934-47cf-b09b-57a67695756d';
 
+const getGiftTypeOptions = (donorType: 'INDIVIDUAL' | 'COMPANY') =>
+  donorType === 'COMPANY'
+    ? [
+        { value: 'DONATION', label: 'Donation' },
+        { value: 'GRANT', label: 'Grant' },
+        { value: 'SPONSORSHIP', label: 'Sponsorship' },
+        { value: 'GIFT_IN_KIND', label: 'Gift in kind' },
+      ]
+    : [
+        { value: 'DONATION', label: 'Donation' },
+        { value: 'GIFT_IN_KIND', label: 'Gift in kind' },
+      ];
+
 const NewGift = () => {
   const {
     donorType,
@@ -59,6 +73,10 @@ const NewGift = () => {
     setDonorEmail,
     companyName,
     setCompanyName,
+    giftType,
+    setGiftType,
+    description,
+    setDescription,
     amountValue,
     setAmountValue,
     currencyCode,
@@ -147,6 +165,7 @@ const NewGift = () => {
     handleSearchRecurringAgreements,
     handleSearchOpportunities,
   } = useNewGiftController();
+  const giftTypeOptions = getGiftTypeOptions(donorType);
 
   return (
     <div style={panelStyle}>
@@ -637,6 +656,23 @@ const NewGift = () => {
           }}
         >
           <label style={{ display: 'grid', gap: '6px' }}>
+            <span style={labelStyle}>Gift type</span>
+            <select
+              style={inputStyle}
+              value={giftType}
+              onChange={(event) =>
+                setGiftType(getInputEventValue(event) as ManualGiftType)
+              }
+            >
+              {giftTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label style={{ display: 'grid', gap: '6px' }}>
             <span style={labelStyle}>Amount</span>
             <input
               style={inputStyle}
@@ -689,6 +725,34 @@ const NewGift = () => {
             />
           </label>
         </div>
+
+        {giftType === 'GIFT_IN_KIND' ? (
+          <div style={warningSectionStyle}>
+            Record the estimated support value for this gift in kind. It will
+            remain visible in CRM context, but it is excluded from default cash
+            donation totals and reconciliation-style views.
+          </div>
+        ) : null}
+
+        {giftType === 'GIFT_IN_KIND' ? (
+          <label style={{ display: 'grid', gap: '6px' }}>
+            <span style={labelStyle}>Description</span>
+            <textarea
+              style={{
+                ...inputStyle,
+                minHeight: '88px',
+                resize: 'vertical',
+              }}
+              placeholder="What was donated?"
+              value={description}
+              onChange={(event) => setDescription(getInputEventValue(event))}
+            />
+            <span style={secondaryTextStyle}>
+              Describe the donated goods or services so the record is meaningful
+              in supporter, company, and appeal context.
+            </span>
+          </label>
+        ) : null}
 
         <div
           style={{

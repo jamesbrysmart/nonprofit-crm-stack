@@ -16,6 +16,7 @@ import type {
   ManualGiftDonorType,
   ManualGiftDuplicateCheckResponse,
   ManualGiftPaymentType,
+  ManualGiftType,
   OpportunitySummary,
 } from './manual-gift-entry.types';
 import type { RecurringAgreementSummary } from 'src/recurring/recurring.types';
@@ -39,6 +40,8 @@ export const useNewGiftController = () => {
   const [donorLastName, setDonorLastName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [giftType, setGiftType] = useState<ManualGiftType>('DONATION');
+  const [description, setDescription] = useState('');
   const [amountValue, setAmountValue] = useState('');
   const [currencyCode, setCurrencyCode] = useState('GBP');
   const [paymentType, setPaymentType] =
@@ -123,8 +126,18 @@ export const useNewGiftController = () => {
   }, [donorType]);
 
   useEffect(() => {
+    if (
+      donorType === 'INDIVIDUAL' &&
+      (giftType === 'GRANT' || giftType === 'SPONSORSHIP')
+    ) {
+      setGiftType('DONATION');
+    }
+  }, [donorType, giftType]);
+
+  useEffect(() => {
     setDuplicateGiftCheckResult(null);
   }, [
+    giftType,
     donorType,
     amountValue,
     currencyCode,
@@ -134,6 +147,12 @@ export const useNewGiftController = () => {
     companyChoice,
     selectedCompanyId,
   ]);
+
+  useEffect(() => {
+    if (giftType === 'GIFT_IN_KIND' && paymentType !== 'OTHER') {
+      setPaymentType('OTHER');
+    }
+  }, [giftType, paymentType]);
 
   useEffect(() => {
     if (selectedAppealId === '') {
@@ -459,6 +478,10 @@ export const useNewGiftController = () => {
           : {
               companyName: trimmedCompanyName,
             }),
+        giftType,
+        ...(giftType === 'GIFT_IN_KIND' && description.trim() !== ''
+          ? { description: description.trim() }
+          : {}),
         amountValue: amountValue.trim(),
         currencyCode,
         paymentType,
@@ -651,6 +674,10 @@ export const useNewGiftController = () => {
     setDonorEmail,
     companyName,
     setCompanyName,
+    giftType,
+    setGiftType,
+    description,
+    setDescription,
     amountValue,
     setAmountValue,
     currencyCode,

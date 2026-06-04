@@ -60,6 +60,7 @@ export type GiftAidEvaluatedPayload = GiftAidCaptureInput & {
   donorEmail?: string | null;
   giftDate?: string | null;
   name?: string | null;
+  giftType?: string | null;
   amount?:
     | {
         amountMicros?: number | null;

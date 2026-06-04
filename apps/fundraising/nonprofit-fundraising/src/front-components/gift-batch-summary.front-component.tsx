@@ -300,7 +300,7 @@ const GiftBatchSummary = () => {
             Use Import records on Gift staging to add rows to this batch, then return here to review and process them.
           </div>
           <div style={secondaryTextStyle}>
-            Pilot limit: maximum 200 donations per batch.
+            Maximum 200 donations per batch.
           </div>
 
           <div

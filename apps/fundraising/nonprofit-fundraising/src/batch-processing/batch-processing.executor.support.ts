@@ -99,6 +99,22 @@ const normalizeProviderForRecurringAgreement = (
   value: string | null | undefined,
 ) => normalizeString(value).toUpperCase();
 
+const normalizeGiftPaymentType = (value: string | null | undefined) => {
+  const normalized = normalizeString(value).toUpperCase();
+
+  switch (normalized) {
+    case 'CARD':
+    case 'DIRECT_DEBIT':
+    case 'BANK_TRANSFER':
+    case 'CASH':
+    case 'CHEQUE':
+    case 'OTHER':
+      return normalized;
+    default:
+      return '';
+  }
+};
+
 export const isProviderBackedRecurringStagingRow = (row: BatchProcessingRow) =>
   normalizeString(row.recurringAgreement?.id) === '' &&
   normalizeProviderForRecurringAgreement(row.provider) !== '' &&
@@ -167,6 +183,7 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
   const donorLastName = normalizeString(row.donorLastName);
   const donorEmail = normalizeString(row.donorEmail);
   const giftDate = normalizeString(row.giftDate);
+  const paymentType = normalizeGiftPaymentType(row.paymentType);
   const explicitFundId = normalizeString(row.fund?.id);
   const appealId = normalizeString(row.appeal?.id);
   const appealSourceId = normalizeString(row.appealSource?.id);
@@ -200,6 +217,10 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
     throw new Error('Gift date is required for batch processing');
   }
 
+  if (paymentType === '') {
+    throw new Error('Payment type is required before batch processing');
+  }
+
   if (
     appealSourceId !== '' &&
     (appealId === '' || appealSourceAppealId === '' || appealSourceAppealId !== appealId)
@@ -219,6 +240,7 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
     donorFirstName,
     donorLastName,
     ...(donorEmail !== '' ? { donorEmail } : {}),
+    paymentType,
     ...(normalizeString(row.externalId) !== ''
       ? { externalId: normalizeString(row.externalId) }
       : {}),

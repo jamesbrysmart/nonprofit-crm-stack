@@ -6,6 +6,9 @@ export const GIFT_OBJECT_UNIVERSAL_IDENTIFIER =
 export const GIFT_NAME_FIELD_UNIVERSAL_IDENTIFIER =
   '54717f2c-e673-45a8-9771-c31cc093c0f8';
 
+export const GIFT_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER =
+  '8db3f7d8-7fd9-4ec7-9940-3b570dc1f19f';
+
 export const GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
   '85198e1e-135b-47bf-bbd9-83c75f1c3989';
 
@@ -23,6 +26,9 @@ export const GIFT_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER =
 
 export const GIFT_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
   '3cbc11d6-d0af-420f-ab8f-cd43bd3913a3';
+
+export const GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
+  'e95f0f55-c4b7-4a6e-8f74-9142d4f9c7cb';
 
 export const GIFT_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER =
   '81d4b8be-f4fc-4862-b964-2c8780eec656';
@@ -97,6 +103,16 @@ export default defineObject({
       label: 'Name',
       description: 'Human-readable label for the gift record',
       icon: 'IconAbc',
+    },
+    {
+      universalIdentifier: GIFT_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'description',
+      label: 'Description',
+      description: 'Optional descriptive context for the gift record',
+      icon: 'IconFileDescription',
+      isNullable: true,
+      defaultValue: null,
     },
     {
       universalIdentifier: GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
@@ -190,6 +206,45 @@ export default defineObject({
           label: 'Other',
           position: 5,
           color: 'gray',
+        },
+      ],
+    },
+    {
+      universalIdentifier: GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'giftType',
+      label: 'Gift type',
+      description: 'Fundraising income/support classification for the gift',
+      icon: 'IconCategory',
+      defaultValue: "'DONATION'",
+      options: [
+        {
+          id: '5ed57f4b-5a8d-4bb8-b8cc-c91627c2574e',
+          value: 'DONATION',
+          label: 'Donation',
+          position: 0,
+          color: 'blue',
+        },
+        {
+          id: 'eb6e5f8c-5d17-4ab7-a8af-4b305cba1da6',
+          value: 'GRANT',
+          label: 'Grant',
+          position: 1,
+          color: 'green',
+        },
+        {
+          id: 'd57d92f2-5225-4a5d-b2e8-3376cde1c411',
+          value: 'SPONSORSHIP',
+          label: 'Sponsorship',
+          position: 2,
+          color: 'orange',
+        },
+        {
+          id: 'b81d6396-73c7-4d68-8e15-61c829de6fe4',
+          value: 'GIFT_IN_KIND',
+          label: 'Gift in kind',
+          position: 3,
+          color: 'purple',
         },
       ],
     },

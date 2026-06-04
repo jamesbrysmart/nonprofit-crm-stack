@@ -29,6 +29,7 @@ const loadStoredRecord = async (
       },
       giftDate: true,
       donationType: true,
+      paymentType: true,
       donorFirstName: true,
       donorLastName: true,
       donorEmail: true,
@@ -51,6 +52,7 @@ const loadStoredRecord = async (
       providerIntervalUnit: true,
       providerIntervalCount: true,
       rawProviderEvidence: true,
+      appealSourceExternalId: true,
       sourceAppealName: true,
       sourceFundName: true,
       donorResolutionState: true,
@@ -95,6 +97,21 @@ const loadStoredRecord = async (
           id: true,
         },
       },
+      softCreditPerson: {
+        id: true,
+        name: {
+          firstName: true,
+          lastName: true,
+        },
+        emails: {
+          primaryEmail: true,
+        },
+      },
+      softCreditCompany: {
+        id: true,
+        name: true,
+      },
+      softCreditType: true,
       fund: {
         id: true,
         name: true,

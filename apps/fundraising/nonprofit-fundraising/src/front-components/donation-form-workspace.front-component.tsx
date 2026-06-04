@@ -3,6 +3,12 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
 import { Button } from 'twenty-sdk/ui';
 import {
+  getAppealIdForAppealSourceSelection,
+  getAppealSourceIdsForAppeal,
+  getFundIdForAppealSelection,
+} from 'src/gift-coding/gift-coding';
+import {
+  badgeStyle,
   fieldGridStyle,
   inputStyle,
   labelStyle,
@@ -23,6 +29,7 @@ import {
   type DonationFormWorkspaceState,
   useDonationFormRecord,
 } from 'src/front-components/donation-form-workspace.shared';
+import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
 import {
   getInputEventChecked,
   getInputEventValue,
@@ -39,6 +46,18 @@ const DonationFormConfigure = () => {
     null,
   );
   const [saving, setSaving] = useState(false);
+  const selectedAppealId = state?.selectedAppealId ?? '';
+  const {
+    appeals,
+    appealSources,
+    funds,
+    loadingAppeals,
+    loadingAppealSources,
+    loadingFunds,
+    appealOptionsError,
+    appealSourceOptionsError,
+    fundOptionsError,
+  } = useGiftCodingOptions({ selectedAppealId });
 
   useEffect(() => {
     if (!record?.id) {
@@ -79,6 +98,9 @@ const DonationFormConfigure = () => {
       const nextConfig = buildUpdatedDraftConfig({
         currentConfig: normalizeConfig(record.config),
         state,
+        appeals,
+        appealSources,
+        funds,
       });
 
       await saveDonationFormDraft({
@@ -115,6 +137,63 @@ const DonationFormConfigure = () => {
     }
   };
 
+  const handleAppealChange = (nextAppealId: string) => {
+    if (!state) {
+      return;
+    }
+
+    const allowedSourceIds = getAppealSourceIdsForAppeal({
+      appealSources,
+      appealId: nextAppealId,
+    });
+    const nextAppealSourceId =
+      state.selectedAppealSourceId !== '' &&
+      allowedSourceIds &&
+      !allowedSourceIds.has(state.selectedAppealSourceId)
+        ? ''
+        : state.selectedAppealSourceId;
+
+    setState({
+      ...state,
+      selectedAppealId: nextAppealId,
+      selectedAppealSourceId: nextAppealSourceId,
+      selectedFundId: getFundIdForAppealSelection({
+        appeals,
+        nextAppealId,
+        currentFundId: state.selectedFundId,
+      }),
+    });
+  };
+
+  const handleAppealSourceChange = (nextAppealSourceId: string) => {
+    if (!state) {
+      return;
+    }
+
+    const nextAppealId = getAppealIdForAppealSourceSelection({
+      appealSources,
+      nextAppealSourceId,
+    });
+    const resolvedAppealId =
+      state.selectedAppealId === '' && nextAppealId !== ''
+        ? nextAppealId
+        : state.selectedAppealId;
+
+    setState({
+      ...state,
+      selectedAppealSourceId: nextAppealSourceId,
+      selectedAppealId: resolvedAppealId,
+      selectedFundId:
+        state.selectedAppealId === '' && nextAppealId !== ''
+          ? getFundIdForAppealSelection({
+              appeals,
+              nextAppealId,
+              currentFundId: state.selectedFundId,
+            })
+          : state.selectedFundId,
+    });
+  };
+
   if (loading) {
     return <div style={secondaryTextStyle}>Loading donation form configuration…</div>;
   }
@@ -133,14 +212,8 @@ const DonationFormConfigure = () => {
         <div style={{ display: 'grid', gap: '6px' }}>
           <div
             style={{
+              ...badgeStyle(stateBadge.tone),
               alignSelf: 'flex-start',
-              padding: '4px 10px',
-              borderRadius: '999px',
-              fontSize: '12px',
-              fontWeight: 700,
-              background:
-                stateBadge.tone === 'warning' ? '#fff3cd' : '#dcfce7',
-              color: stateBadge.tone === 'warning' ? '#92400e' : '#166534',
             }}
           >
             {stateBadge.label}
@@ -349,28 +422,72 @@ const DonationFormConfigure = () => {
         </div>
       ) : null}
 
-      <div style={fieldGridStyle}>
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Default appeal name</span>
-          <input
-            style={inputStyle}
-            value={state.sourceAppealName}
-            onChange={(event) =>
-              handleFieldChange('sourceAppealName', getInputEventValue(event))
-            }
-          />
-        </label>
+      <div style={compactSectionStyle}>
+        <div style={secondaryTextStyle}>
+          Optional default coding. Leave these blank for a generic donation form,
+          or set them for appeal- or source-specific forms.
+        </div>
+        <div style={fieldGridStyle}>
+          <label style={{ display: 'grid', gap: '4px' }}>
+            <span style={labelStyle}>Default appeal</span>
+            <select
+              style={inputStyle}
+              value={state.selectedAppealId}
+              onChange={(event) => handleAppealChange(getInputEventValue(event))}
+            >
+              <option value="">No default appeal</option>
+              {appeals.map((appeal) => (
+                <option key={appeal.id} value={appeal.id}>
+                  {normalizeString(appeal.name, 'Untitled appeal')}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Default fund name</span>
-          <input
-            style={inputStyle}
-            value={state.sourceFundName}
-            onChange={(event) =>
-              handleFieldChange('sourceFundName', getInputEventValue(event))
-            }
-          />
-        </label>
+          <label style={{ display: 'grid', gap: '4px' }}>
+            <span style={labelStyle}>Default appeal source</span>
+            <select
+              style={inputStyle}
+              value={state.selectedAppealSourceId}
+              onChange={(event) =>
+                handleAppealSourceChange(getInputEventValue(event))
+              }
+            >
+              <option value="">No default appeal source</option>
+              {appealSources.map((appealSource) => (
+                <option key={appealSource.id} value={appealSource.id}>
+                  {normalizeString(appealSource.name, 'Untitled source')}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label style={{ display: 'grid', gap: '4px' }}>
+            <span style={labelStyle}>Default fund</span>
+            <select
+              style={inputStyle}
+              value={state.selectedFundId}
+              onChange={(event) =>
+                handleFieldChange('selectedFundId', getInputEventValue(event))
+              }
+            >
+              <option value="">No default fund</option>
+              {funds.map((fund) => (
+                <option key={fund.id} value={fund.id}>
+                  {normalizeString(fund.name, 'Untitled fund')}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {loadingAppeals || loadingAppealSources || loadingFunds ? (
+          <div style={secondaryTextStyle}>Loading appeal and fund options…</div>
+        ) : null}
+        {appealOptionsError || appealSourceOptionsError || fundOptionsError ? (
+          <div style={secondaryTextStyle}>
+            {appealOptionsError || appealSourceOptionsError || fundOptionsError}
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import type {
   ManualGiftEntryRequest,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import {
+  getManualGiftType,
   getManualGiftPaymentType,
   normalizeRequiredCurrencyCode,
   normalizeRequiredGiftDate,
@@ -17,10 +18,12 @@ export const buildManualGiftPayload = (args: {
   companyId?: string | null;
 }) => {
   const { body, donorType, donorId, companyId } = args;
+  const giftType = getManualGiftType(body.giftType);
   const donorFirstName = normalizeString(body.donorFirstName);
   const donorLastName = normalizeString(body.donorLastName);
   const donorEmail = normalizeString(body.donorEmail);
   const companyName = normalizeString(body.companyName);
+  const description = normalizeString(body.description);
 
   if (donorType === 'INDIVIDUAL') {
     if (donorFirstName === '' || donorLastName === '') {
@@ -34,14 +37,20 @@ export const buildManualGiftPayload = (args: {
     // Manual entry bypasses staging by default because this is the trusted
     // operator path in the product model.
     name:
-      donorType === 'INDIVIDUAL'
-        ? `Gift from ${donorFirstName} ${donorLastName}`.trim()
-        : `Gift from ${companyName}`,
+      giftType === 'GIFT_IN_KIND'
+        ? donorType === 'INDIVIDUAL'
+          ? `Gift in kind from ${donorFirstName} ${donorLastName}`.trim()
+          : `Gift in kind from ${companyName}`
+        : donorType === 'INDIVIDUAL'
+          ? `Gift from ${donorFirstName} ${donorLastName}`.trim()
+          : `Gift from ${companyName}`,
     amount: {
       currencyCode: normalizeRequiredCurrencyCode(body.currencyCode),
       amountMicros: parseRequiredManualGiftAmountMicros(body.amountValue),
     },
     giftDate: normalizeRequiredGiftDate(body.giftDate),
+    giftType,
+    ...(description !== '' ? { description } : {}),
     ...(donorType === 'INDIVIDUAL'
       ? {
           donorFirstName,

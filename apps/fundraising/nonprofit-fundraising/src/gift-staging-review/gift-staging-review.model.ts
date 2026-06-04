@@ -53,6 +53,23 @@ const buildEvidenceName = (
   return donorEmail !== '' ? donorEmail : 'Unknown donor evidence';
 };
 
+const coalesceSoftCreditType = (value: string | null | undefined) => {
+  const normalized = coalesceString(value).toUpperCase();
+
+  switch (normalized) {
+    case 'FUNDRAISER':
+    case 'INTRODUCER':
+    case 'HOST':
+    case 'MATCHER':
+    case 'ADVOCATE':
+    case 'PARTNER':
+    case 'OTHER':
+      return normalized;
+    default:
+      return '';
+  }
+};
+
 const formatAmountDisplay = (
   amount:
     | {
@@ -137,14 +154,17 @@ export const buildGiftStagingReviewRecord = (
     donorLastName: stored.donorLastName,
     donorResolutionState: stored.donorResolutionState,
     giftDate: stored.giftDate,
+    paymentType: stored.paymentType,
     processingStatus: stored.processingStatus,
     provider: stored.provider,
     providerAgreementId: stored.providerAgreementId,
     providerIntervalCount: stored.providerIntervalCount,
     providerIntervalUnit: stored.providerIntervalUnit,
+    appealSourceExternalId: stored.appealSourceExternalId,
     sourceAppealName: stored.sourceAppealName,
     sourceFundName: stored.sourceFundName,
     appeal: stored.appeal,
+    appealSource: stored.appealSource,
     fund: stored.fund,
     recurringAgreement: stored.recurringAgreement,
   });
@@ -159,6 +179,7 @@ export const buildGiftStagingReviewRecord = (
     amountDisplay: formatAmountDisplay(stored.amount),
     giftDate: coalesceString(stored.giftDate),
     donationType: coalesceString(stored.donationType),
+    paymentType: coalesceString(stored.paymentType),
     donorFirstName,
     donorLastName,
     donorEmail,
@@ -178,6 +199,7 @@ export const buildGiftStagingReviewRecord = (
         ? stored.providerIntervalCount
         : null,
     rawProviderEvidence: stored.rawProviderEvidence ?? null,
+    appealSourceExternalId: coalesceString(stored.appealSourceExternalId),
     sourceAppealName: coalesceString(stored.sourceAppealName),
     sourceFundName: coalesceString(stored.sourceFundName),
     appealId: coalesceString(stored.appeal?.id),
@@ -187,6 +209,11 @@ export const buildGiftStagingReviewRecord = (
     appealDefaultFundId: coalesceString(stored.appeal?.defaultFund?.id),
     fundId: coalesceString(stored.fund?.id),
     fundName: coalesceString(stored.fund?.name),
+    softCreditPersonId: coalesceString(stored.softCreditPerson?.id),
+    softCreditPersonName: buildPersonDisplayName(stored.softCreditPerson),
+    softCreditCompanyId: coalesceString(stored.softCreditCompany?.id),
+    softCreditCompanyName: coalesceString(stored.softCreditCompany?.name),
+    softCreditType: coalesceSoftCreditType(stored.softCreditType),
     donorEvidenceName: buildEvidenceName(
       donorFirstName,
       donorLastName,
@@ -240,6 +267,32 @@ export const deriveReviewState = (
     };
   }
 
+  if (record.paymentState === 'AWAITING_PAYMENT') {
+    return {
+      title: 'Awaiting payment',
+      accent: '#57606a',
+      background: '#f6f8fa',
+      reason:
+        'This donation attempt has not finished payment confirmation yet, so it is not ready for review or processing.',
+      nextAction:
+        'No action is needed here while payment is still in progress. The record will either confirm later or expire automatically.',
+      hasBlocker: false,
+    };
+  }
+
+  if (record.paymentState === 'PAYMENT_EXPIRED') {
+    return {
+      title: 'Payment expired',
+      accent: '#57606a',
+      background: '#f6f8fa',
+      reason:
+        'This donation attempt did not complete payment and has been marked expired.',
+      nextAction:
+        'No action is needed unless you are reviewing the payment attempt history for audit or support.',
+      hasBlocker: false,
+    };
+  }
+
   if (record.giftReadyStatus === 'NEEDS_REVIEW') {
     if (record.preflightIssueCodes.includes('DONOR_REVIEW_REQUIRED')) {
       if (record.errorDetail !== '') {
@@ -275,6 +328,19 @@ export const deriveReviewState = (
           'Gift date is missing. Add the date before processing this gift.',
         nextAction:
           'Open Details to update the gift date, then come back to processing when the row is complete.',
+        hasBlocker: true,
+      };
+    }
+
+    if (record.preflightIssueCodes.includes('PAYMENT_TYPE_REQUIRED')) {
+      return {
+        title: 'Needs review',
+        accent: '#7c5d00',
+        background: '#fff8e1',
+        reason:
+          'Payment type is missing. Set how this gift was paid before processing the row.',
+        nextAction:
+          'Open coding to choose the payment type, then recheck the row before processing.',
         hasBlocker: true,
       };
     }
@@ -323,28 +389,43 @@ export const deriveReviewState = (
     }
 
     if (
+      record.preflightIssueCodes.includes('APPEAL_SOURCE_REVIEW_REQUIRED') ||
       record.preflightIssueCodes.includes('SOURCE_APPEAL_REVIEW_REQUIRED') ||
       record.preflightIssueCodes.includes('SOURCE_FUND_REVIEW_REQUIRED')
     ) {
+      const needsAppealSource = record.preflightIssueCodes.includes(
+        'APPEAL_SOURCE_REVIEW_REQUIRED',
+      );
       const needsAppeal = record.preflightIssueCodes.includes(
         'SOURCE_APPEAL_REVIEW_REQUIRED',
       );
       const needsFund = record.preflightIssueCodes.includes(
         'SOURCE_FUND_REVIEW_REQUIRED',
       );
+      const reason =
+        needsAppealSource && needsAppeal && needsFund
+          ? 'External appeal source ID, source appeal/campaign, and source fund/designation are recorded but not yet linked.'
+          : needsAppealSource && needsAppeal
+            ? 'External appeal source ID and source appeal/campaign are recorded but not yet linked.'
+            : needsAppealSource && needsFund
+              ? 'External appeal source ID and source fund/designation are recorded but not yet linked.'
+              : needsAppeal && needsFund
+                ? 'Source appeal/campaign and fund/designation are recorded but not yet linked.'
+                : needsAppealSource
+                  ? 'An external appeal source ID is recorded but no appeal source is linked yet.'
+                  : needsAppeal
+                    ? 'Source appeal/campaign is recorded but no appeal is linked yet.'
+                    : 'Source fund/designation is recorded but no fund is linked yet.';
 
       return {
         title: 'Needs review',
         accent: '#7c5d00',
         background: '#fff8e1',
-        reason:
-          needsAppeal && needsFund
-            ? 'Source appeal/campaign and fund/designation are recorded but not yet linked.'
-            : needsAppeal
-              ? 'Source appeal/campaign is recorded but no appeal is linked yet.'
-              : 'Source fund/designation is recorded but no fund is linked yet.',
+        reason,
         nextAction:
-          'Review the source coding evidence and link the right appeal and/or fund before processing.',
+          needsAppealSource
+            ? 'Review the source attribution evidence and link or create the right appeal source before processing.'
+            : 'Review the source coding evidence and link the right appeal and/or fund before processing.',
         hasBlocker: true,
       };
     }

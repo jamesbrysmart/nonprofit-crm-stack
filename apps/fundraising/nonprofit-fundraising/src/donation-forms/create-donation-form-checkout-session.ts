@@ -217,12 +217,25 @@ const createDonationFormPaymentSessionBase = async ({
     DONATION_FORM_GIFT_AID_SOURCE;
   const submittedAt = (dependencies.now ?? new Date()).toISOString();
   const giftAidDeclarationDate = submittedAt.slice(0, 10);
+  const defaultAppealId =
+    normalizeString(config.defaultAppeal?.id) ||
+    normalizeString(config.defaultAppealSource?.appeal?.id);
+  const defaultAppealSourceId = normalizeString(config.defaultAppealSource?.id);
+  const defaultFundId =
+    normalizeString(config.defaultFund?.id) ||
+    normalizeString(config.defaultAppeal?.defaultFund?.id) ||
+    normalizeString(config.defaultAppealSource?.appeal?.defaultFund?.id);
   const sourceAppealName =
     normalizeString(request.attribution?.sourceAppealName) ||
+    normalizeString(config.defaultAppealSource?.appeal?.name) ||
+    normalizeString(config.defaultAppeal?.name) ||
     normalizeString(config.sourceAppealName) ||
     undefined;
   const sourceFundName =
     normalizeString(request.attribution?.sourceFundName) ||
+    normalizeString(config.defaultFund?.name) ||
+    normalizeString(config.defaultAppeal?.defaultFund?.name) ||
+    normalizeString(config.defaultAppealSource?.appeal?.defaultFund?.name) ||
     normalizeString(config.sourceFundName) ||
     undefined;
   const giftAidTextVersion =
@@ -237,9 +250,9 @@ const createDonationFormPaymentSessionBase = async ({
     ...(giftAidTextVersion ? { textVersion: giftAidTextVersion } : {}),
   });
 
-  if (giftAidRequested && giftAidEvidence.giftAidDeclarationCaptured !== true) {
+  if (config.requireAddress === true && !donorMailingAddress) {
     throw new Error(
-      'Gift Aid requires the donor home address to be completed before payment.',
+      'This donation form requires the donor address before payment.',
     );
   }
 
@@ -257,6 +270,40 @@ const createDonationFormPaymentSessionBase = async ({
         amountMicros: toAmountMicros(amountMinorUnits),
       },
       donationType,
+      paymentType: 'CARD',
+      ...(defaultAppealId !== ''
+        ? {
+            appeal: {
+              connect: {
+                where: {
+                  id: defaultAppealId,
+                },
+              },
+            },
+          }
+        : {}),
+      ...(defaultAppealSourceId !== ''
+        ? {
+            appealSource: {
+              connect: {
+                where: {
+                  id: defaultAppealSourceId,
+                },
+              },
+            },
+          }
+        : {}),
+      ...(defaultFundId !== ''
+        ? {
+            fund: {
+              connect: {
+                where: {
+                  id: defaultFundId,
+                },
+              },
+            },
+          }
+        : {}),
       sourceFingerprint,
       provider: 'STRIPE',
       ...(donationType === 'RECURRING'

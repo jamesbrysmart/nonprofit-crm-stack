@@ -1,11 +1,21 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import type {
+  AppealSourceSummary,
+  AppealSummary,
+  FundSummary,
+} from 'src/manual-gift-entry/manual-gift-entry.types';
 import {
-  cardStyle,
-  inputStyle,
+  codeBlockStyle,
+  linkStyle,
+  panelStyle,
+  textareaStyle,
 } from 'src/front-components/gift-staging-review-ui';
 import {
   normalizeDonationFormAmountOptions,
+  type DonationFormConfiguredAppeal,
+  type DonationFormConfiguredAppealSource,
+  type DonationFormConfiguredFund,
   normalizeDonationFormConfigObject,
   normalizeDonationFormMode,
   normalizeDonationFormString,
@@ -38,8 +48,9 @@ export type DonationFormWorkspaceState = {
   giftAidTextVersion: string;
   requireAddress: boolean;
   collectPhone: boolean;
-  sourceAppealName: string;
-  sourceFundName: string;
+  selectedAppealId: string;
+  selectedFundId: string;
+  selectedAppealSourceId: string;
 };
 
 export type PublishedState = {
@@ -65,8 +76,9 @@ export const DEFAULT_DONATION_FORM_WORKSPACE_STATE: DonationFormWorkspaceState =
   giftAidTextVersion: '',
   requireAddress: false,
   collectPhone: false,
-  sourceAppealName: '',
-  sourceFundName: '',
+  selectedAppealId: '',
+  selectedFundId: '',
+  selectedAppealSourceId: '',
 };
 
 export const normalizeString = normalizeDonationFormString;
@@ -105,6 +117,19 @@ export const deriveWorkspaceState = (
   record: DonationFormWorkspaceRecord,
 ): DonationFormWorkspaceState => {
   const config = normalizeConfig(record.config);
+  const defaultAppeal =
+    typeof config.defaultAppeal === 'object' && config.defaultAppeal !== null
+      ? (config.defaultAppeal as DonationFormConfiguredAppeal)
+      : null;
+  const defaultFund =
+    typeof config.defaultFund === 'object' && config.defaultFund !== null
+      ? (config.defaultFund as DonationFormConfiguredFund)
+      : null;
+  const defaultAppealSource =
+    typeof config.defaultAppealSource === 'object' &&
+    config.defaultAppealSource !== null
+      ? (config.defaultAppealSource as DonationFormConfiguredAppealSource)
+      : null;
 
   return {
     internalName:
@@ -148,14 +173,14 @@ export const deriveWorkspaceState = (
     ),
     requireAddress: config.requireAddress === true,
     collectPhone: config.collectPhone === true,
-    sourceAppealName: normalizeString(
-      typeof config.sourceAppealName === 'string'
-        ? config.sourceAppealName
-        : undefined,
-    ),
-    sourceFundName: normalizeString(
-      typeof config.sourceFundName === 'string' ? config.sourceFundName : undefined,
-    ),
+    selectedAppealId:
+      normalizeString(defaultAppeal?.id) ||
+      normalizeString(defaultAppealSource?.appeal?.id),
+    selectedFundId:
+      normalizeString(defaultFund?.id) ||
+      normalizeString(defaultAppeal?.defaultFund?.id) ||
+      normalizeString(defaultAppealSource?.appeal?.defaultFund?.id),
+    selectedAppealSourceId: normalizeString(defaultAppealSource?.id),
   };
 };
 
@@ -287,9 +312,15 @@ const contrastRatioWithWhite = (hexColor: string): number => {
 export const buildUpdatedDraftConfig = ({
   currentConfig,
   state,
+  appeals,
+  appealSources,
+  funds,
 }: {
   currentConfig: Record<string, unknown>;
   state: DonationFormWorkspaceState;
+  appeals: AppealSummary[];
+  appealSources: AppealSourceSummary[];
+  funds: FundSummary[];
 }): Record<string, unknown> => {
   const amountOptions = parseAmountOptionsText(state.amountOptionsText);
   const minimumAmount = parseOptionalAmountText(state.minimumAmountText);
@@ -297,9 +328,111 @@ export const buildUpdatedDraftConfig = ({
   const description = normalizeString(state.description);
   const primaryColor = normalizeHexColor(state.primaryColor);
   const thankYouMessage = normalizeString(state.thankYouMessage);
-  const sourceAppealName = normalizeString(state.sourceAppealName);
-  const sourceFundName = normalizeString(state.sourceFundName);
   const giftAidTextVersion = normalizeString(state.giftAidTextVersion);
+  const selectedAppealId = normalizeString(state.selectedAppealId);
+  const selectedAppealSourceId = normalizeString(state.selectedAppealSourceId);
+  const selectedFundId = normalizeString(state.selectedFundId);
+  const selectedAppeal = appeals.find(
+    (appeal) => normalizeString(appeal.id) === selectedAppealId,
+  );
+  const selectedAppealSource = appealSources.find(
+    (appealSource) =>
+      normalizeString(appealSource.id) === selectedAppealSourceId,
+  );
+  const selectedFund = funds.find(
+    (fund) => normalizeString(fund.id) === selectedFundId,
+  );
+
+  if (selectedAppealId !== '' && !selectedAppeal) {
+    throw new Error('Selected appeal was not found.');
+  }
+
+  if (selectedAppealSourceId !== '' && !selectedAppealSource) {
+    throw new Error('Selected appeal source was not found.');
+  }
+
+  if (selectedFundId !== '' && !selectedFund) {
+    throw new Error('Selected fund was not found.');
+  }
+
+  const selectedAppealSourceAppealId = normalizeString(
+    selectedAppealSource?.appeal?.id,
+  );
+
+  if (
+    selectedAppealId !== '' &&
+    selectedAppealSourceAppealId !== '' &&
+    selectedAppealId !== selectedAppealSourceAppealId
+  ) {
+    throw new Error(
+      'Selected appeal source does not belong to the selected appeal.',
+    );
+  }
+
+  const resolvedAppeal =
+    selectedAppeal ??
+    (selectedAppealSource?.appeal
+      ? {
+          id: selectedAppealSource.appeal.id ?? '',
+          name: selectedAppealSource.appeal.name ?? null,
+          defaultFund: selectedAppealSource.appeal.defaultFund ?? null,
+        }
+      : null);
+  const resolvedFund =
+    selectedFund ??
+    (resolvedAppeal?.defaultFund
+      ? {
+          id: resolvedAppeal.defaultFund.id ?? '',
+          name: resolvedAppeal.defaultFund.name ?? null,
+        }
+      : null);
+
+  const defaultAppeal =
+    normalizeString(resolvedAppeal?.id) !== ''
+      ? {
+          id: normalizeString(resolvedAppeal?.id),
+          ...(normalizeString(resolvedAppeal?.name) !== ''
+            ? { name: normalizeString(resolvedAppeal?.name) }
+            : {}),
+          ...(normalizeString(resolvedAppeal?.defaultFund?.id) !== ''
+            ? {
+                defaultFund: {
+                  id: normalizeString(resolvedAppeal?.defaultFund?.id),
+                  ...(normalizeString(resolvedAppeal?.defaultFund?.name) !== ''
+                    ? {
+                        name: normalizeString(
+                          resolvedAppeal?.defaultFund?.name,
+                        ),
+                      }
+                    : {}),
+                },
+              }
+            : {}),
+        }
+      : null;
+  const defaultFund =
+    normalizeString(resolvedFund?.id) !== ''
+      ? {
+          id: normalizeString(resolvedFund?.id),
+          ...(normalizeString(resolvedFund?.name) !== ''
+            ? { name: normalizeString(resolvedFund?.name) }
+            : {}),
+        }
+      : null;
+  const defaultAppealSource =
+    selectedAppealSourceId !== ''
+      ? {
+          id: selectedAppealSourceId,
+          ...(normalizeString(selectedAppealSource?.name) !== ''
+            ? { name: normalizeString(selectedAppealSource?.name) }
+            : {}),
+          ...(defaultAppeal ? { appeal: defaultAppeal } : {}),
+        }
+      : null;
+  const sourceAppealName =
+    normalizeString(defaultAppealSource?.appeal?.name) ||
+    normalizeString(defaultAppeal?.name);
+  const sourceFundName = normalizeString(defaultFund?.name);
 
   return {
     ...currentConfig,
@@ -343,6 +476,11 @@ export const buildUpdatedDraftConfig = ({
             'Primary colour is too light for white button text. Choose a darker colour.',
           );
         })()),
+    ...(defaultAppeal ? { defaultAppeal } : { defaultAppeal: null }),
+    ...(defaultFund ? { defaultFund } : { defaultFund: null }),
+    ...(defaultAppealSource
+      ? { defaultAppealSource }
+      : { defaultAppealSource: null }),
     ...(sourceAppealName !== ''
       ? { sourceAppealName }
       : { sourceAppealName: null }),
@@ -445,31 +583,9 @@ export const derivePublishedState = (
   };
 };
 
-export const textareaStyle = {
-  ...inputStyle,
-  minHeight: '96px',
-  resize: 'vertical' as const,
-};
+export { textareaStyle, linkStyle, panelStyle };
 
-export const embedCodeStyle = {
-  margin: 0,
-  padding: '10px 12px',
-  borderRadius: '6px',
-  border: '1px solid #d8dee4',
-  background: '#f6f8fa',
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-  fontSize: '12px',
-  lineHeight: 1.5,
-  whiteSpace: 'pre-wrap' as const,
-  wordBreak: 'break-word' as const,
-};
-
-export const linkStyle = {
-  color: '#0969da',
-  fontSize: '14px',
-  fontWeight: 600,
-  textDecoration: 'none',
-};
+export const embedCodeStyle = codeBlockStyle;
 
 export const previewFrameStyle = {
   display: 'grid',
@@ -523,12 +639,6 @@ export const compactMetaGridStyle = {
   display: 'grid',
   gap: '10px',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-};
-
-export const panelStyle = {
-  ...cardStyle,
-  display: 'grid',
-  gap: '16px',
 };
 
 export const getPreviewDonationTypeOptions = (

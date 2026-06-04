@@ -3,6 +3,10 @@ import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { collectAppealIds, recomputeAppealRollups } from 'src/appeal-rollups/appeal-rollups';
 import { resolveAppealSourceSelection } from 'src/appeal-sources/appeal-source-integrity';
 import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
+import {
+  deriveFundraiserSoftCreditSelection,
+  loadAppealSourceFundraisersById,
+} from 'src/soft-credits/fundraiser-soft-credit';
 import type {
   SaveGiftCodingRequest,
   SaveGiftCodingResponse,
@@ -34,6 +38,13 @@ const loadGiftCodingContext = async (
       fund: {
         id: true,
       },
+      softCreditPerson: {
+        id: true,
+      },
+      softCreditCompany: {
+        id: true,
+      },
+      softCreditType: true,
     },
   } as any);
 
@@ -43,6 +54,9 @@ const loadGiftCodingContext = async (
         appeal?: { id?: string | null } | null;
         appealSource?: { id?: string | null } | null;
         fund?: { id?: string | null } | null;
+        softCreditPerson?: { id?: string | null } | null;
+        softCreditCompany?: { id?: string | null } | null;
+        softCreditType?: string | null;
       }
     | null;
 };
@@ -81,6 +95,21 @@ const handler = async (
     client,
     appealId: inputAppealId,
     appealSourceId: inputAppealSourceId,
+  });
+  const appealSourceFundraisers = await loadAppealSourceFundraisersById(client, [
+    existing.appealSource?.id ?? '',
+    appealSourceId,
+  ]);
+  const resolvedSoftCreditSelection = deriveFundraiserSoftCreditSelection({
+    currentSoftCredit: {
+      softCreditPersonId: existing.softCreditPerson?.id ?? '',
+      softCreditCompanyId: existing.softCreditCompany?.id ?? '',
+      softCreditType: existing.softCreditType ?? '',
+    },
+    currentAppealSourceFundraiser:
+      appealSourceFundraisers[existing.appealSource?.id ?? ''],
+    nextAppealSourceFundraiser: appealSourceFundraisers[appealSourceId],
+    requestedSoftCreditSelection: softCreditSelection,
   });
   const nextFundId = fundId === '' ? appealDefaultFundId : fundId;
 
@@ -128,35 +157,35 @@ const handler = async (
             : {
                 fundId: null,
               }),
-          ...(softCreditSelection.mode === 'set' &&
-          softCreditSelection.softCreditPersonId !== ''
+          ...(resolvedSoftCreditSelection.mode === 'set' &&
+          resolvedSoftCreditSelection.softCreditPersonId !== ''
             ? {
                 softCreditPerson: {
                   connect: {
                     where: {
-                      id: softCreditSelection.softCreditPersonId,
+                      id: resolvedSoftCreditSelection.softCreditPersonId,
                     },
                   },
                 },
                 softCreditCompanyId: null,
-                softCreditType: softCreditSelection.softCreditType,
+                softCreditType: resolvedSoftCreditSelection.softCreditType,
               }
             : {}),
-          ...(softCreditSelection.mode === 'set' &&
-          softCreditSelection.softCreditCompanyId !== ''
+          ...(resolvedSoftCreditSelection.mode === 'set' &&
+          resolvedSoftCreditSelection.softCreditCompanyId !== ''
             ? {
                 softCreditCompany: {
                   connect: {
                     where: {
-                      id: softCreditSelection.softCreditCompanyId,
+                      id: resolvedSoftCreditSelection.softCreditCompanyId,
                     },
                   },
                 },
                 softCreditPersonId: null,
-                softCreditType: softCreditSelection.softCreditType,
+                softCreditType: resolvedSoftCreditSelection.softCreditType,
               }
             : {}),
-          ...(softCreditSelection.mode === 'clear'
+          ...(resolvedSoftCreditSelection.mode === 'clear'
             ? {
                 softCreditPersonId: null,
                 softCreditCompanyId: null,
@@ -189,21 +218,21 @@ const handler = async (
     appealId: appealId === '' ? null : appealId,
     appealSourceId: appealSourceId === '' ? null : appealSourceId,
     fundId: nextFundId === '' ? null : nextFundId,
-    ...(softCreditSelection.mode !== 'unchanged'
+    ...(resolvedSoftCreditSelection.mode !== 'unchanged'
       ? {
           softCreditPersonId:
-            softCreditSelection.mode === 'set' &&
-            softCreditSelection.softCreditPersonId !== ''
-              ? softCreditSelection.softCreditPersonId
+            resolvedSoftCreditSelection.mode === 'set' &&
+            resolvedSoftCreditSelection.softCreditPersonId !== ''
+              ? resolvedSoftCreditSelection.softCreditPersonId
               : null,
           softCreditCompanyId:
-            softCreditSelection.mode === 'set' &&
-            softCreditSelection.softCreditCompanyId !== ''
-              ? softCreditSelection.softCreditCompanyId
+            resolvedSoftCreditSelection.mode === 'set' &&
+            resolvedSoftCreditSelection.softCreditCompanyId !== ''
+              ? resolvedSoftCreditSelection.softCreditCompanyId
               : null,
           softCreditType:
-            softCreditSelection.mode === 'set'
-              ? softCreditSelection.softCreditType
+            resolvedSoftCreditSelection.mode === 'set'
+              ? resolvedSoftCreditSelection.softCreditType
               : null,
         }
       : {}),

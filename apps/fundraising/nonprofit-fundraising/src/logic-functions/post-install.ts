@@ -64,6 +64,13 @@ type SeedStagingRow = {
   name: string;
   intakeSource: string;
   amountMicros?: number | null;
+  paymentType?:
+    | 'CARD'
+    | 'DIRECT_DEBIT'
+    | 'BANK_TRANSFER'
+    | 'CASH'
+    | 'CHEQUE'
+    | 'OTHER';
   donorFirstName: string;
   donorLastName: string;
   donorEmail?: string;
@@ -2848,6 +2855,9 @@ const seedGiftStagings = async (
                     amountMicros: null,
                   },
             giftDate: seed.giftDate,
+            paymentType:
+              seed.paymentType ??
+              (seed.provider === 'STRIPE' ? 'CARD' : 'BANK_TRANSFER'),
             donorFirstName: seed.donorFirstName,
             donorLastName: seed.donorLastName,
             ...(seed.donorEmail

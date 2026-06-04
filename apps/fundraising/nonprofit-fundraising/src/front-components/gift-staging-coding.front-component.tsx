@@ -23,6 +23,7 @@ import {
 } from 'src/gift-staging-review/gift-staging-review.actions';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
+import type { AppealSourceSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
 
 export const GIFT_STAGING_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'ac717de2-3df8-4d25-9a84-9687c7ca081d';
@@ -53,6 +54,63 @@ const getInputEventValue = (event: unknown) => {
   return '';
 };
 
+const normalizeString = (value: string | null | undefined, fallback = '') =>
+  typeof value === 'string' ? value.trim() || fallback : fallback;
+
+const buildPersonDisplayName = (
+  person: AppealSourceSummary['fundraiserPerson'],
+) => {
+  if (!person) {
+    return '';
+  }
+
+  const firstName = normalizeString(person.name?.firstName);
+  const lastName = normalizeString(person.name?.lastName);
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName !== '') {
+    return fullName;
+  }
+
+  return normalizeString(person.emails?.primaryEmail);
+};
+
+const getDerivedSoftCreditLabel = (
+  appealSource: AppealSourceSummary | null,
+) => {
+  if (!appealSource) {
+    return '';
+  }
+
+  const fundraiserPersonName = buildPersonDisplayName(
+    appealSource.fundraiserPerson,
+  );
+
+  if (fundraiserPersonName !== '') {
+    return `Fundraiser: ${fundraiserPersonName}`;
+  }
+
+  const fundraiserCompanyName = normalizeString(
+    appealSource.fundraiserCompany?.name,
+  );
+
+  if (fundraiserCompanyName !== '') {
+    return `Fundraiser: ${fundraiserCompanyName}`;
+  }
+
+  return '';
+};
+
+const PAYMENT_TYPE_OPTIONS = [
+  { value: '', label: 'Select payment type' },
+  { value: 'CARD', label: 'Card' },
+  { value: 'DIRECT_DEBIT', label: 'Direct debit' },
+  { value: 'BANK_TRANSFER', label: 'Bank transfer' },
+  { value: 'CASH', label: 'Cash' },
+  { value: 'CHEQUE', label: 'Cheque' },
+  { value: 'OTHER', label: 'Other' },
+] as const;
+
 const GiftStagingCoding = () => {
   const recordId = useRecordId();
   const { record, loading, error, refresh } = useGiftStagingReviewRecord(
@@ -61,6 +119,7 @@ const GiftStagingCoding = () => {
   const [selectedAppealId, setSelectedAppealId] = useState('');
   const [selectedAppealSourceId, setSelectedAppealSourceId] = useState('');
   const [selectedFundId, setSelectedFundId] = useState('');
+  const [selectedPaymentType, setSelectedPaymentType] = useState('');
   const [saving, setSaving] = useState(false);
   const {
     appeals,
@@ -82,11 +141,19 @@ const GiftStagingCoding = () => {
     setSelectedAppealId(record.appealId);
     setSelectedAppealSourceId(record.appealSourceId);
     setSelectedFundId(record.fundId);
+    setSelectedPaymentType(record.paymentType);
   }, [record, saving]);
 
   const selectedAppeal = useMemo(
     () => appeals.find((appeal) => appeal.id === selectedAppealId) ?? null,
     [appeals, selectedAppealId],
+  );
+  const selectedAppealSource = useMemo(
+    () =>
+      appealSources.find(
+        (appealSource) => appealSource.id === selectedAppealSourceId,
+      ) ?? null,
+    [appealSources, selectedAppealSourceId],
   );
 
   if (loading) {
@@ -102,10 +169,18 @@ const GiftStagingCoding = () => {
   }
 
   const isProcessed = record.processingStatus === 'PROCESSED';
+  const currentSoftCreditLabel =
+    record.softCreditPersonName !== ''
+      ? `Fundraiser: ${record.softCreditPersonName}`
+      : record.softCreditCompanyName !== ''
+        ? `Fundraiser: ${record.softCreditCompanyName}`
+        : '';
+  const derivedSoftCreditLabel = getDerivedSoftCreditLabel(selectedAppealSource);
   const hasUnsavedChanges =
     selectedAppealId !== record.appealId ||
     selectedAppealSourceId !== record.appealSourceId ||
-    selectedFundId !== record.fundId;
+    selectedFundId !== record.fundId ||
+    selectedPaymentType !== record.paymentType;
 
   const handleAppealChange = (nextAppealId: string) => {
     setSelectedAppealId(nextAppealId);
@@ -152,6 +227,7 @@ const GiftStagingCoding = () => {
         appealId: selectedAppealId,
         appealSourceId: selectedAppealSourceId,
         fundId: selectedFundId,
+        paymentType: selectedPaymentType,
       });
       await enqueueSnackbar({
         message: 'Gift coding saved.',
@@ -223,6 +299,20 @@ const GiftStagingCoding = () => {
               : record.appealSourceName}
           </div>
         </div>
+        <div style={compactMetaItemStyle}>
+          <div style={labelStyle}>Current soft credit</div>
+          <div style={secondaryTextStyle}>
+            {currentSoftCreditLabel === ''
+              ? 'No soft credit set.'
+              : currentSoftCreditLabel}
+          </div>
+        </div>
+        <div style={compactMetaItemStyle}>
+          <div style={labelStyle}>Current payment type</div>
+          <div style={secondaryTextStyle}>
+            {record.paymentType === '' ? 'No payment type set.' : record.paymentType}
+          </div>
+        </div>
       </div>
 
       <div
@@ -232,6 +322,24 @@ const GiftStagingCoding = () => {
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         }}
       >
+        <label style={{ display: 'grid', gap: '4px' }}>
+          <span style={labelStyle}>Payment type</span>
+          <select
+            style={inputStyle}
+            value={selectedPaymentType}
+            onChange={(event) =>
+              setSelectedPaymentType(getInputEventValue(event).trim().toUpperCase())
+            }
+            disabled={saving || isProcessed}
+          >
+            {PAYMENT_TYPE_OPTIONS.map((option) => (
+              <option key={option.value || 'blank'} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label style={{ display: 'grid', gap: '4px' }}>
           <span style={labelStyle}>Appeal</span>
           <select
@@ -307,6 +415,17 @@ const GiftStagingCoding = () => {
           </div>
         </div>
       ) : null}
+
+      <div style={compactDividerSectionStyle}>
+        <div style={labelStyle}>Soft credit</div>
+        <div style={secondaryTextStyle}>
+          {derivedSoftCreditLabel !== ''
+            ? `${derivedSoftCreditLabel}. Derived from the selected appeal source.`
+            : selectedAppealSourceId !== ''
+              ? 'No fundraiser soft credit will be derived from the selected appeal source.'
+              : 'Select an appeal source with a linked fundraiser to derive soft credit.'}
+        </div>
+      </div>
 
       {appealOptionsError ||
       appealSourceOptionsError ||

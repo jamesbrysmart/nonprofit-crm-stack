@@ -7,17 +7,20 @@ import {
 type BatchProcessingLikeRow = Pick<
   BatchProcessingRow,
   | 'amount'
+  | 'appealSource'
   | 'donor'
   | 'donorFirstName'
   | 'donorLastName'
   | 'donorResolutionState'
   | 'giftDate'
+  | 'paymentType'
   | 'processingStatus'
   | 'provider'
   | 'providerAgreementId'
   | 'providerIntervalCount'
   | 'providerIntervalUnit'
   | 'recurringAgreement'
+  | 'appealSourceExternalId'
   | 'sourceAppealName'
   | 'sourceFundName'
   | 'appeal'
@@ -31,7 +34,9 @@ export type BatchPreflightIssueCode =
   | 'AMOUNT_INVALID'
   | 'CURRENCY_REQUIRED'
   | 'GIFT_DATE_REQUIRED'
+  | 'PAYMENT_TYPE_REQUIRED'
   | 'RECURRING_INTERVAL_INVALID'
+  | 'APPEAL_SOURCE_REVIEW_REQUIRED'
   | 'SOURCE_APPEAL_REVIEW_REQUIRED'
   | 'SOURCE_FUND_REVIEW_REQUIRED';
 
@@ -102,9 +107,12 @@ export const classifyBatchPreflight = (
   const amountMicros = row.amount?.amountMicros;
   const currencyCode = normalizeString(row.amount?.currencyCode);
   const giftDate = normalizeString(row.giftDate);
+  const paymentType = normalizeString(row.paymentType);
   const sourceAppealName = normalizeString(row.sourceAppealName);
   const sourceFundName = normalizeString(row.sourceFundName);
+  const appealSourceExternalId = normalizeString(row.appealSourceExternalId);
   const linkedAppealId = normalizeString(row.appeal?.id);
+  const linkedAppealSourceId = normalizeString(row.appealSource?.id);
   const linkedFundId = normalizeString(row.fund?.id);
 
   if (
@@ -137,8 +145,16 @@ export const classifyBatchPreflight = (
     issueCodes.push('GIFT_DATE_REQUIRED');
   }
 
+  if (paymentType === '') {
+    issueCodes.push('PAYMENT_TYPE_REQUIRED');
+  }
+
   if (!hasSupportedRecurringCadence(row)) {
     issueCodes.push('RECURRING_INTERVAL_INVALID');
+  }
+
+  if (appealSourceExternalId !== '' && linkedAppealSourceId === '') {
+    issueCodes.push('APPEAL_SOURCE_REVIEW_REQUIRED');
   }
 
   if (sourceAppealName !== '' && linkedAppealId === '') {

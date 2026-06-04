@@ -180,6 +180,7 @@ export const loadGiftById = async (giftId: string) => {
       providerPaymentId: true,
       paymentProviderCustomerId: true,
       giftDate: true,
+      giftType: true,
       amount: {
         amountMicros: true,
         currencyCode: true,

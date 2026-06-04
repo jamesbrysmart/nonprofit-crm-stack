@@ -159,6 +159,7 @@ export const buildStripeOneOffGiftStagingInput = (
     },
     giftDate: formatUnixDate(giftDateSource),
     donationType,
+    paymentType: 'CARD',
     donorFirstName: nameParts.donorFirstName,
     donorLastName: nameParts.donorLastName,
     ...(donorEmail !== '' ? { donorEmail } : {}),

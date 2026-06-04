@@ -317,6 +317,7 @@ export const createStripeRecurringGiftForConfidentMatch = async (
             normalizeString(session.customer_details?.email) ||
             normalizeString(agreement.person?.emails?.primaryEmail) ||
             null,
+          paymentType: 'CARD',
           externalId,
           sourceFingerprint: eventId,
           provider: STRIPE_PROVIDER,

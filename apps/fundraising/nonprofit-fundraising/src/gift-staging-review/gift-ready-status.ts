@@ -30,15 +30,22 @@ type GiftReadyRow = {
   donorLastName?: string | null;
   donorResolutionState?: string | null;
   giftDate?: string | null;
+  paymentType?: string | null;
   paymentState?: string | null;
   processingStatus?: string | null;
   provider?: string | null;
   providerAgreementId?: string | null;
   providerIntervalCount?: number | null;
   providerIntervalUnit?: string | null;
+  appealSourceExternalId?: string | null;
   sourceAppealName?: string | null;
   sourceFundName?: string | null;
   appeal?:
+    | {
+        id?: string | null;
+      }
+    | null;
+  appealSource?:
     | {
         id?: string | null;
       }

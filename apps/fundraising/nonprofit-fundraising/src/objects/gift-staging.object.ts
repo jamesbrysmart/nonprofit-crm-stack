@@ -18,6 +18,9 @@ export const GIFT_STAGING_GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_DONATION_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
   '6441af6a-eafd-44df-b824-0b347c8e36fd';
 
+export const GIFT_STAGING_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
+  '7f4c0f8f-d8f1-4b3d-8202-c8ebc9e6b8df';
+
 export const GIFT_STAGING_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER =
   '0f4cf644-e073-42eb-8df1-f776d4b5c3dc';
 
@@ -129,6 +132,9 @@ export const GIFT_STAGING_SOURCE_APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_SOURCE_FUND_NAME_FIELD_UNIVERSAL_IDENTIFIER =
   '7932f2e6-e1d2-4693-966c-cfed8dc09102';
 
+export const GIFT_STAGING_APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER =
+  '7532d997-f6ba-4ccb-a4de-afc24ed6efa4';
+
 export const GIFT_STAGING_SOFT_CREDIT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
   'ac7af6e3-ed66-4e8a-ae0e-4ebac53d25b7';
 
@@ -213,6 +219,60 @@ export default defineObject({
       icon: 'IconExternalLink',
       isNullable: true,
       defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_STAGING_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'paymentType',
+      label: 'Payment type',
+      description: 'How the payment was or is expected to be taken',
+      icon: 'IconCreditCard',
+      isNullable: true,
+      defaultValue: null,
+      options: [
+        {
+          id: '1c26b4dc-3d28-4d81-8d6c-d243ef8451c8',
+          value: 'CARD',
+          label: 'Card',
+          position: 0,
+          color: 'blue',
+        },
+        {
+          id: '4f07ffbf-2623-4b91-8e1b-ebd1a0aa75d5',
+          value: 'DIRECT_DEBIT',
+          label: 'Direct debit',
+          position: 1,
+          color: 'blue',
+        },
+        {
+          id: '778dfc9b-1b6b-4d77-a4f1-e8ffef73ee86',
+          value: 'BANK_TRANSFER',
+          label: 'Bank transfer',
+          position: 2,
+          color: 'green',
+        },
+        {
+          id: '6a57fd64-32b8-40d9-9762-844f2d7e15cc',
+          value: 'CASH',
+          label: 'Cash',
+          position: 3,
+          color: 'yellow',
+        },
+        {
+          id: '6df34f7f-e1af-45c5-b66e-5d4f7226fd46',
+          value: 'CHEQUE',
+          label: 'Cheque',
+          position: 4,
+          color: 'orange',
+        },
+        {
+          id: 'c8f4e161-8d6c-4682-b879-0e385e5b7053',
+          value: 'OTHER',
+          label: 'Other',
+          position: 5,
+          color: 'gray',
+        },
+      ],
     },
     {
       universalIdentifier:
@@ -766,6 +826,18 @@ export default defineObject({
       description:
         'Source-side fund or designation label preserved as intake evidence before canonical fund mapping is known',
       icon: 'IconPigMoney',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        GIFT_STAGING_APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'appealSourceExternalId',
+      label: 'Appeal source external ID',
+      description:
+        'Stable external fundraiser, page, or source identifier intended to match an appeal source external ID.',
+      icon: 'IconRoute2',
       isNullable: true,
       defaultValue: null,
     },

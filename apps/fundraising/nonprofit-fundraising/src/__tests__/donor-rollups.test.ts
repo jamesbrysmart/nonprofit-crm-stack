@@ -74,6 +74,45 @@ describe('computeDonorRollupSummary', () => {
       lastGiftDate: null,
     });
   });
+
+  it('excludes gifts in kind from default cash rollups', () => {
+    expect(
+      computeDonorRollupSummary('person_3', [
+        {
+          id: 'gift_inkind',
+          giftType: 'GIFT_IN_KIND',
+          giftDate: '2026-05-10',
+          amount: {
+            amountMicros: 50_000_000,
+            currencyCode: 'GBP',
+          },
+          donor: {
+            id: 'person_3',
+          },
+        },
+        {
+          id: 'gift_cash',
+          giftType: 'DONATION',
+          giftDate: '2026-05-12',
+          amount: {
+            amountMicros: 20_000_000,
+            currencyCode: 'GBP',
+          },
+          donor: {
+            id: 'person_3',
+          },
+        },
+      ]),
+    ).toEqual({
+      donorId: 'person_3',
+      lifetimeGiftAmount: {
+        amountMicros: 20_000_000,
+        currencyCode: 'GBP',
+      },
+      lifetimeGiftCount: 1,
+      lastGiftDate: '2026-05-12',
+    });
+  });
 });
 
 describe('gift database-event donor extraction', () => {

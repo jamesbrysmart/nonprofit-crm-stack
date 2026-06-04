@@ -130,6 +130,21 @@ const formatAmount = ({
     currency: currencyCode,
   }).format(amountMinorUnits / 100);
 
+const formatAmountWithoutCurrencySymbol = ({
+  amountMinorUnits,
+  currencyCode,
+}: {
+  amountMinorUnits: number;
+  currencyCode: string;
+}): string =>
+  new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: currencyCode,
+  })
+    .format(amountMinorUnits / 100)
+    .replace(/[^\d.,-]/g, '')
+    .trim();
+
 const fieldMarkup = ({
   label,
   id,
@@ -263,6 +278,50 @@ export const buildDonationFormCardMarkup = ({
           formatAmount({ amountMinorUnits: firstAmount, currencyCode }),
         ) +
         '</button>';
+  const customAmountMarkup =
+    config.allowCustomAmount === true
+      ? '<label class="field custom-amount">' +
+        '<span>Custom amount' +
+        (typeof config.minimumAmount === 'number' && config.minimumAmount > 0
+          ? ' <span class="hint">Minimum ' +
+            escapeHtml(
+              formatAmount({
+                amountMinorUnits: config.minimumAmount,
+                currencyCode,
+              }),
+            ) +
+            '</span>'
+          : '') +
+        '</span>' +
+        '<div class="custom-amount-input">' +
+        '<span class="currency-symbol">' +
+        escapeHtml(
+          formatAmount({
+            amountMinorUnits: 100,
+            currencyCode,
+          }).replace(/[0-9.,\s-]/g, '') || currencyCode,
+        ) +
+        '</span>' +
+        '<input id="customAmountMajor" type="number" min="' +
+        escapeHtml(
+          typeof config.minimumAmount === 'number' && config.minimumAmount > 0
+            ? formatAmountWithoutCurrencySymbol({
+                amountMinorUnits: config.minimumAmount,
+                currencyCode,
+              })
+            : '1',
+        ) +
+        '" step="0.01" inputmode="decimal" placeholder="' +
+        escapeHtml(
+          formatAmountWithoutCurrencySymbol({
+            amountMinorUnits: firstAmount,
+            currencyCode,
+          }),
+        ) +
+        '" />' +
+        '</div>' +
+        '</label>'
+      : '';
 
   const donationTypeMarkup =
     donationTypeOptions.length > 1
@@ -382,6 +441,10 @@ export const buildDonationFormCardMarkup = ({
         'Published configuration loaded successfully. Checkout submission is the next spike step.',
     ) +
     '</p>' +
+    '<div class="section">' +
+    '<div class="label">Step 1</div>' +
+    '<p class="hint">Your donation details</p>' +
+    '</div>' +
     '<form id="donationForm">' +
     donationTypeMarkup +
     '<div class="section">' +
@@ -391,6 +454,7 @@ export const buildDonationFormCardMarkup = ({
     '<div class="amounts" id="amounts">' +
     amountMarkup +
     '</div>' +
+    customAmountMarkup +
     '</div>' +
     '<input type="hidden" id="amountMinorUnits" value="' +
     escapeHtml(String(firstAmount)) +
@@ -437,6 +501,14 @@ export const buildDonationFormCardMarkup = ({
     '<div id="errorPanel"></div>' +
     '</form>' +
     '<section id="paymentPanel" class="payment-panel" hidden>' +
+    '<div class="label">Step 2</div>' +
+    '<p class="hint">Secure payment</p>' +
+    '<div class="summary" id="donationSummary"></div>' +
+    '<div class="actions">' +
+    '<button class="button button-secondary" id="changeDonationDetailsButton" type="button">' +
+    'Change donation details' +
+    '</button>' +
+    '</div>' +
     '<div class="label">Secure payment details</div>' +
     '<p class="hint" id="paymentHint">' +
     escapeHtml(paymentHint) +

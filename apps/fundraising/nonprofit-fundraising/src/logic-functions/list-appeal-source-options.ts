@@ -40,6 +40,20 @@ const handler = async (
           name: true,
           status: true,
           sourceType: true,
+          fundraiserPerson: {
+            id: true,
+            name: {
+              firstName: true,
+              lastName: true,
+            },
+            emails: {
+              primaryEmail: true,
+            },
+          },
+          fundraiserCompany: {
+            id: true,
+            name: true,
+          },
           appeal: {
             id: true,
             name: true,

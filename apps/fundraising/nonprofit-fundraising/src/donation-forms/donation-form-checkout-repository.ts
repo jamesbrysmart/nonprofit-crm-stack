@@ -3,6 +3,7 @@ import {
   normalizeDonationFormPublishedConfig,
   normalizeDonationFormString,
 } from './donation-form-config';
+import { resolveStripeProviderConfigKey } from './donation-form-checkout-stripe';
 import type { PublishedDonationFormForCheckout } from './donation-form-checkout.types';
 
 type DonationFormPublicRecord = {
@@ -64,10 +65,7 @@ export const loadPublishedDonationFormForCheckout = async (
     throw new Error('Donation form is missing a published version');
   }
 
-  const providerConfigKey = normalizeString(record.providerConfigKey);
-  if (providerConfigKey === '') {
-    throw new Error('Donation form is missing a provider config key');
-  }
+  const providerConfigKey = resolveStripeProviderConfigKey(record.providerConfigKey);
 
   const config = normalizeDonationFormPublishedConfig(
     record.publishedConfig ?? null,

@@ -19,6 +19,7 @@ type CurrencyAmount = {
 type GiftRecord = {
   id: string;
   giftDate?: string | null;
+  giftType?: string | null;
   amount?: CurrencyAmount | null;
   appeal?: {
     id?: string | null;
@@ -78,6 +79,9 @@ const normalizeCurrencyCode = (value: string | null | undefined) => {
   return normalized === '' ? 'GBP' : normalized;
 };
 
+const includeInCashRollups = (giftType: string | null | undefined) =>
+  normalizeString(giftType).toUpperCase() !== 'GIFT_IN_KIND';
+
 const chunkArray = <T,>(items: T[], size: number): T[][] => {
   const chunks: T[][] = [];
 
@@ -135,7 +139,8 @@ export const computeAppealRollupSummary = (
   gifts: GiftRecord[],
   currentAppeal?: AppealRollupRecord,
 ): AppealRollupSummary => {
-  const sortedByGiftDate = [...gifts].sort((left, right) =>
+  const includedGifts = gifts.filter((gift) => includeInCashRollups(gift.giftType));
+  const sortedByGiftDate = [...includedGifts].sort((left, right) =>
     normalizeString(right.giftDate).localeCompare(normalizeString(left.giftDate)),
   );
   const currencyCode =
@@ -143,7 +148,7 @@ export const computeAppealRollupSummary = (
     normalizeCurrencyCode(currentAppeal?.raisedAmount?.currencyCode);
   const contributorIds = new Set<string>();
 
-  for (const gift of gifts) {
+  for (const gift of includedGifts) {
     const donorId = normalizeString(gift.donor?.id);
     const companyId = normalizeString(gift.company?.id);
 
@@ -159,13 +164,13 @@ export const computeAppealRollupSummary = (
   return {
     appealId,
     raisedAmount: {
-      amountMicros: gifts.reduce(
+      amountMicros: includedGifts.reduce(
         (sum, gift) => sum + Math.round(gift.amount?.amountMicros ?? 0),
         0,
       ),
       currencyCode,
     },
-    giftCount: gifts.length,
+    giftCount: includedGifts.length,
     donorCount: contributorIds.size,
     lastGiftAt: normalizeString(sortedByGiftDate[0]?.giftDate) || null,
   };
@@ -238,6 +243,7 @@ const loadCommittedGiftsForAppeals = async (
             node: {
               id: true,
               giftDate: true,
+              giftType: true,
               amount: {
                 amountMicros: true,
                 currencyCode: true,
@@ -308,6 +314,7 @@ const loadAllCommittedGifts = async (
           node: {
             id: true,
             giftDate: true,
+            giftType: true,
             amount: {
               amountMicros: true,
               currencyCode: true,

@@ -8,6 +8,7 @@ import {
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import type {
   BatchGiftCodingAppealMode,
+  BatchGiftCodingAppealSourceMode,
   BatchGiftCodingFundMode,
   BatchProcessingRow,
   UpdateBatchGiftCodingRequest,
@@ -18,6 +19,9 @@ const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
 
 const isAppealSetMode = (mode: BatchGiftCodingAppealMode) =>
+  mode === 'SET_ALL' || mode === 'SET_WHERE_BLANK';
+
+const isAppealSourceSetMode = (mode: BatchGiftCodingAppealSourceMode) =>
   mode === 'SET_ALL' || mode === 'SET_WHERE_BLANK';
 
 const isFundSetMode = (mode: BatchGiftCodingFundMode) =>
@@ -49,6 +53,32 @@ const loadAppealDefaultFund = async (
   return normalizeString(
     (result?.appeal as { defaultFund?: { id?: string | null } | null } | null)
       ?.defaultFund?.id,
+  );
+};
+
+const loadAppealSourceAppealId = async (
+  client: CoreApiClient,
+  appealSourceId: string,
+): Promise<string> => {
+  const result = await client.query({
+    appealSource: {
+      __args: {
+        filter: {
+          id: {
+            eq: appealSourceId,
+          },
+        },
+      },
+      id: true,
+      appeal: {
+        id: true,
+      },
+    },
+  } as any);
+
+  return normalizeString(
+    (result?.appealSource as { appeal?: { id?: string | null } | null } | null)
+      ?.appeal?.id,
   );
 };
 
@@ -104,27 +134,29 @@ const buildNextFundId = ({
   }
 };
 
-const buildNextAppealSourceMutation = ({
+const buildNextAppealSourceId = ({
   row,
-  nextAppealId,
+  mode,
+  selectedAppealSourceId,
 }: {
   row: BatchProcessingRow;
-  nextAppealId: string;
+  mode: BatchGiftCodingAppealSourceMode;
+  selectedAppealSourceId: string;
 }) => {
   const currentAppealSourceId = normalizeString(row.appealSource?.id);
-  const currentAppealSourceAppealId = normalizeString(row.appealSource?.appeal?.id);
 
-  if (currentAppealSourceId === '') {
-    return {};
+  switch (mode) {
+    case 'LEAVE_UNCHANGED':
+      return currentAppealSourceId;
+    case 'CLEAR':
+      return '';
+    case 'SET_ALL':
+      return selectedAppealSourceId;
+    case 'SET_WHERE_BLANK':
+      return currentAppealSourceId === ''
+        ? selectedAppealSourceId
+        : currentAppealSourceId;
   }
-
-  if (nextAppealId !== '' && currentAppealSourceAppealId === nextAppealId) {
-    return {};
-  }
-
-  return {
-    appealSourceId: null,
-  };
 };
 
 const handler = async (
@@ -132,8 +164,10 @@ const handler = async (
 ): Promise<UpdateBatchGiftCodingResponse> => {
   const giftBatchId = normalizeString(event.body?.giftBatchId);
   const appealMode = event.body?.appealMode ?? 'LEAVE_UNCHANGED';
+  const appealSourceMode = event.body?.appealSourceMode ?? 'LEAVE_UNCHANGED';
   const fundMode = event.body?.fundMode ?? 'LEAVE_UNCHANGED';
   const selectedAppealId = normalizeString(event.body?.selectedAppealId);
+  const selectedAppealSourceId = normalizeString(event.body?.selectedAppealSourceId);
   const selectedFundId = normalizeString(event.body?.selectedFundId);
 
   if (giftBatchId === '') {
@@ -142,6 +176,10 @@ const handler = async (
 
   if (isAppealSetMode(appealMode) && selectedAppealId === '') {
     throw new Error('Select an appeal before applying appeal coding.');
+  }
+
+  if (isAppealSourceSetMode(appealSourceMode) && selectedAppealSourceId === '') {
+    throw new Error('Select an appeal source before applying source coding.');
   }
 
   if (isFundSetMode(fundMode) && selectedFundId === '') {
@@ -175,8 +213,32 @@ const handler = async (
       targetedItemCount: 0,
       updatedRowCount: 0,
       appealUpdatedCount: 0,
+      appealSourceUpdatedCount: 0,
       fundUpdatedCount: 0,
     };
+  }
+
+  const selectedAppealSourceAppealId = isAppealSourceSetMode(appealSourceMode)
+    ? await loadAppealSourceAppealId(client, selectedAppealSourceId)
+    : '';
+
+  if (
+    isAppealSourceSetMode(appealSourceMode) &&
+    selectedAppealSourceAppealId === ''
+  ) {
+    throw new Error('The selected appeal source is not linked to an appeal.');
+  }
+
+  if (
+    isAppealSetMode(appealMode) &&
+    isAppealSourceSetMode(appealSourceMode) &&
+    selectedAppealId !== '' &&
+    selectedAppealSourceAppealId !== '' &&
+    selectedAppealId !== selectedAppealSourceAppealId
+  ) {
+    throw new Error(
+      'The selected appeal source does not belong to the selected appeal.',
+    );
   }
 
   const appealDefaultFundId = isFundDefaultMode(fundMode)
@@ -189,18 +251,52 @@ const handler = async (
 
   let updatedRowCount = 0;
   let appealUpdatedCount = 0;
+  let appealSourceUpdatedCount = 0;
   let fundUpdatedCount = 0;
   const writebacks: Array<{ id: string } & Record<string, unknown>> = [];
 
   for (const row of targetRows) {
     const currentAppealId = normalizeString(row.appeal?.id);
     const currentFundId = normalizeString(row.fund?.id);
+    const currentAppealSourceId = normalizeString(row.appealSource?.id);
+    const currentAppealSourceAppealId = normalizeString(row.appealSource?.appeal?.id);
 
-    const nextAppealId = buildNextAppealId({
+    let nextAppealId = buildNextAppealId({
       row,
       mode: appealMode,
       selectedAppealId,
     });
+    let nextAppealSourceId = buildNextAppealSourceId({
+      row,
+      mode: appealSourceMode,
+      selectedAppealSourceId,
+    });
+
+    const nextAppealSourceAppealId =
+      nextAppealSourceId === ''
+        ? ''
+        : nextAppealSourceId === selectedAppealSourceId
+          ? selectedAppealSourceAppealId
+          : currentAppealSourceId === nextAppealSourceId
+            ? currentAppealSourceAppealId
+            : '';
+
+    if (
+      nextAppealSourceId !== '' &&
+      nextAppealSourceAppealId !== '' &&
+      nextAppealSourceId === selectedAppealSourceId
+    ) {
+      nextAppealId = selectedAppealSourceAppealId;
+    }
+
+    if (
+      nextAppealSourceId !== '' &&
+      nextAppealSourceAppealId !== '' &&
+      (nextAppealId === '' || nextAppealSourceAppealId !== nextAppealId)
+    ) {
+      nextAppealSourceId = '';
+    }
+
     const nextFundId = buildNextFundId({
       row,
       mode: fundMode,
@@ -209,12 +305,8 @@ const handler = async (
     });
 
     const appealChanged = nextAppealId !== currentAppealId;
+    const appealSourceChanged = nextAppealSourceId !== currentAppealSourceId;
     const fundChanged = nextFundId !== currentFundId;
-    const appealSourceMutation = buildNextAppealSourceMutation({
-      row,
-      nextAppealId,
-    });
-    const appealSourceChanged = Object.keys(appealSourceMutation).length > 0;
 
     if (!appealChanged && !fundChanged && !appealSourceChanged) {
       continue;
@@ -223,13 +315,18 @@ const handler = async (
     writebacks.push({
       id: row.id,
       ...(appealChanged ? { appealId: nextAppealId === '' ? null : nextAppealId } : {}),
-      ...appealSourceMutation,
+      ...(appealSourceChanged
+        ? { appealSourceId: nextAppealSourceId === '' ? null : nextAppealSourceId }
+        : {}),
       ...(fundChanged ? { fundId: nextFundId === '' ? null : nextFundId } : {}),
     });
 
     updatedRowCount += 1;
     if (appealChanged) {
       appealUpdatedCount += 1;
+    }
+    if (appealSourceChanged) {
+      appealSourceUpdatedCount += 1;
     }
     if (fundChanged) {
       fundUpdatedCount += 1;
@@ -245,6 +342,7 @@ const handler = async (
     targetedItemCount: targetRows.length,
     updatedRowCount,
     appealUpdatedCount,
+    appealSourceUpdatedCount,
     fundUpdatedCount,
   };
 };

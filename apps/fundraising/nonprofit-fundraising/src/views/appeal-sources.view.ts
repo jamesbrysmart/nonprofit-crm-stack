@@ -1,7 +1,7 @@
 import { defineView, ViewKey } from 'twenty-sdk/define';
 import { APPEAL_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-appeal-source.field';
 import {
-  APPEAL_SOURCE_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_PLATFORM_FIELD_UNIVERSAL_IDENTIFIER,
@@ -72,7 +72,7 @@ export default defineView({
     {
       universalIdentifier: '5ea8352e-d5b3-4b57-ab48-dcfc771126df',
       fieldMetadataUniversalIdentifier:
-        APPEAL_SOURCE_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       position: 6,
       isVisible: true,
       size: 220,
