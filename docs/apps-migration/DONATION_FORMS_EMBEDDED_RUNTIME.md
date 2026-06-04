@@ -211,6 +211,15 @@ Current spike findings:
 - Embedded Checkout remains technically promising, but still feels more like a Stripe-managed checkout block inside the donation journey
 - Payment Element currently looks closest to a cohesive charity donation form and should be treated as the working baseline for the target donor experience, subject to embed feasibility
 - Twenty-served direct-DOM script delivery is not a clean active path in the current app framework, so the direct-DOM learnings should remain documentary rather than product-facing for now
+- Stripe Link / “save my information for faster checkout” UI is Stripe-owned behavior inside the Payment Element flow
+- disabling Link in Stripe-side settings materially improved the donor experience in live testing, so the current baseline should assume:
+  - Payment Element remains the default payment UI
+  - Link can be disabled in Stripe settings if it adds visible friction or duplicates donor-detail capture unhelpfully
+- Express Checkout Element looks like a plausible future enhancement, not a replacement decision:
+  - likely first target would be one-off donations only
+  - strongest candidate shape is additive: express buttons above the existing Payment Element, not a new donation-form architecture
+  - the biggest open question is payment-method availability inside embedded cross-origin iframe contexts on real charity websites, especially Apple Pay / Google Pay wallet behavior
+  - do not assume recurring monthly support or iframe wallet behavior is production-ready until it is prototyped in the real embed model
 
 Current productisation finding:
 
@@ -387,7 +396,12 @@ Repeated webhooks must no-op or update existing staging records, not create dupl
 
 - **Donor abandons Checkout**
   - a pre-payment staging row may exist
-  - it should remain excluded from normal queues and can be expired/cleaned up later
+  - v1 lifecycle contract:
+    - donation-form rows are created as `paymentState = AWAITING_PAYMENT`
+    - `AWAITING_PAYMENT` rows are hidden from the default actionable `GiftStaging` workflow
+    - a simple nightly cleanup job should convert donation-form rows still in `AWAITING_PAYMENT` to `PAYMENT_EXPIRED`
+    - this cleanup should be based on our own rule, not on Stripe event coverage
+    - later Stripe success evidence may still overwrite an expired row to `PAYMENT_CONFIRMED`
 
 - **Payment fails**
   - the pre-payment staging row should remain operationally quiet and non-processable

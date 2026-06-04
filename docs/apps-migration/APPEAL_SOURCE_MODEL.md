@@ -1,7 +1,7 @@
 # AppealSource Model
 
 _Status: working note_  
-_Updated: 2026-05-29_
+_Updated: 2026-06-01_
 
 ## Purpose
 
@@ -78,7 +78,7 @@ Core:
 Tracking:
 
 - `sourceCode`
-- `externalReference`
+- `externalId`
 - `platform`
 - `url`
 
@@ -91,18 +91,48 @@ Audience:
 
 - `audienceDescription`
 
+Fundraiser ownership:
+
+- `fundraiserPerson`
+- `fundraiserCompany`
+
 ## Current deferred concepts
 
 These are intentionally not in the current app data model yet:
 
 - `audienceCount` / `recipientCount`
 - cost fields
-- owner person/company
 - parent appeal source hierarchy
 - rollup fields
 - response metrics
 - weighted attribution
-- `GiftCredit` / `SoftCredit`
+
+## Fundraiser-derived soft credit pattern
+
+`AppealSource` now supports an optional linked fundraiser person/company.
+
+In the current fundraiser / P2P-style workflow:
+
+- if a `GiftStaging` or `Gift` record is linked to an `AppealSource` with a linked fundraiser,
+- and a caller does not explicitly provide different soft-credit values,
+- soft credit is derived from that source as:
+  - linked fundraiser person/company
+  - `softCreditType = FUNDRAISER`
+
+Behavior:
+
+- selecting or changing `AppealSource` refreshes that derived fundraiser soft credit
+- clearing `AppealSource` clears the derived fundraiser soft credit
+- explicit soft-credit input, if provided by a caller, still wins
+
+This is intentionally a narrow current rule for fundraiser attribution.
+
+It should not be treated as the final behavior for all future soft-credit types such as:
+
+- `INTRODUCER`
+- `HOST`
+- `MATCHER`
+- `PARTNER`
 
 Keep these as future design candidates, not as implied current behavior.
 

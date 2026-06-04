@@ -1,59 +1,47 @@
-# Testing & Quality Workflow (dev-stack)
+# Testing & Quality Workflow
 
-Purpose: define the minimum quality bar for changes in this stack and point to the canonical commands (run what exists, not what we wish existed).
+Purpose: define the minimum quality bar for changes in this stack and point sessions toward the current command owners.
 
-This is intentionally lightweight and is modeled on Twenty’s posture: run lint + type checks + relevant tests after changes, and reserve heavier end-to-end checks for wiring / critical flows.
+## Current Default
 
-## Sources of truth (commands)
+Testing should follow the current app-first posture:
 
-- Fundraising service scripts: `services/fundraising-service/package.json`
-- Stack bring-up and smoke checks: `docs/OPERATIONS_RUNBOOK.md`
-- Twenty core checks (when relevant): `services/twenty-core/.github/workflows/*` and `services/twenty-core/CLAUDE.md`
+- for fundraising app work, use the scripts and tests in `apps/fundraising/nonprofit-fundraising`
+- for Twenty core work, use the commands and workflow definitions in `services/twenty-core`
+- treat `services/fundraising-service` checks as legacy-only unless a task explicitly touches that code
 
-When in doubt, run the exact scripts/targets defined in the owning package’s config rather than inventing new commands.
+When in doubt, run the exact scripts defined in the package you changed rather than inventing new commands.
 
-## Definition of done (default)
+## Sources Of Truth
+
+- Fundraising app scripts: `apps/fundraising/nonprofit-fundraising/package.json`
+- Twenty core checks: `services/twenty-core/.github/workflows/*`
+- App workflow context: `docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md`
+
+## Definition Of Done
 
 For any non-trivial change:
 
-- Add or update tests when reasonable.
-- Run the smallest relevant checks for the component you touched (lint + type checks + unit tests where applicable).
-- TypeScript type checking for `services/fundraising-service` is enforced in strict mode via `services/fundraising-service/tsconfig.json`; run `npm -C services/fundraising-service run typecheck` as part of the default checks.
-- When debugging, prefer running the single most relevant test file first (e.g., `npm -C services/fundraising-service test -- <path/to/file.spec.ts>`) before running the full suite.
-- If the change affects runtime wiring (gateway/proxy/env/compose) or user-facing end-to-end behavior, run an end-to-end smoke check.
-- Don’t “leave it red”: if checks fail and you’re not fixing it now, explicitly track it (e.g., `docs/POC-backlog.md`) and call it out in the session/PR summary.
+- add or update tests when reasonable
+- run the smallest relevant lint, typecheck, or test command for the code you touched
+- if checks fail and you are not fixing them now, call that out explicitly
 
-Lint/format note for `services/fundraising-service`:
-
-- Prefer `npm -C services/fundraising-service run lint:diff` and `npm -C services/fundraising-service run format:diff` during normal iteration to avoid broad repo churn.
-- Use `npm -C services/fundraising-service run lint:check` for a full non-mutating `oxlint` pass.
-- `lint:check` does not run Prettier; pair it with `npm -C services/fundraising-service run format:check`, or use `npm -C services/fundraising-service run check:full` to run both.
-- Use `npm -C services/fundraising-service run lint:diff:fix` only when you explicitly want targeted `oxlint --fix` changes.
-- Treat `npm -C services/fundraising-service run lint` and `npm -C services/fundraising-service run format` as auto-fix commands, not neutral checks.
-
-## What to run (by change type)
+## What To Run
 
 | Change type | Minimum checks | Notes |
 | --- | --- | --- |
-| Docs-only (`docs/*`, ADRs, runbooks) | internal consistency scan | See `AGENTS.md` “Docs consistency”. If you changed operational steps, verify against scripts/config. |
-| Wiring (`docker-compose*.yml`, `nginx/*`, `.env.example`) | bring-up + health + relevant smoke | Use `docs/OPERATIONS_RUNBOOK.md` as the canonical checklist. |
-| Fundraising service (`services/fundraising-service/*`) | package lint + tests; smoke when end-to-end changes | Use `services/fundraising-service/package.json`. Prefer `lint:diff` / `format:diff` while iterating and `lint:check` for a full non-mutating `oxlint` pass. If you touched proxy/ingestion/staging/batch processing, run the gift smoke checks from `docs/OPERATIONS_RUNBOOK.md`. |
-| Vendor sync (updating `services/twenty-core` pointer) | health + smoke checks | Treat as maintenance, not feature work. Validate the stack using `docs/OPERATIONS_RUNBOOK.md`. |
-| Twenty core code change (`services/twenty-core/*`, exceptional) | Twenty Nx targets + relevant tests | Default posture: avoid edits; only do this when explicitly approved. |
+| Docs-only (`docs/*`, `README.md`, `AGENTS.md`) | internal consistency scan | Remove or quarantine misleading legacy guidance, not just append exceptions. |
+| Fundraising app (`apps/fundraising/nonprofit-fundraising/*`) | smallest relevant app test run | Prefer focused `yarn test` or `yarn test:unit` runs from that app. |
+| Twenty core (`services/twenty-core/*`) | relevant Twenty-owned checks | Use existing Yarn/Nx targets and upstream workflow patterns. |
+| Legacy fundraising service (`services/fundraising-service/*`) | package-local checks only if explicitly touching legacy code | Do not propose these by default for normal fundraising work. |
+| Wiring / compose / nginx | verify current intent before testing | Do not assume the legacy Docker gateway workflow is still the desired validation path. |
 
-## Fundraising: focused regression pack (gift-batch)
+## Legacy Note
 
-When changing gift-batch workflows, prefer this pack before wider runs:
+Older testing guidance in this repo referenced:
 
-- `npm test -- gift-batch/gift-batch-processing.service.spec.ts`
-- `npm test -- gift-batch/gift-batch-donor-match.service.spec.ts`
-- `npm test -- identity-resolution/person-identity.service.spec.ts`
-- `npm test -- gift-staging/gift-staging.service.spec.ts`
-- `npm test -- gift-staging/gift-staging-processing.service.spec.ts`
-- `npm run client:build`
+- `services/fundraising-service` as the primary fundraising package
+- smoke scripts against the old gateway workflow
+- local host URLs such as `localhost:3000` and `localhost:4000`
 
-For batch-processing/rate-limit investigations, use the runbook’s `Batch smoke + retry ledger (gift-batch)` procedure so results are comparable across sessions. For deeper context, see `docs/solutions/gift-batch-processing.md`.
-
-## Smoke tests are necessary (but not sufficient)
-
-Smoke tests catch “main path works” failures (auth/proxy/gift creation/staging processing), but they do not replace unit tests for `services/fundraising-service`.
+Those are no longer default assumptions and should only be used when the task is explicitly about the legacy runtime.

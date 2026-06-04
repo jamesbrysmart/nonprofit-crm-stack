@@ -1,7 +1,7 @@
 # Soft Credit Model
 
 _Status: working note_  
-_Updated: 2026-05-29_
+_Updated: 2026-06-01_
 
 ## Purpose
 
@@ -100,8 +100,20 @@ UI prominence and defaulting are also intentionally deferred, including question
 
 - whether soft credit should appear prominently in manual entry,
 - whether P2P-style workflows should surface it differently,
-- whether `AppealSource` or source evidence should suggest a default soft credit,
 - and whether future fundraiser-owner fields should prefill it.
+
+## Current fundraiser / P2P derivation rule
+
+One narrow defaulting rule is now part of the current model:
+
+- if an `AppealSource` has a linked `fundraiserPerson` or `fundraiserCompany`,
+- and a gift or staging row is linked to that `AppealSource`,
+- then soft credit is derived as that fundraiser with `softCreditType = FUNDRAISER`,
+- unless a caller explicitly provides different soft-credit values.
+
+This is intended for fundraiser / P2P-style source attribution.
+
+It is not the final defaulting rule for all soft-credit scenarios, and it should not be read as saying that all future soft-credit types must come from `AppealSource`.
 
 ## Future migration path
 
