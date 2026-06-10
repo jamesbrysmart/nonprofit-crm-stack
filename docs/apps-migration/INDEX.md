@@ -56,6 +56,8 @@ If you need:
   - [APPEAL_SOURCE_MODEL.md](docs/apps-migration/APPEAL_SOURCE_MODEL.md)
 - current lightweight soft-credit model and deferred concepts:
   - [SOFT_CREDIT_MODEL.md](docs/apps-migration/SOFT_CREDIT_MODEL.md)
+- current likely use of native Twenty `Opportunity` for funding / bid / award pipeline work:
+  - [OPPORTUNITY_FUNDING_PIPELINE_MODEL.md](docs/apps-migration/OPPORTUNITY_FUNDING_PIPELINE_MODEL.md)
 - agreed lean runtime boundary and lifecycle for embeddable donation forms:
   - [DONATION_FORMS_EMBEDDED_RUNTIME.md](docs/apps-migration/DONATION_FORMS_EMBEDDED_RUNTIME.md)
 - current UI blocks and reuse candidates:
@@ -81,6 +83,7 @@ Use these categories when deciding how much weight to give a doc.
 - [ONLINE_DONATION_INTAKE_FIELD_MODEL.md](docs/apps-migration/ONLINE_DONATION_INTAKE_FIELD_MODEL.md)
 - [APPEAL_SOURCE_MODEL.md](docs/apps-migration/APPEAL_SOURCE_MODEL.md)
 - [SOFT_CREDIT_MODEL.md](docs/apps-migration/SOFT_CREDIT_MODEL.md)
+- [OPPORTUNITY_FUNDING_PIPELINE_MODEL.md](docs/apps-migration/OPPORTUNITY_FUNDING_PIPELINE_MODEL.md)
 - [DONATION_FORMS_EMBEDDED_RUNTIME.md](docs/apps-migration/DONATION_FORMS_EMBEDDED_RUNTIME.md)
 - [APP_RUNTIME_ARCHITECTURE.md](docs/apps-migration/APP_RUNTIME_ARCHITECTURE.md)
 - [API_PRESSURE.md](docs/apps-migration/API_PRESSURE.md)

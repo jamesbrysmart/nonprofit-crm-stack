@@ -47,13 +47,13 @@ When updating this doc in regular syncs, keep it lightweight:
 3. Add 2-4 bullet highlights on direction, drift, or breaking-change signals.
 4. Record only current implications; skip deeper migration design discussion.
 
-## Current Extensibility Surface (baseline verified 2026-05-29)
+## Current Extensibility Surface (baseline verified 2026-06-05)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `2.9.0` (current merged repo head is ahead of multiple release tags including `v2.8.1`, so repo head, runtime tag, and published package version still need to be treated as distinct signals).
+  - Current package version in-tree: `2.10.0` (current merged repo head is ahead of the latest release tag `v2.9.0`, so repo head, runtime tag, and published package version still need to be treated as distinct signals).
   - CLI command registry now includes: `remote add`, `remote list`, `remote remove`, `remote status`, `remote switch`, `build`, `deploy`, `dev`, `publish`, `install`, `typecheck`, `uninstall`, `add`, `logs`, `exec`, `catalog-sync`, plus `server start|status|logs|stop|reset`.
   - `dev` now explicitly supports `--once` for one-shot build/sync/typed-client generation without a long-running watcher.
   - Local server management now also supports a separate `--test` instance, which gives the app workflow a cleaner isolated integration-test story.
@@ -80,7 +80,7 @@ When updating this doc in regular syncs, keep it lightweight:
     - the front-component renderer explicitly aliases `twenty-sdk/ui` to Twenty UI for example builds, and the built-in front-component story set includes `twenty-ui-example.front-component`.
   - Practical read for app work: treat `twenty-sdk/ui` as the intended native UI surface for front components when the active app-tooling version supports it, but keep the current published app scaffold/version as the compatibility baseline until the version gap closes.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `2.9.0`.
+  - Current package version in-tree: `2.10.0`.
   - Scaffolder now defaults to a minimal app plus test scaffold; richer starting points are example-based (`--example hello-world`, `--example postcard`) rather than `--exhaustive` / `--minimal` mode selection.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
   - Default scaffold now includes application config, a default role, schema/integration test scaffolding with dedicated test-instance setup, and local CI/CD workflow templates; scaffolded source now uses the split SDK import paths (`twenty-sdk/define`, `twenty-sdk/front-component`) consistently.
@@ -124,6 +124,47 @@ When updating this doc in regular syncs, keep it lightweight:
   - CLI naming is still evolving: newer `twenty-sdk` docs and code now prefer colon-style command groups (`docker:*`, `app:*`, `dev:*`, `remote:*`) while older flat commands remain available as deprecated wrappers. Treat repo-local runbooks and prompts as version-sensitive here.
   - Recent SDK changes are now more about package shape, import boundaries, OAuth/registration plumbing, and install/validation ergonomics than about obvious new fundraising-specific platform primitives.
   - Docs/examples move quickly and can drift between releases; verify against `packages/twenty-docs` and `packages/twenty-sdk/README.md` after each upstream sync, especially around CLI/scaffolder command names.
+
+---
+
+## Latest Snapshot — 2026-06-05
+
+**Context:** Updated `services/twenty-core` from merge commit `ca3e3aea8f` to merge commit `128d2d394d` (local merge on 2026-06-05; fetched upstream head: `cd540098f1`; local tags now include `v2.9.0`; in-tree `twenty-sdk`, `create-twenty-app`, and `twenty-client-sdk` package versions are `2.10.0`).
+
+**Highlights**
+
+1. **View augmentation became more granular**
+   - Upstream added `defineViewField()`, which lets apps add fields to existing views without redefining whole views.
+   - Practical read: this is one of the strongest incremental UI-extension signals we have seen so far, especially for app slices that want to augment existing record/list surfaces rather than replace them.
+
+2. **Agents are moving closer to normal logic-function workflows**
+   - The SDK now includes `runAgent()` for calling app agents from logic functions.
+   - Practical read: Twenty is continuing to converge agents, skills, and logic functions into one app-authoring surface rather than leaving agents as a separate novelty feature.
+
+3. **HTTP trigger control is still evolving**
+   - Upstream added more control on HTTP triggers/routes.
+   - Practical read: route-trigger ergonomics are still changing, so app HTTP/webhook flows remain an area where we should expect ongoing surface drift between releases.
+
+4. **Command-menu and conditional-availability behavior are still active change areas**
+   - This range includes command-menu display refinements plus docs clarifying `RECORD_SELECTION` semantics.
+   - It also tightens conditional-availability usage so certain variables are no longer valid at runtime.
+   - Practical read: command visibility, placement, and gating should continue to be treated as regression-test targets after upgrades.
+
+5. **The in-tree app toolchain has moved on again beyond the latest release tag**
+   - Runtime/release line: `v2.9.0`
+   - In-tree app-tooling line: `2.10.0`
+   - Practical read: version drift is now normal enough that runtime choice and app package choice need to stay explicit rather than inferred from the checked-out repo alone.
+
+6. **New reference apps keep arriving**
+   - A new internal People Data Labs app landed in this range.
+   - Practical read: the best current app examples continue to be the internal apps rather than older scaffolds alone.
+
+**Current implications**
+
+1. Treat `defineViewField()` as the most interesting new app primitive in this range.
+2. Keep command-menu and conditional-availability behavior on the short list of post-upgrade regression checks.
+3. Keep HTTP-trigger/webhook flows in the “expect drift, verify in practice” bucket.
+4. Continue treating runtime tags and published app package versions as separate decisions.
 
 ---
 

@@ -1439,6 +1439,7 @@ Migration read:
 - Review the form layout and default visibility before porting.
 - Keep manual entry and staging review distinct in purpose, but deliberately look for shared relational-entry patterns/components where the user need overlaps.
 - Do not force a universal default-field hierarchy here before migration evidence justifies it.
+- For the more current working direction on `Opportunity` as a lightweight funding / bid / award pipeline object before payment, see [OPPORTUNITY_FUNDING_PIPELINE_MODEL.md](docs/apps-migration/OPPORTUNITY_FUNDING_PIPELINE_MODEL.md).
 
 #### Scenario: Creating Or Selecting A Batch During Entry
 

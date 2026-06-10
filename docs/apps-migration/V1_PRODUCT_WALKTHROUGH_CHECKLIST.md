@@ -197,6 +197,69 @@ Key transitions:
 - batch coding / checking / donor match -> row-level review state changes
 - batch processed -> committed gifts and batch outcome updates
 
+### Current walkthrough notes
+
+#### Donor-match result wording
+
+Observed on the seeded CSV pressure-test batch (`100` rows):
+
+- opening the batch and choosing `Run donor match` feels like the correct first
+  user action when nothing looks obviously wrong at first glance
+- after running donor match, the current success copy reads:
+  - `Donor match complete. 9 rows were linked automatically.`
+  - `Open Needs review to check 90 remaining rows.`
+
+Current concern:
+
+- the phrase `90 remaining rows` is vague and misleading
+- it does not explain what kind of donor-review state those rows are in
+- it also reads as though one row has disappeared, because the user naturally
+  expects a clearer accounting of the full batch outcome
+
+Current product read:
+
+- donor-match results should explain exact-match success explicitly
+- the non-linked rows should be described as rows still needing donor review,
+  rather than a vague remainder bucket
+- later refinement may also want to distinguish:
+  - ambiguous donor matches
+  - no confident donor match found
+
+Status:
+
+- note for wording / workflow clarity
+- not necessarily an immediate fix
+
+#### Partial donor matches are not visible enough at batch level
+
+Observed question during batch walkthrough:
+
+- a common donor-admin case is a likely donor match without an email address
+- product-wise, this behaves more like a partial / ambiguous match than a true
+  no-match case
+
+Current concern:
+
+- the underlying donor-resolution model does distinguish ambiguous matches from
+  generic unreviewed rows, but the batch view does not make that distinction
+  clear enough on quick scan
+- from the batch page, rows with likely donor candidates and rows with no
+  confident match can feel collapsed into the same broad `Needs review` bucket
+
+Current product read:
+
+- this is not necessarily a matching-logic bug
+- it is a workflow clarity issue for donor admins working through larger CSV or
+  imported batches
+- batch-level review should eventually make it clearer when a batch contains
+  partial / ambiguous donor matches versus rows that are simply still
+  unreviewed or unmatched
+
+Status:
+
+- note for donor-review workflow clarity
+- keep discussing in scenario testing before deciding on UI changes
+
 ### 5. Gift staging review
 
 This area covers the review surface for staged gifts before they are processed into committed gifts.

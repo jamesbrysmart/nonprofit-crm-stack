@@ -76,7 +76,9 @@ What to do:
 
 Current examples:
 
-- [gift-batch-record.front-component.tsx](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/front-components/gift-batch-record.front-component.tsx)
+- [gift-batch-summary.front-component.tsx](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/front-components/gift-batch-summary.front-component.tsx)
+- [gift-batch-actions.front-component.tsx](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/front-components/gift-batch-actions.front-component.tsx)
+- [gift-batch-worklists.front-component.tsx](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/front-components/gift-batch-worklists.front-component.tsx)
 - [use-gift-batch-review.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/gift-batch-review/use-gift-batch-review.ts)
 - [process-batch.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/logic-functions/process-batch.ts)
 - [run-batch-donor-match.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/logic-functions/run-batch-donor-match.ts)
