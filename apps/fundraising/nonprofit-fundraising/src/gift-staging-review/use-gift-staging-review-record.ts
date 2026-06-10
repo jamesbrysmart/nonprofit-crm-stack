@@ -34,6 +34,7 @@ const loadStoredRecord = async (
       donorLastName: true,
       donorEmail: true,
       donorPhone: true,
+      isAnonymousDonor: true,
       donorMailingAddress: {
         addressStreet1: true,
         addressStreet2: true,
@@ -125,7 +126,7 @@ const loadStoredRecord = async (
         name: true,
       },
     },
-  } as never);
+  } as any);
 
   return (result?.giftStaging as StoredGiftStagingRecord | null) ?? null;
 };
@@ -181,7 +182,9 @@ export const useGiftStagingReviewRecord = (recordId: string | null) => {
 
     return subscribeToGiftStagingRecordInvalidated({
       recordId,
-      onInvalidate: refresh,
+      onInvalidate: () => {
+        void refresh();
+      },
     });
   }, [recordId]);
 

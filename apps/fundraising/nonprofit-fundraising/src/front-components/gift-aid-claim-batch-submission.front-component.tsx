@@ -6,7 +6,7 @@ import {
   compactWidgetRootStyle,
   labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import { useGiftAidClaimWorkspace } from 'src/gift-aid-claims/use-gift-aid-claim-workspace';
 
 export const GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =

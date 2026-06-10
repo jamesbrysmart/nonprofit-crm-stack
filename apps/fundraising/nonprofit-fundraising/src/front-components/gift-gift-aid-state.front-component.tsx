@@ -4,14 +4,13 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import { useRecordId } from 'twenty-sdk/front-component';
 import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
 import {
+  CompactMetaGrid,
+  CompactMetaItem,
   compactDividerSectionStyle,
-  compactMetaGridStyle,
-  compactMetaItemStyle,
   compactValueStyle,
   compactWidgetRootStyle,
-  labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 
 export const GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '867a2364-6eaa-4ef6-a7d3-85759e0e9b93';
@@ -304,24 +303,17 @@ const GiftGiftAidState = () => {
       <div style={compactValueStyle}>{nextAction}</div>
 
       <div style={compactDividerSectionStyle}>
-        <div style={compactMetaGridStyle}>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Decision source</div>
-            <div style={textStyle}>
-              {decisionSource === '' ? 'Not recorded' : toTitleCase(decisionSource)}
-            </div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Last checked</div>
-            <div style={textStyle}>
-              {formatDateTime(record.giftAidLastEvaluatedAt)}
-            </div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Declaration</div>
-            <div style={textStyle}>{declarationName}</div>
-          </div>
-        </div>
+        <CompactMetaGrid>
+          <CompactMetaItem
+            label="Decision source"
+            value={decisionSource === '' ? 'Not recorded' : toTitleCase(decisionSource)}
+          />
+          <CompactMetaItem
+            label="Last checked"
+            value={formatDateTime(record.giftAidLastEvaluatedAt)}
+          />
+          <CompactMetaItem label="Declaration" value={declarationName} />
+        </CompactMetaGrid>
       </div>
     </div>
   );

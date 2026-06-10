@@ -11,7 +11,7 @@ import {
   compactWidgetRootStyle,
   labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 
 export const COMPANY_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'fb455e53-c13d-49d6-8895-602cc9c2b094';

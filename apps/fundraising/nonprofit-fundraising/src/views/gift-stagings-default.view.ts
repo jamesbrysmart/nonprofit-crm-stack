@@ -7,14 +7,12 @@ import {
   GIFT_STAGING_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_INTAKE_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_STAGING_IS_READY_FOR_PROCESSING_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROVIDER_AGREEMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROCESSING_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_STAGING_PAYMENT_STATE_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/objects/gift-staging.object';
 
 export const GIFT_STAGINGS_DEFAULT_VIEW_UNIVERSAL_IDENTIFIER =
@@ -31,16 +29,9 @@ export default defineView({
     {
       universalIdentifier: '8c9c8e4c-1f4f-41e2-beb4-6f744574b9b2',
       fieldMetadataUniversalIdentifier:
-        GIFT_STAGING_PAYMENT_STATE_FIELD_UNIVERSAL_IDENTIFIER,
+        GIFT_STAGING_PROCESSING_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
       operand: ViewFilterOperand.IS_NOT,
-      value: JSON.stringify(['AWAITING_PAYMENT']),
-    },
-    {
-      universalIdentifier: 'd0db8231-6106-49a5-9c6b-e572fe6ceac4',
-      fieldMetadataUniversalIdentifier:
-        GIFT_STAGING_PAYMENT_STATE_FIELD_UNIVERSAL_IDENTIFIER,
-      operand: ViewFilterOperand.IS_NOT,
-      value: JSON.stringify(['PAYMENT_EXPIRED']),
+      value: JSON.stringify(['PROCESSED']),
     },
   ],
   fields: [
@@ -93,18 +84,10 @@ export default defineView({
       size: 220,
     },
     {
-      universalIdentifier: '9af965c4-4304-4932-b65b-dab6bff8ea1c',
-      fieldMetadataUniversalIdentifier:
-        GIFT_STAGING_IS_READY_FOR_PROCESSING_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 6,
-      isVisible: true,
-      size: 160,
-    },
-    {
       universalIdentifier: '5c84b58b-2cc7-4368-92b9-e8918b38424b',
       fieldMetadataUniversalIdentifier:
         GIFT_STAGING_PROCESSING_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 7,
+      position: 6,
       isVisible: true,
       size: 160,
     },
@@ -112,7 +95,7 @@ export default defineView({
       universalIdentifier: '5c44cb8e-5cb3-4b0a-a8a9-85223490a55f',
       fieldMetadataUniversalIdentifier:
         GIFT_STAGING_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 8,
+      position: 7,
       isVisible: true,
       size: 220,
     },
@@ -120,7 +103,7 @@ export default defineView({
       universalIdentifier: '367f5ee4-6766-4060-9cbe-976908f95ee9',
       fieldMetadataUniversalIdentifier:
         GIFT_STAGING_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 9,
+      position: 8,
       isVisible: true,
       size: 140,
     },
@@ -128,7 +111,7 @@ export default defineView({
       universalIdentifier: '7fbba2dc-9201-46e9-9eb2-b6cc99d06d2f',
       fieldMetadataUniversalIdentifier:
         GIFT_STAGING_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 10,
+      position: 9,
       isVisible: true,
       size: 220,
     },
@@ -136,7 +119,7 @@ export default defineView({
       universalIdentifier: '31903a7a-24dd-4a82-9a5e-c3ca69c45f3e',
       fieldMetadataUniversalIdentifier:
         GIFT_STAGING_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 11,
+      position: 10,
       isVisible: true,
       size: 220,
     },

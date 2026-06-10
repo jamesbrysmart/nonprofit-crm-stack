@@ -44,7 +44,7 @@ export default definePageLayout({
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
-            viewId: APPEAL_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+            viewUniversalIdentifier: APPEAL_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

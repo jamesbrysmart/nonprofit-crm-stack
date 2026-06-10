@@ -5,6 +5,7 @@ import {
   persistBatchRowWritebacks,
 } from 'src/batch-processing/batch-processing.executor';
 import { resolveAppealSourceExternalIdsForRows } from 'src/appeal-sources/appeal-source-external-id-resolution';
+import { resolveAppealSourceParentsForProcessing } from 'src/appeal-sources/appeal-source-processing-resolution';
 import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
@@ -122,7 +123,13 @@ export const processGiftStagingRows = async (
   let failedItems = 0;
 
   if (processableRows.length > 0) {
-    const result = await executeBatchGiftProcessing(processableRows);
+    // One bulk lookup keeps appeal-source attribution deterministic without
+    // turning the high-volume gift create path into per-row relation reads.
+    const resolvedProcessableRows = await resolveAppealSourceParentsForProcessing(
+      client,
+      processableRows,
+    );
+    const result = await executeBatchGiftProcessing(resolvedProcessableRows);
     executionMetrics = result.metrics;
     processedItems = result.successfulWritebacks.length;
     failedItems = result.failedWritebacks.length;

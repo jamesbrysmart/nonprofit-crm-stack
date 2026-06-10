@@ -6,7 +6,7 @@ import {
   actionRowStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import {
   finalizeGiftAidClaimBatch,
   queueGiftAidClaimSubmission,

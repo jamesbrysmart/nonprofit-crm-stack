@@ -1,6 +1,7 @@
 type ProcessabilityInput = {
   processingStatus: string | null | undefined;
   paymentState?: string | null | undefined;
+  isAnonymousDonor?: boolean | null | undefined;
   donorResolutionState: string | null | undefined;
   donorFirstName?: string | null | undefined;
   donorLastName?: string | null | undefined;
@@ -20,6 +21,10 @@ export const hasLinkedDonorForProcessing = (
   input: Pick<ProcessabilityInput, 'linkedDonorId'>,
 ) => normalizeString(input.linkedDonorId) !== '';
 
+export const isExplicitAnonymousDonor = (
+  input: Pick<ProcessabilityInput, 'isAnonymousDonor'>,
+) => input.isAnonymousDonor === true;
+
 export const isPaymentConfirmedOrNotRequired = (
   input: Pick<ProcessabilityInput, 'paymentState'>,
 ) => {
@@ -33,7 +38,8 @@ export const isGiftStagingProcessable = (input: ProcessabilityInput) => {
     input.processingStatus !== 'PROCESSED' &&
       isPaymentConfirmedOrNotRequired(input) &&
       input.donorResolutionState !== 'AMBIGUOUS' &&
-      (hasLinkedDonorForProcessing(input) ||
+      (isExplicitAnonymousDonor(input) ||
+        hasLinkedDonorForProcessing(input) ||
         hasSufficientDonorEvidenceForNewDonor(input)),
   );
 };

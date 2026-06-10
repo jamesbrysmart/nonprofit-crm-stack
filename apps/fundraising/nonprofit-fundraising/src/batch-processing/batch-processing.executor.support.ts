@@ -2,6 +2,7 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
+import type { GiftAidEvaluatedPayload } from 'src/gift-aid/gift-aid.types';
 import {
   hasLinkedDonorForProcessing,
   hasSufficientDonorEvidenceForNewDonor,
@@ -62,6 +63,9 @@ export type DonorSupporterEmailOptOutUpdate = {
   donorId: string;
   supporterEmailOptOut: true;
 };
+
+type GiftCreatePayload = ReturnType<typeof buildGiftPayloadFromRow> &
+  GiftAidEvaluatedPayload;
 
 export const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
@@ -182,6 +186,7 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
   const donorFirstName = normalizeString(row.donorFirstName);
   const donorLastName = normalizeString(row.donorLastName);
   const donorEmail = normalizeString(row.donorEmail);
+  const isAnonymousDonor = row.isAnonymousDonor === true;
   const giftDate = normalizeString(row.giftDate);
   const paymentType = normalizeGiftPaymentType(row.paymentType);
   const explicitFundId = normalizeString(row.fund?.id);
@@ -205,6 +210,17 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
   }
 
   if (
+    isAnonymousDonor &&
+    (normalizeString(row.recurringAgreement?.id) !== '' ||
+      isProviderBackedRecurringStagingRow(row))
+  ) {
+    throw new Error(
+      'Anonymous donor gifts are not yet supported for recurring processing',
+    );
+  }
+
+  if (
+    !isAnonymousDonor &&
     !hasLinkedDonorForProcessing({ linkedDonorId: row.donor?.id }) &&
     !hasSufficientDonorEvidenceForNewDonor(row)
   ) {
@@ -240,6 +256,7 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
     donorFirstName,
     donorLastName,
     ...(donorEmail !== '' ? { donorEmail } : {}),
+    ...(isAnonymousDonor ? { isAnonymousDonor: true } : {}),
     paymentType,
     ...(normalizeString(row.externalId) !== ''
       ? { externalId: normalizeString(row.externalId) }
@@ -648,10 +665,11 @@ export const createGiftViaRowFallback = async (
 ): Promise<SuccessfulWriteback> => {
   const client = new CoreApiClient();
   const giftAidDeclarationService = createGiftAidDeclarationService(client);
-  let payload = buildGiftPayloadFromRow(row);
+  let payload: GiftCreatePayload = buildGiftPayloadFromRow(row);
   let donorId = normalizeString(payload.donorId as string | undefined);
+  const isAnonymousDonor = row.isAnonymousDonor === true;
 
-  if (donorId === '') {
+  if (donorId === '' && !isAnonymousDonor) {
     donorId = await ensurePersonForRowFallback(client, row);
     payload = {
       ...payload,
@@ -659,11 +677,11 @@ export const createGiftViaRowFallback = async (
     };
   }
 
-  payload = await applyGiftAidMetadata(
+  payload = (await applyGiftAidMetadata(
     giftAidDeclarationService,
     payload,
     isGiftAidEnabled(),
-  );
+  )) as GiftCreatePayload;
   let recurringAgreementId = normalizeString(
     payload.recurringAgreementId as string | undefined,
   );
@@ -707,13 +725,17 @@ export const createGiftViaRowFallback = async (
       __args: {
         data: {
           ...createData,
-          donor: {
-            connect: {
-              where: {
-                id: donorId,
-              },
-            },
-          },
+          ...(donorId !== ''
+            ? {
+                donor: {
+                  connect: {
+                    where: {
+                      id: donorId,
+                    },
+                  },
+                },
+              }
+            : {}),
           ...(declarationId !== ''
             ? {
                 giftAidDeclaration: {

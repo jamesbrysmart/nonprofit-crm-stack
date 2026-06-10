@@ -7,8 +7,10 @@ import {
   deriveLinkedDonorSupporterEmailOptOutUpdate,
   deriveRecurringCadenceFromProviderEvidence,
 } from 'src/batch-processing/batch-processing.executor';
+import { resolveAppealSourceParentsForProcessing } from 'src/appeal-sources/appeal-source-processing-resolution';
 import { buildGiftPayloadFromRow } from 'src/batch-processing/batch-processing.executor.support';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
+import type { CoreApiClient } from 'twenty-client-sdk/core';
 
 describe('deriveRecurringCadenceFromProviderEvidence', () => {
   it.each([
@@ -84,6 +86,7 @@ const buildProcessingRow = (
   providerIntervalCount: null,
   donorPhone: null,
   supporterEmailOptOut: null,
+  isAnonymousDonor: false,
   rawProviderEvidence: null,
   donorResolutionState: 'UNREVIEWED',
   donor: null,
@@ -305,6 +308,20 @@ describe('canProcessBatchRow', () => {
     ).toBe(false);
   });
 
+  it('allows an explicitly anonymous row without donor evidence', () => {
+    expect(
+      canProcessBatchRow(
+        buildProcessingRow({
+          donorFirstName: '',
+          donorLastName: '',
+          donorEmail: '',
+          donor: null,
+          isAnonymousDonor: true,
+        }),
+      ),
+    ).toBe(true);
+  });
+
   it('blocks a payment-gated row until payment is confirmed', () => {
     expect(
       canProcessBatchRow(
@@ -351,5 +368,87 @@ describe('buildGiftPayloadFromRow', () => {
         }),
       ),
     ).toThrow('Payment type is required before batch processing');
+  });
+
+  it('marks an explicitly anonymous payload without donor linkage requirements', () => {
+    expect(
+      buildGiftPayloadFromRow(
+        buildProcessingRow({
+          donorFirstName: '',
+          donorLastName: '',
+          donorEmail: '',
+          donor: null,
+          isAnonymousDonor: true,
+        }),
+      ),
+    ).toMatchObject({
+      isAnonymousDonor: true,
+    });
+  });
+
+  it('rejects explicitly anonymous recurring rows for now', () => {
+    expect(() =>
+      buildGiftPayloadFromRow(
+        buildProcessingRow({
+          donorFirstName: '',
+          donorLastName: '',
+          donorEmail: '',
+          donor: null,
+          isAnonymousDonor: true,
+          providerAgreementId: 'sub_123',
+          providerIntervalUnit: 'month',
+          providerIntervalCount: 1,
+        }),
+      ),
+    ).toThrow(
+      'Anonymous donor gifts are not yet supported for recurring processing',
+    );
+  });
+});
+
+describe('resolveAppealSourceParentsForProcessing', () => {
+  it('hydrates the appeal source parent before payload validation', async () => {
+    const client = {
+      query: async () => ({
+        appealSources: {
+          edges: [
+            {
+              node: {
+                id: 'source_1',
+                appeal: {
+                  id: 'appeal_1',
+                  defaultFund: {
+                    id: 'fund_1',
+                    name: 'General fund',
+                  },
+                },
+              },
+            },
+          ],
+        },
+      }),
+    } as unknown as CoreApiClient;
+
+    const [resolvedRow] = await resolveAppealSourceParentsForProcessing(client, [
+      buildProcessingRow({
+        donorResolutionState: 'CONFIRMED',
+        donor: { id: 'person_1' },
+        appeal: {
+          id: 'appeal_1',
+          name: 'Spring appeal',
+        },
+        appealSource: {
+          id: 'source_1',
+          name: 'Spring email',
+        },
+      }),
+    ]);
+
+    expect(resolvedRow.appealSource?.appeal?.id).toBe('appeal_1');
+    expect(buildGiftPayloadFromRow(resolvedRow)).toMatchObject({
+      appealId: 'appeal_1',
+      appealSourceId: 'source_1',
+      fundId: 'fund_1',
+    });
   });
 });

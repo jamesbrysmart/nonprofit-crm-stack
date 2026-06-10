@@ -16,6 +16,34 @@ import {
   loadAppealSourceFundraisersById,
 } from 'src/soft-credits/fundraiser-soft-credit';
 import { resolveAppealSourceExternalIdsForRows } from 'src/appeal-sources/appeal-source-external-id-resolution';
+import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
+
+type GiftStagingReadinessRow = Pick<
+  BatchProcessingRow,
+  | 'id'
+  | 'amount'
+  | 'donorFirstName'
+  | 'donorLastName'
+  | 'donorEmail'
+  | 'isAnonymousDonor'
+  | 'donorResolutionState'
+  | 'donor'
+  | 'giftDate'
+  | 'paymentType'
+  | 'paymentState'
+  | 'processingStatus'
+  | 'provider'
+  | 'providerAgreementId'
+  | 'providerIntervalCount'
+  | 'providerIntervalUnit'
+  | 'appealSourceExternalId'
+  | 'sourceAppealName'
+  | 'sourceFundName'
+  | 'appeal'
+  | 'appealSource'
+  | 'fund'
+  | 'recurringAgreement'
+>;
 
 const updateGiftStaging = async (
   recordId: string,
@@ -53,6 +81,7 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
       donorFirstName: true,
       donorLastName: true,
       donorEmail: true,
+      isAnonymousDonor: true,
       donorResolutionState: true,
       donor: {
         id: true,
@@ -83,39 +112,23 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
     },
   } as any);
 
+  const loadedRow = result?.giftStaging as
+    | (Partial<GiftStagingReadinessRow> & { id?: string | null })
+    | null;
+
+  if (!loadedRow?.id) {
+    return {
+      client,
+      row: null,
+    };
+  }
+
   return {
     client,
-    row: result?.giftStaging as
-      | {
-          id?: string;
-          amount?:
-            | {
-                amountMicros?: number | null;
-                currencyCode?: string | null;
-              }
-            | null;
-          donorFirstName?: string | null;
-          donorLastName?: string | null;
-          donorEmail?: string | null;
-          donorResolutionState?: string | null;
-          donor?: { id?: string | null } | null;
-          giftDate?: string | null;
-          paymentType?: string | null;
-          paymentState?: string | null;
-          processingStatus?: string | null;
-          provider?: string | null;
-          providerAgreementId?: string | null;
-          providerIntervalCount?: number | null;
-          providerIntervalUnit?: string | null;
-          appealSourceExternalId?: string | null;
-          sourceAppealName?: string | null;
-          sourceFundName?: string | null;
-          appeal?: { id?: string | null } | null;
-          appealSource?: { id?: string | null } | null;
-          fund?: { id?: string | null } | null;
-          recurringAgreement?: { id?: string | null } | null;
-        }
-      | null,
+    row: {
+      ...loadedRow,
+      id: loadedRow.id,
+    } as GiftStagingReadinessRow,
   };
 };
 
@@ -125,34 +138,8 @@ const evaluateGiftReadyStatus = async ({
 }: {
   client: CoreApiClient;
   row: {
-    id?: string;
-    amount?:
-      | {
-          amountMicros?: number | null;
-          currencyCode?: string | null;
-        }
-      | null;
-    donorFirstName?: string | null;
-    donorLastName?: string | null;
-    donorEmail?: string | null;
-    donorResolutionState?: string | null;
-    donor?: { id?: string | null } | null;
-    giftDate?: string | null;
-    paymentType?: string | null;
-    paymentState?: string | null;
-    processingStatus?: string | null;
-    provider?: string | null;
-    providerAgreementId?: string | null;
-    providerIntervalCount?: number | null;
-    providerIntervalUnit?: string | null;
-    appealSourceExternalId?: string | null;
-    sourceAppealName?: string | null;
-    sourceFundName?: string | null;
-    appeal?: { id?: string | null } | null;
-    appealSource?: { id?: string | null } | null;
-    fund?: { id?: string | null } | null;
-    recurringAgreement?: { id?: string | null } | null;
-  };
+    id: string;
+  } & GiftStagingReadinessRow;
 }): Promise<GiftReadyStatus> => {
   const [resolvedRow] = await resolveAppealSourceExternalIdsForRows(client, [
     row,
@@ -162,12 +149,13 @@ const evaluateGiftReadyStatus = async ({
   ]);
   const evaluation = evaluateGiftReadyRow({
     row: {
-      id: resolvedRow.id ?? '',
+      id: resolvedRow.id,
       amount: resolvedRow.amount ?? null,
       donor: resolvedRow.donor ?? null,
       donorEmail: resolvedRow.donorEmail ?? null,
       donorFirstName: resolvedRow.donorFirstName ?? null,
       donorLastName: resolvedRow.donorLastName ?? null,
+      isAnonymousDonor: resolvedRow.isAnonymousDonor ?? null,
       donorResolutionState: resolvedRow.donorResolutionState ?? null,
       giftDate: resolvedRow.giftDate ?? null,
       paymentType: resolvedRow.paymentType ?? null,
@@ -214,7 +202,9 @@ const checkGiftReadyStatus = async (recordId: string): Promise<GiftReadyStatus> 
     client,
     row: {
       ...row,
-      id: row.id ?? recordId,
+      // Rechecking is the user's explicit retry gate, so evaluate against the
+      // same retryable state this action persists below.
+      processingStatus: 'NOT_PROCESSED',
     },
   });
 };
@@ -242,6 +232,7 @@ export const saveDonorEvidence = async (
       donorEvidence.donorEmail.trim() === ''
         ? null
         : donorEvidence.donorEmail.trim(),
+    isAnonymousDonor: false,
     donorId: null,
     donorResolutionState: 'NEW_DONOR',
     giftReadyStatus: 'NEEDS_REVIEW',
@@ -258,6 +249,7 @@ export const linkDonor = async (recordId: string, donorId: string) => {
         },
       },
     },
+    isAnonymousDonor: false,
     donorResolutionState: 'CONFIRMED',
     giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
@@ -273,8 +265,8 @@ export const leaveUnresolved = async (recordId: string) => {
 
   const donorRow = {
     ...row,
-    id: row.id ?? recordId,
     donor: null,
+    isAnonymousDonor: false,
     donorResolutionState: 'NEW_DONOR',
     processingStatus: 'NOT_PROCESSED',
   };
@@ -287,6 +279,7 @@ export const leaveUnresolved = async (recordId: string) => {
   return updateGiftStaging(recordId, {
     giftReadyStatus,
     donorId: null,
+    isAnonymousDonor: false,
     donorResolutionState: 'NEW_DONOR',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
@@ -297,6 +290,36 @@ export const checkIfReady = async (recordId: string) => {
   const giftReadyStatus = await checkGiftReadyStatus(recordId);
 
   return updateGiftStaging(recordId, {
+    giftReadyStatus,
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+  });
+};
+
+export const markAnonymousDonor = async (recordId: string) => {
+  const { client, row } = await loadGiftStagingForReadinessCheck(recordId);
+
+  if (!row) {
+    throw new Error('Gift staging row not found');
+  }
+
+  const anonymousRow = {
+    ...row,
+    donor: null,
+    isAnonymousDonor: true,
+    donorResolutionState: 'UNREVIEWED',
+    processingStatus: 'NOT_PROCESSED',
+  };
+
+  const giftReadyStatus = await evaluateGiftReadyStatus({
+    client,
+    row: anonymousRow,
+  });
+
+  return updateGiftStaging(recordId, {
+    donorId: null,
+    isAnonymousDonor: true,
+    donorResolutionState: 'UNREVIEWED',
     giftReadyStatus,
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,

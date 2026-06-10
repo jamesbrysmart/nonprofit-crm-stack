@@ -16,10 +16,11 @@ import {
   labelStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import {
   leaveUnresolved,
   linkDonor,
+  markAnonymousDonor,
   saveDonorEvidence,
 } from 'src/gift-staging-review/gift-staging-review.actions';
 import { buildPersonDisplayName } from 'src/gift-staging-review/gift-staging-review.model';
@@ -101,6 +102,11 @@ const GiftStagingDonorReview = () => {
     donorFirstName !== record.donorFirstName ||
     donorLastName !== record.donorLastName ||
     donorEmail !== record.donorEmail;
+  const canMarkAnonymousDonor =
+    !record.isAnonymousDonor &&
+    record.donorFirstName.trim() === '' &&
+    record.donorLastName.trim() === '' &&
+    record.donorEmail.trim() === '';
   const linkedDonorPrimaryEmail = record.linkedDonor?.emails?.primaryEmail?.trim() ?? '';
   const stagedEmail = record.donorEmail.trim();
   const hasDifferentStagedEmail =
@@ -122,7 +128,12 @@ const GiftStagingDonorReview = () => {
     (hasRecordedPrimaryEmailConflict || emailConflictCandidates.length > 0);
 
   const donorState =
-    record.linkedDonorName !== ''
+    record.isAnonymousDonor
+      ? {
+          label: 'Anonymous donor',
+          tone: 'neutral' as const,
+        }
+      : record.linkedDonorName !== ''
       ? {
           label: 'Donor selected',
           tone: 'success' as const,
@@ -264,6 +275,29 @@ const GiftStagingDonorReview = () => {
     }
   };
 
+  const handleMarkAnonymousDonor = async () => {
+    setSaving(true);
+
+    try {
+      await markAnonymousDonor(recordId);
+      await enqueueSnackbar({
+        message: 'This row will process without linking or creating a donor.',
+        variant: 'success',
+      });
+      await afterMutationRefresh();
+    } catch (actionError) {
+      await enqueueSnackbar({
+        message:
+          actionError instanceof Error
+            ? actionError.message
+            : 'Unable to mark this row as anonymous.',
+        variant: 'error',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div style={compactWidgetRootStyle}>
       <div style={sectionHeaderStyle}>
@@ -303,6 +337,16 @@ const GiftStagingDonorReview = () => {
             }}
             disabled={saving || hasPrimaryEmailConflictCandidate}
           />
+          {canMarkAnonymousDonor ? (
+            <Button
+              title="Mark anonymous donor"
+              variant="secondary"
+              onClick={() => {
+                void handleMarkAnonymousDonor();
+              }}
+              disabled={saving}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -368,6 +412,16 @@ const GiftStagingDonorReview = () => {
               This gift uses a different email and may update the donor during processing.
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {record.isAnonymousDonor ? (
+        <div style={compactConfirmationCardStyle}>
+          <div style={labelStyle}>Anonymous donor</div>
+          <div style={secondaryTextStyle}>
+            This gift is marked anonymous and will not link or create a donor
+            when processed.
+          </div>
         </div>
       ) : null}
 

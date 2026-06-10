@@ -4,7 +4,7 @@ import {
   compactDividerSectionStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import { openGiftQueue } from 'src/front-components/gift-aid-claim-batch-ui';
 import { useGiftAidClaimWorkspace } from 'src/gift-aid-claims/use-gift-aid-claim-workspace';
 

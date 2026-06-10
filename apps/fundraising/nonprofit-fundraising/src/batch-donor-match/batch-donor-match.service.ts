@@ -73,9 +73,28 @@ const findExistingDonorsByCaseNormalizedName = async ({
 export type DonorMatchRowsResult = {
   totalCandidateRows: number;
   evaluatedRows: number;
+  alreadyConfirmedRows: number;
   autoLinkedRows: number;
   ambiguousRows: number;
   unchangedRows: number;
+};
+
+const isAlreadyConfirmedDonorMatch = (row: BatchDonorMatchRow) => {
+  const processingStatus =
+    typeof row.processingStatus === 'string'
+      ? row.processingStatus.trim().toUpperCase()
+      : '';
+  const donorResolutionState =
+    typeof row.donorResolutionState === 'string'
+      ? row.donorResolutionState.trim().toUpperCase()
+      : '';
+
+  return (
+    processingStatus !== 'PROCESSED' &&
+    row.isAnonymousDonor !== true &&
+    ((typeof row.donor?.id === 'string' && row.donor.id.trim() !== '') ||
+      donorResolutionState === 'CONFIRMED')
+  );
 };
 
 export const runDonorMatchOnRows = async (
@@ -153,12 +172,14 @@ export const runDonorMatchOnRows = async (
     totalCandidateRows: rows.filter(
       (row) =>
         isPaymentConfirmedOrNotRequired(row) &&
+        row.isAnonymousDonor !== true &&
         typeof row.processingStatus === 'string'
           ? row.processingStatus.trim() !== 'PROCESSED' &&
             row.donorResolutionState?.trim() === 'UNREVIEWED'
           : row.donorResolutionState?.trim() === 'UNREVIEWED',
     ).length,
     evaluatedRows,
+    alreadyConfirmedRows: rows.filter(isAlreadyConfirmedDonorMatch).length,
     autoLinkedRows,
     ambiguousRows,
     unchangedRows: evaluatedRows - autoLinkedRows - ambiguousRows,

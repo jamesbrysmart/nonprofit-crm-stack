@@ -5,15 +5,14 @@ import { useRecordId } from 'twenty-sdk/front-component';
 import { deriveRefundState } from 'src/gift-lifecycle/gift-refund';
 import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
 import {
+  CompactMetaGrid,
+  CompactMetaItem,
   badgeStyle,
   compactDividerSectionStyle,
-  compactMetaGridStyle,
-  compactMetaItemStyle,
   compactValueStyle,
   compactWidgetRootStyle,
-  labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 
 export const GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '9c6fe424-f7a3-4b1f-b4b0-ae10308b9d0a';
@@ -327,34 +326,28 @@ const GiftRecordSummaryWidget = () => {
       </div>
 
       <div style={compactDividerSectionStyle}>
-        <div style={compactMetaGridStyle}>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Provider</div>
-            <div style={secondaryTextStyle}>
-              {provider === '' ? 'Manual / not recorded' : provider}
-            </div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Recurring</div>
-            <div style={secondaryTextStyle}>
-              {recurringAgreementName === '' ? 'Not linked' : recurringAgreementName}
-            </div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Gift Aid claim</div>
-            <div style={secondaryTextStyle}>
-              {claimBatchName === '' ? 'Not in a claim batch' : claimBatchName}
-            </div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Provider reference</div>
-            <div style={secondaryTextStyle}>
-              {normalizeString(record.providerPaymentId) === ''
+        <CompactMetaGrid>
+          <CompactMetaItem
+            label="Provider"
+            value={provider === '' ? 'Manual / not recorded' : provider}
+          />
+          <CompactMetaItem
+            label="Recurring"
+            value={recurringAgreementName === '' ? 'Not linked' : recurringAgreementName}
+          />
+          <CompactMetaItem
+            label="Gift Aid claim"
+            value={claimBatchName === '' ? 'Not in a claim batch' : claimBatchName}
+          />
+          <CompactMetaItem
+            label="Provider reference"
+            value={
+              normalizeString(record.providerPaymentId) === ''
                 ? 'Not recorded'
-                : normalizeString(record.providerPaymentId)}
-            </div>
-          </div>
-        </div>
+                : normalizeString(record.providerPaymentId)
+            }
+          />
+        </CompactMetaGrid>
       </div>
     </div>
   );

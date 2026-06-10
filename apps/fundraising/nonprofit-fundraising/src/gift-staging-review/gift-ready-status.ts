@@ -1,4 +1,5 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
+import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
 import {
   classifyBatchPreflight,
   type BatchPreflightResult,
@@ -12,55 +13,32 @@ import { isPaymentConfirmedOrNotRequired } from './gift-staging-processability';
 
 export type GiftReadyStatus = 'NEEDS_REVIEW' | 'READY_TO_PROCESS';
 
-type GiftReadyRow = {
-  id: string;
-  amount:
-    | {
-        amountMicros?: number | null;
-        currencyCode?: string | null;
-      }
-    | null;
-  donor:
-    | {
-        id?: string | null;
-      }
-    | null;
-  donorEmail?: string | null;
-  donorFirstName?: string | null;
-  donorLastName?: string | null;
-  donorResolutionState?: string | null;
-  giftDate?: string | null;
-  paymentType?: string | null;
-  paymentState?: string | null;
-  processingStatus?: string | null;
-  provider?: string | null;
-  providerAgreementId?: string | null;
-  providerIntervalCount?: number | null;
-  providerIntervalUnit?: string | null;
-  appealSourceExternalId?: string | null;
-  sourceAppealName?: string | null;
-  sourceFundName?: string | null;
-  appeal?:
-    | {
-        id?: string | null;
-      }
-    | null;
-  appealSource?:
-    | {
-        id?: string | null;
-      }
-    | null;
-  fund?:
-    | {
-        id?: string | null;
-      }
-    | null;
-  recurringAgreement?:
-    | {
-        id?: string | null;
-      }
-    | null;
-};
+type GiftReadyRow = Pick<
+  BatchProcessingRow,
+  | 'id'
+  | 'amount'
+  | 'donor'
+  | 'donorEmail'
+  | 'donorFirstName'
+  | 'donorLastName'
+  | 'isAnonymousDonor'
+  | 'donorResolutionState'
+  | 'giftDate'
+  | 'paymentType'
+  | 'paymentState'
+  | 'processingStatus'
+  | 'provider'
+  | 'providerAgreementId'
+  | 'providerIntervalCount'
+  | 'providerIntervalUnit'
+  | 'appealSourceExternalId'
+  | 'sourceAppealName'
+  | 'sourceFundName'
+  | 'appeal'
+  | 'appealSource'
+  | 'fund'
+  | 'recurringAgreement'
+>;
 
 export type GiftReadyEvaluation = {
   giftReadyStatus: GiftReadyStatus;
@@ -89,6 +67,7 @@ export const evaluateGiftReadyRow = ({
   const preflight = classifyBatchPreflight(row);
   const hasPrimaryEmailConflict =
     preflight.category === 'READY' &&
+    row.isAnonymousDonor !== true &&
     !row.donor?.id &&
     Boolean(
       findPrimaryEmailConflict({

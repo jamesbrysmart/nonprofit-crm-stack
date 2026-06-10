@@ -2,6 +2,7 @@ import type { BatchProcessingRow } from './batch-processing.types';
 import {
   hasLinkedDonorForProcessing,
   hasSufficientDonorEvidenceForNewDonor,
+  isExplicitAnonymousDonor,
 } from 'src/gift-staging-review/gift-staging-processability';
 
 type BatchProcessingLikeRow = Pick<
@@ -11,6 +12,7 @@ type BatchProcessingLikeRow = Pick<
   | 'donor'
   | 'donorFirstName'
   | 'donorLastName'
+  | 'isAnonymousDonor'
   | 'donorResolutionState'
   | 'giftDate'
   | 'paymentType'
@@ -30,6 +32,7 @@ type BatchProcessingLikeRow = Pick<
 export type BatchPreflightIssueCode =
   | 'DONOR_REVIEW_REQUIRED'
   | 'DONOR_EVIDENCE_REQUIRED'
+  | 'ANONYMOUS_DONOR_RECURRING_UNSUPPORTED'
   | 'AMOUNT_REQUIRED'
   | 'AMOUNT_INVALID'
   | 'CURRENCY_REQUIRED'
@@ -122,6 +125,7 @@ export const classifyBatchPreflight = (
   }
 
   if (
+    !isExplicitAnonymousDonor({ isAnonymousDonor: row.isAnonymousDonor }) &&
     !hasLinkedDonorForProcessing({ linkedDonorId: row.donor?.id }) &&
     !hasSufficientDonorEvidenceForNewDonor({
       donorFirstName: row.donorFirstName,
@@ -129,6 +133,14 @@ export const classifyBatchPreflight = (
     })
   ) {
     issueCodes.push('DONOR_EVIDENCE_REQUIRED');
+  }
+
+  if (
+    isExplicitAnonymousDonor({ isAnonymousDonor: row.isAnonymousDonor }) &&
+    (normalizeString(row.recurringAgreement?.id) !== '' ||
+      isProviderBackedRecurringRow(row))
+  ) {
+    issueCodes.push('ANONYMOUS_DONOR_RECURRING_UNSUPPORTED');
   }
 
   if (typeof amountMicros !== 'number' || !Number.isFinite(amountMicros)) {

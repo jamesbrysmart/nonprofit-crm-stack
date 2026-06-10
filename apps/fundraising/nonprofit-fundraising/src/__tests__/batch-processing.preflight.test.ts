@@ -29,6 +29,7 @@ const buildRow = (
   providerIntervalCount: null,
   donorPhone: null,
   supporterEmailOptOut: null,
+  isAnonymousDonor: false,
   rawProviderEvidence: null,
   appealSourceExternalId: null,
   sourceAppealName: null,
@@ -150,6 +151,42 @@ describe('classifyBatchPreflight', () => {
     ).toEqual({
       category: 'NEEDS_REVIEW',
       issueCodes: ['SOURCE_FUND_REVIEW_REQUIRED'],
+    });
+  });
+
+  it('allows an explicitly anonymous one-off gift without donor evidence', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          donorFirstName: '',
+          donorLastName: '',
+          donorEmail: '',
+          isAnonymousDonor: true,
+        }),
+      ),
+    ).toEqual({
+      category: 'READY',
+      issueCodes: [],
+    });
+  });
+
+  it('blocks explicitly anonymous recurring gifts for now', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          donorFirstName: '',
+          donorLastName: '',
+          donorEmail: '',
+          isAnonymousDonor: true,
+          provider: 'STRIPE',
+          providerAgreementId: 'sub_123',
+          providerIntervalUnit: 'month',
+          providerIntervalCount: 1,
+        }),
+      ),
+    ).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['ANONYMOUS_DONOR_RECURRING_UNSUPPORTED'],
     });
   });
 

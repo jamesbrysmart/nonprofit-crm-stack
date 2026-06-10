@@ -8,7 +8,7 @@ import {
   compactWidgetRootStyle,
   labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
 

@@ -15,7 +15,7 @@ import {
   reviewStateStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { deriveReviewState } from 'src/gift-staging-review/gift-staging-review.model';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
@@ -60,7 +60,7 @@ const GiftStagingReviewSummary = () => {
     await navigate(AppPath.RecordShowPage, {
       objectNameSingular: 'gift',
       objectRecordId: record.committedGiftId,
-    });
+    }, {});
   };
 
   return (

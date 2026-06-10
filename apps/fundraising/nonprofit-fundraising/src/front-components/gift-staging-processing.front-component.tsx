@@ -15,7 +15,7 @@ import {
   labelStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import { processGiftStagingRow } from 'src/gift-staging-review/gift-staging-processing.api';
 import {
   checkIfReady,

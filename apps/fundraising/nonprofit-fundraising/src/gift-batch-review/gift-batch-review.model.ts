@@ -170,6 +170,18 @@ export const buildGiftBatchReviewRecord = (
       typeof batch.expectedItemCount === 'number'
         ? batch.expectedItemCount
         : null,
+    defaultAppealId: coalesceString(batch.defaultAppeal?.id),
+    defaultAppealName: coalesceString(batch.defaultAppeal?.name),
+    defaultAppealDefaultFundId: coalesceString(
+      batch.defaultAppeal?.defaultFund?.id,
+    ),
+    defaultAppealDefaultFundName: coalesceString(
+      batch.defaultAppeal?.defaultFund?.name,
+    ),
+    defaultFundId: coalesceString(batch.defaultFund?.id),
+    defaultFundName: coalesceString(batch.defaultFund?.name),
+    defaultAppealSourceId: coalesceString(batch.defaultAppealSource?.id),
+    defaultAppealSourceName: coalesceString(batch.defaultAppealSource?.name),
     expectedTotalAmount: batch.expectedTotalAmount ?? null,
     expectedTotalValueDisplay: formatExpectedTotalValueDisplay(
       batch.expectedTotalAmount,

@@ -95,6 +95,7 @@ export type BatchProcessingRow = {
   providerIntervalCount: number | null;
   donorPhone: string | null;
   supporterEmailOptOut: boolean | null;
+  isAnonymousDonor: boolean | null;
   rawProviderEvidence: unknown;
   appealSourceExternalId: string | null;
   sourceAppealName: string | null;
@@ -185,34 +186,11 @@ export type ProcessSelectedGiftStagingRequest = {
   giftStagingIds: string[];
 };
 
-export type BatchGiftCodingAppealMode =
-  | 'LEAVE_UNCHANGED'
-  | 'CLEAR'
-  | 'SET_ALL'
-  | 'SET_WHERE_BLANK';
-
-export type BatchGiftCodingAppealSourceMode =
-  | 'LEAVE_UNCHANGED'
-  | 'CLEAR'
-  | 'SET_ALL'
-  | 'SET_WHERE_BLANK';
-
-export type BatchGiftCodingFundMode =
-  | 'LEAVE_UNCHANGED'
-  | 'CLEAR'
-  | 'SET_ALL'
-  | 'SET_WHERE_BLANK'
-  | 'SET_APPEAL_DEFAULT_ALL'
-  | 'SET_APPEAL_DEFAULT_WHERE_BLANK';
-
 export type UpdateBatchGiftCodingRequest = {
   giftBatchId: string;
-  appealMode: BatchGiftCodingAppealMode;
-  selectedAppealId?: string;
-  appealSourceMode: BatchGiftCodingAppealSourceMode;
-  selectedAppealSourceId?: string;
-  fundMode: BatchGiftCodingFundMode;
-  selectedFundId?: string;
+  defaultAppealId?: string | null;
+  defaultAppealSourceId?: string | null;
+  defaultFundId?: string | null;
 };
 
 export type ProcessBatchResponse = {
@@ -234,6 +212,7 @@ export type RunBatchDonorMatchResponse = {
   giftBatchId: string;
   totalCandidateRows: number;
   evaluatedRows: number;
+  alreadyConfirmedRows: number;
   autoLinkedRows: number;
   ambiguousRows: number;
   unchangedRows: number;
@@ -243,6 +222,7 @@ export type RunSelectedGiftStagingDonorMatchResponse = {
   selectedItemCount: number;
   totalCandidateRows: number;
   evaluatedRows: number;
+  alreadyConfirmedRows: number;
   autoLinkedRows: number;
   ambiguousRows: number;
   unchangedRows: number;

@@ -14,14 +14,15 @@
     "lint": "oxlint -c .oxlintrc.json .",
     "lint:fix": "oxlint --fix -c .oxlintrc.json .",
     "stripe:fixtures": "node scripts/stripe-intake-fixtures.mjs",
+    "typecheck": "tsc --noEmit --pretty false --project tsconfig.typecheck.json",
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "stripe": "22.1.1",
-    "twenty-client-sdk": "2.8.0",
-    "twenty-sdk": "2.8.0"
+    "twenty-client-sdk": "2.9.0",
+    "twenty-sdk": "2.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.7.2",

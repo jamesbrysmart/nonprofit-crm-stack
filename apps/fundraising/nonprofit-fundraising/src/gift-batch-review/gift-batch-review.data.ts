@@ -10,7 +10,8 @@ export type GiftStagingQueueScope =
   | 'all'
   | 'failed'
   | 'not-ready'
-  | 'ready';
+  | 'ready'
+  | 'possible-donor-matches';
 
 export const buildGiftStagingQueryParams = (
   batchId: string,
@@ -33,6 +34,13 @@ export const buildGiftStagingQueryParams = (
       break;
     case 'ready':
       queryParams['filter[giftReadyStatus][IS]'] = ['READY_TO_PROCESS'];
+      queryParams['filter[processingStatus][IS_NOT]'] = [
+        'PROCESSED',
+        'PROCESS_FAILED',
+      ];
+      break;
+    case 'possible-donor-matches':
+      queryParams['filter[donorResolutionState][IS]'] = ['AMBIGUOUS'];
       queryParams['filter[processingStatus][IS_NOT]'] = [
         'PROCESSED',
         'PROCESS_FAILED',
@@ -65,6 +73,25 @@ export const loadGiftBatchReview = async (
       processedItems: true,
       failedItems: true,
       expectedItemCount: true,
+      defaultAppeal: {
+        id: true,
+        name: true,
+        defaultFund: {
+          id: true,
+          name: true,
+        },
+      },
+      defaultFund: {
+        id: true,
+        name: true,
+      },
+      defaultAppealSource: {
+        id: true,
+        name: true,
+        appeal: {
+          id: true,
+        },
+      },
       expectedTotalAmount: {
         amountMicros: true,
         currencyCode: true,

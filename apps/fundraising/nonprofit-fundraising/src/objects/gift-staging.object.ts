@@ -81,11 +81,11 @@ export const GIFT_STAGING_DONOR_MAILING_ADDRESS_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_STAGING_SUPPORTER_EMAIL_OPT_OUT_FIELD_UNIVERSAL_IDENTIFIER =
   'ba57a628-a226-4d08-8e34-fd1e1e974bb5';
 
+export const GIFT_STAGING_IS_ANONYMOUS_DONOR_FIELD_UNIVERSAL_IDENTIFIER =
+  '80b8db99-c717-4b34-a32f-e9f7a9f5c64f';
+
 export const GIFT_STAGING_DONOR_RESOLUTION_STATE_FIELD_UNIVERSAL_IDENTIFIER =
   '0d638f6a-901f-4974-85f6-bfda935c17f9';
-
-export const GIFT_STAGING_IS_READY_FOR_PROCESSING_FIELD_UNIVERSAL_IDENTIFIER =
-  'cb3d34bd-6b3d-4b33-85c0-db4db0be35a4';
 
 export const GIFT_STAGING_GIFT_READY_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
   '1ac97fa8-5de6-44c7-8a53-0f8e6ec675c6';
@@ -549,6 +549,17 @@ export default defineObject({
     },
     {
       universalIdentifier:
+        GIFT_STAGING_IS_ANONYMOUS_DONOR_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.BOOLEAN,
+      name: 'isAnonymousDonor',
+      label: 'Anonymous donor',
+      description:
+        'Whether this staged gift should be processed without linking or creating a donor',
+      icon: 'IconMask',
+      defaultValue: false,
+    },
+    {
+      universalIdentifier:
         GIFT_STAGING_DONOR_RESOLUTION_STATE_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.SELECT,
       name: 'donorResolutionState',
@@ -585,16 +596,6 @@ export default defineObject({
           color: 'green',
         },
       ],
-    },
-    {
-      universalIdentifier:
-        GIFT_STAGING_IS_READY_FOR_PROCESSING_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.BOOLEAN,
-      name: 'markedReady',
-      label: 'Legacy marked ready',
-      description: 'Legacy reviewer-ready flag retained temporarily during readiness-status migration',
-      icon: 'IconListCheck',
-      defaultValue: false,
     },
     {
       universalIdentifier:

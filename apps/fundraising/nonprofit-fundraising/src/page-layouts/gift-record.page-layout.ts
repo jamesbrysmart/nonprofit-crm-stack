@@ -59,7 +59,7 @@ export default definePageLayout({
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
-            viewId: GIFT_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+            viewUniversalIdentifier: GIFT_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

@@ -1,6 +1,7 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { definePostInstallLogicFunction } from 'twenty-sdk/define';
 import type {
+  AppealSourceSummary,
   AppealSummary,
   FundSummary,
   PersonSummary,
@@ -60,6 +61,29 @@ type SeedAppeal = {
   externalReference?: string;
 };
 
+type SeedAppealSource = {
+  name: string;
+  status: 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED';
+  sourceType:
+    | 'EMAIL'
+    | 'DIRECT_MAIL'
+    | 'DONATION_PAGE'
+    | 'P2P_PAGE'
+    | 'QR_CODE'
+    | 'SOCIAL'
+    | 'AD'
+    | 'PARTNER'
+    | 'PHONE'
+    | 'EVENT_ASK'
+    | 'SEGMENT'
+    | 'OTHER';
+  appealName: string;
+  externalId?: string;
+  sourceCode?: string;
+  platform?: string;
+  fundraiserPersonEmail?: string;
+};
+
 type SeedStagingRow = {
   name: string;
   intakeSource: string;
@@ -86,6 +110,9 @@ type SeedStagingRow = {
   providerAgreementId?: string;
   providerIntervalUnit?: string;
   providerIntervalCount?: number;
+  sourceAppealName?: string;
+  sourceFundName?: string;
+  appealSourceExternalId?: string;
   giftAidRequested?: boolean;
   giftAidDeclarationCaptured?: boolean;
   giftAidDeclarationDate?: string;
@@ -101,6 +128,7 @@ type BatchSummaryRecord = {
 
 type ExistingFundRecord = FundSummary;
 type ExistingAppealRecord = AppealSummary;
+type ExistingAppealSourceRecord = AppealSourceSummary;
 
 type ExistingGiftStagingRecord = {
   id: string;
@@ -259,30 +287,7 @@ const SEED_PEOPLE: SeedPerson[] = [
 ];
 
 const SEED_BATCHES: SeedBatch[] = [
-  {
-    name: 'April import batch',
-    source: 'csv_import',
-    status: 'PENDING',
-    totalItems: 3,
-    processedItems: 0,
-    failedItems: 0,
-  },
-  {
-    name: 'Standing orders follow-up',
-    source: 'integration_sync',
-    status: 'PENDING',
-    totalItems: 2,
-    processedItems: 0,
-    failedItems: 1,
-  },
-  {
-    name: 'Stripe processing smoke batch',
-    source: 'stripe_smoke',
-    status: 'PENDING',
-    totalItems: 4,
-    processedItems: 0,
-    failedItems: 0,
-  },
+  // Donor match fixture: exact match, ambiguous match, and no-candidate paths.
   {
     name: 'Donor match smoke batch',
     source: 'csv_import',
@@ -295,12 +300,13 @@ const SEED_BATCHES: SeedBatch[] = [
     name: 'Check batch smoke batch',
     source: 'csv_import',
     status: 'PENDING',
-    totalItems: 4,
+    totalItems: 5,
     processedItems: 0,
     failedItems: 0,
-    expectedItemCount: 4,
-    expectedTotalAmountMicros: 45_000_000,
+    expectedItemCount: 5,
+    expectedTotalAmountMicros: 53_000_000,
   },
+  // Walkthrough fixture: a believable end-to-end CSV review flow.
   {
     name: 'CSV walkthrough batch',
     source: 'csv_import',
@@ -311,6 +317,29 @@ const SEED_BATCHES: SeedBatch[] = [
     expectedItemCount: 4,
     expectedTotalAmountMicros: 46_500_000,
   },
+  // Coding fixture: realistic imported coding clues for appeal/fund/source updates.
+  {
+    name: 'Coding smoke batch',
+    source: 'csv_import',
+    status: 'PENDING',
+    totalItems: 5,
+    processedItems: 0,
+    failedItems: 0,
+    expectedItemCount: 5,
+    expectedTotalAmountMicros: 113_000_000,
+  },
+  // P2P fixture: imported fundraiser/page external ids, including one unresolved id.
+  {
+    name: 'P2P external ID import batch',
+    source: 'csv_import',
+    status: 'PENDING',
+    totalItems: 4,
+    processedItems: 0,
+    failedItems: 0,
+    expectedItemCount: 4,
+    expectedTotalAmountMicros: 92_000_000,
+  },
+  // Workflow-limit fixture: enough rows to exercise oversized-batch behavior.
   {
     name: 'CSV pressure test batch',
     source: 'csv_import',
@@ -361,162 +390,54 @@ const SEED_APPEALS: SeedAppeal[] = [
   },
 ];
 
+const SEED_APPEAL_SOURCES: SeedAppealSource[] = [
+  {
+    name: 'Spring email series',
+    status: 'ACTIVE',
+    sourceType: 'EMAIL',
+    appealName: 'Spring Appeal 2026',
+    externalId: 'SRC-SPRING-EMAIL-2026',
+    sourceCode: 'SPR-EM-26',
+    platform: 'Mailchimp',
+    fundraiserPersonEmail: 'ada.lovelace@example.org',
+  },
+  {
+    name: 'Emergency donation page',
+    status: 'ACTIVE',
+    sourceType: 'DONATION_PAGE',
+    appealName: 'Emergency Response Appeal',
+    externalId: 'SRC-EMERG-PAGE-2026',
+    sourceCode: 'EMERG-WEB',
+    platform: 'Website',
+    fundraiserPersonEmail: 'nora.patel@example.org',
+  },
+  {
+    name: 'Ada Lovelace fundraiser page',
+    status: 'ACTIVE',
+    sourceType: 'P2P_PAGE',
+    appealName: 'Spring Appeal 2026',
+    externalId: 'P2P-ADA-2026',
+    sourceCode: 'P2P-ADA',
+    platform: 'GiveMatch',
+    fundraiserPersonEmail: 'ada.lovelace@example.org',
+  },
+  {
+    name: 'Chris Bennett fundraiser page',
+    status: 'ACTIVE',
+    sourceType: 'P2P_PAGE',
+    appealName: 'Spring Appeal 2026',
+    externalId: 'P2P-CHRIS-2026',
+    sourceCode: 'P2P-CHRIS',
+    platform: 'GiveMatch',
+    fundraiserPersonEmail: 'chris.bennett@example.org',
+  },
+];
+
+// CSV import fixtures should stay clue-based by default.
+// Use imported names and external ids here rather than prelinked appeal/fund/source
+// relations so the staging workflow can demonstrate how it derives those links.
 const SEED_STAGING_ROWS: SeedStagingRow[] = [
-  {
-    name: 'April import - Ada Lovelace',
-    intakeSource: 'csv_import',
-    amountMicros: 25_000_000,
-    donorFirstName: 'Ada',
-    donorLastName: 'Lovelace',
-    donorEmail: 'ada.lovelace@example.org',
-    giftDate: '2026-04-01',
-    donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
-    processingStatus: 'NOT_PROCESSED',
-    errorDetail: null,
-    batchName: 'April import batch',
-    giftAidRequested: true,
-    giftAidDeclarationCaptured: true,
-    giftAidDeclarationDate: '2026-04-01',
-    giftAidCoverageScope: 'past_and_future',
-    giftAidDeclarationSource: 'csv_import',
-    giftAidTextVersion: 'v1',
-  },
-  {
-    name: 'April import - Jamie Taylor',
-    intakeSource: 'csv_import',
-    amountMicros: 40_000_000,
-    donorFirstName: 'Jamie',
-    donorLastName: 'Taylor',
-    donorEmail: 'jamie.taylor@unknown.example.org',
-    giftDate: '2026-04-02',
-    donorResolutionState: 'AMBIGUOUS',
-    markedReady: false,
-    processingStatus: 'NOT_PROCESSED',
-    errorDetail: null,
-    batchName: 'April import batch',
-  },
-  {
-    name: 'April import - Chris Bennett new donor',
-    intakeSource: 'csv_import',
-    amountMicros: 30_000_000,
-    donorFirstName: 'Chris',
-    donorLastName: 'Bennett',
-    donorEmail: 'chris.bennett@example.org',
-    giftDate: '2026-04-03',
-    donorResolutionState: 'NEW_DONOR',
-    markedReady: false,
-    processingStatus: 'NOT_PROCESSED',
-    errorDetail: null,
-    batchName: 'April import batch',
-  },
-  {
-    name: 'Standing order follow-up - Elliot Meyer',
-    intakeSource: 'integration_sync',
-    amountMicros: 15_000_000,
-    donorFirstName: 'Elliot',
-    donorLastName: 'Meyer',
-    donorEmail: 'elliot.meyer@example.org',
-    giftDate: null,
-    donorResolutionState: 'CONFIRMED',
-    markedReady: false,
-    processingStatus: 'NOT_PROCESSED',
-    errorDetail: null,
-    batchName: 'Standing orders follow-up',
-    linkedDonorEmail: 'elliot.meyer@example.org',
-  },
-  {
-    name: 'Standing order follow-up - Chris Bennett failed',
-    intakeSource: 'integration_sync',
-    amountMicros: 12_500_000,
-    donorFirstName: 'Chris',
-    donorLastName: 'Bennett',
-    donorEmail: 'chris.bennett@example.org',
-    giftDate: '2026-04-05',
-    donorResolutionState: 'CONFIRMED',
-    markedReady: false,
-    processingStatus: 'PROCESS_FAILED',
-    errorDetail: 'Duplicate external payment id needs follow-up before retry.',
-    batchName: 'Standing orders follow-up',
-    linkedDonorEmail: 'chris.bennett@example.org',
-  },
-  {
-    name: 'Stripe smoke - Ada ready one-off',
-    intakeSource: 'stripe_webhook',
-    amountMicros: 25_000_000,
-    donorFirstName: 'Ada',
-    donorLastName: 'Lovelace',
-    donorEmail: 'ada.lovelace@example.org',
-    giftDate: '2026-04-20',
-    donorResolutionState: 'CONFIRMED',
-    markedReady: true,
-    processingStatus: 'NOT_PROCESSED',
-    errorDetail: null,
-    batchName: 'Stripe processing smoke batch',
-    linkedDonorEmail: 'ada.lovelace@example.org',
-    provider: 'STRIPE',
-    providerPaymentId: 'pi_smoke_ada_one_off',
-    giftAidRequested: true,
-  },
-  {
-    name: 'Stripe smoke - Nora ready recurring review',
-    intakeSource: 'stripe_webhook',
-    amountMicros: 18_000_000,
-    donorFirstName: 'Nora',
-    donorLastName: 'Patel',
-    donorEmail: 'nora.patel@example.org',
-    giftDate: '2026-04-21',
-    donorResolutionState: 'CONFIRMED',
-    markedReady: true,
-    processingStatus: 'NOT_PROCESSED',
-    errorDetail: null,
-    batchName: 'Stripe processing smoke batch',
-    linkedDonorEmail: 'nora.patel@example.org',
-    provider: 'STRIPE',
-    providerPaymentId: 'pi_smoke_nora_recurring',
-    providerAgreementId: 'sub_smoke_nora_monthly',
-    providerIntervalUnit: 'month',
-    providerIntervalCount: 1,
-    giftAidRequested: false,
-  },
-  {
-    name: 'Stripe smoke - Robin recurring unsupported cadence',
-    intakeSource: 'stripe_webhook',
-    amountMicros: 22_000_000,
-    donorFirstName: 'Robin',
-    donorLastName: 'Sloan',
-    donorEmail: 'robin.sloan@example.org',
-    giftDate: '2026-04-22',
-    donorResolutionState: 'CONFIRMED',
-    markedReady: true,
-    processingStatus: 'NOT_PROCESSED',
-    errorDetail: null,
-    batchName: 'Stripe processing smoke batch',
-    linkedDonorEmail: 'robin.sloan@example.org',
-    provider: 'STRIPE',
-    providerPaymentId: 'pi_smoke_robin_recurring',
-    providerAgreementId: 'sub_smoke_robin_unsupported',
-    providerIntervalUnit: 'day',
-    providerIntervalCount: 14,
-    giftAidRequested: false,
-  },
-  {
-    name: 'Stripe smoke - Elliot missing gift date',
-    intakeSource: 'stripe_webhook',
-    amountMicros: 12_000_000,
-    donorFirstName: 'Elliot',
-    donorLastName: 'Meyer',
-    donorEmail: 'elliot.meyer@example.org',
-    giftDate: null,
-    donorResolutionState: 'CONFIRMED',
-    markedReady: false,
-    processingStatus: 'NOT_PROCESSED',
-    errorDetail: null,
-    batchName: 'Stripe processing smoke batch',
-    linkedDonorEmail: 'elliot.meyer@example.org',
-    provider: 'STRIPE',
-    providerPaymentId: 'pi_smoke_elliot_blocked',
-  },
+  // Donor match fixture: imported clues only, donor state resolved by match review.
   {
     name: 'Donor match smoke - Ada exact match',
     intakeSource: 'csv_import',
@@ -526,7 +447,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'ada.lovelace@example.org',
     giftDate: '2026-04-25',
     donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Donor match smoke batch',
@@ -540,7 +461,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'jamie.taylor.one@example.org',
     giftDate: '2026-04-26',
     donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Donor match smoke batch',
@@ -554,7 +475,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'jamie.taylor@unknown.example.org',
     giftDate: '2026-04-27',
     donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Donor match smoke batch',
@@ -568,11 +489,12 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'sasha.baker@example.org',
     giftDate: '2026-04-28',
     donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Donor match smoke batch',
   },
+  // Readiness fixture: separates ready rows from missing-data and donor-review blockers.
   {
     name: 'Check batch smoke - Ada ready',
     intakeSource: 'csv_import',
@@ -582,7 +504,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'ada.lovelace@example.org',
     giftDate: '2026-04-29',
     donorResolutionState: 'CONFIRMED',
-    markedReady: true,
+    giftReadyStatus: 'READY_TO_PROCESS',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Check batch smoke batch',
@@ -597,7 +519,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'jamie.taylor.one@example.org',
     giftDate: '2026-04-30',
     donorResolutionState: 'CONFIRMED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Check batch smoke batch',
@@ -612,7 +534,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'elliot.meyer@example.org',
     giftDate: null,
     donorResolutionState: 'CONFIRMED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Check batch smoke batch',
@@ -627,11 +549,29 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'jamie.taylor@unknown.example.org',
     giftDate: '2026-05-01',
     donorResolutionState: 'AMBIGUOUS',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'Check batch smoke batch',
   },
+  // This row intentionally starts with blank donor evidence, as a realistic CSV
+  // import ambiguity. It should remain blocked unless a reviewer explicitly marks
+  // it anonymous on the staging record.
+  {
+    name: 'Check batch smoke - blank donor evidence import',
+    intakeSource: 'csv_import',
+    amountMicros: 8_000_000,
+    donorFirstName: '',
+    donorLastName: '',
+    donorEmail: '',
+    giftDate: '2026-05-02',
+    donorResolutionState: 'UNREVIEWED',
+    giftReadyStatus: 'NEEDS_REVIEW',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Check batch smoke batch',
+  },
+  // Walkthrough fixture: believable CSV review path from match through readiness.
   {
     name: 'CSV walkthrough - Ada exact match valid',
     intakeSource: 'csv_import',
@@ -641,7 +581,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'ada.lovelace@example.org',
     giftDate: '2026-05-02',
     donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'CSV walkthrough batch',
@@ -655,7 +595,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'jamie.taylor@unknown.example.org',
     giftDate: '2026-05-03',
     donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'CSV walkthrough batch',
@@ -669,7 +609,7 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'elliot.meyer@example.org',
     giftDate: null,
     donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'CSV walkthrough batch',
@@ -683,10 +623,157 @@ const SEED_STAGING_ROWS: SeedStagingRow[] = [
     donorEmail: 'sasha.baker@example.org',
     giftDate: '2026-05-04',
     donorResolutionState: 'UNREVIEWED',
-    markedReady: false,
+    giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
     errorDetail: null,
     batchName: 'CSV walkthrough batch',
+  },
+  // Coding fixtures: sparse imported rows that should still feel believable in a
+  // CSV import, while giving us enough variation to review bulk appeal/fund/source
+  // coding on the batch record.
+  {
+    name: 'Coding smoke - Ada uncoded donation',
+    intakeSource: 'csv_import',
+    amountMicros: 22_000_000,
+    donorFirstName: 'Ada',
+    donorLastName: 'Lovelace',
+    donorEmail: 'ada.lovelace@example.org',
+    giftDate: '2026-05-05',
+    donorResolutionState: 'CONFIRMED',
+    giftReadyStatus: 'READY_TO_PROCESS',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Coding smoke batch',
+    linkedDonorEmail: 'ada.lovelace@example.org',
+  },
+  {
+    name: 'Coding smoke - imported appeal clue',
+    intakeSource: 'csv_import',
+    amountMicros: 18_500_000,
+    donorFirstName: 'Chris',
+    donorLastName: 'Bennett',
+    donorEmail: 'chris.bennett@example.org',
+    giftDate: '2026-05-05',
+    donorResolutionState: 'CONFIRMED',
+    giftReadyStatus: 'READY_TO_PROCESS',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Coding smoke batch',
+    linkedDonorEmail: 'chris.bennett@example.org',
+    sourceAppealName: 'Spring Appeal 2026',
+  },
+  {
+    name: 'Coding smoke - imported fund clue',
+    intakeSource: 'csv_import',
+    amountMicros: 14_000_000,
+    donorFirstName: 'Elliot',
+    donorLastName: 'Meyer',
+    donorEmail: 'elliot.meyer@example.org',
+    giftDate: '2026-05-06',
+    donorResolutionState: 'CONFIRMED',
+    giftReadyStatus: 'READY_TO_PROCESS',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Coding smoke batch',
+    linkedDonorEmail: 'elliot.meyer@example.org',
+    sourceFundName: 'General Fund',
+  },
+  {
+    name: 'Coding smoke - imported source external id',
+    intakeSource: 'csv_import',
+    amountMicros: 27_500_000,
+    donorFirstName: 'Nora',
+    donorLastName: 'Patel',
+    donorEmail: 'nora.patel@example.org',
+    giftDate: '2026-05-06',
+    donorResolutionState: 'CONFIRMED',
+    giftReadyStatus: 'READY_TO_PROCESS',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Coding smoke batch',
+    linkedDonorEmail: 'nora.patel@example.org',
+    appealSourceExternalId: 'SRC-SPRING-EMAIL-2026',
+  },
+  {
+    name: 'Coding smoke - imported emergency clues',
+    intakeSource: 'csv_import',
+    amountMicros: 31_000_000,
+    donorFirstName: 'Robin',
+    donorLastName: 'Sloan',
+    donorEmail: 'robin.sloan@example.org',
+    giftDate: '2026-05-07',
+    donorResolutionState: 'CONFIRMED',
+    giftReadyStatus: 'READY_TO_PROCESS',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'Coding smoke batch',
+    linkedDonorEmail: 'robin.sloan@example.org',
+    sourceAppealName: 'Emergency Response Appeal',
+    sourceFundName: 'Emergency Response Fund',
+  },
+  // P2P external-id fixture: multiple imported gifts can resolve to the same
+  // fundraiser page, while one missing page stays visible for review.
+  {
+    name: 'P2P external ID - Ada page donation one',
+    intakeSource: 'csv_import',
+    amountMicros: 25_000_000,
+    donorFirstName: 'Morgan',
+    donorLastName: 'Reed',
+    donorEmail: 'morgan.reed@example.org',
+    giftDate: '2026-05-08',
+    donorResolutionState: 'NEW_DONOR',
+    giftReadyStatus: 'NEEDS_REVIEW',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'P2P external ID import batch',
+    provider: 'IMPORTED',
+    appealSourceExternalId: 'P2P-ADA-2026',
+  },
+  {
+    name: 'P2P external ID - Ada page donation two',
+    intakeSource: 'csv_import',
+    amountMicros: 18_000_000,
+    donorFirstName: 'Priya',
+    donorLastName: 'Shah',
+    donorEmail: 'priya.shah@example.org',
+    giftDate: '2026-05-08',
+    donorResolutionState: 'NEW_DONOR',
+    giftReadyStatus: 'NEEDS_REVIEW',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'P2P external ID import batch',
+    appealSourceExternalId: 'P2P-ADA-2026',
+  },
+  {
+    name: 'P2P external ID - Chris page donation',
+    intakeSource: 'csv_import',
+    amountMicros: 21_000_000,
+    donorFirstName: 'Theo',
+    donorLastName: 'King',
+    donorEmail: 'theo.king@example.org',
+    giftDate: '2026-05-09',
+    donorResolutionState: 'NEW_DONOR',
+    giftReadyStatus: 'NEEDS_REVIEW',
+    processingStatus: 'PROCESS_FAILED',
+    errorDetail:
+      'Previous processing attempt failed before the retry check was run.',
+    batchName: 'P2P external ID import batch',
+    appealSourceExternalId: 'P2P-CHRIS-2026',
+  },
+  {
+    name: 'P2P external ID - missing fundraiser page retry',
+    intakeSource: 'csv_import',
+    amountMicros: 28_000_000,
+    donorFirstName: 'Lena',
+    donorLastName: 'Ward',
+    donorEmail: 'lena.ward@example.org',
+    giftDate: '2026-05-09',
+    donorResolutionState: 'NEW_DONOR',
+    giftReadyStatus: 'NEEDS_REVIEW',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
+    batchName: 'P2P external ID import batch',
+    appealSourceExternalId: 'P2P-MISSING-2026',
   },
   {
     name: 'CSV pressure - Alina Mercer',
@@ -2466,6 +2553,54 @@ const loadAppeals = async (
   );
 };
 
+const loadAppealSources = async (
+  client: CoreApiClient,
+): Promise<ExistingAppealSourceRecord[]> => {
+  const result = await client.query({
+    appealSources: {
+      __args: {
+        first: 100,
+      },
+      edges: {
+        node: {
+          id: true,
+          name: true,
+          status: true,
+          sourceType: true,
+          fundraiserPerson: {
+            id: true,
+            name: {
+              firstName: true,
+              lastName: true,
+            },
+            emails: {
+              primaryEmail: true,
+            },
+          },
+          fundraiserCompany: {
+            id: true,
+            name: true,
+          },
+          appeal: {
+            id: true,
+            name: true,
+            defaultFund: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  } as any);
+
+  return (
+    result?.appealSources?.edges?.map(
+      (edge: { node: ExistingAppealSourceRecord }) => edge.node,
+    ) ?? []
+  );
+};
+
 const loadPersonByEmail = async (
   client: CoreApiClient,
   email: string,
@@ -2815,6 +2950,145 @@ const seedAppeals = async (
   return appealsByName;
 };
 
+const seedAppealSources = async (
+  client: CoreApiClient,
+  appealsByName: Map<string, ExistingAppealRecord>,
+  peopleByEmail: Map<string, PersonSummary>,
+) => {
+  const existingAppealSources = await loadAppealSources(client);
+  const appealSourcesByName = new Map<string, ExistingAppealSourceRecord>();
+
+  for (const seed of SEED_APPEAL_SOURCES) {
+    const existing = existingAppealSources.find(
+      (appealSource) => appealSource.name === seed.name,
+    );
+    const appeal = appealsByName.get(seed.appealName);
+    const fundraiserPerson = seed.fundraiserPersonEmail
+      ? peopleByEmail.get(seed.fundraiserPersonEmail)
+      : undefined;
+
+    if (!appeal?.id) {
+      throw new Error(`Seed appeal "${seed.appealName}" not found`);
+    }
+
+    const data = {
+      status: seed.status,
+      sourceType: seed.sourceType,
+      externalId: seed.externalId ?? null,
+      sourceCode: seed.sourceCode ?? null,
+      platform: seed.platform ?? null,
+      appeal: {
+        connect: {
+          where: {
+            id: appeal.id,
+          },
+        },
+      },
+      ...(fundraiserPerson?.id
+        ? {
+            fundraiserPerson: {
+              connect: {
+                where: {
+                  id: fundraiserPerson.id,
+                },
+              },
+            },
+          }
+        : {
+            fundraiserPerson: {
+              disconnect: true,
+            },
+          }),
+    };
+
+    if (existing) {
+      await client.mutation({
+        updateAppealSource: {
+          __args: {
+            id: existing.id,
+            data,
+          },
+          id: true,
+          name: true,
+          status: true,
+          sourceType: true,
+          fundraiserPerson: {
+            id: true,
+            name: {
+              firstName: true,
+              lastName: true,
+            },
+            emails: {
+              primaryEmail: true,
+            },
+          },
+          fundraiserCompany: {
+            id: true,
+            name: true,
+          },
+          appeal: {
+            id: true,
+            name: true,
+            defaultFund: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      } as any);
+      appealSourcesByName.set(seed.name, existing);
+      continue;
+    }
+
+    const result = await client.mutation({
+      createAppealSource: {
+        __args: {
+          data: {
+            name: seed.name,
+            ...data,
+          },
+        },
+        id: true,
+        name: true,
+        status: true,
+        sourceType: true,
+        fundraiserPerson: {
+          id: true,
+          name: {
+            firstName: true,
+            lastName: true,
+          },
+          emails: {
+            primaryEmail: true,
+          },
+        },
+        fundraiserCompany: {
+          id: true,
+          name: true,
+        },
+        appeal: {
+          id: true,
+          name: true,
+          defaultFund: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    } as any);
+
+    const created = result?.createAppealSource as
+      | ExistingAppealSourceRecord
+      | undefined;
+
+    if (created?.id) {
+      appealSourcesByName.set(seed.name, created);
+    }
+  }
+
+  return appealSourcesByName;
+};
+
 const seedGiftStagings = async (
   client: CoreApiClient,
   peopleByEmail: Map<string, PersonSummary>,
@@ -2878,10 +3152,17 @@ const seedGiftStagings = async (
             ...(typeof seed.providerIntervalCount === 'number'
               ? { providerIntervalCount: seed.providerIntervalCount }
               : {}),
+            ...(seed.sourceAppealName
+              ? { sourceAppealName: seed.sourceAppealName }
+              : {}),
+            ...(seed.sourceFundName
+              ? { sourceFundName: seed.sourceFundName }
+              : {}),
+            ...(seed.appealSourceExternalId
+              ? { appealSourceExternalId: seed.appealSourceExternalId }
+              : {}),
             donorResolutionState: seed.donorResolutionState,
-            giftReadyStatus:
-              seed.giftReadyStatus ??
-              (seed.markedReady ? 'READY_TO_PROCESS' : 'NEEDS_REVIEW'),
+            giftReadyStatus: seed.giftReadyStatus ?? 'NEEDS_REVIEW',
             processingStatus: seed.processingStatus,
             errorDetail: seed.errorDetail,
             giftAidRequested: seed.giftAidRequested ?? false,
@@ -3167,7 +3448,8 @@ const handler = async (): Promise<void> => {
   const peopleByEmail = await seedPeople(client);
   const batchesByName = await seedBatches(client);
   const fundsByName = await seedFunds(client);
-  await seedAppeals(client, fundsByName);
+  const appealsByName = await seedAppeals(client, fundsByName);
+  await seedAppealSources(client, appealsByName, peopleByEmail);
   await seedGiftAidDeclarations(client, peopleByEmail);
   const declarationRecords = await loadGiftAidDeclarations(client);
   const declarationsByName = new Map(

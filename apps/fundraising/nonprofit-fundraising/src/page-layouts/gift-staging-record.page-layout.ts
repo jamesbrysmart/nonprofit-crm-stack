@@ -68,19 +68,20 @@ export default definePageLayout({
       ],
     },
     {
-      universalIdentifier: '5fef2c2a-28a6-4be4-9ed6-56ff66dfb1a6',
-      title: 'Details',
+      universalIdentifier: 'c2905869-2c0a-4ace-8f2a-8e7d7d7d339b',
+      title: 'Details v2',
       position: 50,
       icon: 'IconList',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
-          universalIdentifier: '81ea74f2-a31b-4520-9dfe-b9c3c2a4f16f',
+          universalIdentifier: '9244d8bd-cb9a-4b0f-a292-513f0b1ccb2c',
           title: 'Core gift fields',
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
-            viewId: GIFT_STAGING_REVIEW_CORE_VIEW_UNIVERSAL_IDENTIFIER,
+            viewUniversalIdentifier:
+              GIFT_STAGING_REVIEW_CORE_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

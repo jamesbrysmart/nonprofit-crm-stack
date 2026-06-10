@@ -9,7 +9,7 @@ import {
   compactWidgetRootStyle,
   labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import { formatAmount } from 'src/front-components/gift-aid-claim-batch-ui';
 import {
   finalizeGiftAidClaimBatch,

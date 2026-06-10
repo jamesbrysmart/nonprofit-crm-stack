@@ -25,7 +25,8 @@ export default definePageLayout({
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
-            viewId: APPEAL_SOURCE_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
+            viewUniversalIdentifier:
+              APPEAL_SOURCE_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],
@@ -43,7 +44,7 @@ export default definePageLayout({
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
-            viewId: APPEAL_SOURCE_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+            viewUniversalIdentifier: APPEAL_SOURCE_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

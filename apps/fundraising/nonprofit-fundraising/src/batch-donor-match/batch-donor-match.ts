@@ -15,6 +15,7 @@ const normalizeEmail = (value: string | null | undefined) =>
 export const canEvaluateBatchDonorMatchRow = (row: BatchDonorMatchRow) => {
   return (
     isPaymentConfirmedOrNotRequired(row) &&
+    row.isAnonymousDonor !== true &&
     normalizeString(row.donorResolutionState) === 'UNREVIEWED' &&
     normalizeString(row.processingStatus) !== 'PROCESSED' &&
     normalizeString(row.donor?.id) === '' &&

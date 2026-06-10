@@ -7,7 +7,7 @@ import {
   compactDividerSectionStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import {
   checkBatch,
   processBatch,
@@ -25,28 +25,43 @@ export const GIFT_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '8f38c33f-3208-4f01-9472-17406eb2279d';
 
 const buildDonorMatchSummary = (input: RunBatchDonorMatchResponse) => {
-  const linkedLabel =
-    input.autoLinkedRows === 1
-      ? '1 row was linked automatically.'
-      : `${input.autoLinkedRows} rows were linked automatically.`;
+  const sentences: string[] = [];
+
+  if (input.alreadyConfirmedRows > 0) {
+    sentences.push(
+      `${input.alreadyConfirmedRows} row${input.alreadyConfirmedRows === 1 ? '' : 's'} already had confirmed donor match${input.alreadyConfirmedRows === 1 ? '' : 'es'}.`,
+    );
+  }
+
+  if (input.autoLinkedRows > 0) {
+    sentences.push(
+      `${input.autoLinkedRows} exact donor match${input.autoLinkedRows === 1 ? '' : 'es'} linked.`,
+    );
+  }
 
   if (input.ambiguousRows > 0) {
-    return {
-      headline: `Donor match complete. ${linkedLabel}`,
-      nextStep: `Open Needs review to finish ${input.ambiguousRows} ambiguous match${input.ambiguousRows === 1 ? '' : 'es'}.`,
-    };
+    sentences.push(
+      `Review ${input.ambiguousRows} possible donor match${input.ambiguousRows === 1 ? '' : 'es'}.`,
+    );
   }
 
   if (input.unchangedRows > 0) {
-    return {
-      headline: `Donor match complete. ${linkedLabel}`,
-      nextStep: `Open Needs review to check ${input.unchangedRows} remaining row${input.unchangedRows === 1 ? '' : 's'}.`,
-    };
+    sentences.push(
+      `${input.unchangedRows} row${input.unchangedRows === 1 ? '' : 's'} had no confident donor match.`,
+    );
   }
 
   return {
-    headline: `Donor match complete. ${linkedLabel}`,
-    nextStep: null,
+    headline:
+      sentences.length > 0
+        ? sentences.join(' ')
+        : 'No donor matches were found.',
+    nextStep:
+      input.ambiguousRows > 0
+        ? 'Open Review possible donor matches to resolve likely matches before checking the batch.'
+        : input.unchangedRows > 0
+          ? 'Open Needs review to check rows with no confident donor match.'
+          : null,
   };
 };
 
@@ -118,7 +133,7 @@ const GiftBatchActions = () => {
       setLastCheckRun(null);
 
       await enqueueSnackbar({
-        message: `Donor match complete: ${result.autoLinkedRows} linked, ${result.ambiguousRows} ambiguous, ${result.unchangedRows} still unreviewed.`,
+        message: buildDonorMatchSummary(result).headline,
         variant: 'success',
       });
 

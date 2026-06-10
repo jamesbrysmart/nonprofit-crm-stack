@@ -1,43 +1,47 @@
 import type { CSSProperties } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
 import { Button } from 'twenty-sdk/ui';
-import type {
-  BatchGiftCodingAppealMode,
-  BatchGiftCodingAppealSourceMode,
-  BatchGiftCodingFundMode,
-} from 'src/batch-processing/batch-processing.types';
 import { updateBatchGiftCoding } from 'src/batch-processing/batch-processing.api';
 import {
+  CompactMetaGrid,
+  CompactMetaItem,
   badgeStyle,
   compactDividerSectionStyle,
   compactWidgetRootStyle,
   inputStyle,
   labelStyle,
-  pillButtonStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
-} from 'src/front-components/gift-staging-review-ui';
+  subtlePanelStyle,
+} from 'src/front-components/front-component-ui';
 import { useGiftBatchReview } from 'src/gift-batch-review/use-gift-batch-review';
 import { broadcastGiftBatchInvalidated } from 'src/gift-batch-review/gift-batch-sync';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
-import {
-  getAppealIdForAppealSourceSelection,
-  getAppealSourceIdsForAppeal,
-  getFundIdForAppealSelection,
-} from 'src/gift-coding/gift-coding';
+import { getAppealIdForAppealSourceSelection } from 'src/gift-coding/gift-coding';
 
 export const GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'df218c63-9ad9-4fc2-afca-cd120791befa';
 
-type CompactCodingMode =
-  | 'LEAVE_UNCHANGED'
-  | 'CLEAR'
-  | 'SET_ALL'
-  | 'SET_WHERE_BLANK';
+const controlGridStyle: CSSProperties = {
+  display: 'grid',
+  gap: '10px',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  alignItems: 'end',
+};
 
-type FundSelectionMode = 'APPEAL_DEFAULT' | 'SPECIFIC_FUND';
+const inlineFieldStyle: CSSProperties = {
+  display: 'grid',
+  gap: '4px',
+};
+
+const summaryValueStyle: CSSProperties = {
+  color: '#1f2328',
+  fontSize: '13px',
+  lineHeight: 1.4,
+};
 
 const getInputEventValue = (event: unknown) => {
   if (
@@ -65,99 +69,79 @@ const getInputEventValue = (event: unknown) => {
   return '';
 };
 
-const isSetMode = (mode: CompactCodingMode) =>
-  mode === 'SET_ALL' || mode === 'SET_WHERE_BLANK';
-
-const MODE_OPTIONS: Array<{
-  mode: CompactCodingMode;
-  label: string;
-}> = [
-  { mode: 'LEAVE_UNCHANGED', label: 'Leave' },
-  { mode: 'CLEAR', label: 'Clear' },
-  { mode: 'SET_ALL', label: 'Apply to all' },
-  { mode: 'SET_WHERE_BLANK', label: 'Only where blank' },
-];
-
-const ruleListStyle: CSSProperties = {
-  display: 'grid',
-  gap: '10px',
-};
-
-const ruleCardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
-  borderRadius: '8px',
-  padding: '12px',
-  display: 'grid',
-  gap: '10px',
-  background: '#ffffff',
-};
-
-const ruleHeaderStyle: CSSProperties = {
-  display: 'grid',
-  gap: '4px',
-};
-
-const modeButtonRowStyle: CSSProperties = {
-  display: 'flex',
-  gap: '8px',
-  flexWrap: 'wrap',
-};
-
-const controlGridStyle: CSSProperties = {
-  display: 'grid',
-  gap: '10px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-  alignItems: 'end',
-};
-
-const inlineFieldStyle: CSSProperties = {
-  display: 'grid',
-  gap: '4px',
-};
-
-const helperTextStyle: CSSProperties = {
-  ...secondaryTextStyle,
-  fontSize: '12px',
-};
-
-const ModeButton = ({
-  label,
-  selected,
-  onClick,
-  disabled,
+const saveBatchCodingDefaults = async ({
+  recordId,
+  defaultAppealId,
+  defaultFundId,
+  defaultAppealSourceId,
 }: {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-  disabled: boolean;
-}) => (
-  <button
-    type="button"
-    style={{
-      ...pillButtonStyle(selected),
-      opacity: disabled ? 0.6 : 1,
-      cursor: disabled ? 'default' : 'pointer',
-    }}
-    onClick={onClick}
-    disabled={disabled}
-  >
-    {label}
-  </button>
-);
+  recordId: string;
+  defaultAppealId: string;
+  defaultFundId: string;
+  defaultAppealSourceId: string;
+}) => {
+  const client = new CoreApiClient();
+
+  await client.mutation({
+    updateGiftBatch: {
+      __args: {
+        id: recordId,
+        data: {
+          ...(defaultAppealId !== ''
+            ? {
+                defaultAppeal: {
+                  connect: {
+                    where: {
+                      id: defaultAppealId,
+                    },
+                  },
+                },
+              }
+            : {
+                defaultAppealId: null,
+              }),
+          ...(defaultFundId !== ''
+            ? {
+                defaultFund: {
+                  connect: {
+                    where: {
+                      id: defaultFundId,
+                    },
+                  },
+                },
+              }
+            : {
+                defaultFundId: null,
+              }),
+          ...(defaultAppealSourceId !== ''
+            ? {
+                defaultAppealSource: {
+                  connect: {
+                    where: {
+                      id: defaultAppealSourceId,
+                    },
+                  },
+                },
+              }
+            : {
+                defaultAppealSourceId: null,
+              }),
+        },
+      },
+      id: true,
+    },
+  } as any);
+};
 
 const GiftBatchCoding = () => {
   const recordId = useRecordId();
   const { record, loading, error } = useGiftBatchReview(recordId);
-  const [appealMode, setAppealMode] = useState<CompactCodingMode>('LEAVE_UNCHANGED');
-  const [appealSourceMode, setAppealSourceMode] =
-    useState<CompactCodingMode>('LEAVE_UNCHANGED');
-  const [fundMode, setFundMode] = useState<CompactCodingMode>('LEAVE_UNCHANGED');
-  const [fundSelectionMode, setFundSelectionMode] =
-    useState<FundSelectionMode>('APPEAL_DEFAULT');
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedAppealId, setSelectedAppealId] = useState('');
   const [selectedAppealSourceId, setSelectedAppealSourceId] = useState('');
   const [selectedFundId, setSelectedFundId] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [savingDefaults, setSavingDefaults] = useState(false);
+  const [applyingDefaults, setApplyingDefaults] = useState(false);
   const {
     appeals,
     appealSources,
@@ -170,9 +154,31 @@ const GiftBatchCoding = () => {
     fundOptionsError,
   } = useGiftCodingOptions({ selectedAppealId });
 
+  useEffect(() => {
+    if (!record) {
+      return;
+    }
+
+    setSelectedAppealId(record.defaultAppealId);
+    setSelectedFundId(record.defaultFundId);
+    setSelectedAppealSourceId(record.defaultAppealSourceId);
+  }, [record]);
+
   const selectedAppeal = useMemo(
     () => appeals.find((appeal) => appeal.id === selectedAppealId) ?? null,
     [appeals, selectedAppealId],
+  );
+
+  const selectedFund = useMemo(
+    () => funds.find((fund) => fund.id === selectedFundId) ?? null,
+    [funds, selectedFundId],
+  );
+
+  const selectedAppealSource = useMemo(
+    () =>
+      appealSources.find((appealSource) => appealSource.id === selectedAppealSourceId) ??
+      null,
+    [appealSources, selectedAppealSourceId],
   );
 
   if (loading && !record) {
@@ -189,47 +195,50 @@ const GiftBatchCoding = () => {
 
   const isOverWorkflowLimit = record.isOverWorkflowLimit;
   const targetCount = record.unprocessedItems;
-  const hasActionSelected =
-    appealMode !== 'LEAVE_UNCHANGED' ||
-    appealSourceMode !== 'LEAVE_UNCHANGED' ||
-    fundMode !== 'LEAVE_UNCHANGED';
-  const requiresAppealSelection =
-    isSetMode(appealMode) || (isSetMode(fundMode) && fundSelectionMode === 'APPEAL_DEFAULT');
-  const requiresAppealSourceSelection = isSetMode(appealSourceMode);
-  const requiresFundSelection =
-    isSetMode(fundMode) && fundSelectionMode === 'SPECIFIC_FUND';
-  const isDisabled = saving || isOverWorkflowLimit || targetCount === 0;
+  const hasDefaults =
+    record.defaultAppealId !== '' ||
+    record.defaultFundId !== '' ||
+    record.defaultAppealSourceId !== '';
+  const hasDraftDefaults =
+    selectedAppealId !== '' || selectedFundId !== '' || selectedAppealSourceId !== '';
+  const hasUnsavedChanges =
+    selectedAppealId !== record.defaultAppealId ||
+    selectedFundId !== record.defaultFundId ||
+    selectedAppealSourceId !== record.defaultAppealSourceId;
+  const isBusy = savingDefaults || applyingDefaults;
+  const isDisabled = isBusy || isOverWorkflowLimit || targetCount === 0;
+  const canApplyDefaults = !isDisabled && hasDraftDefaults;
+  const canSaveDefaults = !isBusy && hasUnsavedChanges;
+  const canRemoveDefaults = !isBusy && hasDefaults;
 
-  const isSaveDisabled =
-    isDisabled ||
-    loadingAppeals ||
-    loadingAppealSources ||
-    loadingFunds ||
-    !hasActionSelected ||
-    (requiresAppealSelection && selectedAppealId === '') ||
-    (requiresAppealSourceSelection && selectedAppealSourceId === '') ||
-    (requiresFundSelection && selectedFundId === '');
+  const appealSummary =
+    selectedAppeal?.name ??
+    (record.defaultAppealName || 'No batch default');
+  const fundSummary =
+    selectedFund?.name ??
+    (record.defaultFundName || 'No batch default');
+  const appealSourceSummary =
+    selectedAppealSource?.name ??
+    (record.defaultAppealSourceName || 'No batch default');
 
   const handleAppealChange = (nextAppealId: string) => {
     setSelectedAppealId(nextAppealId);
-    setSelectedFundId(
-      getFundIdForAppealSelection({
-        appeals,
-        nextAppealId,
-        currentFundId: selectedFundId,
-      }),
-    );
+
+    const nextAppeal =
+      appeals.find((appeal) => appeal.id === nextAppealId) ?? null;
+    const nextDefaultFundId = nextAppeal?.defaultFund?.id?.trim() ?? '';
+    setSelectedFundId(nextDefaultFundId);
 
     if (selectedAppealSourceId === '') {
       return;
     }
 
-    const allowedSourceIds = getAppealSourceIdsForAppeal({
+    const currentSourceAppealId = getAppealIdForAppealSourceSelection({
       appealSources,
-      appealId: nextAppealId,
+      nextAppealSourceId: selectedAppealSourceId,
     });
 
-    if (allowedSourceIds && !allowedSourceIds.has(selectedAppealSourceId)) {
+    if (currentSourceAppealId !== '' && currentSourceAppealId !== nextAppealId) {
       setSelectedAppealSourceId('');
     }
   };
@@ -247,36 +256,19 @@ const GiftBatchCoding = () => {
     setSelectedAppealSourceId(nextAppealSourceId);
   };
 
-  const mappedAppealMode = appealMode as BatchGiftCodingAppealMode;
-  const mappedAppealSourceMode =
-    appealSourceMode as BatchGiftCodingAppealSourceMode;
-  const mappedFundMode: BatchGiftCodingFundMode =
-    fundMode === 'LEAVE_UNCHANGED' || fundMode === 'CLEAR'
-      ? fundMode
-      : fundSelectionMode === 'APPEAL_DEFAULT'
-        ? fundMode === 'SET_ALL'
-          ? 'SET_APPEAL_DEFAULT_ALL'
-          : 'SET_APPEAL_DEFAULT_WHERE_BLANK'
-        : fundMode === 'SET_ALL'
-          ? 'SET_ALL'
-          : 'SET_WHERE_BLANK';
-
-  const handleApplyCoding = async () => {
-    setSaving(true);
+  const handleSaveDefaults = async () => {
+    setSavingDefaults(true);
 
     try {
-      const result = await updateBatchGiftCoding({
-        giftBatchId: recordId,
-        appealMode: mappedAppealMode,
-        selectedAppealId,
-        appealSourceMode: mappedAppealSourceMode,
-        selectedAppealSourceId,
-        fundMode: mappedFundMode,
-        selectedFundId,
+      await saveBatchCodingDefaults({
+        recordId,
+        defaultAppealId: selectedAppealId,
+        defaultFundId: selectedFundId,
+        defaultAppealSourceId: selectedAppealSourceId,
       });
 
       await enqueueSnackbar({
-        message: `Batch coding updated: ${result.updatedRowCount} gifts changed, ${result.appealUpdatedCount} appeal updates, ${result.appealSourceUpdatedCount} source updates, ${result.fundUpdatedCount} fund updates.`,
+        message: 'Batch coding defaults saved.',
         variant: 'success',
       });
 
@@ -286,11 +278,77 @@ const GiftBatchCoding = () => {
         message:
           saveError instanceof Error
             ? saveError.message
-            : 'Unable to update gift coding for this batch.',
+            : 'Unable to save batch coding defaults.',
         variant: 'error',
       });
     } finally {
-      setSaving(false);
+      setSavingDefaults(false);
+    }
+  };
+
+  const handleApplyDefaults = async () => {
+    setApplyingDefaults(true);
+
+    try {
+      const result = await updateBatchGiftCoding({
+        giftBatchId: recordId,
+        defaultAppealId: selectedAppealId,
+        defaultFundId: selectedFundId,
+        defaultAppealSourceId: selectedAppealSourceId,
+      });
+
+      await enqueueSnackbar({
+        message: `Batch coding applied: ${result.updatedRowCount} gifts updated across blank coding fields.`,
+        variant: 'success',
+      });
+
+      setIsExpanded(false);
+      broadcastGiftBatchInvalidated(recordId);
+    } catch (applyError) {
+      await enqueueSnackbar({
+        message:
+          applyError instanceof Error
+            ? applyError.message
+            : 'Unable to apply batch coding defaults.',
+        variant: 'error',
+      });
+    } finally {
+      setApplyingDefaults(false);
+    }
+  };
+
+  const handleRemoveDefaults = async () => {
+    setSavingDefaults(true);
+
+    try {
+      await saveBatchCodingDefaults({
+        recordId,
+        defaultAppealId: '',
+        defaultFundId: '',
+        defaultAppealSourceId: '',
+      });
+
+      setSelectedAppealId('');
+      setSelectedFundId('');
+      setSelectedAppealSourceId('');
+
+      await enqueueSnackbar({
+        message:
+          'Batch coding defaults removed. This does not change coding already applied to gifts.',
+        variant: 'success',
+      });
+
+      broadcastGiftBatchInvalidated(recordId);
+    } catch (removeError) {
+      await enqueueSnackbar({
+        message:
+          removeError instanceof Error
+            ? removeError.message
+            : 'Unable to remove batch coding defaults.',
+        variant: 'error',
+      });
+    } finally {
+      setSavingDefaults(false);
     }
   };
 
@@ -306,12 +364,12 @@ const GiftBatchCoding = () => {
           ) : null}
         </div>
         <Button
-          title={saving ? 'Applying...' : 'Apply coding'}
+          title={isExpanded ? 'Close coding' : 'Open coding'}
           variant="secondary"
           onClick={() => {
-            void handleApplyCoding();
+            setIsExpanded((current) => !current);
           }}
-          disabled={isSaveDisabled}
+          disabled={isBusy || isOverWorkflowLimit || targetCount === 0}
         />
       </div>
 
@@ -321,156 +379,126 @@ const GiftBatchCoding = () => {
           : record.totalItems === 0
             ? 'No gifts have been added to this batch yet.'
             : targetCount === 0
-            ? 'All gifts in this batch have already been processed.'
-            : 'Update coding for unprocessed gifts in this batch.'}
+              ? 'All gifts in this batch have already been processed.'
+              : isExpanded
+                ? 'Set shared coding defaults for this batch, then apply them to blank rows only.'
+                : 'Shared coding defaults for this batch.'}
       </div>
 
-      {!isOverWorkflowLimit && targetCount > 0 ? (
-        <div style={ruleListStyle}>
-          <div style={ruleCardStyle}>
-            <div style={ruleHeaderStyle}>
-              <div style={labelStyle}>Appeal</div>
-              <div style={helperTextStyle}>
-                Choose the appeal you want to apply across this batch.
-              </div>
-            </div>
-            <div style={modeButtonRowStyle}>
-              {MODE_OPTIONS.map((option) => (
-                <ModeButton
-                  key={option.mode}
-                  label={option.label}
-                  selected={appealMode === option.mode}
-                  onClick={() => setAppealMode(option.mode)}
-                  disabled={isDisabled}
-                />
-              ))}
-            </div>
-            {isSetMode(appealMode) ? (
-              <label style={inlineFieldStyle}>
-                <span style={labelStyle}>Appeal</span>
-                <select
-                  style={inputStyle}
-                  value={selectedAppealId}
-                  onChange={(event) => handleAppealChange(getInputEventValue(event))}
-                  disabled={isDisabled || loadingAppeals}
-                >
-                  <option value="">Select appeal</option>
-                  {appeals.map((appeal) => (
-                    <option key={appeal.id} value={appeal.id}>
-                      {appeal.name ?? 'Unnamed appeal'}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
+      {!isOverWorkflowLimit && targetCount > 0 && !isExpanded ? (
+        <CompactMetaGrid>
+          <CompactMetaItem label="Appeal">
+            <div style={summaryValueStyle}>{appealSummary}</div>
+          </CompactMetaItem>
+          <CompactMetaItem label="Fund">
+            <div style={summaryValueStyle}>{fundSummary}</div>
+          </CompactMetaItem>
+          <CompactMetaItem label="Appeal source">
+            <div style={summaryValueStyle}>{appealSourceSummary}</div>
+          </CompactMetaItem>
+        </CompactMetaGrid>
+      ) : null}
+
+      {!isOverWorkflowLimit && targetCount > 0 && isExpanded ? (
+        <div style={{ display: 'grid', gap: '12px' }}>
+          <div style={controlGridStyle}>
+            <label style={inlineFieldStyle}>
+              <span style={labelStyle}>Appeal</span>
+              <select
+                style={inputStyle}
+                value={selectedAppealId}
+                onChange={(event) => handleAppealChange(getInputEventValue(event))}
+                disabled={isBusy || loadingAppeals}
+              >
+                <option value="">No batch default</option>
+                {appeals.map((appeal) => (
+                  <option key={appeal.id} value={appeal.id}>
+                    {appeal.name ?? 'Unnamed appeal'}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={inlineFieldStyle}>
+              <span style={labelStyle}>Fund</span>
+              <select
+                style={inputStyle}
+                value={selectedFundId}
+                onChange={(event) => setSelectedFundId(getInputEventValue(event))}
+                disabled={isBusy || loadingFunds}
+              >
+                <option value="">No batch default</option>
+                {funds.map((fund) => (
+                  <option key={fund.id} value={fund.id}>
+                    {fund.name ?? 'Unnamed fund'}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={inlineFieldStyle}>
+              <span style={labelStyle}>Appeal source</span>
+              <select
+                style={inputStyle}
+                value={selectedAppealSourceId}
+                onChange={(event) =>
+                  handleAppealSourceChange(getInputEventValue(event))
+                }
+                disabled={isBusy || loadingAppealSources}
+              >
+                <option value="">No batch default</option>
+                {appealSources.map((appealSource) => (
+                  <option key={appealSource.id} value={appealSource.id}>
+                    {appealSource.name ?? 'Unnamed appeal source'}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
-          <div style={ruleCardStyle}>
-            <div style={ruleHeaderStyle}>
-              <div style={labelStyle}>Fund</div>
-              <div style={helperTextStyle}>
-                Use the appeal default fund or choose a specific fund.
+          {selectedAppeal?.defaultFund?.name ? (
+            <div style={subtlePanelStyle}>
+              <div style={labelStyle}>Appeal default fund</div>
+              <div style={secondaryTextStyle}>
+                {selectedAppeal.defaultFund.name}
               </div>
             </div>
-            <div style={modeButtonRowStyle}>
-              {MODE_OPTIONS.map((option) => (
-                <ModeButton
-                  key={option.mode}
-                  label={option.label}
-                  selected={fundMode === option.mode}
-                  onClick={() => setFundMode(option.mode)}
-                  disabled={isDisabled}
-                />
-              ))}
-            </div>
-            {isSetMode(fundMode) ? (
-              <div style={controlGridStyle}>
-                <label style={inlineFieldStyle}>
-                  <span style={labelStyle}>Fund source</span>
-                  <select
-                    style={inputStyle}
-                    value={fundSelectionMode}
-                    onChange={(event) =>
-                      setFundSelectionMode(
-                        getInputEventValue(event) as FundSelectionMode,
-                      )
-                    }
-                    disabled={isDisabled}
-                  >
-                    <option value="APPEAL_DEFAULT">Use appeal default</option>
-                    <option value="SPECIFIC_FUND">Choose specific fund</option>
-                  </select>
-                </label>
+          ) : null}
 
-                {fundSelectionMode === 'SPECIFIC_FUND' ? (
-                  <label style={inlineFieldStyle}>
-                    <span style={labelStyle}>Fund</span>
-                    <select
-                      style={inputStyle}
-                      value={selectedFundId}
-                      onChange={(event) => setSelectedFundId(getInputEventValue(event))}
-                      disabled={isDisabled || loadingFunds}
-                    >
-                      <option value="">Select fund</option>
-                      {funds.map((fund) => (
-                        <option key={fund.id} value={fund.id}>
-                          {fund.name ?? 'Unnamed fund'}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
-              </div>
-            ) : null}
-            {isSetMode(fundMode) &&
-            fundSelectionMode === 'APPEAL_DEFAULT' &&
-            selectedAppeal?.defaultFund?.name ? (
-              <div style={compactDividerSectionStyle}>
-                <div style={labelStyle}>Appeal default fund</div>
-                <div style={secondaryTextStyle}>
-                  {selectedAppeal.defaultFund.name}
-                </div>
-              </div>
-            ) : null}
+          <div style={compactDividerSectionStyle}>
+            <div style={secondaryTextStyle}>
+              Applying defaults only fills blank appeal, fund, and appeal source
+              fields on unprocessed gifts. It does not overwrite existing coding.
+            </div>
           </div>
 
-          <div style={ruleCardStyle}>
-            <div style={ruleHeaderStyle}>
-              <div style={labelStyle}>Appeal source</div>
-              <div style={helperTextStyle}>
-                This also keeps the appeal aligned with the selected source.
-              </div>
-            </div>
-            <div style={modeButtonRowStyle}>
-              {MODE_OPTIONS.map((option) => (
-                <ModeButton
-                  key={option.mode}
-                  label={option.label}
-                  selected={appealSourceMode === option.mode}
-                  onClick={() => setAppealSourceMode(option.mode)}
-                  disabled={isDisabled}
-                />
-              ))}
-            </div>
-            {isSetMode(appealSourceMode) ? (
-              <label style={inlineFieldStyle}>
-                <span style={labelStyle}>Appeal source</span>
-                <select
-                  style={inputStyle}
-                  value={selectedAppealSourceId}
-                  onChange={(event) =>
-                    handleAppealSourceChange(getInputEventValue(event))
-                  }
-                  disabled={isDisabled || loadingAppealSources}
-                >
-                  <option value="">Select appeal source</option>
-                  {appealSources.map((appealSource) => (
-                    <option key={appealSource.id} value={appealSource.id}>
-                      {appealSource.name ?? 'Unnamed appeal source'}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <Button
+              title={savingDefaults ? 'Saving...' : 'Save defaults'}
+              variant="secondary"
+              onClick={() => {
+                void handleSaveDefaults();
+              }}
+              disabled={!canSaveDefaults}
+            />
+            <Button
+              title={applyingDefaults ? 'Applying...' : 'Apply defaults to blank rows'}
+              variant="primary"
+              accent="blue"
+              onClick={() => {
+                void handleApplyDefaults();
+              }}
+              disabled={!canApplyDefaults}
+            />
+            {hasDefaults ? (
+              <Button
+                title="Remove batch defaults"
+                variant="secondary"
+                onClick={() => {
+                  void handleRemoveDefaults();
+                }}
+                disabled={!canRemoveDefaults}
+              />
             ) : null}
           </div>
         </div>
@@ -497,6 +525,6 @@ export default defineFrontComponent({
   universalIdentifier: GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   name: 'gift-batch-coding',
   description:
-    'Compact batch coding controls for appeal, fund, and appeal source.',
+    'Batch coding defaults for appeal, fund, and appeal source.',
   component: GiftBatchCoding,
 });

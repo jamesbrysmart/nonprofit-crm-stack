@@ -1,15 +1,14 @@
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useRecurringAgreementReviewRecord } from 'src/recurring/use-recurring-agreement-review-record';
 import {
+  CompactMetaGrid,
+  CompactMetaItem,
   badgeStyle,
-  compactMetaGridStyle,
-  compactMetaItemStyle,
   compactValueStyle,
   compactWidgetRootStyle,
-  labelStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 
 export const RECURRING_AGREEMENT_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '57794d35-c598-44fc-a3dd-d80591d077cb';
@@ -64,26 +63,15 @@ const RecurringAgreementState = () => {
         {record.health.message}
       </div>
 
-      <div style={compactMetaGridStyle}>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Status</div>
-          <div style={secondaryTextStyle}>{formatEnumLabel(record.status)}</div>
-        </div>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Next due</div>
-          <div style={secondaryTextStyle}>{record.nextExpectedAt ?? 'Not set'}</div>
-        </div>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Cadence</div>
-          <div style={secondaryTextStyle}>
-            {record.intervalCount} x {formatEnumLabel(record.cadence)}
-          </div>
-        </div>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Amount</div>
-          <div style={secondaryTextStyle}>{record.amountLabel}</div>
-        </div>
-      </div>
+      <CompactMetaGrid>
+        <CompactMetaItem label="Status" value={formatEnumLabel(record.status)} />
+        <CompactMetaItem label="Next due" value={record.nextExpectedAt ?? 'Not set'} />
+        <CompactMetaItem
+          label="Cadence"
+          value={`${record.intervalCount} x ${formatEnumLabel(record.cadence)}`}
+        />
+        <CompactMetaItem label="Amount" value={record.amountLabel} />
+      </CompactMetaGrid>
     </div>
   );
 };

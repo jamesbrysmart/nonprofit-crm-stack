@@ -10,7 +10,7 @@ import {
   compactWidgetRootStyle,
   labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 
 export const GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'e16aaf4a-97cd-488b-a19e-73635165ad1f';

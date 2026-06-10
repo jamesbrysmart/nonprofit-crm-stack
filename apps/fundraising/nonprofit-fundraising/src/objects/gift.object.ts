@@ -24,6 +24,9 @@ export const GIFT_DONOR_LAST_NAME_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_DONOR_EMAIL_FIELD_UNIVERSAL_IDENTIFIER =
   '801acbd4-c386-44d4-98d5-7eb751baec7a';
 
+export const GIFT_IS_ANONYMOUS_DONOR_FIELD_UNIVERSAL_IDENTIFIER =
+  '8397c7f7-a444-4b8d-bc4f-b99cb72a4123';
+
 export const GIFT_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
   '3cbc11d6-d0af-420f-ab8f-cd43bd3913a3';
 
@@ -155,6 +158,16 @@ export default defineObject({
       icon: 'IconAt',
       isNullable: true,
       defaultValue: null,
+    },
+    {
+      universalIdentifier: GIFT_IS_ANONYMOUS_DONOR_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.BOOLEAN,
+      name: 'isAnonymousDonor',
+      label: 'Anonymous donor',
+      description:
+        'Whether this committed gift was intentionally processed without linking or creating a donor',
+      icon: 'IconMask',
+      defaultValue: false,
     },
     {
       universalIdentifier: GIFT_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,

@@ -173,6 +173,7 @@ export const loadGiftById = async (giftId: string) => {
       donorFirstName: true,
       donorLastName: true,
       donorEmail: true,
+      isAnonymousDonor: true,
       externalId: true,
       sourceFingerprint: true,
       providerEventId: true,
@@ -249,6 +250,7 @@ export const loadGiftStagingById = async (giftStagingId: string) => {
       donorLastName: true,
       donorEmail: true,
       donorPhone: true,
+      isAnonymousDonor: true,
       supporterEmailOptOut: true,
       donorMailingAddress: {
         addressStreet1: true,
@@ -273,7 +275,6 @@ export const loadGiftStagingById = async (giftStagingId: string) => {
       sourceAppealName: true,
       sourceFundName: true,
       donorResolutionState: true,
-      markedReady: true,
       giftReadyStatus: true,
       paymentState: true,
       processingStatus: true,

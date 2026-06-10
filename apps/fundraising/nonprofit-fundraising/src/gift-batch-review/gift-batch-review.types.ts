@@ -53,6 +53,35 @@ export type BatchSummaryRecord = {
   processedItems: number | null;
   failedItems: number | null;
   expectedItemCount: number | null;
+  defaultAppeal:
+    | {
+        id: string;
+        name?: string | null;
+        defaultFund?:
+          | {
+              id?: string | null;
+              name?: string | null;
+            }
+          | null;
+      }
+    | null;
+  defaultFund:
+    | {
+        id: string;
+        name?: string | null;
+      }
+    | null;
+  defaultAppealSource:
+    | {
+        id: string;
+        name?: string | null;
+        appeal?:
+          | {
+              id?: string | null;
+            }
+          | null;
+      }
+    | null;
   expectedTotalAmount:
     | {
         amountMicros?: number | null;
@@ -71,6 +100,14 @@ export type GiftBatchReviewRecord = {
   workflowLimitMessage: string | null;
   totalValueDisplay: string;
   expectedItemCount: number | null;
+  defaultAppealId: string;
+  defaultAppealName: string;
+  defaultAppealDefaultFundId: string;
+  defaultAppealDefaultFundName: string;
+  defaultFundId: string;
+  defaultFundName: string;
+  defaultAppealSourceId: string;
+  defaultAppealSourceName: string;
   expectedTotalAmount:
     | {
         amountMicros?: number | null;

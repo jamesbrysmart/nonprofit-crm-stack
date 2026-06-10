@@ -5,7 +5,7 @@ import {
   compactDividerSectionStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import {
   openGiftBatchQueue,
   useGiftBatchReview,
@@ -89,6 +89,27 @@ const GiftBatchWorklists = () => {
         </div>
       ) : (
         <>
+          {record.ambiguousItems > 0 ? (
+            <div style={compactDividerSectionStyle}>
+              <div style={queueRowStyle}>
+                <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+                  Review possible donor matches
+                </div>
+                <div style={queueCountStyle}>
+                  {record.ambiguousItems} row
+                  {record.ambiguousItems === 1 ? '' : 's'}
+                </div>
+                <button
+                  type="button"
+                  style={queueActionStyle}
+                  onClick={() => openQueue('possible-donor-matches')}
+                >
+                  Open
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           <div style={compactDividerSectionStyle}>
             <div style={queueRowStyle}>
               <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>

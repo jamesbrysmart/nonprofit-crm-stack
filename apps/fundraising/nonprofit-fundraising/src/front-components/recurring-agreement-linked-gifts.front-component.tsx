@@ -6,7 +6,7 @@ import {
   compactWidgetRootStyle,
   labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import { useRecurringAgreementReviewRecord } from 'src/recurring/use-recurring-agreement-review-record';
 
 export const RECURRING_AGREEMENT_LINKED_GIFTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =

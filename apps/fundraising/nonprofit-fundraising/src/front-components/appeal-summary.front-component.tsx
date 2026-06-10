@@ -18,7 +18,7 @@ import {
   labelStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 
 export const APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '1af94784-e9f5-4520-b5a3-3089948f7e35';

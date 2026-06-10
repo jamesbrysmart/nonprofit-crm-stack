@@ -15,7 +15,7 @@ import {
   compactWidgetRootStyle,
   labelStyle,
   secondaryTextStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 
 export const GIFT_AID_CLAIM_SUBMISSION_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '0aa4d6b8-59ef-4f5f-a155-0fdcb14318bd';

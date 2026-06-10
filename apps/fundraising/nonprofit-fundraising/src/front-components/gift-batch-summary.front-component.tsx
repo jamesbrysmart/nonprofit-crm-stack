@@ -4,16 +4,17 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
 import { Button } from 'twenty-sdk/ui';
 import {
+  CompactMetaGrid,
+  CompactMetaItem,
   actionRowStyle,
   badgeStyle,
-  compactMetaGridStyle,
   compactMetaItemStyle,
   compactWidgetRootStyle,
   inputStyle,
   labelStyle,
   secondaryTextStyle,
   subtlePanelStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import { broadcastGiftBatchInvalidated } from 'src/gift-batch-review/gift-batch-sync';
 import { useGiftBatchReview } from 'src/gift-batch-review/use-gift-batch-review';
 
@@ -369,20 +370,11 @@ const GiftBatchSummary = () => {
         </div>
       ) : null}
 
-      <div style={compactMetaGridStyle}>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Source</div>
-          <div style={secondaryTextStyle}>{batchDetails}</div>
-        </div>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Rows</div>
-          <div style={secondaryTextStyle}>{itemSummary}</div>
-        </div>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Value</div>
-          <div style={secondaryTextStyle}>{valueSummary}</div>
-        </div>
-      </div>
+      <CompactMetaGrid>
+        <CompactMetaItem label="Source" value={batchDetails} />
+        <CompactMetaItem label="Rows" value={itemSummary} />
+        <CompactMetaItem label="Value" value={valueSummary} />
+      </CompactMetaGrid>
 
       {routingSummary ? (
         <div style={secondaryTextStyle}>{routingSummary}</div>

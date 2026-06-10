@@ -47,6 +47,7 @@ export type StoredGiftStagingRecord = {
   donorLastName: string | null;
   donorEmail: string | null;
   donorPhone: string | null;
+  isAnonymousDonor: boolean | null;
   donorMailingAddress:
     | {
         addressStreet1?: string | null;
@@ -146,6 +147,7 @@ export type GiftStagingReviewRecord = {
   donorLastName: string;
   donorEmail: string;
   donorPhone: string;
+  isAnonymousDonor: boolean;
   externalId: string;
   sourceFingerprint: string;
   providerEventId: string;

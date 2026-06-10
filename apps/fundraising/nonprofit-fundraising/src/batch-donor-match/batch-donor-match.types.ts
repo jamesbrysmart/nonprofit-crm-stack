@@ -5,6 +5,7 @@ export type BatchDonorMatchRow = {
   donorFirstName: string | null;
   donorLastName: string | null;
   donorEmail: string | null;
+  isAnonymousDonor: boolean | null;
   donorResolutionState: string | null;
   paymentState: string | null;
   processingStatus: string | null;
@@ -21,6 +22,7 @@ export type BatchDonorMatchResponse = {
   giftBatchId: string;
   totalCandidateRows: number;
   evaluatedRows: number;
+  alreadyConfirmedRows: number;
   autoLinkedRows: number;
   ambiguousRows: number;
   unchangedRows: number;

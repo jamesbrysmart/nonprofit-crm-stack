@@ -64,14 +64,19 @@ const loadGiftCodingContext = async (
 const handler = async (
   event: RoutePayload<SaveGiftCodingRequest>,
 ): Promise<SaveGiftCodingResponse> => {
-  const giftId = normalizeString(event.body.giftId);
-  const inputAppealId = normalizeString(event.body.appealId);
-  const inputAppealSourceId = normalizeString(event.body.appealSourceId);
-  const fundId = normalizeString(event.body.fundId);
+  if (!event.body) {
+    throw new Error('Request body is required');
+  }
+
+  const { body } = event;
+  const giftId = normalizeString(body.giftId);
+  const inputAppealId = normalizeString(body.appealId);
+  const inputAppealSourceId = normalizeString(body.appealSourceId);
+  const fundId = normalizeString(body.fundId);
   const softCreditSelection = resolveSoftCreditSelection({
-    softCreditPersonId: event.body.softCreditPersonId,
-    softCreditCompanyId: event.body.softCreditCompanyId,
-    softCreditType: event.body.softCreditType,
+    softCreditPersonId: body.softCreditPersonId,
+    softCreditCompanyId: body.softCreditCompanyId,
+    softCreditType: body.softCreditType,
     treatUndefinedAsUnchanged: true,
   });
 

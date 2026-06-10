@@ -24,7 +24,7 @@ export default definePageLayout({
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
-            viewId: FUND_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
+            viewUniversalIdentifier: FUND_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

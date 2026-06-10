@@ -44,7 +44,7 @@ type SubmissionResult =
       submittedToHmrcAt: string;
       lastPolledAt?: string;
       completedAt: string;
-      correlationId: string;
+      correlationId?: string;
       transactionId?: string;
       responseBody: Record<string, unknown>;
     }
@@ -107,7 +107,7 @@ const parseHmrcConfig = (): HmrcCharitiesConfig => {
   return parsed as HmrcCharitiesConfig;
 };
 
-const isUkAddress = (address: MailingAddress) => {
+const isUkAddress = (address: MailingAddress | undefined) => {
   const country = normalizeString(address?.addressCountry ?? undefined).toUpperCase();
   return country === '' || country === 'GB' || country === 'UK' || country === 'UNITED KINGDOM';
 };
@@ -230,7 +230,6 @@ export const runGiftAidHmrcSubmission = async (
       submittedToHmrcAt: initialCompletedAt,
       lastPolledAt: initialCompletedAt,
       completedAt: initialCompletedAt,
-      correlationId: undefined,
       transactionId: `tx-${Date.now()}`,
       responseBody: {
         mode,
@@ -256,7 +255,6 @@ export const runGiftAidHmrcSubmission = async (
       status: 'BUILT',
       submittedToHmrcAt: initialCompletedAt,
       completedAt: initialCompletedAt,
-      correlationId: undefined,
       responseBody: {
         mode,
         environment,

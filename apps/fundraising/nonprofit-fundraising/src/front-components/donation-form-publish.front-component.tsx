@@ -11,7 +11,7 @@ import {
   secondaryTextStyle,
   sectionHeaderStyle,
   valueStyle,
-} from 'src/front-components/gift-staging-review-ui';
+} from 'src/front-components/front-component-ui';
 import {
   compactMetaGridStyle,
   derivePublishedState,

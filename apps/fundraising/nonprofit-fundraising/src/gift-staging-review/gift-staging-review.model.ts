@@ -152,6 +152,7 @@ export const buildGiftStagingReviewRecord = (
     donor: stored.donor,
     donorFirstName: stored.donorFirstName,
     donorLastName: stored.donorLastName,
+    isAnonymousDonor: stored.isAnonymousDonor,
     donorResolutionState: stored.donorResolutionState,
     giftDate: stored.giftDate,
     paymentType: stored.paymentType,
@@ -184,6 +185,7 @@ export const buildGiftStagingReviewRecord = (
     donorLastName,
     donorEmail,
     donorPhone: coalesceString(stored.donorPhone),
+    isAnonymousDonor: stored.isAnonymousDonor === true,
     externalId: coalesceString(stored.externalId),
     sourceFingerprint: coalesceString(stored.sourceFingerprint),
     providerEventId: coalesceString(stored.providerEventId),
@@ -375,6 +377,23 @@ export const deriveReviewState = (
       };
     }
 
+    if (
+      record.preflightIssueCodes.includes(
+        'ANONYMOUS_DONOR_RECURRING_UNSUPPORTED',
+      )
+    ) {
+      return {
+        title: 'Needs review',
+        accent: '#7c5d00',
+        background: '#fff8e1',
+        reason:
+          'Anonymous donor processing is not yet supported for recurring gifts.',
+        nextAction:
+          'Review the donor details or remove the anonymous donor decision before processing this recurring gift.',
+        hasBlocker: true,
+      };
+    }
+
     if (record.preflightIssueCodes.includes('RECURRING_INTERVAL_INVALID')) {
       return {
         title: 'Needs review',
@@ -429,6 +448,21 @@ export const deriveReviewState = (
         hasBlocker: true,
       };
     }
+  }
+
+  if (record.isAnonymousDonor) {
+    return {
+      title: 'Anonymous donor',
+      accent: '#57606a',
+      background: '#f6f8fa',
+      reason:
+        'This gift is explicitly marked anonymous, so it will not link or create a donor when processed.',
+      nextAction:
+        record.giftReadyStatus === 'READY_TO_PROCESS'
+          ? 'Process it when the rest of the row is ready.'
+          : 'Finish the remaining row checks before processing.',
+      hasBlocker: false,
+    };
   }
 
   if (record.preflightCategory === 'READY') {

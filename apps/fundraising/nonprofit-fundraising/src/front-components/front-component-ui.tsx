@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 export const panelStackStyle: CSSProperties = {
   display: 'grid',
@@ -205,6 +205,25 @@ export const compactValueStyle: CSSProperties = {
   ...valueStyle,
   fontSize: '14px',
 };
+
+export const CompactMetaGrid = ({ children }: { children: ReactNode }) => (
+  <div style={compactMetaGridStyle}>{children}</div>
+);
+
+export const CompactMetaItem = ({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value?: ReactNode;
+  children?: ReactNode;
+}) => (
+  <div style={compactMetaItemStyle}>
+    <div style={labelStyle}>{label}</div>
+    {children ?? <div style={secondaryTextStyle}>{value}</div>}
+  </div>
+);
 
 export const panelStyle: CSSProperties = {
   ...cardStyle,
