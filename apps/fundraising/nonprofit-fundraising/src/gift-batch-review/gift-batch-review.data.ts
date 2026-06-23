@@ -1,4 +1,9 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import {
+  extractConnection,
+  extractConnectionNodes,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
 import { buildGiftBatchReviewRecord } from './gift-batch-review.model';
 import type {
   BatchSummaryRecord,
@@ -69,9 +74,8 @@ export const loadGiftBatchReview = async (
       name: true,
       source: true,
       status: true,
-      totalItems: true,
-      processedItems: true,
-      failedItems: true,
+      processedGifts: true,
+      failedGifts: true,
       expectedItemCount: true,
       defaultAppeal: {
         id: true,
@@ -141,19 +145,23 @@ export const loadGiftBatchReview = async (
           },
         },
       },
+      totalCount: true,
     },
   } as any);
 
-  const batch = result?.giftBatch as BatchSummaryRecord | null;
+  const batch = extractQueryRecord<BatchSummaryRecord>(result, 'giftBatch') ?? null;
 
   if (!batch) {
     return null;
   }
 
-  const rows =
-    result?.giftStagings?.edges?.map(
-      (edge: { node: BatchReviewRow }) => edge.node,
-    ) ?? [];
+  const giftStagingsConnection = extractConnection<BatchReviewRow>(
+    result,
+    'giftStagings',
+  );
+  const rows = extractConnectionNodes<BatchReviewRow>(result, 'giftStagings');
 
-  return buildGiftBatchReviewRecord(batch, rows);
+  return buildGiftBatchReviewRecord(batch, rows, {
+    attachedItemCount: giftStagingsConnection.totalCount,
+  });
 };

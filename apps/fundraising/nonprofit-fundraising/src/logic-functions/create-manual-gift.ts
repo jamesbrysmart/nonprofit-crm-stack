@@ -1,6 +1,8 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { extractMutationRecord, extractQueryRecord } from 'src/core-api/core-api-results';
 import { recomputeAppealRollups } from 'src/appeal-rollups/appeal-rollups';
+import { recomputeCompanyRollups } from 'src/company-rollups/company-rollups';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { attachGiftToCurrentDraftIfClaimable } from 'src/gift-aid-claims/gift-aid-claim-batch';
 import { recomputeDonorRollups } from 'src/donor-rollups/donor-rollups';
@@ -64,12 +66,10 @@ const resolveAppealAndFundSelection = async (
       },
     } as any);
 
-    const resolvedAppeal = result?.appeal as
-      | {
-          id?: string | null;
-          defaultFund?: { id?: string | null } | null;
-        }
-      | null;
+    const resolvedAppeal = extractQueryRecord<{
+      id?: string | null;
+      defaultFund?: { id?: string | null } | null;
+    }>(result, 'appeal');
 
     if (!resolvedAppeal?.id) {
       throw new Error('Selected appeal was not found');
@@ -122,7 +122,10 @@ const ensurePersonForManualGift = async (
     },
   } as any);
 
-  const personId = result?.createPerson?.id;
+  const personId = extractMutationRecord<{ id?: string | null }>(
+    result,
+    'createPerson',
+  )?.id;
 
   if (typeof personId !== 'string' || personId === '') {
     throw new Error('Create person response missing id');
@@ -148,7 +151,10 @@ const ensureCompanyForManualGift = async (
     },
   } as any);
 
-  const companyId = result?.createCompany?.id;
+  const companyId = extractMutationRecord<{ id?: string | null }>(
+    result,
+    'createCompany',
+  )?.id;
 
   if (typeof companyId !== 'string' || companyId === '') {
     throw new Error('Create company response missing id');
@@ -209,11 +215,19 @@ const handler = async (
       : null;
   const donorId =
     donorType === 'INDIVIDUAL'
-      ? await resolveIndividualDonorId(client, body, donorChoice)
+      ? await resolveIndividualDonorId(
+          client,
+          body,
+          donorChoice as ManualGiftDonorChoice,
+        )
       : null;
   const companyId =
     donorType === 'COMPANY'
-      ? await resolveCompanyId(client, body, companyChoice)
+      ? await resolveCompanyId(
+          client,
+          body,
+          companyChoice as ManualGiftCompanyChoice,
+        )
       : null;
   const giftAidDeclarationService = createGiftAidDeclarationService(client);
   const giftAidInput =
@@ -241,7 +255,9 @@ const handler = async (
   );
   const declarationId = normalizeString(evaluatedGiftPayload.giftAidDeclarationId);
   const recurringAgreementId = normalizeString(
-    evaluatedGiftPayload.recurringAgreementId as string | undefined,
+    (evaluatedGiftPayload as Record<string, unknown>).recurringAgreementId as
+      | string
+      | undefined,
   );
   const { appealId, appealSourceId, fundId } =
     await resolveAppealAndFundSelection(client, body);
@@ -401,7 +417,10 @@ const handler = async (
     },
   } as any);
 
-  const giftId = result?.createGift?.id;
+  const giftId = extractMutationRecord<{ id?: string | null }>(
+    result,
+    'createGift',
+  )?.id;
 
   if (typeof giftId !== 'string' || giftId === '') {
     throw new Error('Create gift response missing id');
@@ -432,6 +451,18 @@ const handler = async (
       console.warn(
         'Non-blocking donor rollup recompute failed after manual gift create',
         donorId,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  if (companyId) {
+    try {
+      await recomputeCompanyRollups(client, [companyId]);
+    } catch (error) {
+      console.warn(
+        'Non-blocking company rollup recompute failed after manual gift create',
+        companyId,
         error instanceof Error ? error.message : String(error),
       );
     }

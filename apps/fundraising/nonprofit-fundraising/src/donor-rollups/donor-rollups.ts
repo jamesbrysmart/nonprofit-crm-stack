@@ -1,5 +1,9 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
+import {
+  extractConnection,
+  extractConnectionNodes,
+} from 'src/core-api/core-api-results';
 import type {
   DatabaseEventPayload,
   ObjectRecordDeleteEvent,
@@ -29,8 +33,11 @@ type GiftRecord = {
 type PersonRollupRecord = {
   id: string;
   lifetimeGiftAmount?: CurrencyAmount | null;
-  lifetimeGiftCount?: number | null;
+  giftCount?: number | null;
+  firstGiftDate?: string | null;
   lastGiftDate?: string | null;
+  lastGiftAmount?: CurrencyAmount | null;
+  largestGiftAmount?: CurrencyAmount | null;
 };
 
 type DonorRollupSummary = {
@@ -39,8 +46,11 @@ type DonorRollupSummary = {
     amountMicros: number;
     currencyCode: string;
   };
-  lifetimeGiftCount: number;
+  giftCount: number;
+  firstGiftDate: string | null;
   lastGiftDate: string | null;
+  lastGiftAmount: CurrencyAmount | null;
+  largestGiftAmount: CurrencyAmount | null;
 };
 
 type DonorRollupWriteback = {
@@ -49,8 +59,11 @@ type DonorRollupWriteback = {
     amountMicros: number;
     currencyCode: string;
   };
-  lifetimeGiftCount: number;
+  giftCount: number;
+  firstGiftDate: string | null;
   lastGiftDate: string | null;
+  lastGiftAmount: CurrencyAmount | null;
+  largestGiftAmount: CurrencyAmount | null;
 };
 
 type GiftEventRecord = {
@@ -110,21 +123,45 @@ const areSummariesEqual = (
   next: DonorRollupSummary,
 ) =>
   areAmountsEqual(current.lifetimeGiftAmount, next.lifetimeGiftAmount) &&
-  Math.round(current.lifetimeGiftCount ?? 0) === next.lifetimeGiftCount &&
-  normalizeString(current.lastGiftDate) === normalizeString(next.lastGiftDate);
+  Math.round(current.giftCount ?? 0) === next.giftCount &&
+  normalizeString(current.firstGiftDate) ===
+    normalizeString(next.firstGiftDate) &&
+  normalizeString(current.lastGiftDate) === normalizeString(next.lastGiftDate) &&
+  areAmountsEqual(current.lastGiftAmount, next.lastGiftAmount) &&
+  areAmountsEqual(current.largestGiftAmount, next.largestGiftAmount);
+
+const toRollupAmount = (
+  amount: CurrencyAmount | null | undefined,
+  fallbackCurrencyCode: string,
+): CurrencyAmount => ({
+  amountMicros: Math.round(amount?.amountMicros ?? 0),
+  currencyCode:
+    normalizeCurrencyCode(amount?.currencyCode) || fallbackCurrencyCode,
+});
 
 export const computeDonorRollupSummary = (
   donorId: string,
   gifts: GiftRecord[],
   currentPerson?: PersonRollupRecord,
 ): DonorRollupSummary => {
-  const includedGifts = gifts.filter((gift) => includeInCashRollups(gift.giftType));
+  const includedGifts = gifts.filter((gift) =>
+    includeInCashRollups(gift.giftType),
+  );
   const sortedByGiftDate = [...includedGifts].sort((left, right) =>
     normalizeString(right.giftDate).localeCompare(normalizeString(left.giftDate)),
   );
+  const sortedByGiftDateAscending = [...includedGifts].sort((left, right) =>
+    normalizeString(left.giftDate).localeCompare(normalizeString(right.giftDate)),
+  );
+  const largestGift = [...includedGifts].sort(
+    (left, right) =>
+      Math.round(right.amount?.amountMicros ?? 0) -
+      Math.round(left.amount?.amountMicros ?? 0),
+  )[0];
   const currencyCode =
     normalizeCurrencyCode(sortedByGiftDate[0]?.amount?.currencyCode) ||
     normalizeCurrencyCode(currentPerson?.lifetimeGiftAmount?.currencyCode);
+  const lastGift = sortedByGiftDate[0];
 
   return {
     donorId,
@@ -135,8 +172,16 @@ export const computeDonorRollupSummary = (
       ),
       currencyCode,
     },
-    lifetimeGiftCount: includedGifts.length,
-    lastGiftDate: normalizeString(sortedByGiftDate[0]?.giftDate) || null,
+    giftCount: includedGifts.length,
+    firstGiftDate:
+      normalizeString(sortedByGiftDateAscending[0]?.giftDate) || null,
+    lastGiftDate: normalizeString(lastGift?.giftDate) || null,
+    lastGiftAmount: lastGift
+      ? toRollupAmount(lastGift.amount, currencyCode)
+      : null,
+    largestGiftAmount: largestGift
+      ? toRollupAmount(largestGift.amount, currencyCode)
+      : null,
   };
 };
 
@@ -160,17 +205,23 @@ const loadPeopleByIds = async (
               amountMicros: true,
               currencyCode: true,
             },
-            lifetimeGiftCount: true,
+            giftCount: true,
+            firstGiftDate: true,
             lastGiftDate: true,
+            lastGiftAmount: {
+              amountMicros: true,
+              currencyCode: true,
+            },
+            largestGiftAmount: {
+              amountMicros: true,
+              currencyCode: true,
+            },
           },
         },
       },
     } as any);
 
-    const people =
-      result?.people?.edges?.map(
-        (edge: { node: PersonRollupRecord }) => edge.node,
-      ) ?? [];
+    const people = extractConnectionNodes<PersonRollupRecord>(result, 'people');
 
     for (const person of people) {
       peopleById.set(person.id, person);
@@ -223,9 +274,8 @@ const loadCommittedGiftsForDonors = async (
         },
       } as any);
 
-      const gifts =
-        result?.gifts?.edges?.map((edge: { node: GiftRecord }) => edge.node) ??
-        [];
+      const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
+      const gifts = giftConnection.edges.map((edge) => edge.node);
 
       for (const gift of gifts) {
         const donorId = normalizeString(gift.donor?.id);
@@ -237,10 +287,10 @@ const loadCommittedGiftsForDonors = async (
         giftsByDonorId.get(donorId)?.push(gift);
       }
 
-      hasNextPage = result?.gifts?.pageInfo?.hasNextPage === true;
+      hasNextPage = giftConnection.pageInfo?.hasNextPage === true;
       cursor =
-        typeof result?.gifts?.pageInfo?.endCursor === 'string'
-          ? result.gifts.pageInfo.endCursor
+        typeof giftConnection.pageInfo?.endCursor === 'string'
+          ? giftConnection.pageInfo.endCursor
           : undefined;
     }
   }
@@ -288,9 +338,8 @@ const loadAllCommittedGifts = async (
       },
     } as any);
 
-    const gifts =
-      result?.gifts?.edges?.map((edge: { node: GiftRecord }) => edge.node) ??
-      [];
+    const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
+    const gifts = giftConnection.edges.map((edge) => edge.node);
 
     for (const gift of gifts) {
       const donorId = normalizeString(gift.donor?.id);
@@ -304,10 +353,10 @@ const loadAllCommittedGifts = async (
       giftsByDonorId.set(donorId, donorGifts);
     }
 
-    hasNextPage = result?.gifts?.pageInfo?.hasNextPage === true;
+    hasNextPage = giftConnection.pageInfo?.hasNextPage === true;
     cursor =
-      typeof result?.gifts?.pageInfo?.endCursor === 'string'
-        ? result.gifts.pageInfo.endCursor
+      typeof giftConnection.pageInfo?.endCursor === 'string'
+        ? giftConnection.pageInfo.endCursor
         : undefined;
   }
 
@@ -330,12 +379,27 @@ const loadDonorIdsWithExistingRollups = async (
           filter: {
             or: [
               {
-                lifetimeGiftCount: {
+                giftCount: {
                   gt: 0,
                 },
               },
               {
+                firstGiftDate: {
+                  is: 'NOT_NULL',
+                },
+              },
+              {
                 lastGiftDate: {
+                  is: 'NOT_NULL',
+                },
+              },
+              {
+                lastGiftAmount: {
+                  is: 'NOT_NULL',
+                },
+              },
+              {
+                largestGiftAmount: {
                   is: 'NOT_NULL',
                 },
               },
@@ -354,9 +418,8 @@ const loadDonorIdsWithExistingRollups = async (
       },
     } as any);
 
-    const people =
-      result?.people?.edges?.map((edge: { node: { id: string } }) => edge.node) ??
-      [];
+    const peopleConnection = extractConnection<{ id: string }>(result, 'people');
+    const people = peopleConnection.edges.map((edge) => edge.node);
 
     for (const person of people) {
       const donorId = normalizeString(person.id);
@@ -366,10 +429,10 @@ const loadDonorIdsWithExistingRollups = async (
       }
     }
 
-    hasNextPage = result?.people?.pageInfo?.hasNextPage === true;
+    hasNextPage = peopleConnection.pageInfo?.hasNextPage === true;
     cursor =
-      typeof result?.people?.pageInfo?.endCursor === 'string'
-        ? result.people.pageInfo.endCursor
+      typeof peopleConnection.pageInfo?.endCursor === 'string'
+        ? peopleConnection.pageInfo.endCursor
         : undefined;
   }
 
@@ -459,8 +522,11 @@ export const recomputeDonorRollups = async (
     writebacks.push({
       id: donorId,
       lifetimeGiftAmount: nextSummary.lifetimeGiftAmount,
-      lifetimeGiftCount: nextSummary.lifetimeGiftCount,
+      giftCount: nextSummary.giftCount,
+      firstGiftDate: nextSummary.firstGiftDate,
       lastGiftDate: nextSummary.lastGiftDate,
+      lastGiftAmount: nextSummary.lastGiftAmount,
+      largestGiftAmount: nextSummary.largestGiftAmount,
     });
   }
 

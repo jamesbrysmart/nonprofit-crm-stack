@@ -13,6 +13,7 @@ export type PersonSummary = {
   emails?: {
     primaryEmail?: string | null;
   } | null;
+  mailingAddress?: MailingAddressEvidence | null;
 };
 
 export type CompanySummary = {

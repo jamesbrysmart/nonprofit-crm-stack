@@ -3,6 +3,10 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   buildGiftStagingReviewRecord,
 } from 'src/gift-staging-review/gift-staging-review.model';
+import {
+  evaluateGiftReadyRow,
+} from 'src/gift-staging-review/gift-ready-status';
+import { loadPeopleByPrimaryEmails } from 'src/donor-resolution/donor-creation-viability';
 import { subscribeToGiftStagingRecordInvalidated } from './gift-staging-record-sync';
 import type {
   GiftStagingReviewRecord,
@@ -156,7 +160,45 @@ export const useGiftStagingReviewRecord = (recordId: string | null) => {
         return null;
       }
 
-      const nextRecord = buildGiftStagingReviewRecord(loadedRecord);
+      const peopleByEmail = await loadPeopleByPrimaryEmails(
+        new CoreApiClient(),
+        loadedRecord.donor?.id ? [] : [loadedRecord.donorEmail ?? ''],
+      );
+      const evaluation = evaluateGiftReadyRow({
+        row: {
+          id: loadedRecord.id,
+          amount:
+            typeof loadedRecord.amount === 'string'
+              ? null
+              : loadedRecord.amount,
+          donor: loadedRecord.donor,
+          donorEmail: loadedRecord.donorEmail,
+          donorFirstName: loadedRecord.donorFirstName,
+          donorLastName: loadedRecord.donorLastName,
+          isAnonymousDonor: loadedRecord.isAnonymousDonor,
+          donorResolutionState: loadedRecord.donorResolutionState,
+          giftDate: loadedRecord.giftDate,
+          paymentType: loadedRecord.paymentType,
+          paymentState: loadedRecord.paymentState,
+          processingStatus: loadedRecord.processingStatus,
+          provider: loadedRecord.provider,
+          providerAgreementId: loadedRecord.providerAgreementId,
+          providerIntervalCount: loadedRecord.providerIntervalCount,
+          providerIntervalUnit: loadedRecord.providerIntervalUnit,
+          appealSourceExternalId: loadedRecord.appealSourceExternalId,
+          sourceAppealName: loadedRecord.sourceAppealName,
+          sourceFundName: loadedRecord.sourceFundName,
+          appeal: loadedRecord.appeal,
+          appealSource: loadedRecord.appealSource,
+          fund: loadedRecord.fund,
+          recurringAgreement: loadedRecord.recurringAgreement,
+        },
+        peopleByEmail,
+      });
+      const nextRecord = buildGiftStagingReviewRecord(
+        loadedRecord,
+        evaluation.preflight,
+      );
       setRecord(nextRecord);
 
       return nextRecord;

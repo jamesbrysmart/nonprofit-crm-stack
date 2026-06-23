@@ -1,7 +1,7 @@
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { AppPath, navigate } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   badgeStyle,
   compactConfirmationCardStyle,
   compactValueStyle,
@@ -59,7 +59,7 @@ const RecurringAgreementDonorContext = () => {
               {donorEmail === '' ? 'No email on record' : donorEmail}
             </div>
           </div>
-          <Button
+          <ActionButton
             title="Open donor record"
             variant="secondary"
             onClick={() => {

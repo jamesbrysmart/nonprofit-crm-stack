@@ -148,6 +148,7 @@ export type GiftStagingReviewRecord = {
   donorEmail: string;
   donorPhone: string;
   isAnonymousDonor: boolean;
+  donorMailingAddressDisplay: string;
   externalId: string;
   sourceFingerprint: string;
   providerEventId: string;
@@ -203,6 +204,11 @@ export type DerivedReviewState = {
   reason: string;
   nextAction: string;
   hasBlocker: boolean;
+};
+
+export type DerivedReviewIssue = {
+  code: BatchPreflightIssueCode;
+  label: string;
 };
 
 export type GiftStagingReviewData = {

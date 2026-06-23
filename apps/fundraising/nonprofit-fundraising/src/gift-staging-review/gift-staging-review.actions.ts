@@ -1,7 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
-  buildConflictMessage,
-  findPrimaryEmailConflict,
   loadPeopleByPrimaryEmails,
 } from 'src/donor-resolution/donor-creation-viability';
 import {
@@ -176,18 +174,6 @@ const evaluateGiftReadyStatus = async ({
     peopleByEmail,
   });
 
-  if (evaluation.hasPrimaryEmailConflict) {
-    const conflict = findPrimaryEmailConflict({
-      donorEmail: resolvedRow.donorEmail,
-      linkedDonorId: resolvedRow.donor?.id,
-      peopleByEmail,
-    });
-
-    throw new Error(
-      buildConflictMessage(resolvedRow.donorEmail?.trim() ?? '', conflict ?? undefined),
-    );
-  }
-
   return evaluation.giftReadyStatus;
 };
 
@@ -332,7 +318,6 @@ export const saveGiftCoding = async (
     appealId: string;
     appealSourceId: string;
     fundId: string;
-    paymentType?: string;
     softCreditPersonId?: string;
     softCreditCompanyId?: string;
     softCreditType?: string;
@@ -406,16 +391,6 @@ export const saveGiftCoding = async (
     requestedSoftCreditSelection: softCreditSelection,
   });
   const fundId = coding.fundId.trim() === '' ? appealDefaultFundId : coding.fundId.trim();
-  const paymentType = coding.paymentType?.trim().toUpperCase() ?? '';
-
-  if (
-    paymentType !== '' &&
-    !['CARD', 'DIRECT_DEBIT', 'BANK_TRANSFER', 'CASH', 'CHEQUE', 'OTHER'].includes(
-      paymentType,
-    )
-  ) {
-    throw new Error('Payment type is not supported');
-  }
 
   return updateGiftStaging(recordId, {
     ...(appealId !== ''
@@ -492,6 +467,8 @@ export const saveGiftCoding = async (
           softCreditType: null,
         }
       : {}),
-    paymentType: paymentType === '' ? null : paymentType,
+    giftReadyStatus: 'NEEDS_REVIEW',
+    processingStatus: 'NOT_PROCESSED',
+    errorDetail: null,
   });
 };

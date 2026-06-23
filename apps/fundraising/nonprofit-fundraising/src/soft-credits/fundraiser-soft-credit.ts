@@ -1,4 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   ResolvedSoftCreditSelection,
   SoftCreditType,
@@ -59,16 +60,11 @@ export const loadAppealSourceFundraisersById = async (
     },
   } as any);
 
-  const records =
-    result?.appealSources?.edges?.map(
-      (edge: {
-        node: {
-          id?: string | null;
-          fundraiserPerson?: { id?: string | null } | null;
-          fundraiserCompany?: { id?: string | null } | null;
-        };
-      }) => edge.node,
-    ) ?? [];
+  const records = extractConnectionNodes<{
+    id?: string | null;
+    fundraiserPerson?: { id?: string | null } | null;
+    fundraiserCompany?: { id?: string | null } | null;
+  }>(result, 'appealSources');
 
   return Object.fromEntries(
     records

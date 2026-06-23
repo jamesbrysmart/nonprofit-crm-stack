@@ -802,6 +802,7 @@ describe('buildStripeOneOffGiftStagingInput', () => {
       },
       giftDate: '2026-04-26',
       donationType: 'ONE_OFF',
+      paymentType: 'CARD',
       donorFirstName: 'Ada',
       donorLastName: 'Lovelace',
       donorEmail: 'ada@example.com',

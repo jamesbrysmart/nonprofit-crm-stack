@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
+import { extractQueryRecord } from 'src/core-api/core-api-results';
 import {
   AppPath,
   navigate,
   useRecordId,
 } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   actionRowStyle,
   badgeStyle,
   compactMetaGridStyle,
@@ -104,9 +105,14 @@ const loadSubmissionRecord = async (
         status: true,
       },
     },
-  } as never);
+  } as any);
 
-  return (result?.giftAidClaimSubmission as GiftAidClaimSubmissionRecordView | null) ?? null;
+  return (
+    extractQueryRecord<GiftAidClaimSubmissionRecordView>(
+      result,
+      'giftAidClaimSubmission',
+    ) ?? null
+  );
 };
 
 const GiftAidClaimSubmissionRecord = () => {
@@ -184,7 +190,7 @@ const GiftAidClaimSubmissionRecord = () => {
 
       <div style={actionRowStyle}>
         {record.giftAidClaimBatch?.id ? (
-          <Button
+          <ActionButton
             title="Open parent claim batch"
             variant="secondary"
             onClick={() => {

@@ -1,4 +1,9 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import {
+  extractConnectionNodes,
+  extractMutationRecord,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
 import type {
   GiftAidDeclarationRecord,
   GiftAidDeclarationStatus,
@@ -92,9 +97,10 @@ export const createGiftAidDeclarationService = (client: CoreApiClient) => {
       },
     } as any);
 
-    const declaration =
-      (result?.giftAidDeclaration as GiftAidDeclarationRecord | undefined) ??
-      undefined;
+    const declaration = extractQueryRecord<GiftAidDeclarationRecord>(
+      result,
+      'giftAidDeclaration',
+    );
 
     if (declaration?.id) {
       declarationsById.set(declaration.id, declaration);
@@ -138,10 +144,10 @@ export const createGiftAidDeclarationService = (client: CoreApiClient) => {
       },
     } as any);
 
-    const declarations =
-      result?.giftAidDeclarations?.edges?.map(
-        (edge: { node: GiftAidDeclarationRecord }) => edge.node,
-      ) ?? [];
+    const declarations = extractConnectionNodes<GiftAidDeclarationRecord>(
+      result,
+      'giftAidDeclarations',
+    );
 
     declarationsByPersonId.set(personId, declarations);
     for (const declaration of declarations) {
@@ -205,8 +211,10 @@ export const createGiftAidDeclarationService = (client: CoreApiClient) => {
       },
     } as any);
 
-    const declaration =
-      result?.createGiftAidDeclaration as GiftAidDeclarationRecord | undefined;
+    const declaration = extractMutationRecord<GiftAidDeclarationRecord>(
+      result,
+      'createGiftAidDeclaration',
+    );
 
     if (declaration?.id) {
       declarationsById.set(declaration.id, declaration);

@@ -12,13 +12,10 @@ export const GIFT_BATCH_SOURCE_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_BATCH_STATUS_FIELD_UNIVERSAL_IDENTIFIER =
   '89d10d33-2db8-4ffc-ab9b-4b20bf379758';
 
-export const GIFT_BATCH_TOTAL_ITEMS_FIELD_UNIVERSAL_IDENTIFIER =
-  'ff8a5f27-bcff-4c5d-9344-d663f6f54554';
-
-export const GIFT_BATCH_PROCESSED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER =
+export const GIFT_BATCH_PROCESSED_GIFTS_FIELD_UNIVERSAL_IDENTIFIER =
   '038c7cd9-09cf-4351-8d2a-f170bb6cfe33';
 
-export const GIFT_BATCH_FAILED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER =
+export const GIFT_BATCH_FAILED_GIFTS_FIELD_UNIVERSAL_IDENTIFIER =
   'f1c6d37b-7d39-4fd4-8a1e-b475e89f7e2d';
 
 export const GIFT_BATCH_EXPECTED_ITEM_COUNT_FIELD_UNIVERSAL_IDENTIFIER =
@@ -94,30 +91,21 @@ export default defineObject({
       ],
     },
     {
-      universalIdentifier: GIFT_BATCH_TOTAL_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.NUMBER,
-      name: 'totalItems',
-      label: 'Total items',
-      description: 'How many staged rows belong to the batch',
-      icon: 'IconHash',
-      defaultValue: 0,
-    },
-    {
       universalIdentifier:
-        GIFT_BATCH_PROCESSED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
+        GIFT_BATCH_PROCESSED_GIFTS_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.NUMBER,
-      name: 'processedItems',
-      label: 'Processed items',
-      description: 'How many rows in the batch are committed',
+      name: 'processedGifts',
+      label: 'Processed gifts',
+      description: 'How many gifts were committed by batch processing',
       icon: 'IconCheck',
       defaultValue: 0,
     },
     {
-      universalIdentifier: GIFT_BATCH_FAILED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
+      universalIdentifier: GIFT_BATCH_FAILED_GIFTS_FIELD_UNIVERSAL_IDENTIFIER,
       type: FieldType.NUMBER,
-      name: 'failedItems',
-      label: 'Failed items',
-      description: 'How many rows in the batch currently have processing errors',
+      name: 'failedGifts',
+      label: 'Failed gifts',
+      description: 'How many gifts failed during batch processing',
       icon: 'IconAlertTriangle',
       defaultValue: 0,
     },

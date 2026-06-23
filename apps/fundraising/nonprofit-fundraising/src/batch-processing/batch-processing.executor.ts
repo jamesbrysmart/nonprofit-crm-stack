@@ -54,6 +54,12 @@ export type BatchCreateResult = {
   metrics: BatchExecutionMetrics;
 };
 
+export type SingleGiftProcessingResult = {
+  writeback: RowWriteback;
+  stagingWritebackSucceeded: boolean;
+  reconciliationError: string | null;
+};
+
 class CorrelationContractFailure extends Error {
   constructor(message: string) {
     super(message);
@@ -356,6 +362,51 @@ const persistWritebacks = async (writebacks: RowWriteback[]) => {
       delayMs: CHUNK_DELAY_MS,
     },
   );
+};
+
+export const executeSingleGiftProcessing = async (
+  row: BatchProcessingRow,
+): Promise<SingleGiftProcessingResult> => {
+  const { entries, preflightFailures, directRowFallbackSuccesses } =
+    await prepareBatchGiftEntries([row]);
+
+  let writeback: RowWriteback | null =
+    directRowFallbackSuccesses[0] ?? preflightFailures[0] ?? null;
+
+  if (!writeback && entries[0]) {
+    const chunkResult = await createBatchChunkWithFallback([entries[0]]);
+    writeback =
+      chunkResult.successfulWritebacks[0] ??
+      chunkResult.failedWritebacks[0] ??
+      null;
+  }
+
+  if (!writeback) {
+    throw new Error('Single-row processing produced no writeback result');
+  }
+
+  let stagingWritebackSucceeded = true;
+  let reconciliationError: string | null = null;
+
+  try {
+    await persistWritebacks([writeback]);
+  } catch (error) {
+    stagingWritebackSucceeded = false;
+    reconciliationError =
+      error instanceof Error
+        ? error.message
+        : 'Staging reconciliation failed after processing';
+  }
+
+  if ('committedGiftId' in writeback) {
+    await runBatchProcessingSideEffects([writeback]);
+  }
+
+  return {
+    writeback,
+    stagingWritebackSucceeded,
+    reconciliationError,
+  };
 };
 
 export const executeBatchGiftProcessing = async (

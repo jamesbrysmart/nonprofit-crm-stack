@@ -1,5 +1,6 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 
 const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
@@ -53,12 +54,13 @@ const loadAppealSourceParentsById = async (
   } as any);
 
   return new Map(
-    (
-      result?.appealSources?.edges?.map(
-        (edge: { node: AppealSourceParentRecord }) => edge.node,
-      ) ?? []
-    )
-      .map((appealSource) => [normalizeString(appealSource.id), appealSource])
+    extractConnectionNodes<AppealSourceParentRecord>(result, 'appealSources')
+      .map(
+        (appealSource): [string, AppealSourceParentRecord] => [
+          normalizeString(appealSource.id),
+          appealSource,
+        ],
+      )
       .filter(([id]) => id !== ''),
   );
 };

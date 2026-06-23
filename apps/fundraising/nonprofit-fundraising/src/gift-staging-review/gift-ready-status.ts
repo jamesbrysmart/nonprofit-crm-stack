@@ -66,7 +66,6 @@ export const evaluateGiftReadyRow = ({
 }): GiftReadyEvaluation => {
   const preflight = classifyBatchPreflight(row);
   const hasPrimaryEmailConflict =
-    preflight.category === 'READY' &&
     row.isAnonymousDonor !== true &&
     !row.donor?.id &&
     Boolean(
@@ -76,15 +75,27 @@ export const evaluateGiftReadyRow = ({
         peopleByEmail,
       }),
     );
+  const preflightWithEmailConflict: BatchPreflightResult =
+    hasPrimaryEmailConflict &&
+    preflight.category !== 'PROCESSED' &&
+    preflight.category !== 'FAILED'
+      ? {
+          category: 'NEEDS_REVIEW',
+          issueCodes: [
+            ...preflight.issueCodes,
+            'DONOR_PRIMARY_EMAIL_CONFLICT',
+          ],
+        }
+      : preflight;
 
   return {
     giftReadyStatus:
-      preflight.category === 'READY' &&
+      preflightWithEmailConflict.category === 'READY' &&
       isPaymentConfirmedOrNotRequired({ paymentState: row.paymentState }) &&
       !hasPrimaryEmailConflict
         ? 'READY_TO_PROCESS'
         : 'NEEDS_REVIEW',
-    preflight,
+    preflight: preflightWithEmailConflict,
     hasPrimaryEmailConflict,
   };
 };

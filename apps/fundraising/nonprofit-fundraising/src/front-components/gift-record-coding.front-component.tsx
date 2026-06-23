@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   badgeStyle,
   compactDividerSectionStyle,
   compactMetaGridStyle,
@@ -397,7 +397,7 @@ const GiftRecordCoding = () => {
             <span style={badgeStyle('success')}>Fund set</span>
           ) : null}
         </div>
-        <Button
+        <ActionButton
           title="Save coding"
           variant="secondary"
           onClick={() => {

@@ -4,8 +4,8 @@ import {
   enqueueSnackbar,
   useRecordId,
 } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   actionRowStyle,
   compactDividerSectionStyle,
   compactMetaItemStyle,
@@ -115,13 +115,17 @@ const GiftStagingProcessing = () => {
       await enqueueSnackbar({
         message:
           result.processingStatus === 'PROCESSED'
-            ? 'Gift record created.'
+            ? result.stagingWritebackSucceeded
+              ? 'Gift record created.'
+              : `Gift record created, but staging sync did not complete cleanly.${result.reconciliationError ? ` ${result.reconciliationError}` : ''}`
             : result.processingStatus === 'PROCESS_FAILED'
               ? result.errorDetail ?? 'This gift could not be processed.'
               : 'This gift cannot be processed yet.',
         variant:
           result.processingStatus === 'PROCESSED'
-            ? 'success'
+            ? result.stagingWritebackSucceeded
+              ? 'success'
+              : 'warning'
             : result.processingStatus === 'PROCESS_FAILED'
               ? 'error'
               : 'info',
@@ -168,17 +172,16 @@ const GiftStagingProcessing = () => {
       ) : null}
 
       <div style={actionRowStyle}>
-        <Button
+        <ActionButton
           title={processingRow ? 'Processing...' : 'Process'}
           variant="primary"
-          accent="blue"
           onClick={() => {
             void handleProcessRow();
           }}
           disabled={saving || processingRow || !canProcess}
         />
         {showCheckReady ? (
-          <Button
+          <ActionButton
             title="Check if ready"
             variant="secondary"
             onClick={() => {

@@ -50,7 +50,16 @@ describe('batch donor match', () => {
   it('auto-links only when one exact email candidate exists', () => {
     const outcome = determineBatchDonorMatchOutcome({
       email: 'ada@example.com',
-      candidates: [
+      nameCandidates: [
+        {
+          id: 'person_1',
+          emails: {
+            primaryEmail: 'ada@example.com',
+            additionalEmails: [],
+          },
+        },
+      ],
+      emailCandidates: [
         {
           id: 'person_1',
           emails: {
@@ -70,7 +79,7 @@ describe('batch donor match', () => {
   it('marks rows ambiguous when multiple exact email candidates exist', () => {
     const outcome = determineBatchDonorMatchOutcome({
       email: 'ada@example.com',
-      candidates: [
+      nameCandidates: [
         {
           id: 'person_1',
           emails: {
@@ -86,6 +95,7 @@ describe('batch donor match', () => {
           },
         },
       ],
+      emailCandidates: [],
     });
 
     expect(outcome).toEqual({
@@ -97,12 +107,34 @@ describe('batch donor match', () => {
   it('marks same-name rows ambiguous when email does not safely auto-link', () => {
     const outcome = determineBatchDonorMatchOutcome({
       email: 'ada@example.com',
-      candidates: [
+      nameCandidates: [
         {
           id: 'person_1',
           emails: {
             primaryEmail: 'other@example.com',
             additionalEmails: ['another@example.com'],
+          },
+        },
+      ],
+      emailCandidates: [],
+    });
+
+    expect(outcome).toEqual({
+      kind: 'AMBIGUOUS',
+      candidateCount: 1,
+    });
+  });
+
+  it('marks unique exact email-only matches ambiguous for review', () => {
+    const outcome = determineBatchDonorMatchOutcome({
+      email: 'ada@example.com',
+      nameCandidates: [],
+      emailCandidates: [
+        {
+          id: 'person_1',
+          emails: {
+            primaryEmail: 'ada@example.com',
+            additionalEmails: [],
           },
         },
       ],
@@ -117,7 +149,8 @@ describe('batch donor match', () => {
   it('leaves rows unreviewed when no candidate set exists', () => {
     const outcome = determineBatchDonorMatchOutcome({
       email: 'nobody@example.com',
-      candidates: [],
+      nameCandidates: [],
+      emailCandidates: [],
     });
 
     expect(outcome).toEqual({

@@ -4,6 +4,7 @@ import {
   type RoutePayload,
 } from 'twenty-sdk/define';
 import { loadBatchProcessingContext } from 'src/batch-processing/batch-loaders';
+import { createBatchRouteLogger } from 'src/batch-processing/batch-route-logging';
 import {
   getGiftBatchWorkflowLimitMessage,
   isGiftBatchOverWorkflowLimit,
@@ -134,60 +135,86 @@ const handler = async (
     throw new Error('giftBatchId is required');
   }
 
-  const client = new CoreApiClient();
-  const { batch, rows } = await loadBatchProcessingContext(client, giftBatchId);
-
-  if (!batch) {
-    throw new Error('Batch not found');
-  }
-
-  if (isGiftBatchOverWorkflowLimit(batch.totalItems)) {
-    throw new Error(getGiftBatchWorkflowLimitMessage(batch.totalItems));
-  }
-
-  const counts = await checkGiftStagingRowsReadiness(client, rows);
-
-  const expectedItemCount =
-    typeof batch.expectedItemCount === 'number'
-      ? batch.expectedItemCount
-      : null;
-  const itemCountMatchesExpected =
-    expectedItemCount === null
-      ? null
-      : expectedItemCount === counts.actualItemCount;
-
-  const actualTotal = summarizeActualTotal(rows);
-  const expectedTotalDisplay = formatExpectedTotalDisplay(
-    batch.expectedTotalAmount,
-  );
-  const expectedAmountMicros = batch.expectedTotalAmount?.amountMicros;
-  const expectedCurrencyCode = normalizeString(
-    batch.expectedTotalAmount?.currencyCode,
-  );
-  const totalMatchesExpected =
-    typeof expectedAmountMicros !== 'number' ||
-    !Number.isFinite(expectedAmountMicros) ||
-    expectedCurrencyCode === ''
-      ? null
-      : actualTotal.amountMicros !== null &&
-          actualTotal.currencyCode !== null &&
-          actualTotal.amountMicros === expectedAmountMicros &&
-          actualTotal.currencyCode === expectedCurrencyCode;
-
-  return {
+  const logger = createBatchRouteLogger({
+    route: 'check-batch',
     giftBatchId,
-    checkedAt: counts.checkedAt,
-    actualItemCount: counts.actualItemCount,
-    expectedItemCount,
-    itemCountMatchesExpected,
-    expectedTotalDisplay,
-    actualTotalDisplay: actualTotal.display,
-    totalMatchesExpected,
-    readyItems: counts.readyItems,
-    needsReviewItems: counts.needsReviewItems,
-    failedItems: counts.failedItems,
-    processedItems: counts.processedItems,
-  };
+  });
+  logger.info('started');
+
+  const client = new CoreApiClient();
+  try {
+    const { batch, rows } = await loadBatchProcessingContext(client, giftBatchId);
+
+    logger.info('context_loaded', { rowCount: rows.length });
+
+    if (!batch) {
+      throw new Error('Batch not found');
+    }
+
+    if (isGiftBatchOverWorkflowLimit(rows.length)) {
+      throw new Error(getGiftBatchWorkflowLimitMessage(rows.length));
+    }
+
+    const counts = await checkGiftStagingRowsReadiness(client, rows);
+    logger.info('readiness_checked', {
+      actualItemCount: counts.actualItemCount,
+      readyItems: counts.readyItems,
+      needsReviewItems: counts.needsReviewItems,
+      failedItems: counts.failedItems,
+      processedItems: counts.processedItems,
+    });
+
+    const expectedItemCount =
+      typeof batch.expectedItemCount === 'number'
+        ? batch.expectedItemCount
+        : null;
+    const itemCountMatchesExpected =
+      expectedItemCount === null
+        ? null
+        : expectedItemCount === counts.actualItemCount;
+
+    const actualTotal = summarizeActualTotal(rows);
+    const expectedTotalDisplay = formatExpectedTotalDisplay(
+      batch.expectedTotalAmount,
+    );
+    const expectedAmountMicros = batch.expectedTotalAmount?.amountMicros;
+    const expectedCurrencyCode = normalizeString(
+      batch.expectedTotalAmount?.currencyCode,
+    );
+    const totalMatchesExpected =
+      typeof expectedAmountMicros !== 'number' ||
+      !Number.isFinite(expectedAmountMicros) ||
+      expectedCurrencyCode === ''
+        ? null
+        : actualTotal.amountMicros !== null &&
+            actualTotal.currencyCode !== null &&
+            actualTotal.amountMicros === expectedAmountMicros &&
+            actualTotal.currencyCode === expectedCurrencyCode;
+
+    logger.info('completed', {
+      actualItemCount: counts.actualItemCount,
+      readyItems: counts.readyItems,
+      needsReviewItems: counts.needsReviewItems,
+    });
+
+    return {
+      giftBatchId,
+      checkedAt: counts.checkedAt,
+      actualItemCount: counts.actualItemCount,
+      expectedItemCount,
+      itemCountMatchesExpected,
+      expectedTotalDisplay,
+      actualTotalDisplay: actualTotal.display,
+      totalMatchesExpected,
+      readyItems: counts.readyItems,
+      needsReviewItems: counts.needsReviewItems,
+      failedItems: counts.failedItems,
+      processedItems: counts.processedItems,
+    };
+  } catch (error) {
+    logger.fail('failed', error);
+    throw error;
+  }
 };
 
 export default defineLogicFunction({

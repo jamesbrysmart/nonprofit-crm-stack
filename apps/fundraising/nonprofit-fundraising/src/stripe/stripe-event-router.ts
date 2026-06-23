@@ -89,11 +89,31 @@ const getStripeObjectId = (value: StripeObjectRef): string | null => {
   return null;
 };
 
-const hasStripeSubscription = (event: TrustedStripeEvent): boolean =>
-  getStripeObjectId(event.data?.object?.subscription) !== null;
+const getEventObject = (event: TrustedStripeEvent) => event.data?.object ?? null;
 
-const isDonationFormCheckout = (event: TrustedStripeEvent): boolean =>
-  normalizeString(event.data?.object?.metadata?.sourceFingerprint) !== '';
+const isStripeCheckoutSessionLike = (
+  value: unknown,
+): value is StripeCheckoutSessionLike =>
+  value !== null &&
+  value !== undefined &&
+  typeof value === 'object' &&
+  ('metadata' in value || 'subscription' in value);
+
+const hasStripeSubscription = (event: TrustedStripeEvent): boolean => {
+  const object = getEventObject(event);
+
+  return isStripeCheckoutSessionLike(object)
+    ? getStripeObjectId(object.subscription) !== null
+    : false;
+};
+
+const isDonationFormCheckout = (event: TrustedStripeEvent): boolean => {
+  const object = getEventObject(event);
+
+  return isStripeCheckoutSessionLike(object)
+    ? normalizeString(object.metadata?.sourceFingerprint) !== ''
+    : false;
+};
 
 export const routeTrustedStripeEvent = async (
   client: CoreApiClient,

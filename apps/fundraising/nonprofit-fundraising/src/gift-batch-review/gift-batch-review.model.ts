@@ -136,11 +136,15 @@ const buildReviewRow = (row: BatchReviewRow): GiftBatchReviewRow => {
 export const buildGiftBatchReviewRecord = (
   batch: BatchSummaryRecord,
   rows: BatchReviewRow[],
+  options: {
+    attachedItemCount?: number;
+  } = {},
 ): GiftBatchReviewRecord => {
   const reviewRows = rows.map(buildReviewRow);
   const totalItems =
-    typeof batch.totalItems === 'number' && Number.isFinite(batch.totalItems)
-      ? batch.totalItems
+    typeof options.attachedItemCount === 'number' &&
+    Number.isFinite(options.attachedItemCount)
+      ? options.attachedItemCount
       : reviewRows.length;
   const isOverWorkflowLimit = isGiftBatchOverWorkflowLimit(totalItems);
   const processedItems = reviewRows.filter(

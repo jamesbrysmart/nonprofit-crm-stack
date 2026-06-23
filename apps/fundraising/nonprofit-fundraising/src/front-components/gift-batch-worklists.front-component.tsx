@@ -10,6 +10,7 @@ import {
   openGiftBatchQueue,
   useGiftBatchReview,
 } from 'src/gift-batch-review/use-gift-batch-review';
+import { MAX_GIFT_BATCH_ITEMS } from 'src/batch-processing/batch-processing.limits';
 
 export const GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '4432b728-7ae1-4ad2-92f6-49d5b1624398';
@@ -68,9 +69,9 @@ const GiftBatchWorklists = () => {
   return (
     <div style={compactWidgetRootStyle}>
       <div style={queueRowStyle}>
-        <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>All staged rows</div>
+        <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>All staged gifts</div>
         <div style={queueCountStyle}>
-          {record.totalItems} row{record.totalItems === 1 ? '' : 's'}
+          {record.totalItems} gift{record.totalItems === 1 ? '' : 's'}
         </div>
         <button
           type="button"
@@ -84,7 +85,7 @@ const GiftBatchWorklists = () => {
       {record.isOverWorkflowLimit ? (
         <div style={compactDividerSectionStyle}>
           <div style={secondaryTextStyle}>
-            Ready/needs-review worklists are unavailable for oversized batches because the current workflow only supports up to 200 donations per batch.
+            Split the batch before using review worklists.
           </div>
         </div>
       ) : (
@@ -96,7 +97,7 @@ const GiftBatchWorklists = () => {
                   Review possible donor matches
                 </div>
                 <div style={queueCountStyle}>
-                  {record.ambiguousItems} row
+                  {record.ambiguousItems} gift
                   {record.ambiguousItems === 1 ? '' : 's'}
                 </div>
                 <button
@@ -116,7 +117,7 @@ const GiftBatchWorklists = () => {
                 Needs review
               </div>
               <div style={queueCountStyle}>
-                {needsReviewItems} row{needsReviewItems === 1 ? '' : 's'}
+                {needsReviewItems} gift{needsReviewItems === 1 ? '' : 's'}
               </div>
               <button
                 type="button"
@@ -134,7 +135,7 @@ const GiftBatchWorklists = () => {
                 Ready to process
               </div>
               <div style={queueCountStyle}>
-                {record.readyItems} row{record.readyItems === 1 ? '' : 's'}
+                {record.readyItems} gift{record.readyItems === 1 ? '' : 's'}
               </div>
               <button
                 type="button"
@@ -152,7 +153,7 @@ const GiftBatchWorklists = () => {
                 Failed
               </div>
               <div style={queueCountStyle}>
-                {record.failedItems} row{record.failedItems === 1 ? '' : 's'}
+                {record.failedItems} gift{record.failedItems === 1 ? '' : 's'}
               </div>
               <button
                 type="button"

@@ -1,4 +1,9 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import {
+  extractConnectionNodes,
+  extractMutationRecord,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
 import { computeClaimBatchRollups } from './gift-aid-claim-batch-rollups';
 import type {
   GiftAidClaimBatchRecord,
@@ -79,9 +84,10 @@ export const getCurrentDraftClaimBatch = async (
     },
   } as any);
 
-  return result?.giftAidClaimBatches?.edges?.[0]?.node as
-    | GiftAidClaimBatchRecord
-    | undefined;
+  return extractConnectionNodes<GiftAidClaimBatchRecord>(
+    result,
+    'giftAidClaimBatches',
+  )[0];
 };
 
 export const getOrCreateCurrentDraftClaimBatch = async (
@@ -111,7 +117,10 @@ export const getOrCreateCurrentDraftClaimBatch = async (
     },
   } as any);
 
-  return created.createGiftAidClaimBatch as GiftAidClaimBatchRecord;
+  return extractMutationRecord<GiftAidClaimBatchRecord>(
+    created,
+    'createGiftAidClaimBatch',
+  ) as GiftAidClaimBatchRecord;
 };
 
 export const listGiftsForClaimBatch = async (
@@ -134,11 +143,7 @@ export const listGiftsForClaimBatch = async (
     },
   } as any);
 
-  return (
-    result?.gifts?.edges?.map(
-      (edge: { node: GiftAidClaimGiftRecord }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<GiftAidClaimGiftRecord>(result, 'gifts');
 };
 
 export const listNeedsReviewGiftAidGifts = async (
@@ -169,11 +174,7 @@ export const listNeedsReviewGiftAidGifts = async (
     },
   } as any);
 
-  return (
-    result?.gifts?.edges?.map(
-      (edge: { node: GiftAidClaimGiftRecord }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<GiftAidClaimGiftRecord>(result, 'gifts');
 };
 
 export const refreshClaimBatchSummary = async (
@@ -246,16 +247,18 @@ export const loadGiftAidClaimWorkspace = async (
 
   const gifts = await listGiftsForClaimBatch(client, batchId);
   const needsReviewGifts = await listNeedsReviewGiftAidGifts(client);
-  const batch = (result?.giftAidClaimBatch as GiftAidClaimBatchRecord | null) ?? null;
-  const submissions =
-    result?.giftAidClaimSubmissions?.edges?.map(
-      (edge: { node: GiftAidClaimSubmissionRecord }) => edge.node,
-    )?.sort((left, right) => {
+  const batch =
+    extractQueryRecord<GiftAidClaimBatchRecord>(result, 'giftAidClaimBatch') ??
+    null;
+  const submissions = extractConnectionNodes<GiftAidClaimSubmissionRecord>(
+    result,
+    'giftAidClaimSubmissions',
+  ).sort((left: GiftAidClaimSubmissionRecord, right: GiftAidClaimSubmissionRecord) => {
       const leftTimestamp = left.submittedAt ?? left.completedAt ?? '';
       const rightTimestamp = right.submittedAt ?? right.completedAt ?? '';
 
       return rightTimestamp.localeCompare(leftTimestamp);
-    }) ?? [];
+    });
 
   if (!batch) {
     return {
@@ -289,5 +292,8 @@ export const loadClaimBatch = async (client: CoreApiClient, batchId: string) => 
     },
   } as any);
 
-  return refreshed?.giftAidClaimBatch as GiftAidClaimBatchRecord | null;
+  return (
+    extractQueryRecord<GiftAidClaimBatchRecord>(refreshed, 'giftAidClaimBatch') ??
+    null
+  );
 };

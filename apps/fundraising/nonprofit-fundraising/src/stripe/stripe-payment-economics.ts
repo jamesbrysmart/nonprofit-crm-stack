@@ -33,7 +33,7 @@ const buildCurrencyAmountFromMinorUnits = ({
   amountMinorUnits: number | null | undefined;
   currency: string | null | undefined;
 }): PaymentEconomicsCurrencyAmount | null => {
-  if (!Number.isInteger(amountMinorUnits)) {
+  if (typeof amountMinorUnits !== 'number' || !Number.isInteger(amountMinorUnits)) {
     return null;
   }
 
@@ -139,7 +139,9 @@ const createStripePaymentEconomicsRetriever = (
           const latestInvoice = subscription.latest_invoice;
 
           if (latestInvoice && typeof latestInvoice !== 'string') {
-            paymentIntentId = getProviderPaymentId(latestInvoice.payment_intent);
+            paymentIntentId = getProviderPaymentId(
+              (latestInvoice as StripeInvoiceObject).payment_intent,
+            );
           }
         }
       }

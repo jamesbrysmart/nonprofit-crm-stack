@@ -1,4 +1,9 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import {
+  extractConnectionNodes,
+  extractMutationRecord,
+} from 'src/core-api/core-api-results';
+import { recomputeDonorRollups } from 'src/donor-rollups/donor-rollups';
 import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
 import {
   createStripeOneOffGiftStaging,
@@ -100,7 +105,11 @@ const toCurrencyCode = (currency: string | null | undefined): string => {
 };
 
 const toAmountMicros = (amountMinorUnits: number | null | undefined): number => {
-  if (!Number.isInteger(amountMinorUnits) || amountMinorUnits <= 0) {
+  if (
+    typeof amountMinorUnits !== 'number' ||
+    !Number.isInteger(amountMinorUnits) ||
+    amountMinorUnits <= 0
+  ) {
     throw new Error('Stripe checkout session must include a positive amount_total');
   }
 
@@ -152,15 +161,20 @@ const getEventParts = (event: StripeRecurringCheckoutSessionCompletedEvent) => {
 
   const giftDateSource = session.created ?? event.created;
 
-  if (!Number.isInteger(giftDateSource) || giftDateSource <= 0) {
+  if (
+    typeof giftDateSource !== 'number' ||
+    !Number.isInteger(giftDateSource) ||
+    giftDateSource <= 0
+  ) {
     throw new Error('Stripe event must include a valid created timestamp');
   }
+  const createdTimestamp: number = giftDateSource;
 
   return {
     eventId,
     session,
     externalId,
-    giftDate: formatUnixDate(giftDateSource),
+    giftDate: formatUnixDate(createdTimestamp),
   };
 };
 
@@ -186,7 +200,8 @@ const findGiftBySourceFingerprint = async (
     },
   } as any);
 
-  const giftId = result?.gifts?.edges?.[0]?.node?.id;
+  const giftId = extractConnectionNodes<{ id?: string | null }>(result, 'gifts')[0]
+    ?.id;
 
   return typeof giftId === 'string' && giftId !== '' ? giftId : null;
 };
@@ -235,9 +250,10 @@ const findRecurringAgreementByStripeSubscription = async (
   } as any);
 
   return (
-    (result?.recurringAgreements?.edges?.[0]?.node as
-      | MatchedRecurringAgreement
-      | undefined) ?? null
+    extractConnectionNodes<MatchedRecurringAgreement>(
+      result,
+      'recurringAgreements',
+    )[0] ?? null
   );
 };
 
@@ -342,7 +358,10 @@ export const createStripeRecurringGiftForConfidentMatch = async (
     },
   } as any);
 
-  const giftId = result?.createGift?.id;
+  const giftId = extractMutationRecord<{ id?: string | null }>(
+    result,
+    'createGift',
+  )?.id;
 
   if (typeof giftId !== 'string' || giftId === '') {
     throw new Error('Create recurring Stripe gift response missing id');
@@ -353,6 +372,16 @@ export const createStripeRecurringGiftForConfidentMatch = async (
     agreement.id,
     giftDate,
   );
+
+  try {
+    await recomputeDonorRollups(client, [donorId]);
+  } catch (error) {
+    console.warn(
+      'Non-blocking donor rollup recompute failed after Stripe recurring gift create',
+      donorId,
+      error instanceof Error ? error.message : String(error),
+    );
+  }
 
   return {
     created: true,

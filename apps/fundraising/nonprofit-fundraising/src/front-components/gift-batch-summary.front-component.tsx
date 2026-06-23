@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
-  CompactMetaGrid,
-  CompactMetaItem,
+  ActionButton,
+  SummaryStrip,
+  SummaryStripItem,
   actionRowStyle,
   badgeStyle,
   compactMetaItemStyle,
@@ -17,6 +17,7 @@ import {
 } from 'src/front-components/front-component-ui';
 import { broadcastGiftBatchInvalidated } from 'src/gift-batch-review/gift-batch-sync';
 import { useGiftBatchReview } from 'src/gift-batch-review/use-gift-batch-review';
+import { MAX_GIFT_BATCH_ITEMS } from 'src/batch-processing/batch-processing.limits';
 
 export const GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'ad9b4651-f8ea-40a2-b714-bda5d8ef16ce';
@@ -128,8 +129,8 @@ const getOperationalState = (input: {
   if (input.isOverWorkflowLimit) {
     return {
       label: 'Batch too large',
-      tone: 'warning' as const,
-      message: 'This batch is above the supported pilot limit and must be split before workflow actions can continue.',
+      tone: 'danger' as const,
+      message: null,
     };
   }
 
@@ -145,7 +146,7 @@ const getOperationalState = (input: {
     return {
       label: 'Needs attention',
       tone: 'warning' as const,
-      message: 'Some rows failed during processing and need follow-up.',
+      message: 'Some gifts failed during processing and need follow-up.',
     };
   }
 
@@ -153,7 +154,7 @@ const getOperationalState = (input: {
     return {
       label: 'Needs review',
       tone: 'warning' as const,
-      message: 'Some rows still need review before they can be processed.',
+      message: 'Some gifts still need review before they can be processed.',
     };
   }
 
@@ -161,7 +162,7 @@ const getOperationalState = (input: {
     return {
       label: 'Ready to process',
       tone: 'success' as const,
-      message: 'This batch has rows ready to process now.',
+      message: 'This batch has gifts ready to process now.',
     };
   }
 
@@ -169,7 +170,7 @@ const getOperationalState = (input: {
     return {
       label: 'Processed',
       tone: 'success' as const,
-      message: 'All rows in this batch have already been processed.',
+      message: 'All gifts in this batch have already been processed.',
     };
   }
 
@@ -227,20 +228,20 @@ const GiftBatchSummary = () => {
     record.isOverWorkflowLimit
       ? limitMessage
       : record.failedItems > 0
-      ? `${record.failedItems} row${record.failedItems === 1 ? '' : 's'} failed in processing.`
+      ? `${record.failedItems} gift${record.failedItems === 1 ? '' : 's'} failed in processing.`
       : record.readyItems > 0 && record.needsReviewItems > 0
         ? `${record.readyItems} ready to process, ${record.needsReviewItems} still need review.`
       : record.readyItems > 0
-          ? `${record.readyItems} row${record.readyItems === 1 ? '' : 's'} ready to process.`
+          ? `${record.readyItems} gift${record.readyItems === 1 ? '' : 's'} ready to process.`
           : record.needsReviewItems > 0
-            ? `${record.needsReviewItems} row${record.needsReviewItems === 1 ? '' : 's'} still need review.`
+            ? `${record.needsReviewItems} gift${record.needsReviewItems === 1 ? '' : 's'} still need review.`
             : record.totalItems > 0 && record.processedItems === record.totalItems
-              ? 'All rows in this batch have already been processed.'
+              ? 'All gifts in this batch have already been processed.'
               : null;
 
   const itemSummary = hasExpectedItemCount
     ? `${record.totalItems} currently attached · ${record.expectedItemCount} expected`
-    : `${record.totalItems} row${record.totalItems === 1 ? '' : 's'}`;
+    : `${record.totalItems} gift${record.totalItems === 1 ? '' : 's'}`;
 
   const valueSummary = hasExpectedTotalValue
     ? `${record.totalValueDisplay} attached · ${record.expectedTotalValueDisplay} expected`
@@ -290,7 +291,7 @@ const GiftBatchSummary = () => {
       ) : null}
       {record.isOverWorkflowLimit ? (
         <div style={secondaryTextStyle}>
-          This batch can be viewed, but donor match, readiness checks, and processing are blocked until it is split into smaller batches.
+          Batch actions are blocked until this import is split into smaller batches.
         </div>
       ) : null}
 
@@ -301,7 +302,7 @@ const GiftBatchSummary = () => {
             Use Import records on Gift staging to add rows to this batch, then return here to review and process them.
           </div>
           <div style={secondaryTextStyle}>
-            Maximum 200 donations per batch.
+            Maximum {MAX_GIFT_BATCH_ITEMS} gifts per batch.
           </div>
 
           <div
@@ -358,7 +359,7 @@ const GiftBatchSummary = () => {
           </div>
 
           <div style={actionRowStyle}>
-            <Button
+            <ActionButton
               title={savingSetup ? 'Saving...' : 'Save batch setup'}
               variant="secondary"
               onClick={() => {
@@ -370,11 +371,11 @@ const GiftBatchSummary = () => {
         </div>
       ) : null}
 
-      <CompactMetaGrid>
-        <CompactMetaItem label="Source" value={batchDetails} />
-        <CompactMetaItem label="Rows" value={itemSummary} />
-        <CompactMetaItem label="Value" value={valueSummary} />
-      </CompactMetaGrid>
+      <SummaryStrip>
+        <SummaryStripItem label="Source" value={batchDetails} />
+        <SummaryStripItem label="Rows" value={itemSummary} />
+        <SummaryStripItem label="Value" value={valueSummary} />
+      </SummaryStrip>
 
       {routingSummary ? (
         <div style={secondaryTextStyle}>{routingSummary}</div>

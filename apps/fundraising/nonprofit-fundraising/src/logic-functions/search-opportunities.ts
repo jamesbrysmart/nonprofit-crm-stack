@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   OpportunitySummary,
   SearchOpportunitiesResponse,
@@ -60,10 +61,10 @@ const handler = async (
   } as any);
 
   return {
-    opportunities:
-      result?.opportunities?.edges?.map(
-        (edge: { node: OpportunitySummary }) => edge.node,
-      ) ?? [],
+    opportunities: extractConnectionNodes<OpportunitySummary>(
+      result,
+      'opportunities',
+    ),
   };
 };
 

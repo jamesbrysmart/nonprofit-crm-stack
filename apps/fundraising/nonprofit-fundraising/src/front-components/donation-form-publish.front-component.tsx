@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import { publishDonationForm } from 'src/donation-forms/donation-form-publish.api';
 import { DEFAULT_STRIPE_PROVIDER_CONFIG_KEY } from 'src/donation-forms/donation-form-checkout-stripe';
 import {
+  ActionButton,
   badgeStyle,
   labelStyle,
   panelStackStyle,
@@ -129,7 +129,7 @@ const DonationFormPublish = () => {
               embed snippet.
             </div>
           </div>
-          <Button
+          <ActionButton
             title={
               publishing
                 ? 'Publishing…'

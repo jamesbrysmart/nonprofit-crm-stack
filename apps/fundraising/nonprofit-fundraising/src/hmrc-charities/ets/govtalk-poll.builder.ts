@@ -6,10 +6,10 @@ const escapeXml = (value: string): string =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;');
 
-export interface BuildHmrcGovTalkPollOptions {
+export type BuildHmrcGovTalkPollOptions = {
   messageClass: string;
   correlationId: string;
-}
+};
 
 export const buildHmrcGovTalkPollXml = (
   options: BuildHmrcGovTalkPollOptions,

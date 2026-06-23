@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   FundSummary,
   ListFundOptionsResponse,
@@ -34,9 +35,7 @@ const handler = async (
   } as any);
 
   return {
-    funds:
-      result?.funds?.edges?.map((edge: { node: FundSummary }) => edge.node) ??
-      [],
+    funds: extractConnectionNodes<FundSummary>(result, 'funds'),
   };
 };
 

@@ -6,16 +6,15 @@ import {
   navigate,
   useRecordId,
 } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
+  SummaryStrip,
+  SummaryStripItem,
   actionRowStyle,
   badgeStyle,
   compactDividerSectionStyle,
-  compactMetaGridStyle,
-  compactMetaItemStyle,
   compactValueStyle,
   compactWidgetRootStyle,
-  labelStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
 } from 'src/front-components/front-component-ui';
@@ -328,34 +327,26 @@ const AppealSummary = () => {
         {identityLine !== '' ? ` · ${identityLine}` : ''}
       </div>
 
-      <div style={compactDividerSectionStyle}>
-        <div style={compactMetaGridStyle}>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Raised</div>
-            <div style={secondaryTextStyle}>{formatAmount(record.raisedAmount)}</div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Goal</div>
-            <div style={secondaryTextStyle}>{formatAmount(record.goalAmount)}</div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Progress</div>
-            <div style={secondaryTextStyle}>{goalProgressLabel ?? 'No goal set'}</div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Gift count</div>
-            <div style={secondaryTextStyle}>{Math.round(record.giftCount ?? 0)}</div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Donor count</div>
-            <div style={secondaryTextStyle}>{Math.round(record.donorCount ?? 0)}</div>
-          </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Last gift</div>
-            <div style={secondaryTextStyle}>{formatDate(record.lastGiftAt)}</div>
-          </div>
-        </div>
-      </div>
+      <SummaryStrip>
+        <SummaryStripItem label="Raised">
+          <div style={secondaryTextStyle}>{formatAmount(record.raisedAmount)}</div>
+        </SummaryStripItem>
+        <SummaryStripItem label="Goal">
+          <div style={secondaryTextStyle}>{formatAmount(record.goalAmount)}</div>
+        </SummaryStripItem>
+        <SummaryStripItem label="Progress">
+          <div style={secondaryTextStyle}>{goalProgressLabel ?? 'No goal set'}</div>
+        </SummaryStripItem>
+        <SummaryStripItem label="Gift count">
+          <div style={secondaryTextStyle}>{Math.round(record.giftCount ?? 0)}</div>
+        </SummaryStripItem>
+        <SummaryStripItem label="Donor count">
+          <div style={secondaryTextStyle}>{Math.round(record.donorCount ?? 0)}</div>
+        </SummaryStripItem>
+        <SummaryStripItem label="Last gift">
+          <div style={secondaryTextStyle}>{formatDate(record.lastGiftAt)}</div>
+        </SummaryStripItem>
+      </SummaryStrip>
 
       {advisories.length > 0 ? (
         <div style={compactDividerSectionStyle}>
@@ -369,14 +360,14 @@ const AppealSummary = () => {
 
       <div style={compactDividerSectionStyle}>
         <div style={actionRowStyle}>
-          <Button
+          <ActionButton
             title="View gifts for this appeal"
             variant="secondary"
             onClick={() => {
               void handleOpenGifts();
             }}
           />
-          <Button
+          <ActionButton
             title="View staged gifts for this appeal"
             variant="secondary"
             onClick={() => {

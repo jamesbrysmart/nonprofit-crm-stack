@@ -22,37 +22,44 @@ export const useRecurringAgreementReviewRecord = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const refresh = async () => {
+    if (!recordId) {
+      setRecord(null);
+      setError('No recurring agreement selected');
+      setLoading(false);
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const loaded = await loadRecurringAgreementReview(recordId);
+
+      if (!loaded) {
+        setRecord(null);
+        setError('Recurring agreement not found');
+        return null;
+      }
+
+      setRecord(loaded);
+      return loaded;
+    } catch (loadError) {
+      setRecord(null);
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : 'Unable to load recurring agreement',
+      );
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const run = async () => {
-      if (!recordId) {
-        setError('No recurring agreement selected');
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const loaded = await loadRecurringAgreementReview(recordId);
-
-        if (!loaded) {
-          setRecord(null);
-          setError('Recurring agreement not found');
-          return;
-        }
-
-        setRecord(loaded);
-      } catch (loadError) {
-        setRecord(null);
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'Unable to load recurring agreement',
-        );
-      } finally {
-        setLoading(false);
-      }
+      await refresh();
     };
 
     void run();
@@ -63,5 +70,6 @@ export const useRecurringAgreementReviewRecord = () => {
     record,
     loading,
     error,
+    refresh,
   };
 };

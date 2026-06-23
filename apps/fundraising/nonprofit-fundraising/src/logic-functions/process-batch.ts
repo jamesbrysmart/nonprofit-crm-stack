@@ -8,6 +8,7 @@ import {
   getGiftBatchWorkflowLimitMessage,
   isGiftBatchOverWorkflowLimit,
 } from 'src/batch-processing/batch-processing.limits';
+import { createBatchRouteLogger } from 'src/batch-processing/batch-route-logging';
 import { processGiftStagingRows } from 'src/gift-staging-review/gift-ready-check.service';
 import type {
   ProcessBatchRequest,
@@ -65,27 +66,68 @@ const handler = async (
     throw new Error('giftBatchId is required');
   }
 
+  const logger = createBatchRouteLogger({
+    route: 'process-batch',
+    giftBatchId,
+  });
+  logger.info('started');
+
   const client = new CoreApiClient();
-  const { batch, rows } = await loadBatchProcessingContext(client, giftBatchId);
+  let loaded: Awaited<ReturnType<typeof loadBatchProcessingContext>>;
+
+  try {
+    loaded = await loadBatchProcessingContext(client, giftBatchId);
+  } catch (error) {
+    logger.fail('context_load_failed', error);
+    throw error;
+  }
+
+  const { batch, rows } = loaded;
+  logger.info('context_loaded', { rowCount: rows.length });
 
   if (!batch) {
+    logger.warn('batch_not_found');
     throw new Error('Batch not found');
   }
 
-  if (isGiftBatchOverWorkflowLimit(batch.totalItems)) {
-    throw new Error(getGiftBatchWorkflowLimitMessage(batch.totalItems));
+  if (isGiftBatchOverWorkflowLimit(rows.length)) {
+    logger.warn('blocked_over_workflow_limit', {
+      totalItems: rows.length,
+    });
+    throw new Error(getGiftBatchWorkflowLimitMessage(rows.length));
   }
 
-  await updateBatch(client, giftBatchId, {
-    status: 'PROCESSING',
-  });
+  try {
+    await updateBatch(client, giftBatchId, {
+      status: 'PROCESSING',
+    });
+  } catch (error) {
+    logger.fail('mark_processing_failed', error);
+    throw error;
+  }
+  logger.info('batch_marked_processing');
 
   try {
     const processingResult = await processGiftStagingRows(client, rows);
     const executionMetrics = processingResult.executionMetrics;
+    logger.info('rows_processed', {
+      totalItems: processingResult.totalItems,
+      processedItems: processingResult.processedItems,
+      failedItems: processingResult.failedItems,
+      notReadyItems: processingResult.notReadyItems,
+      chunkCount: executionMetrics.chunkCount,
+      batchPathProcessed: executionMetrics.batchPathProcessed,
+      rowFallbackProcessed: executionMetrics.rowFallbackProcessed,
+    });
 
     const { totalItems, processedItems, failedItems, notReadyItems } =
       await summarizeBatchOutcome(client, giftBatchId);
+    logger.info('outcome_summarized', {
+      totalItems,
+      processedItems,
+      failedItems,
+      notReadyItems,
+    });
 
     const batchStatus =
       processedItems === totalItems && failedItems === 0 && notReadyItems === 0
@@ -94,9 +136,17 @@ const handler = async (
 
     await updateBatch(client, giftBatchId, {
       status: batchStatus,
+      processedGifts: processedItems,
+      failedGifts: failedItems,
+    });
+    logger.info('batch_status_updated', { batchStatus });
+
+    logger.info('completed', {
       totalItems,
       processedItems,
       failedItems,
+      notReadyItems,
+      batchStatus,
     });
 
     return {
@@ -117,19 +167,26 @@ const handler = async (
     try {
       const { totalItems, processedItems, failedItems } =
         await summarizeBatchOutcome(client, giftBatchId);
-
-      await updateBatch(client, giftBatchId, {
-        status: 'PROCESSED_WITH_ISSUES',
+      logger.warn('summarized_after_failure', {
         totalItems,
         processedItems,
         failedItems,
       });
+
+      await updateBatch(client, giftBatchId, {
+        status: 'PROCESSED_WITH_ISSUES',
+        processedGifts: processedItems,
+        failedGifts: failedItems,
+      });
+      logger.warn('batch_marked_processed_with_issues');
     } catch {
       await updateBatch(client, giftBatchId, {
         status: 'PROCESSED_WITH_ISSUES',
       });
+      logger.warn('batch_marked_processed_with_issues_without_summary');
     }
 
+    logger.fail('failed', error);
     throw error;
   }
 };

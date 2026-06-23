@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
   getAppealIdForAppealSourceSelection,
   getAppealSourceIdsForAppeal,
   getFundIdForAppealSelection,
 } from 'src/gift-coding/gift-coding';
 import {
+  ActionButton,
   badgeStyle,
   compactDividerSectionStyle,
   compactWidgetRootStyle,
@@ -239,7 +239,7 @@ const GiftStagingCoding = () => {
             <span style={badgeStyle('success')}>Fund set</span>
           ) : null}
         </div>
-        <Button
+        <ActionButton
           title="Save coding"
           variant="secondary"
           onClick={() => {

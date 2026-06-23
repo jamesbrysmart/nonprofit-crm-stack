@@ -230,11 +230,37 @@ export const ManualGiftEntryGiftAidCapture = ({
 export const ManualGiftEntryGiftAidSection = ({
   donorType,
   includedInFlow,
-  ...props
+  giftAidRequested,
+  giftAidDeclarationCaptured,
+  giftAidDeclarationDate,
+  giftAidCoverageScope,
+  giftAidDeclarationSource,
+  giftAidTextVersion,
+  onGiftAidRequestedChange,
+  onGiftAidDeclarationCapturedChange,
+  onGiftAidDeclarationDateChange,
+  onGiftAidCoverageScopeChange,
+  onGiftAidDeclarationSourceChange,
+  onGiftAidTextVersionChange,
 }: ManualGiftEntryGiftAidSectionProps) => {
   if (!includedInFlow || donorType !== 'INDIVIDUAL') {
     return null;
   }
 
-  return <ManualGiftEntryGiftAidCapture {...props} />;
+  return (
+    <ManualGiftEntryGiftAidCapture
+      giftAidRequested={giftAidRequested}
+      giftAidDeclarationCaptured={giftAidDeclarationCaptured}
+      giftAidDeclarationDate={giftAidDeclarationDate}
+      giftAidCoverageScope={giftAidCoverageScope}
+      giftAidDeclarationSource={giftAidDeclarationSource}
+      giftAidTextVersion={giftAidTextVersion}
+      onGiftAidRequestedChange={onGiftAidRequestedChange}
+      onGiftAidDeclarationCapturedChange={onGiftAidDeclarationCapturedChange}
+      onGiftAidDeclarationDateChange={onGiftAidDeclarationDateChange}
+      onGiftAidCoverageScopeChange={onGiftAidCoverageScopeChange}
+      onGiftAidDeclarationSourceChange={onGiftAidDeclarationSourceChange}
+      onGiftAidTextVersionChange={onGiftAidTextVersionChange}
+    />
+  );
 };

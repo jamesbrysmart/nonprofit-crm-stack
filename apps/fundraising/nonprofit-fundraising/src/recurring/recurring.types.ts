@@ -49,9 +49,23 @@ export type SearchRecurringAgreementsResponse = {
 export type StoredRecurringAgreementRecord = RecurringAgreementSummary & {
   startDate: string | null;
   endDate: string | null;
+  paymentType: string | null;
   providerAgreementId: string | null;
   providerPaymentMethodId: string | null;
   mandateReference: string | null;
+  appeal: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+  appealSource: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+  fund: {
+    id?: string | null;
+    name?: string | null;
+    code?: string | null;
+  } | null;
   gifts: Array<{
     id: string;
     name: string | null;
@@ -98,15 +112,26 @@ export type RecurringAgreementReviewRecord = {
   cadence: string;
   intervalCount: number;
   amountLabel: string;
+  amountMicros: number | null;
+  currencyCode: string;
   startDate: string | null;
   endDate: string | null;
   nextExpectedAt: string | null;
+  paymentType: string | null;
   provider: string;
   providerAgreementId: string | null;
   providerPaymentMethodId: string | null;
   mandateReference: string | null;
+  appealName: string | null;
+  appealId: string | null;
+  appealSourceName: string | null;
+  appealSourceId: string | null;
+  fundName: string | null;
+  fundId: string | null;
   donorName: string;
   donorId: string | null;
+  donorFirstName: string;
+  donorLastName: string;
   donorEmail: string | null;
   health: RecurringAgreementHealth;
   recentGifts: StoredRecurringAgreementRecord['gifts'];

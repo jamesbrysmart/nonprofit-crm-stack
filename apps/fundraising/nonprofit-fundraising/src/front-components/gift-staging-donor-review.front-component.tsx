@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   actionRowStyle,
   badgeStyle,
   choiceButtonStyle,
@@ -23,7 +23,10 @@ import {
   markAnonymousDonor,
   saveDonorEvidence,
 } from 'src/gift-staging-review/gift-staging-review.actions';
-import { buildPersonDisplayName } from 'src/gift-staging-review/gift-staging-review.model';
+import {
+  buildAddressDisplay,
+  buildPersonDisplayName,
+} from 'src/gift-staging-review/gift-staging-review.model';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
 import { checkDonorDuplicates } from 'src/manual-gift-entry/manual-gift-entry.api';
 import type { DuplicateCheckResponse } from 'src/manual-gift-entry/manual-gift-entry.types';
@@ -126,6 +129,9 @@ const GiftStagingDonorReview = () => {
   const hasPrimaryEmailConflictCandidate =
     record.linkedDonorName === '' &&
     (hasRecordedPrimaryEmailConflict || emailConflictCandidates.length > 0);
+  const canTreatAsNewDonor =
+    record.donorResolution === 'AMBIGUOUS' ||
+    (duplicateCheckResult?.candidates.length ?? 0) > 0;
 
   const donorState =
     record.isAnonymousDonor
@@ -253,12 +259,22 @@ const GiftStagingDonorReview = () => {
   };
 
   const handleLeaveUnresolved = async () => {
+    if (hasPrimaryEmailConflictCandidate) {
+      await enqueueSnackbar({
+        message:
+          'This row cannot be treated as a new donor because the staged email already belongs to an existing donor. Link that donor or change the staged email first.',
+        variant: 'warning',
+      });
+      return;
+    }
+
     setSaving(true);
 
     try {
       await leaveUnresolved(recordId);
       await enqueueSnackbar({
-        message: 'This row will create a new donor on processing if it is otherwise ready.',
+        message:
+          'This row will be treated as a new donor if it is otherwise safe to process.',
         variant: 'success',
       });
       await afterMutationRefresh();
@@ -303,7 +319,7 @@ const GiftStagingDonorReview = () => {
       <div style={sectionHeaderStyle}>
         <span style={badgeStyle(donorState.tone)}>{donorState.label}</span>
         <div style={actionRowStyle}>
-          <Button
+          <ActionButton
             title="Save donor details"
             variant="secondary"
             onClick={() => {
@@ -311,7 +327,7 @@ const GiftStagingDonorReview = () => {
             }}
             disabled={!hasUnsavedEvidenceChanges || saving || checkingDuplicates}
           />
-          <Button
+          <ActionButton
             title={
               checkingDuplicates
                 ? 'Checking...'
@@ -325,20 +341,18 @@ const GiftStagingDonorReview = () => {
             }}
             disabled={checkingDuplicates || saving}
           />
-          <Button
-            title={
-              record.linkedDonorName !== ''
-                ? 'Use new donor instead'
-                : 'Create new donor on processing'
-            }
-            variant="secondary"
-            onClick={() => {
-              void handleLeaveUnresolved();
-            }}
-            disabled={saving || hasPrimaryEmailConflictCandidate}
-          />
+          {canTreatAsNewDonor ? (
+            <ActionButton
+              title="Treat as new donor"
+              variant="secondary"
+              onClick={() => {
+                void handleLeaveUnresolved();
+              }}
+              disabled={saving}
+            />
+          ) : null}
           {canMarkAnonymousDonor ? (
-            <Button
+            <ActionButton
               title="Mark anonymous donor"
               variant="secondary"
               onClick={() => {
@@ -392,6 +406,11 @@ const GiftStagingDonorReview = () => {
             disabled={saving}
           />
         </label>
+        {record.donorMailingAddressDisplay !== '' ? (
+          <div style={secondaryTextStyle}>
+            Address: {record.donorMailingAddressDisplay}
+          </div>
+        ) : null}
       </div>
 
       {showAddressFields ? (
@@ -449,6 +468,9 @@ const GiftStagingDonorReview = () => {
           ) : null}
           {duplicateCheckResult.candidates.map((candidate) => {
             const selected = candidate.id === selectedDonorId;
+            const candidateAddress = buildAddressDisplay(
+              candidate.mailingAddress,
+            );
 
             return (
               <button
@@ -461,13 +483,18 @@ const GiftStagingDonorReview = () => {
                 <span style={secondaryTextStyle}>
                   {candidate.emails?.primaryEmail ?? 'No primary email'}
                 </span>
+                {candidateAddress !== '' ? (
+                  <span style={secondaryTextStyle}>
+                    Address: {candidateAddress}
+                  </span>
+                ) : null}
               </button>
             );
           })}
 
           {duplicateCheckResult.candidates.length > 0 ? (
             <div>
-              <Button
+              <ActionButton
                 title="Use selected donor"
                 variant="primary"
                 accent="blue"

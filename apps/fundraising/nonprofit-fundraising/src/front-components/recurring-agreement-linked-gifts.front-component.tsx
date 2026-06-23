@@ -1,7 +1,7 @@
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { AppPath, navigate } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   compactValueStyle,
   compactWidgetRootStyle,
   labelStyle,
@@ -49,7 +49,7 @@ const RecurringAgreementLinkedGifts = () => {
           ? 'No linked gifts yet'
           : `${record.recentGifts.length} linked gift${record.recentGifts.length === 1 ? '' : 's'}`}
       </div>
-      <Button
+      <ActionButton
         title="Open linked gifts"
         variant="secondary"
         onClick={() => {

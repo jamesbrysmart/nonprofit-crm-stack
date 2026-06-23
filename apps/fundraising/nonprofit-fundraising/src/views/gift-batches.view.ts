@@ -1,12 +1,11 @@
 import { defineView, ViewKey } from 'twenty-sdk/define';
 import {
-  GIFT_BATCH_FAILED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_FAILED_GIFTS_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
-  GIFT_BATCH_PROCESSED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_PROCESSED_GIFTS_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_BATCH_TOTAL_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/objects/gift-batch.object';
 
 export const GIFT_BATCHES_VIEW_UNIVERSAL_IDENTIFIER =
@@ -45,26 +44,18 @@ export default defineView({
       size: 160,
     },
     {
-      universalIdentifier: 'ca0c4009-c25a-4da9-a55f-8875188adf42',
-      fieldMetadataUniversalIdentifier:
-        GIFT_BATCH_TOTAL_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 3,
-      isVisible: true,
-      size: 120,
-    },
-    {
       universalIdentifier: '0f60b63c-cdc2-4cee-a2e8-69ecf5889a2b',
       fieldMetadataUniversalIdentifier:
-        GIFT_BATCH_PROCESSED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 4,
+        GIFT_BATCH_PROCESSED_GIFTS_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 3,
       isVisible: true,
       size: 140,
     },
     {
       universalIdentifier: '7414132d-865f-4caa-b10d-cf89484dc5db',
       fieldMetadataUniversalIdentifier:
-        GIFT_BATCH_FAILED_ITEMS_FIELD_UNIVERSAL_IDENTIFIER,
-      position: 5,
+        GIFT_BATCH_FAILED_GIFTS_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 4,
       isVisible: true,
       size: 120,
     },

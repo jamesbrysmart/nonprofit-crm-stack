@@ -59,8 +59,7 @@ export const upsertGiftStagingBatch = async (
       throw new Error(`Gift staging upsert batch includes unexpected id ${id}`);
     }
 
-    const rest = { ...record };
-    delete rest.id;
+    const { id: _ignoredId, ...rest } = record;
     const payloadEntries = Object.entries(rest).filter(
       ([, value]) => value !== undefined,
     );

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   actionRowStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
@@ -113,7 +113,7 @@ const GiftAidClaimBatchActions = () => {
                 : 'Resolve the blocking gifts before finalizing this draft.'}
           </div>
           <div style={actionRowStyle}>
-            <Button
+            <ActionButton
               title={finalizing ? 'Finalizing...' : 'Finalize draft claim'}
               variant="primary"
               accent="blue"
@@ -130,7 +130,7 @@ const GiftAidClaimBatchActions = () => {
             Queue the submission when you are ready to continue from this finalized claim.
           </div>
           <div style={actionRowStyle}>
-            <Button
+            <ActionButton
               title={
                 queueingSubmission
                   ? 'Queueing submission...'

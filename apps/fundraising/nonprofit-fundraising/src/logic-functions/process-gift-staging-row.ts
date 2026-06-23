@@ -4,7 +4,7 @@ import {
   type RoutePayload,
 } from 'twenty-sdk/define';
 import { loadGiftStagingRowsForProcessing } from 'src/batch-processing/batch-loaders';
-import { processGiftStagingRows } from 'src/gift-staging-review/gift-ready-check.service';
+import { processSingleGiftStagingRow } from 'src/gift-staging-review/gift-ready-check.service';
 
 type ProcessGiftStagingRowRequest = {
   giftStagingId: string;
@@ -15,6 +15,9 @@ type ProcessGiftStagingRowResponse = {
   processingStatus: 'NOT_PROCESSED' | 'PROCESSED' | 'PROCESS_FAILED';
   committedGiftId: string | null;
   recurringAgreementId: string | null;
+  executionPath: 'BATCH' | 'ROW_FALLBACK' | null;
+  stagingWritebackSucceeded: boolean;
+  reconciliationError: string | null;
   errorDetail: string | null;
 };
 
@@ -41,31 +44,23 @@ const handler = async (
       processingStatus: 'NOT_PROCESSED',
       committedGiftId: row.committedGift?.id ?? null,
       recurringAgreementId: row.recurringAgreement?.id ?? null,
+      executionPath: null,
+      stagingWritebackSucceeded: true,
+      reconciliationError: null,
       errorDetail: row.errorDetail,
     };
   }
 
-  const result = await processGiftStagingRows(client, [row]);
-  const refreshedRow = (
-    await loadGiftStagingRowsForProcessing(client, [giftStagingId])
-  )[0] ?? row;
-
-  if (result.processedItems === 1) {
-    return {
-      giftStagingId,
-      processingStatus: 'PROCESSED',
-      committedGiftId: refreshedRow.committedGift?.id ?? null,
-      recurringAgreementId: refreshedRow.recurringAgreement?.id ?? null,
-      errorDetail: null,
-    };
-  }
-
+  const result = await processSingleGiftStagingRow(client, row);
   return {
     giftStagingId,
-    processingStatus: 'PROCESS_FAILED',
-    committedGiftId: null,
-    recurringAgreementId: null,
-    errorDetail: refreshedRow.errorDetail ?? 'Row processing failed',
+    processingStatus: result.processingStatus,
+    committedGiftId: result.committedGiftId,
+    recurringAgreementId: result.recurringAgreementId,
+    executionPath: result.executionPath,
+    stagingWritebackSucceeded: result.stagingWritebackSucceeded,
+    reconciliationError: result.reconciliationError,
+    errorDetail: result.errorDetail,
   };
 };
 

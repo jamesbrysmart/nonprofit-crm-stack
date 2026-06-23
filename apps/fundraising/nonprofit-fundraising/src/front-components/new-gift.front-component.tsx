@@ -1,12 +1,12 @@
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { closeSidePanel } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import { ManualGiftEntryGiftAidSection } from 'src/manual-gift-entry/manual-gift-entry-gift-aid-capture';
 import type {
   ManualGiftDuplicateMatch,
   ManualGiftPaymentType,
   ManualGiftType,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
+import { ActionButton } from 'src/front-components/front-component-ui';
 import {
   bodyTextStyle,
   buildCompanyDisplayName,
@@ -596,7 +596,7 @@ const NewGift = () => {
                     </label>
 
                     <div>
-                      <Button
+                      <ActionButton
                         title={
                           searchingOpportunities ? 'Searching...' : 'Search'
                         }
@@ -886,7 +886,7 @@ const NewGift = () => {
               </label>
 
               <div>
-                <Button
+                <ActionButton
                   title={searchingRecurring ? 'Searching...' : 'Search'}
                   variant="secondary"
                   onClick={() => {
@@ -981,7 +981,7 @@ const NewGift = () => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
+            <ActionButton
               title="Create anyway"
               variant="secondary"
               onClick={() => {
@@ -994,7 +994,7 @@ const NewGift = () => {
       ) : null}
 
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-        <Button
+        <ActionButton
           title="Cancel"
           variant="secondary"
           onClick={() => {
@@ -1002,7 +1002,7 @@ const NewGift = () => {
           }}
           disabled={submitting}
         />
-        <Button
+        <ActionButton
           title={submitting ? 'Creating...' : 'Create gift'}
           variant="primary"
           accent="blue"

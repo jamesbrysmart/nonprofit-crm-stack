@@ -31,6 +31,7 @@ type BatchProcessingLikeRow = Pick<
 
 export type BatchPreflightIssueCode =
   | 'DONOR_REVIEW_REQUIRED'
+  | 'DONOR_PRIMARY_EMAIL_CONFLICT'
   | 'DONOR_EVIDENCE_REQUIRED'
   | 'ANONYMOUS_DONOR_RECURRING_UNSUPPORTED'
   | 'AMOUNT_REQUIRED'

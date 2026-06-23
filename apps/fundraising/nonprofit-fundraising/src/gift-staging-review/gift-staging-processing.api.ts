@@ -10,6 +10,9 @@ export type ProcessGiftStagingRowResponse = {
   processingStatus: 'NOT_PROCESSED' | 'PROCESSED' | 'PROCESS_FAILED';
   committedGiftId: string | null;
   recurringAgreementId: string | null;
+  executionPath: 'BATCH' | 'ROW_FALLBACK' | null;
+  stagingWritebackSucceeded: boolean;
+  reconciliationError: string | null;
   errorDetail: string | null;
 };
 

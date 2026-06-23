@@ -49,9 +49,8 @@ export type BatchSummaryRecord = {
   name: string;
   source: string | null;
   status: string | null;
-  totalItems: number | null;
-  processedItems: number | null;
-  failedItems: number | null;
+  processedGifts: number | null;
+  failedGifts: number | null;
   expectedItemCount: number | null;
   defaultAppeal:
     | {

@@ -1,4 +1,8 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import {
+  extractConnectionNodes,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
 import type {
   RecurringAgreementCadence,
   RecurringAgreementSummary,
@@ -96,17 +100,12 @@ export const searchRecurringAgreements = async (
     },
   } as any);
 
-  const agreements =
-    result?.recurringAgreements?.edges?.map(
-      (
-        edge: {
-          node: RecurringAgreementSummary & {
-            providerAgreementId?: string | null;
-            mandateReference?: string | null;
-          };
-        },
-      ) => edge.node,
-    ) ?? [];
+  const agreements = extractConnectionNodes<
+    RecurringAgreementSummary & {
+      providerAgreementId?: string | null;
+      mandateReference?: string | null;
+    }
+  >(result, 'recurringAgreements');
 
   if (normalizedQuery === '') {
     return agreements.slice(0, 20);
@@ -155,6 +154,7 @@ export const loadRecurringAgreementById = async (
         amountMicros: true,
         currencyCode: true,
       },
+      paymentType: true,
       startDate: true,
       endDate: true,
       nextExpectedAt: true,
@@ -162,6 +162,19 @@ export const loadRecurringAgreementById = async (
       providerAgreementId: true,
       providerPaymentMethodId: true,
       mandateReference: true,
+      appeal: {
+        id: true,
+        name: true,
+      },
+      appealSource: {
+        id: true,
+        name: true,
+      },
+      fund: {
+        id: true,
+        name: true,
+        code: true,
+      },
       person: {
         id: true,
         name: {
@@ -215,9 +228,9 @@ export const loadRecurringAgreementById = async (
     },
   } as any);
 
-  const agreement = result?.recurringAgreement as
-    | Omit<StoredRecurringAgreementRecord, 'gifts' | 'giftStagings'>
-    | null;
+  const agreement = extractQueryRecord<
+    Omit<StoredRecurringAgreementRecord, 'gifts' | 'giftStagings'>
+  >(result, 'recurringAgreement');
 
   if (!agreement) {
     return null;
@@ -225,17 +238,13 @@ export const loadRecurringAgreementById = async (
 
   return {
     ...agreement,
-    gifts:
-      result?.gifts?.edges?.map(
-        (edge: { node: StoredRecurringAgreementRecord['gifts'][number] }) =>
-          edge.node,
-      ) ?? [],
-    giftStagings:
-      result?.giftStagings?.edges?.map(
-        (edge: {
-          node: StoredRecurringAgreementRecord['giftStagings'][number];
-        }) => edge.node,
-      ) ?? [],
+    gifts: extractConnectionNodes<StoredRecurringAgreementRecord['gifts'][number]>(
+      result,
+      'gifts',
+    ),
+    giftStagings: extractConnectionNodes<
+      StoredRecurringAgreementRecord['giftStagings'][number]
+    >(result, 'giftStagings'),
   };
 };
 
@@ -261,8 +270,14 @@ export const advanceRecurringAgreementExpectation = async (
   // Keep recurring expectation anchored on the agreement schedule rather than
   // letting each payment date redefine the commitment rhythm.
   const anchor = currentExpectation ?? startDate ?? fulfilledAt;
+  const cadence = normalizeString(agreement.cadence);
+
+  if (cadence === '') {
+    throw new Error('Recurring agreement cadence is required to advance expectation');
+  }
+
   const nextExpectedAt = formatDateOnly(
-    addCadence(anchor, agreement.cadence, agreement.intervalCount ?? 1),
+    addCadence(anchor, cadence, agreement.intervalCount ?? 1),
   );
 
   await client.mutation({

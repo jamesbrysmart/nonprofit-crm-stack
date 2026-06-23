@@ -1,4 +1,5 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 
 const normalizeString = (value: string | null | undefined) =>
@@ -52,11 +53,7 @@ const loadAppealSourcesByExternalIds = async (
     },
   } as any);
 
-  return (
-    result?.appealSources?.edges?.map(
-      (edge: { node: AppealSourceLookupRecord }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<AppealSourceLookupRecord>(result, 'appealSources');
 };
 
 const chooseAppealSourceMatch = ({

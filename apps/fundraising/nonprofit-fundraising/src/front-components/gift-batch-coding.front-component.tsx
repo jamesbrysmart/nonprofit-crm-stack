@@ -3,12 +3,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import { updateBatchGiftCoding } from 'src/batch-processing/batch-processing.api';
 import {
-  CompactMetaGrid,
-  CompactMetaItem,
-  badgeStyle,
+  ActionButton,
+  SummaryStrip,
+  SummaryStripItem,
   compactDividerSectionStyle,
   compactWidgetRootStyle,
   inputStyle,
@@ -298,8 +297,10 @@ const GiftBatchCoding = () => {
       });
 
       await enqueueSnackbar({
-        message: `Batch coding applied: ${result.updatedRowCount} gifts updated across blank coding fields.`,
-        variant: 'success',
+        message:
+          result.rowUpdateMessage ??
+          `Batch coding applied: ${result.updatedRowCount} gifts updated across blank coding fields.`,
+        variant: result.rowUpdatesApplied ? 'success' : 'warning',
       });
 
       setIsExpanded(false);
@@ -355,15 +356,8 @@ const GiftBatchCoding = () => {
   return (
     <div style={compactWidgetRootStyle}>
       <div style={sectionHeaderStyle}>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={badgeStyle('neutral')}>Batch coding</span>
-          {targetCount > 0 ? (
-            <span style={badgeStyle('success')}>
-              {targetCount} unprocessed {targetCount === 1 ? 'gift' : 'gifts'}
-            </span>
-          ) : null}
-        </div>
-        <Button
+        <div style={labelStyle}>Batch coding defaults</div>
+        <ActionButton
           title={isExpanded ? 'Close coding' : 'Open coding'}
           variant="secondary"
           onClick={() => {
@@ -375,7 +369,7 @@ const GiftBatchCoding = () => {
 
       <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
         {isOverWorkflowLimit
-          ? record.workflowLimitMessage
+          ? 'Split this batch before applying coding defaults.'
           : record.totalItems === 0
             ? 'No gifts have been added to this batch yet.'
             : targetCount === 0
@@ -386,17 +380,17 @@ const GiftBatchCoding = () => {
       </div>
 
       {!isOverWorkflowLimit && targetCount > 0 && !isExpanded ? (
-        <CompactMetaGrid>
-          <CompactMetaItem label="Appeal">
+        <SummaryStrip>
+          <SummaryStripItem label="Appeal">
             <div style={summaryValueStyle}>{appealSummary}</div>
-          </CompactMetaItem>
-          <CompactMetaItem label="Fund">
+          </SummaryStripItem>
+          <SummaryStripItem label="Fund">
             <div style={summaryValueStyle}>{fundSummary}</div>
-          </CompactMetaItem>
-          <CompactMetaItem label="Appeal source">
+          </SummaryStripItem>
+          <SummaryStripItem label="Appeal source">
             <div style={summaryValueStyle}>{appealSourceSummary}</div>
-          </CompactMetaItem>
-        </CompactMetaGrid>
+          </SummaryStripItem>
+        </SummaryStrip>
       ) : null}
 
       {!isOverWorkflowLimit && targetCount > 0 && isExpanded ? (
@@ -473,7 +467,7 @@ const GiftBatchCoding = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <Button
+            <ActionButton
               title={savingDefaults ? 'Saving...' : 'Save defaults'}
               variant="secondary"
               onClick={() => {
@@ -481,7 +475,7 @@ const GiftBatchCoding = () => {
               }}
               disabled={!canSaveDefaults}
             />
-            <Button
+            <ActionButton
               title={applyingDefaults ? 'Applying...' : 'Apply defaults to blank rows'}
               variant="primary"
               accent="blue"
@@ -491,7 +485,7 @@ const GiftBatchCoding = () => {
               disabled={!canApplyDefaults}
             />
             {hasDefaults ? (
-              <Button
+              <ActionButton
                 title="Remove batch defaults"
                 variant="secondary"
                 onClick={() => {

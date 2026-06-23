@@ -12,6 +12,7 @@ import {
 type GiftRollupEventRecord = {
   donorId?: string | null;
   giftDate?: string | null;
+  giftType?: string | null;
   amount?: {
     amountMicros?: number | null;
     currencyCode?: string | null;
@@ -43,6 +44,6 @@ export default defineLogicFunction({
   handler,
   databaseEventTriggerSettings: {
     eventName: 'gift.updated',
-    updatedFields: ['donor', 'donorId', 'amount', 'giftDate'],
+    updatedFields: ['donor', 'donorId', 'amount', 'giftDate', 'giftType'],
   },
 });

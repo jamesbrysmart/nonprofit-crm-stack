@@ -2,6 +2,7 @@ import type { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   buildNotReadyWritebacks,
   executeBatchGiftProcessing,
+  executeSingleGiftProcessing,
   persistBatchRowWritebacks,
 } from 'src/batch-processing/batch-processing.executor';
 import { resolveAppealSourceExternalIdsForRows } from 'src/appeal-sources/appeal-source-external-id-resolution';
@@ -9,7 +10,10 @@ import { resolveAppealSourceParentsForProcessing } from 'src/appeal-sources/appe
 import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
-import { loadGiftReadyEvaluations } from './gift-ready-status';
+import {
+  loadGiftReadyEvaluations,
+  type GiftReadyStatus,
+} from './gift-ready-status';
 
 export type GiftReadyCheckRowsResult = {
   checkedAt: string;
@@ -18,6 +22,16 @@ export type GiftReadyCheckRowsResult = {
   needsReviewItems: number;
   failedItems: number;
   processedItems: number;
+};
+
+export type SingleGiftStagingProcessingResult = {
+  processingStatus: 'NOT_PROCESSED' | 'PROCESSED' | 'PROCESS_FAILED';
+  committedGiftId: string | null;
+  recurringAgreementId: string | null;
+  executionPath: 'BATCH' | 'ROW_FALLBACK' | null;
+  stagingWritebackSucceeded: boolean;
+  reconciliationError: string | null;
+  errorDetail: string | null;
 };
 
 export const checkGiftStagingRowsReadiness = async (
@@ -70,17 +84,33 @@ export const checkGiftStagingRowsReadiness = async (
     },
   );
 
-  await persistGiftStagingBatchUpserts(
-    resolvedRows.map((row) => ({
-      id: row.id,
-      giftReadyStatus:
+  const writebacks = resolvedRows
+    .map((row) => {
+      const nextGiftReadyStatus =
         row.processingStatus === 'PROCESSED' ||
         row.processingStatus === 'PROCESS_FAILED'
           ? null
-          : evaluations.get(row.id)?.giftReadyStatus ?? 'NEEDS_REVIEW',
-      errorDetail: null,
-    })),
-  );
+          : evaluations.get(row.id)?.giftReadyStatus ?? 'NEEDS_REVIEW';
+
+      if (row.giftReadyStatus === nextGiftReadyStatus && row.errorDetail === null) {
+        return null;
+      }
+
+      return {
+        id: row.id,
+        giftReadyStatus: nextGiftReadyStatus,
+        errorDetail: null,
+      };
+    })
+    .filter(
+      (writeback): writeback is {
+        id: string;
+        giftReadyStatus: GiftReadyStatus | null;
+        errorDetail: null;
+      } => writeback !== null,
+    );
+
+  await persistGiftStagingBatchUpserts(writebacks);
 
   return {
     checkedAt,
@@ -141,5 +171,70 @@ export const processGiftStagingRows = async (
     failedItems,
     notReadyItems: notReadyRows.length,
     executionMetrics,
+  };
+};
+
+export const processSingleGiftStagingRow = async (
+  client: CoreApiClient,
+  row: BatchProcessingRow,
+): Promise<SingleGiftStagingProcessingResult> => {
+  const evaluations = await loadGiftReadyEvaluations(client, [row]);
+  const evaluation = evaluations.get(row.id);
+
+  if (
+    row.processingStatus === 'PROCESSED' ||
+    row.processingStatus === 'PROCESS_FAILED' ||
+    evaluation?.giftReadyStatus !== 'READY_TO_PROCESS'
+  ) {
+    await persistBatchRowWritebacks(buildNotReadyWritebacks([row]));
+
+    return {
+      processingStatus: 'NOT_PROCESSED',
+      committedGiftId: row.committedGift?.id ?? null,
+      recurringAgreementId: row.recurringAgreement?.id ?? null,
+      executionPath: null,
+      stagingWritebackSucceeded: true,
+      reconciliationError: null,
+      errorDetail: row.errorDetail,
+    };
+  }
+
+  const [resolvedRow] = await resolveAppealSourceParentsForProcessing(client, [
+    row,
+  ]);
+  const result = await executeSingleGiftProcessing(resolvedRow);
+
+  if ('committedGiftId' in result.writeback) {
+    return {
+      processingStatus: 'PROCESSED',
+      committedGiftId: result.writeback.committedGiftId,
+      recurringAgreementId: result.writeback.recurringAgreementId ?? null,
+      executionPath: result.writeback.executionPath,
+      stagingWritebackSucceeded: result.stagingWritebackSucceeded,
+      reconciliationError: result.reconciliationError,
+      errorDetail: null,
+    };
+  }
+
+  if (result.writeback.processingStatus === 'PROCESS_FAILED') {
+    return {
+      processingStatus: 'PROCESS_FAILED',
+      committedGiftId: null,
+      recurringAgreementId: null,
+      executionPath: result.writeback.executionPath,
+      stagingWritebackSucceeded: result.stagingWritebackSucceeded,
+      reconciliationError: result.reconciliationError,
+      errorDetail: result.writeback.errorDetail,
+    };
+  }
+
+  return {
+    processingStatus: 'NOT_PROCESSED',
+    committedGiftId: null,
+    recurringAgreementId: null,
+    executionPath: null,
+    stagingWritebackSucceeded: result.stagingWritebackSucceeded,
+    reconciliationError: result.reconciliationError,
+    errorDetail: result.writeback.errorDetail,
   };
 };

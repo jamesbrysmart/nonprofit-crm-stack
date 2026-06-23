@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
+  extractConnectionNodes,
+  extractMutationRecord,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
+import {
   computeClaimBatchRollups,
   listGiftsForClaimBatch,
   refreshClaimBatchSummary,
@@ -91,11 +96,11 @@ const createSubmissionRecord = async (
     },
   } as any);
 
-  return result?.createGiftAidClaimSubmission as {
+  return extractMutationRecord<{
     id: string;
     submittedAt?: string;
     snapshotHash?: string;
-  };
+  }>(result, 'createGiftAidClaimSubmission');
 };
 
 const loadClaimBatch = async (client: CoreApiClient, batchId: string) => {
@@ -117,7 +122,10 @@ const loadClaimBatch = async (client: CoreApiClient, batchId: string) => {
     },
   } as any);
 
-  return refreshed?.giftAidClaimBatch as GiftAidClaimBatchRecord | null;
+  return (
+    extractQueryRecord<GiftAidClaimBatchRecord>(refreshed, 'giftAidClaimBatch') ??
+    null
+  );
 };
 
 const loadClaimSubmissions = async (
@@ -147,16 +155,15 @@ const loadClaimSubmissions = async (
     },
   } as any);
 
-  return (
-    result?.giftAidClaimSubmissions?.edges?.map(
-      (edge: { node: GiftAidClaimSubmissionRecord }) => edge.node,
-    )?.sort((left, right) => {
+  return extractConnectionNodes<GiftAidClaimSubmissionRecord>(
+    result,
+    'giftAidClaimSubmissions',
+  ).sort((left: GiftAidClaimSubmissionRecord, right: GiftAidClaimSubmissionRecord) => {
       const leftTimestamp = left.submittedAt ?? left.completedAt ?? '';
       const rightTimestamp = right.submittedAt ?? right.completedAt ?? '';
 
       return rightTimestamp.localeCompare(leftTimestamp);
-    }) ?? []
-  );
+    });
 };
 
 const syncLatestSubmissionStatus = async (
@@ -252,6 +259,9 @@ export const queueGiftAidClaimSubmission = async (
   }
 
   const submission = await createSubmissionRecord(client, claimBatch.id, snapshot);
+  if (!submission?.id) {
+    throw new Error('Gift Aid claim submission creation did not return an id');
+  }
   let adapterResult:
     | Awaited<ReturnType<typeof runGiftAidHmrcSubmission>>
     | undefined;

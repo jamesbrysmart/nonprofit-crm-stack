@@ -1,5 +1,9 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
 import {
+  extractMutationRecord,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
+import {
   normalizeDonationFormPublishedConfig,
   normalizeDonationFormString,
 } from './donation-form-config';
@@ -41,7 +45,8 @@ export const loadPublishedDonationFormForCheckout = async (
     },
   } as any);
 
-  const record = (result?.donationForm as DonationFormPublicRecord | null) ?? null;
+  const record =
+    extractQueryRecord<DonationFormPublicRecord>(result, 'donationForm') ?? null;
 
   if (!record?.id) {
     throw new Error('Published donation form not found');
@@ -99,7 +104,10 @@ export const createGiftStagingRow = async ({
     },
   } as any);
 
-  const giftStagingId = result?.createGiftStaging?.id;
+  const giftStagingId = extractMutationRecord<{ id?: string | null }>(
+    result,
+    'createGiftStaging',
+  )?.id;
   if (typeof giftStagingId !== 'string' || giftStagingId.trim() === '') {
     throw new Error('Create gift staging response missing id');
   }

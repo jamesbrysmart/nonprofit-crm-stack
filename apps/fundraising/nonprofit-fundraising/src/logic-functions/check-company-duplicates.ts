@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   CompanyDuplicateCheckResponse,
   CompanySummary,
@@ -67,10 +68,7 @@ const handler = async (
     },
   } as any);
 
-  const candidates =
-    result?.companies?.edges?.map(
-      (edge: { node: CompanySummary }) => edge.node,
-    ) ?? [];
+  const candidates = extractConnectionNodes<CompanySummary>(result, 'companies');
 
   return buildResult(checkedCompanyName, candidates);
 };

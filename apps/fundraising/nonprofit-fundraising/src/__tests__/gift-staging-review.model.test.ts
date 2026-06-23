@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { deriveReviewState } from 'src/gift-staging-review/gift-staging-review.model';
+import {
+  deriveReviewIssues,
+  deriveReviewState,
+} from 'src/gift-staging-review/gift-staging-review.model';
 import type { GiftStagingReviewRecord } from 'src/gift-staging-review/gift-staging-review.types';
 
 const buildReviewRecord = (
@@ -17,6 +20,7 @@ const buildReviewRecord = (
     donorLastName: 'Donor',
     donorEmail: 'test@example.com',
     donorPhone: '',
+    donorMailingAddressDisplay: '',
     externalId: '',
     sourceFingerprint: '',
     providerEventId: '',
@@ -111,5 +115,52 @@ describe('deriveReviewState', () => {
     });
     expect(result.reason).toContain('external appeal source ID');
     expect(result.nextAction).toContain('appeal source');
+  });
+});
+
+describe('deriveReviewIssues', () => {
+  it('returns each visible blocker when multiple readiness issues are present', () => {
+    const result = deriveReviewIssues(
+      buildReviewRecord({
+        giftReadyStatus: 'NEEDS_REVIEW',
+        preflightCategory: 'NEEDS_REVIEW',
+        preflightIssueCodes: [
+          'PAYMENT_TYPE_REQUIRED',
+          'DONOR_PRIMARY_EMAIL_CONFLICT',
+        ],
+      }),
+    );
+
+    expect(result).toEqual([
+      {
+        code: 'DONOR_PRIMARY_EMAIL_CONFLICT',
+        label: 'Email already belongs to an existing donor',
+      },
+      {
+        code: 'PAYMENT_TYPE_REQUIRED',
+        label: 'Payment type is missing',
+      },
+    ]);
+  });
+
+  it('consolidates amount and currency issues into one user-facing item', () => {
+    const result = deriveReviewIssues(
+      buildReviewRecord({
+        giftReadyStatus: 'NEEDS_REVIEW',
+        preflightCategory: 'NEEDS_REVIEW',
+        preflightIssueCodes: [
+          'AMOUNT_REQUIRED',
+          'AMOUNT_INVALID',
+          'CURRENCY_REQUIRED',
+        ],
+      }),
+    );
+
+    expect(result).toEqual([
+      {
+        code: 'AMOUNT_REQUIRED',
+        label: 'Amount or currency is incomplete or invalid',
+      },
+    ]);
   });
 });

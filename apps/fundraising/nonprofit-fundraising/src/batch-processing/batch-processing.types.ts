@@ -22,9 +22,8 @@ export type BatchSummaryRecord = {
   name: string;
   status: BatchStatus | string | null;
   source?: string | null;
-  totalItems: number | null;
-  processedItems: number | null;
-  failedItems: number | null;
+  processedGifts: number | null;
+  failedGifts: number | null;
   expectedItemCount?: number | null;
   expectedTotalAmount?:
     | {
@@ -162,6 +161,23 @@ export type BatchProcessingRow = {
   } | null;
 };
 
+export type BatchGiftCodingRow = {
+  id: string;
+  processingStatus: string | null;
+  fund: {
+    id: string;
+  } | null;
+  appeal: {
+    id: string;
+  } | null;
+  appealSource: {
+    id: string;
+    appeal?: {
+      id?: string | null;
+    } | null;
+  } | null;
+};
+
 export type ProcessBatchRequest = {
   giftBatchId: string;
 };
@@ -272,4 +288,6 @@ export type UpdateBatchGiftCodingResponse = {
   appealUpdatedCount: number;
   appealSourceUpdatedCount: number;
   fundUpdatedCount: number;
+  rowUpdatesApplied: boolean;
+  rowUpdateMessage: string | null;
 };

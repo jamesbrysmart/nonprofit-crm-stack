@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   DuplicateCheckResponse,
   PersonSummary,
@@ -113,15 +114,20 @@ const handler = async (
           emails: {
             primaryEmail: true,
           },
+          mailingAddress: {
+            addressStreet1: true,
+            addressStreet2: true,
+            addressCity: true,
+            addressState: true,
+            addressPostcode: true,
+            addressCountry: true,
+          },
         },
       },
     },
   } as any);
 
-  const candidates =
-    result?.people?.edges?.map(
-      (edge: { node: PersonSummary }) => edge.node,
-    ) ?? [];
+  const candidates = extractConnectionNodes<PersonSummary>(result, 'people');
 
   return buildResult(checkedFirstName, checkedLastName, candidates);
 };

@@ -1,63 +1,63 @@
-export interface HmrcCharitiesSoftwareIdentity {
+export type HmrcCharitiesSoftwareIdentity = {
   vendorId: string;
   productName: string;
   productVersion: string;
-}
+};
 
-export interface HmrcCharitiesGatewayCredentials {
+export type HmrcCharitiesGatewayCredentials = {
   senderId: string;
   password: string;
-}
+};
 
-export interface HmrcCharitiesClaimIdentity {
+export type HmrcCharitiesClaimIdentity = {
   messageClass: 'HMRC-CHAR-CLM';
   charityIdType: 'CHARID';
   charityId: string;
-}
+};
 
-export interface HmrcCharitiesName {
+export type HmrcCharitiesName = {
   title?: string;
   forename: string;
   surname: string;
-}
+};
 
-export interface HmrcCharitiesOrganisation {
+export type HmrcCharitiesOrganisation = {
   hmrcReference: string;
   charityName: string;
-}
+};
 
-export interface HmrcCharitiesAuthorisedOfficial {
+export type HmrcCharitiesAuthorisedOfficial = {
   name: HmrcCharitiesName;
   postcode?: string;
   overseas?: boolean;
   phoneNumber: string;
-}
+};
 
-export interface HmrcCharitiesRegulator {
+export type HmrcCharitiesRegulator = {
   regName: 'CCEW' | 'CCNI' | 'OSCR';
   regNo?: string;
-}
+};
 
-export interface HmrcCharitiesDonor {
+export type HmrcCharitiesDonor = {
   name: HmrcCharitiesName;
   house: string;
   postcode?: string;
   overseas?: boolean;
-}
+};
 
-export interface HmrcCharitiesGiftAidDonation {
+export type HmrcCharitiesGiftAidDonation = {
   date: string;
   total: string;
   donor: HmrcCharitiesDonor;
   sponsored?: boolean;
-}
+};
 
-export interface HmrcCharitiesClaimPeriod {
+export type HmrcCharitiesClaimPeriod = {
   startDate: string;
   endDate: string;
-}
+};
 
-export interface HmrcCharitiesClaimInput {
+export type HmrcCharitiesClaimInput = {
   software: HmrcCharitiesSoftwareIdentity;
   gateway: HmrcCharitiesGatewayCredentials;
   identity: HmrcCharitiesClaimIdentity;
@@ -69,4 +69,4 @@ export interface HmrcCharitiesClaimInput {
   defaultCurrency?: 'GBP';
   sender: 'Individual';
   donations: HmrcCharitiesGiftAidDonation[];
-}
+};

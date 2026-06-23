@@ -1,9 +1,9 @@
-export interface GovTalkTransactionEngineEndpoints {
+export type GovTalkTransactionEngineEndpoints = {
   submissionUrl: string;
   pollUrl: string;
-}
+};
 
-export interface GovTalkSubmissionAcknowledgement {
+export type GovTalkSubmissionAcknowledgement = {
   qualifier?: string;
   correlationId?: string;
   transactionId?: string;
@@ -12,7 +12,7 @@ export interface GovTalkSubmissionAcknowledgement {
   errorNumber?: string;
   errorText?: string;
   rawXml: string;
-}
+};
 
 const extractTagValue = (xml: string, tagName: string): string | undefined => {
   const regex = new RegExp(`<${tagName}(?:\\s[^>]*)?>([\\s\\S]*?)</${tagName}>`);

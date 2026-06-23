@@ -11,7 +11,6 @@ export default defineCommandMenuItem({
     PROCESS_SELECTED_GIFT_STAGING_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER,
   label: 'Process selected',
   shortLabel: 'Process',
-  icon: 'IconPlayerPlay',
   availabilityType: 'RECORD_SELECTION',
   availabilityObjectUniversalIdentifier:
     GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,

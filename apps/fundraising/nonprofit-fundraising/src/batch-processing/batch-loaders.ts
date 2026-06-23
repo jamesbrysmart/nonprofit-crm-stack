@@ -1,13 +1,24 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import type {
+  BatchGiftCodingRow,
   BatchProcessingRow,
   BatchSummaryRecord,
 } from './batch-processing.types';
 import type { BatchDonorMatchRow } from 'src/batch-donor-match/batch-donor-match.types';
+import {
+  extractConnection,
+  extractConnectionNodes,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
+
+const BATCH_GIFT_CODING_QUERY_PAGE_SIZE = 200;
 
 type BatchDonorMatchSummaryRecord = {
   id: string;
-  totalItems: number | null;
+};
+
+type BatchGiftCodingSummaryRecord = {
+  id: string;
 };
 
 const buildIdFilter = (ids: string[]) => ({
@@ -34,9 +45,8 @@ export const loadBatchProcessingContext = async (
       name: true,
       source: true,
       status: true,
-      totalItems: true,
-      processedItems: true,
-      failedItems: true,
+      processedGifts: true,
+      failedGifts: true,
       expectedItemCount: true,
       expectedTotalAmount: {
         amountMicros: true,
@@ -173,11 +183,99 @@ export const loadBatchProcessingContext = async (
   } as any);
 
   return {
-    batch: (result?.giftBatch as BatchSummaryRecord | null) ?? null,
-    rows:
-      result?.giftStagings?.edges?.map(
-        (edge: { node: BatchProcessingRow }) => edge.node,
-      ) ?? [],
+    batch: extractQueryRecord<BatchSummaryRecord>(result, 'giftBatch') ?? null,
+    rows: extractConnectionNodes<BatchProcessingRow>(result, 'giftStagings'),
+  };
+};
+
+export const loadBatchGiftCodingContext = async (
+  client: CoreApiClient,
+  giftBatchId: string,
+): Promise<{
+  batch: BatchGiftCodingSummaryRecord | null;
+  rows: BatchGiftCodingRow[];
+}> => {
+  let batch: BatchGiftCodingSummaryRecord | null = null;
+  const rows: BatchGiftCodingRow[] = [];
+  let after: string | undefined;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const giftStagingsArgs: Record<string, unknown> = {
+      first: BATCH_GIFT_CODING_QUERY_PAGE_SIZE,
+      filter: {
+        giftBatchId: {
+          eq: giftBatchId,
+        },
+      },
+    };
+
+    if (after) {
+      giftStagingsArgs.after = after;
+    }
+
+    const result = await client.query({
+      giftBatch: {
+        __args: {
+          filter: {
+            id: { eq: giftBatchId },
+          },
+        },
+        id: true,
+      },
+      giftStagings: {
+        __args: giftStagingsArgs,
+        edges: {
+          node: {
+            id: true,
+            processingStatus: true,
+            fund: {
+              id: true,
+            },
+            appeal: {
+              id: true,
+            },
+            appealSource: {
+              id: true,
+              appeal: {
+                id: true,
+              },
+            },
+          },
+        },
+        pageInfo: {
+          hasNextPage: true,
+          endCursor: true,
+        },
+      },
+    } as any);
+
+    batch =
+      batch ??
+      extractQueryRecord<BatchGiftCodingSummaryRecord>(result, 'giftBatch') ??
+      null;
+
+    const connection = extractConnection<BatchGiftCodingRow>(
+      result,
+      'giftStagings',
+    );
+
+    rows.push(...connection.edges.map((edge) => edge.node));
+
+    hasNextPage = connection.pageInfo?.hasNextPage === true;
+    after =
+      typeof connection.pageInfo?.endCursor === 'string'
+        ? connection.pageInfo.endCursor
+        : undefined;
+
+    if (hasNextPage && !after) {
+      throw new Error('Unable to continue loading batch coding rows.');
+    }
+  }
+
+  return {
+    batch,
+    rows,
   };
 };
 
@@ -196,7 +294,6 @@ export const loadBatchDonorMatchContext = async (
         },
       },
       id: true,
-      totalItems: true,
     },
     giftStagings: {
       __args: {
@@ -226,11 +323,10 @@ export const loadBatchDonorMatchContext = async (
   } as any);
 
   return {
-    batch: (result?.giftBatch as BatchDonorMatchSummaryRecord | null) ?? null,
-    rows:
-      result?.giftStagings?.edges?.map(
-        (edge: { node: BatchDonorMatchRow }) => edge.node,
-      ) ?? [],
+    batch:
+      extractQueryRecord<BatchDonorMatchSummaryRecord>(result, 'giftBatch') ??
+      null,
+    rows: extractConnectionNodes<BatchDonorMatchRow>(result, 'giftStagings'),
   };
 };
 
@@ -262,11 +358,7 @@ export const loadGiftStagingRowsForDonorMatch = async (
     },
   } as any);
 
-  return (
-    result?.giftStagings?.edges?.map(
-      (edge: { node: BatchDonorMatchRow }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<BatchDonorMatchRow>(result, 'giftStagings');
 };
 
 export const loadGiftStagingRowsForProcessing = async (
@@ -380,9 +472,5 @@ export const loadGiftStagingRowsForProcessing = async (
     },
   } as any);
 
-  return (
-    result?.giftStagings?.edges?.map(
-      (edge: { node: BatchProcessingRow }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<BatchProcessingRow>(result, 'giftStagings');
 };

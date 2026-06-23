@@ -56,8 +56,57 @@ describe('computeDonorRollupSummary', () => {
         amountMicros: 42_500_000,
         currencyCode: 'GBP',
       },
-      lifetimeGiftCount: 2,
+      giftCount: 2,
+      firstGiftDate: '2026-05-01',
       lastGiftDate: '2026-05-07',
+      lastGiftAmount: {
+        amountMicros: 30_000_000,
+        currencyCode: 'GBP',
+      },
+      largestGiftAmount: {
+        amountMicros: 30_000_000,
+        currencyCode: 'GBP',
+      },
+    });
+  });
+
+  it('keeps last gift amount separate from largest gift amount', () => {
+    expect(
+      computeDonorRollupSummary('person_1', [
+        {
+          id: 'gift_largest',
+          giftDate: '2026-05-01',
+          amount: {
+            amountMicros: 100_000_000,
+            currencyCode: 'GBP',
+          },
+          donor: {
+            id: 'person_1',
+          },
+        },
+        {
+          id: 'gift_latest',
+          giftDate: '2026-05-07',
+          amount: {
+            amountMicros: 30_000_000,
+            currencyCode: 'GBP',
+          },
+          donor: {
+            id: 'person_1',
+          },
+        },
+      ]),
+    ).toMatchObject({
+      firstGiftDate: '2026-05-01',
+      lastGiftDate: '2026-05-07',
+      lastGiftAmount: {
+        amountMicros: 30_000_000,
+        currencyCode: 'GBP',
+      },
+      largestGiftAmount: {
+        amountMicros: 100_000_000,
+        currencyCode: 'GBP',
+      },
     });
   });
 
@@ -70,8 +119,11 @@ describe('computeDonorRollupSummary', () => {
         amountMicros: 0,
         currencyCode: 'GBP',
       },
-      lifetimeGiftCount: 0,
+      giftCount: 0,
+      firstGiftDate: null,
       lastGiftDate: null,
+      lastGiftAmount: null,
+      largestGiftAmount: null,
     });
   });
 
@@ -109,8 +161,17 @@ describe('computeDonorRollupSummary', () => {
         amountMicros: 20_000_000,
         currencyCode: 'GBP',
       },
-      lifetimeGiftCount: 1,
+      giftCount: 1,
+      firstGiftDate: '2026-05-12',
       lastGiftDate: '2026-05-12',
+      lastGiftAmount: {
+        amountMicros: 20_000_000,
+        currencyCode: 'GBP',
+      },
+      largestGiftAmount: {
+        amountMicros: 20_000_000,
+        currencyCode: 'GBP',
+      },
     });
   });
 });

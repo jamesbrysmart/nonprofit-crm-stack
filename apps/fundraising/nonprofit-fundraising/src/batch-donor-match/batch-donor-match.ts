@@ -1,4 +1,5 @@
 import type {
+  BatchDonorMatchEvidence,
   BatchDonorMatchGroup,
   BatchDonorMatchOutcome,
   BatchDonorMatchRow,
@@ -77,38 +78,43 @@ const donorHasExactEmail = (
 
 export const determineBatchDonorMatchOutcome = ({
   email,
-  candidates,
-}: {
-  email: string;
-  candidates: ExactDonorCandidate[];
-}): BatchDonorMatchOutcome => {
-  const exactEmailCandidates = candidates.filter((candidate) =>
+  nameCandidates,
+  emailCandidates,
+}: BatchDonorMatchEvidence): BatchDonorMatchOutcome => {
+  const exactEmailCandidatesFromName = nameCandidates.filter((candidate) =>
     donorHasExactEmail(candidate, email),
   );
 
-  if (exactEmailCandidates.length === 1) {
+  if (exactEmailCandidatesFromName.length === 1) {
     return {
       kind: 'CONFIRMED',
-      donorId: exactEmailCandidates[0].id,
+      donorId: exactEmailCandidatesFromName[0].id,
     };
   }
 
-  if (exactEmailCandidates.length > 1) {
+  if (exactEmailCandidatesFromName.length > 1) {
     return {
       kind: 'AMBIGUOUS',
-      candidateCount: exactEmailCandidates.length,
+      candidateCount: exactEmailCandidatesFromName.length,
     };
   }
 
-  if (candidates.length > 0) {
+  if (emailCandidates.length > 0) {
     return {
       kind: 'AMBIGUOUS',
-      candidateCount: candidates.length,
+      candidateCount: emailCandidates.length,
+    };
+  }
+
+  if (nameCandidates.length > 0) {
+    return {
+      kind: 'AMBIGUOUS',
+      candidateCount: nameCandidates.length,
     };
   }
 
   return {
     kind: 'UNREVIEWED',
-    candidateCount: candidates.length,
+    candidateCount: 0,
   };
 };

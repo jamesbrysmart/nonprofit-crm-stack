@@ -1,4 +1,5 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
+import { extractMutationRecord } from 'src/core-api/core-api-results';
 import {
   STRIPE_INTAKE_SOURCE,
   STRIPE_PROVIDER,
@@ -96,9 +97,14 @@ export const buildStripeOneOffGiftStagingInput = (
 
   const giftDateSource = session.created ?? event.created;
 
-  if (!Number.isInteger(giftDateSource) || giftDateSource <= 0) {
+  if (
+    typeof giftDateSource !== 'number' ||
+    !Number.isInteger(giftDateSource) ||
+    giftDateSource <= 0
+  ) {
     throw new Error('Stripe event must include a valid created timestamp');
   }
+  const createdTimestamp: number = giftDateSource;
 
   const {
     donorName,
@@ -109,7 +115,7 @@ export const buildStripeOneOffGiftStagingInput = (
     normalizedMetadata,
     normalizedCustomFields,
     fallbackCaptureDate,
-  } = extractCheckoutSessionEvidence({ session, giftDateSource });
+  } = extractCheckoutSessionEvidence({ session, giftDateSource: createdTimestamp });
   const nameParts = splitDonorName(donorName);
   const providerPaymentId = getProviderPaymentId(session.payment_intent);
   const paymentProviderCustomerId = getStripeObjectId(session.customer);
@@ -157,7 +163,7 @@ export const buildStripeOneOffGiftStagingInput = (
       currencyCode: toCurrencyCode(session.currency),
       amountMicros: toAmountMicros(session.amount_total),
     },
-    giftDate: formatUnixDate(giftDateSource),
+    giftDate: formatUnixDate(createdTimestamp),
     donationType,
     paymentType: 'CARD',
     donorFirstName: nameParts.donorFirstName,
@@ -210,7 +216,10 @@ export const createStripeOneOffGiftStaging = async (
     },
   } as any);
 
-  const recordId = result?.createGiftStaging?.id;
+  const recordId = extractMutationRecord<{ id?: string | null }>(
+    result,
+    'createGiftStaging',
+  )?.id;
 
   if (typeof recordId !== 'string' || recordId === '') {
     throw new Error('Create gift staging response missing id');

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   actionRowStyle,
   compactDividerSectionStyle,
   compactWidgetRootStyle,
@@ -217,12 +217,12 @@ const GiftBatchActions = () => {
     <div style={compactWidgetRootStyle}>
       <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
         {isOverWorkflowLimit
-          ? record.workflowLimitMessage
+          ? 'Split this batch before running donor match, readiness checks, or processing.'
           : 'Run donor match first, then check the batch before processing the rows that are ready.'}
       </div>
 
       <div style={actionRowStyle}>
-        <Button
+        <ActionButton
           title={matchingDonors ? '1. Matching...' : '1. Run donor match'}
           variant="secondary"
           onClick={() => {
@@ -236,7 +236,7 @@ const GiftBatchActions = () => {
             isOverWorkflowLimit
           }
         />
-        <Button
+        <ActionButton
           title={checking ? '2. Checking...' : '2. Check batch'}
           variant="secondary"
           onClick={() => {
@@ -250,7 +250,7 @@ const GiftBatchActions = () => {
             isOverWorkflowLimit
           }
         />
-        <Button
+        <ActionButton
           title={processing ? '3. Processing...' : '3. Process batch'}
           variant="primary"
           onClick={() => {

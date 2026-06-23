@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   AppealSummary,
   ListAppealOptionsResponse,
@@ -37,10 +38,7 @@ const handler = async (
   } as any);
 
   return {
-    appeals:
-      result?.appeals?.edges?.map(
-        (edge: { node: AppealSummary }) => edge.node,
-      ) ?? [],
+    appeals: extractConnectionNodes<AppealSummary>(result, 'appeals'),
   };
 };
 

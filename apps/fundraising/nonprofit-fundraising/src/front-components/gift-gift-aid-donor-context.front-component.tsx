@@ -6,8 +6,8 @@ import {
   navigate,
   useRecordId,
 } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   compactDividerSectionStyle,
   compactMetaGridStyle,
   compactMetaItemStyle,
@@ -315,7 +315,7 @@ const GiftGiftAidDonorContext = () => {
       </div>
       {linkedDonor?.id ? (
         <div>
-          <Button
+          <ActionButton
             title="Open donor"
             variant="secondary"
             onClick={() => {

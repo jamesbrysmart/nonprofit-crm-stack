@@ -4,6 +4,10 @@ import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import type { GiftAidEvaluatedPayload } from 'src/gift-aid/gift-aid.types';
 import {
+  extractConnectionNodes,
+  extractMutationRecord,
+} from 'src/core-api/core-api-results';
+import {
   hasLinkedDonorForProcessing,
   hasSufficientDonorEvidenceForNewDonor,
 } from 'src/gift-staging-review/gift-staging-processability';
@@ -516,7 +520,9 @@ const ensurePersonForRowFallback = async (
     },
   } as any);
 
-  const personId = normalizeString(result?.createPerson?.id);
+  const personId = normalizeString(
+    extractMutationRecord<{ id?: string | null }>(result, 'createPerson')?.id,
+  );
 
   if (personId === '') {
     throw new Error('Create person response missing id');
@@ -559,9 +565,10 @@ const findRecurringAgreementByProviderAgreementId = async ({
     },
   } as any);
 
-  const agreement = result?.recurringAgreements?.edges?.[0]?.node as
-    | ProviderRecurringAgreementRecord
-    | undefined;
+  const agreement = extractConnectionNodes<ProviderRecurringAgreementRecord>(
+    result,
+    'recurringAgreements',
+  )[0];
   const agreementId = normalizeString(agreement?.id);
 
   return agreementId === '' ? null : agreementId;
@@ -651,7 +658,12 @@ const createProviderBackedRecurringAgreement = async ({
     },
   } as any);
 
-  const createdAgreementId = normalizeString(result?.createRecurringAgreement?.id);
+  const createdAgreementId = normalizeString(
+    extractMutationRecord<{ id?: string | null }>(
+      result,
+      'createRecurringAgreement',
+    )?.id,
+  );
 
   if (createdAgreementId === '') {
     throw new Error('Create recurring agreement response missing id');
@@ -821,7 +833,10 @@ export const createGiftViaRowFallback = async (
     },
   } as any);
 
-  const giftId = result?.createGift?.id;
+  const giftId = extractMutationRecord<{ id?: string | null }>(
+    result,
+    'createGift',
+  )?.id;
 
   if (typeof giftId !== 'string' || giftId === '') {
     throw new Error('Create gift response missing id');

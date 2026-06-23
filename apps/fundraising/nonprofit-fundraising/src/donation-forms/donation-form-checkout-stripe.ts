@@ -4,6 +4,7 @@ import type {
   DonationType,
   PublishedDonationFormForCheckout,
   StripeCheckoutSessionCreator,
+  StripeCheckoutSessionInput,
 } from './donation-form-checkout.types';
 
 const normalizeString = normalizeDonationFormString;
@@ -107,9 +108,9 @@ export const buildStripeCheckoutSessionInput = ({
   amountMinorUnits: number;
   metadata: Record<string, string>;
   sourceFingerprint: string;
-}): Stripe.Checkout.SessionCreateParams => {
+}): StripeCheckoutSessionInput => {
   const config = published.config;
-  const checkoutSessionInput: Stripe.Checkout.SessionCreateParams = {
+  const checkoutSessionInput: StripeCheckoutSessionInput = {
     mode: donationType === 'RECURRING' ? 'subscription' : 'payment',
     customer_email: donorEmail,
     line_items: [

@@ -13,11 +13,11 @@ const escapeXml = (value: string): string =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;');
 
-export interface BuildProvisionalGovTalkSubmissionOptions {
+export type BuildProvisionalGovTalkSubmissionOptions = {
   gatewayTimestamp?: string;
   gatewayTest?: boolean;
   correlationId?: string;
-}
+};
 
 export const buildProvisionalHmrcCharitiesGovTalkSubmissionXml = (
   claim: HmrcCharitiesClaimInput,

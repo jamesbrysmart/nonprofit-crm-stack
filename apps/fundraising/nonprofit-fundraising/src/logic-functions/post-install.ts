@@ -1,9 +1,16 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { definePostInstallLogicFunction } from 'twenty-sdk/define';
+import {
+  collectCompanyIds,
+  recomputeCompanyRollups,
+} from 'src/company-rollups/company-rollups';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   AppealSourceSummary,
   AppealSummary,
+  CompanySummary,
   FundSummary,
+  OpportunitySummary,
   PersonSummary,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 
@@ -23,9 +30,8 @@ type SeedBatch = {
   name: string;
   source: string;
   status: 'PENDING' | 'PROCESSING' | 'PROCESSED' | 'PROCESSED_WITH_ISSUES';
-  totalItems: number;
-  processedItems: number;
-  failedItems: number;
+  processedGifts: number;
+  failedGifts: number;
   expectedItemCount?: number | null;
   expectedTotalAmountMicros?: number | null;
 };
@@ -82,6 +88,30 @@ type SeedAppealSource = {
   sourceCode?: string;
   platform?: string;
   fundraiserPersonEmail?: string;
+};
+
+type SeedCompany = {
+  name: string;
+  domain?: string;
+};
+
+type SeedOpportunity = {
+  name: string;
+  companyName: string;
+  stage: 'NEW' | 'SCREENING' | 'MEETING' | 'PROPOSAL' | 'CUSTOMER';
+  fundingType?:
+    | 'GRANT'
+    | 'TRUST_FOUNDATION'
+    | 'STATUTORY_BID'
+    | 'CORPORATE_SPONSORSHIP'
+    | 'MAJOR_GIFT'
+    | 'OTHER';
+  amountMicros?: number;
+  awardedAmountMicros?: number;
+  applicationDeadline?: string;
+  submittedDate?: string;
+  fundingPeriodStart?: string;
+  fundingPeriodEnd?: string;
 };
 
 type SeedStagingRow = {
@@ -190,9 +220,11 @@ type ExistingGiftAidClaimBatchRecord = {
 
 type SeedGift = {
   name: string;
-  donorEmail: string;
+  donorEmail?: string;
+  companyName?: string;
   amountMicros: number;
   giftDate: string;
+  giftType?: 'DONATION' | 'GIFT_IN_KIND' | 'SPONSORSHIP' | 'GRANT';
   giftAidStatus: 'CLAIMABLE' | 'NOT_CLAIMABLE' | 'NEEDS_REVIEW';
   giftAidReasonCode: string;
   giftAidDecisionSource: 'SYSTEM' | 'MANUAL_OVERRIDE';
@@ -292,17 +324,15 @@ const SEED_BATCHES: SeedBatch[] = [
     name: 'Donor match smoke batch',
     source: 'csv_import',
     status: 'PENDING',
-    totalItems: 4,
-    processedItems: 0,
-    failedItems: 0,
+    processedGifts: 0,
+    failedGifts: 0,
   },
   {
     name: 'Check batch smoke batch',
     source: 'csv_import',
     status: 'PENDING',
-    totalItems: 5,
-    processedItems: 0,
-    failedItems: 0,
+    processedGifts: 0,
+    failedGifts: 0,
     expectedItemCount: 5,
     expectedTotalAmountMicros: 53_000_000,
   },
@@ -311,9 +341,8 @@ const SEED_BATCHES: SeedBatch[] = [
     name: 'CSV walkthrough batch',
     source: 'csv_import',
     status: 'PENDING',
-    totalItems: 4,
-    processedItems: 0,
-    failedItems: 0,
+    processedGifts: 0,
+    failedGifts: 0,
     expectedItemCount: 4,
     expectedTotalAmountMicros: 46_500_000,
   },
@@ -322,9 +351,8 @@ const SEED_BATCHES: SeedBatch[] = [
     name: 'Coding smoke batch',
     source: 'csv_import',
     status: 'PENDING',
-    totalItems: 5,
-    processedItems: 0,
-    failedItems: 0,
+    processedGifts: 0,
+    failedGifts: 0,
     expectedItemCount: 5,
     expectedTotalAmountMicros: 113_000_000,
   },
@@ -333,20 +361,18 @@ const SEED_BATCHES: SeedBatch[] = [
     name: 'P2P external ID import batch',
     source: 'csv_import',
     status: 'PENDING',
-    totalItems: 4,
-    processedItems: 0,
-    failedItems: 0,
+    processedGifts: 0,
+    failedGifts: 0,
     expectedItemCount: 4,
     expectedTotalAmountMicros: 92_000_000,
   },
-  // Workflow-limit fixture: enough rows to exercise oversized-batch behavior.
+  // Pressure-test fixture: currently at the supported batch-action limit.
   {
     name: 'CSV pressure test batch',
     source: 'csv_import',
     status: 'PENDING',
-    totalItems: 100,
-    processedItems: 0,
-    failedItems: 0,
+    processedGifts: 0,
+    failedGifts: 0,
     expectedItemCount: 100,
     expectedTotalAmountMicros: 1_281_000_000,
   },
@@ -430,6 +456,68 @@ const SEED_APPEAL_SOURCES: SeedAppealSource[] = [
     sourceCode: 'P2P-CHRIS',
     platform: 'GiveMatch',
     fundraiserPersonEmail: 'chris.bennett@example.org',
+  },
+];
+
+const SEED_COMPANIES: SeedCompany[] = [
+  {
+    name: 'Oakfield Foundation',
+    domain: 'https://oakfield-foundation.example.org',
+  },
+  {
+    name: 'Northbank Corporate Partners',
+    domain: 'https://northbank.example.org',
+  },
+  {
+    name: 'Riverside Trust',
+    domain: 'https://riverside-trust.example.org',
+  },
+];
+
+const SEED_OPPORTUNITIES: SeedOpportunity[] = [
+  {
+    name: 'Oakfield Foundation - Youth programme grant',
+    companyName: 'Oakfield Foundation',
+    stage: 'CUSTOMER',
+    fundingType: 'TRUST_FOUNDATION',
+    amountMicros: 150_000_000_000,
+    awardedAmountMicros: 125_000_000_000,
+    applicationDeadline: '2026-02-28',
+    submittedDate: '2026-02-20',
+    fundingPeriodStart: '2026-04-01',
+    fundingPeriodEnd: '2027-03-31',
+  },
+  {
+    name: 'Oakfield Foundation - Digital inclusion renewal',
+    companyName: 'Oakfield Foundation',
+    stage: 'PROPOSAL',
+    fundingType: 'TRUST_FOUNDATION',
+    amountMicros: 90_000_000_000,
+    applicationDeadline: '2026-08-15',
+    fundingPeriodStart: '2027-04-01',
+    fundingPeriodEnd: '2028-03-31',
+  },
+  {
+    name: 'Riverside Trust - Community access fund',
+    companyName: 'Riverside Trust',
+    stage: 'SCREENING',
+    fundingType: 'GRANT',
+    amountMicros: 60_000_000_000,
+    applicationDeadline: '2026-09-30',
+    fundingPeriodStart: '2027-01-01',
+    fundingPeriodEnd: '2027-12-31',
+  },
+  {
+    name: 'Northbank Corporate Partners - Annual sponsorship',
+    companyName: 'Northbank Corporate Partners',
+    stage: 'CUSTOMER',
+    fundingType: 'CORPORATE_SPONSORSHIP',
+    amountMicros: 40_000_000_000,
+    awardedAmountMicros: 40_000_000_000,
+    applicationDeadline: '2026-03-15',
+    submittedDate: '2026-03-01',
+    fundingPeriodStart: '2026-06-01',
+    fundingPeriodEnd: '2027-05-31',
   },
 ];
 
@@ -2307,10 +2395,46 @@ const SEED_GIFTS: SeedGift[] = [
     giftAidDeclarationName: 'Ada Lovelace declaration 2026-01-15',
     giftAidClaimBatchName: 'Gift Aid walkthrough clean draft claim',
   },
+  {
+    name: 'Company rollup demo - Northbank sponsorship payment',
+    companyName: 'Northbank Corporate Partners',
+    amountMicros: 20_000_000_000,
+    giftDate: '2026-05-20',
+    giftType: 'SPONSORSHIP',
+    giftAidStatus: 'NOT_CLAIMABLE',
+    giftAidReasonCode: 'company_gift',
+    giftAidDecisionSource: 'SYSTEM',
+    giftAidLastEvaluatedAt: '2026-05-20T10:00:00.000Z',
+  },
+  {
+    name: 'Company rollup demo - Northbank employee match',
+    companyName: 'Northbank Corporate Partners',
+    amountMicros: 7_500_000_000,
+    giftDate: '2026-06-10',
+    giftType: 'DONATION',
+    giftAidStatus: 'NOT_CLAIMABLE',
+    giftAidReasonCode: 'company_gift',
+    giftAidDecisionSource: 'SYSTEM',
+    giftAidLastEvaluatedAt: '2026-06-10T10:00:00.000Z',
+  },
+  {
+    name: 'Company rollup demo - Northbank laptops in kind',
+    companyName: 'Northbank Corporate Partners',
+    amountMicros: 12_000_000_000,
+    giftDate: '2026-06-12',
+    giftType: 'GIFT_IN_KIND',
+    giftAidStatus: 'NOT_CLAIMABLE',
+    giftAidReasonCode: 'gift_in_kind',
+    giftAidDecisionSource: 'SYSTEM',
+    giftAidLastEvaluatedAt: '2026-06-12T10:00:00.000Z',
+  },
 ];
 
 const normalizeEmail = (value: string | undefined | null) =>
   value?.trim().toLowerCase() ?? '';
+
+const normalizeString = (value: string | undefined | null) =>
+  typeof value === 'string' ? value.trim() : '';
 
 const isUniqueViolationError = (error: unknown): boolean => {
   const text =
@@ -2353,11 +2477,51 @@ const loadPeople = async (client: CoreApiClient): Promise<PersonSummary[]> => {
     },
   } as any);
 
-  return (
-    result?.people?.edges?.map(
-      (edge: { node: PersonSummary }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<PersonSummary>(result, 'people');
+};
+
+const loadCompanies = async (
+  client: CoreApiClient,
+): Promise<CompanySummary[]> => {
+  const result = await client.query({
+    companies: {
+      __args: {
+        first: 5000,
+      },
+      edges: {
+        node: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  } as any);
+
+  return extractConnectionNodes<CompanySummary>(result, 'companies');
+};
+
+const loadOpportunities = async (
+  client: CoreApiClient,
+): Promise<OpportunitySummary[]> => {
+  const result = await client.query({
+    opportunities: {
+      __args: {
+        first: 5000,
+      },
+      edges: {
+        node: {
+          id: true,
+          name: true,
+          company: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    },
+  } as any);
+
+  return extractConnectionNodes<OpportunitySummary>(result, 'opportunities');
 };
 
 const loadGiftBatches = async (
@@ -2377,11 +2541,7 @@ const loadGiftBatches = async (
     },
   } as any);
 
-  return (
-    result?.giftBatches?.edges?.map(
-      (edge: { node: BatchSummaryRecord }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<BatchSummaryRecord>(result, 'giftBatches');
 };
 
 const loadGiftStagings = async (
@@ -2401,10 +2561,9 @@ const loadGiftStagings = async (
     },
   } as any);
 
-  return (
-    result?.giftStagings?.edges?.map(
-      (edge: { node: ExistingGiftStagingRecord }) => edge.node,
-    ) ?? []
+  return extractConnectionNodes<ExistingGiftStagingRecord>(
+    result,
+    'giftStagings',
   );
 };
 
@@ -2425,10 +2584,9 @@ const loadRecurringAgreements = async (
     },
   } as any);
 
-  return (
-    result?.recurringAgreements?.edges?.map(
-      (edge: { node: ExistingRecurringAgreementRecord }) => edge.node,
-    ) ?? []
+  return extractConnectionNodes<ExistingRecurringAgreementRecord>(
+    result,
+    'recurringAgreements',
   );
 };
 
@@ -2449,10 +2607,9 @@ const loadGiftAidDeclarations = async (
     },
   } as any);
 
-  return (
-    result?.giftAidDeclarations?.edges?.map(
-      (edge: { node: ExistingGiftAidDeclarationRecord }) => edge.node,
-    ) ?? []
+  return extractConnectionNodes<ExistingGiftAidDeclarationRecord>(
+    result,
+    'giftAidDeclarations',
   );
 };
 
@@ -2473,10 +2630,9 @@ const loadGiftAidClaimBatches = async (
     },
   } as any);
 
-  return (
-    result?.giftAidClaimBatches?.edges?.map(
-      (edge: { node: ExistingGiftAidClaimBatchRecord }) => edge.node,
-    ) ?? []
+  return extractConnectionNodes<ExistingGiftAidClaimBatchRecord>(
+    result,
+    'giftAidClaimBatches',
   );
 };
 
@@ -2495,10 +2651,7 @@ const loadGifts = async (client: CoreApiClient): Promise<ExistingGiftRecord[]> =
     },
   } as any);
 
-  return (
-    result?.gifts?.edges?.map((edge: { node: ExistingGiftRecord }) => edge.node) ??
-    []
-  );
+  return extractConnectionNodes<ExistingGiftRecord>(result, 'gifts');
 };
 
 const loadFunds = async (client: CoreApiClient): Promise<ExistingFundRecord[]> => {
@@ -2518,10 +2671,7 @@ const loadFunds = async (client: CoreApiClient): Promise<ExistingFundRecord[]> =
     },
   } as any);
 
-  return (
-    result?.funds?.edges?.map((edge: { node: ExistingFundRecord }) => edge.node) ??
-    []
-  );
+  return extractConnectionNodes<ExistingFundRecord>(result, 'funds');
 };
 
 const loadAppeals = async (
@@ -2546,11 +2696,7 @@ const loadAppeals = async (
     },
   } as any);
 
-  return (
-    result?.appeals?.edges?.map(
-      (edge: { node: ExistingAppealRecord }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<ExistingAppealRecord>(result, 'appeals');
 };
 
 const loadAppealSources = async (
@@ -2594,10 +2740,9 @@ const loadAppealSources = async (
     },
   } as any);
 
-  return (
-    result?.appealSources?.edges?.map(
-      (edge: { node: ExistingAppealSourceRecord }) => edge.node,
-    ) ?? []
+  return extractConnectionNodes<ExistingAppealSourceRecord>(
+    result,
+    'appealSources',
   );
 };
 
@@ -2632,7 +2777,7 @@ const loadPersonByEmail = async (
     },
   } as any);
 
-  return result?.people?.edges?.[0]?.node as PersonSummary | undefined;
+  return extractConnectionNodes<PersonSummary>(result, 'people')[0];
 };
 
 const findExistingPerson = (
@@ -2737,9 +2882,8 @@ const seedBatches = async (client: CoreApiClient) => {
             data: {
               source: seed.source,
               status: seed.status,
-              totalItems: seed.totalItems,
-              processedItems: seed.processedItems,
-              failedItems: seed.failedItems,
+              processedGifts: seed.processedGifts,
+              failedGifts: seed.failedGifts,
               expectedItemCount: seed.expectedItemCount ?? null,
               expectedTotalAmount:
                 typeof seed.expectedTotalAmountMicros === 'number'
@@ -2765,9 +2909,8 @@ const seedBatches = async (client: CoreApiClient) => {
             name: seed.name,
             source: seed.source,
             status: seed.status,
-            totalItems: seed.totalItems,
-            processedItems: seed.processedItems,
-            failedItems: seed.failedItems,
+            processedGifts: seed.processedGifts,
+            failedGifts: seed.failedGifts,
             expectedItemCount: seed.expectedItemCount ?? null,
             expectedTotalAmount:
               typeof seed.expectedTotalAmountMicros === 'number'
@@ -3089,6 +3232,155 @@ const seedAppealSources = async (
   return appealSourcesByName;
 };
 
+const seedCompanies = async (client: CoreApiClient) => {
+  const existingCompanies = await loadCompanies(client);
+  const companiesByName = new Map<string, CompanySummary>();
+
+  for (const seed of SEED_COMPANIES) {
+    const existing = existingCompanies.find(
+      (company) => normalizeString(company.name) === seed.name,
+    );
+    const data = {
+      ...(seed.domain
+        ? {
+            domainName: {
+              primaryLinkUrl: seed.domain,
+              primaryLinkLabel: seed.domain,
+            },
+          }
+        : {}),
+    };
+
+    if (existing?.id) {
+      if (seed.domain) {
+        await client.mutation({
+          updateCompany: {
+            __args: {
+              id: existing.id,
+              data,
+            },
+            id: true,
+            name: true,
+          },
+        } as any);
+      }
+
+      companiesByName.set(seed.name, existing);
+      continue;
+    }
+
+    const result = await client.mutation({
+      createCompany: {
+        __args: {
+          data: {
+            name: seed.name,
+            position: 'last',
+            ...data,
+          },
+        },
+        id: true,
+        name: true,
+      },
+    } as any);
+
+    const created = result?.createCompany as CompanySummary | undefined;
+
+    if (created?.id) {
+      companiesByName.set(seed.name, created);
+    }
+  }
+
+  return companiesByName;
+};
+
+const seedOpportunities = async (
+  client: CoreApiClient,
+  companiesByName: Map<string, CompanySummary>,
+) => {
+  const existingOpportunities = await loadOpportunities(client);
+
+  for (const seed of SEED_OPPORTUNITIES) {
+    const existing = existingOpportunities.find(
+      (opportunity) => normalizeString(opportunity.name) === seed.name,
+    );
+    const company = companiesByName.get(seed.companyName);
+
+    if (!company?.id) {
+      throw new Error(`Seed company "${seed.companyName}" not found`);
+    }
+
+    const data = {
+      stage: seed.stage,
+      ...(seed.fundingType ? { fundingType: seed.fundingType } : {}),
+      ...(typeof seed.amountMicros === 'number'
+        ? {
+            amount: {
+              currencyCode: 'GBP',
+              amountMicros: seed.amountMicros,
+            },
+          }
+        : {}),
+      ...(typeof seed.awardedAmountMicros === 'number'
+        ? {
+            awardedAmount: {
+              currencyCode: 'GBP',
+              amountMicros: seed.awardedAmountMicros,
+            },
+          }
+        : {
+            awardedAmount: {
+              currencyCode: 'GBP',
+              amountMicros: null,
+            },
+          }),
+      ...(seed.applicationDeadline
+        ? { applicationDeadline: seed.applicationDeadline }
+        : {}),
+      ...(seed.submittedDate ? { submittedDate: seed.submittedDate } : {}),
+      ...(seed.fundingPeriodStart
+        ? { fundingPeriodStart: seed.fundingPeriodStart }
+        : {}),
+      ...(seed.fundingPeriodEnd
+        ? { fundingPeriodEnd: seed.fundingPeriodEnd }
+        : {}),
+      company: {
+        connect: {
+          where: {
+            id: company.id,
+          },
+        },
+      },
+    };
+
+    if (existing?.id) {
+      await client.mutation({
+        updateOpportunity: {
+          __args: {
+            id: existing.id,
+            data,
+          },
+          id: true,
+          name: true,
+        },
+      } as any);
+      continue;
+    }
+
+    await client.mutation({
+      createOpportunity: {
+        __args: {
+          data: {
+            name: seed.name,
+            position: 'last',
+            ...data,
+          },
+        },
+        id: true,
+      },
+    } as any);
+  }
+};
+
 const seedGiftStagings = async (
   client: CoreApiClient,
   peopleByEmail: Map<string, PersonSummary>,
@@ -3298,6 +3590,7 @@ const seedGiftAidClaimBatches = async (client: CoreApiClient) => {
 const seedGifts = async (
   client: CoreApiClient,
   peopleByEmail: Map<string, PersonSummary>,
+  companiesByName: Map<string, CompanySummary>,
   declarationsByName: Map<string, ExistingGiftAidDeclarationRecord>,
   claimBatchesByName: Map<string, ExistingGiftAidClaimBatchRecord>,
 ) => {
@@ -3309,9 +3602,23 @@ const seedGifts = async (
       continue;
     }
 
-    const donor = peopleByEmail.get(seed.donorEmail);
-    if (!donor?.id) {
-      throw new Error(`Seed donor "${seed.donorEmail}" not found for gift "${seed.name}"`);
+    const donor = seed.donorEmail
+      ? peopleByEmail.get(seed.donorEmail)
+      : undefined;
+    const company = seed.companyName
+      ? companiesByName.get(seed.companyName)
+      : undefined;
+
+    if (seed.donorEmail && !donor?.id) {
+      throw new Error(
+        `Seed donor "${seed.donorEmail}" not found for gift "${seed.name}"`,
+      );
+    }
+
+    if (seed.companyName && !company?.id) {
+      throw new Error(
+        `Seed company "${seed.companyName}" not found for gift "${seed.name}"`,
+      );
     }
 
     const declaration = seed.giftAidDeclarationName
@@ -3331,18 +3638,34 @@ const seedGifts = async (
               amountMicros: seed.amountMicros,
             },
             giftDate: seed.giftDate,
-            donorFirstName: donor.name?.firstName ?? '',
-            donorLastName: donor.name?.lastName ?? '',
-            ...(donor.emails?.primaryEmail
+            giftType: seed.giftType ?? 'DONATION',
+            donorFirstName: donor?.name?.firstName ?? '',
+            donorLastName: donor?.name?.lastName ?? company?.name ?? '',
+            ...(donor?.emails?.primaryEmail
               ? { donorEmail: donor.emails.primaryEmail }
               : {}),
-            donor: {
-              connect: {
-                where: {
-                  id: donor.id,
-                },
-              },
-            },
+            ...(donor?.id
+              ? {
+                  donor: {
+                    connect: {
+                      where: {
+                        id: donor.id,
+                      },
+                    },
+                  },
+                }
+              : {}),
+            ...(company?.id
+              ? {
+                  company: {
+                    connect: {
+                      where: {
+                        id: company.id,
+                      },
+                    },
+                  },
+                }
+              : {}),
             giftAidStatus: seed.giftAidStatus,
             giftAidReasonCode: seed.giftAidReasonCode,
             giftAidDecisionSource: seed.giftAidDecisionSource,
@@ -3450,6 +3773,8 @@ const handler = async (): Promise<void> => {
   const fundsByName = await seedFunds(client);
   const appealsByName = await seedAppeals(client, fundsByName);
   await seedAppealSources(client, appealsByName, peopleByEmail);
+  const companiesByName = await seedCompanies(client);
+  await seedOpportunities(client, companiesByName);
   await seedGiftAidDeclarations(client, peopleByEmail);
   const declarationRecords = await loadGiftAidDeclarations(client);
   const declarationsByName = new Map(
@@ -3460,8 +3785,13 @@ const handler = async (): Promise<void> => {
   await seedGifts(
     client,
     peopleByEmail,
+    companiesByName,
     declarationsByName,
     claimBatchesByName,
+  );
+  await recomputeCompanyRollups(
+    client,
+    collectCompanyIds([...companiesByName.values()].map((company) => company.id)),
   );
 
   await seedGiftStagings(client, peopleByEmail, batchesByName);

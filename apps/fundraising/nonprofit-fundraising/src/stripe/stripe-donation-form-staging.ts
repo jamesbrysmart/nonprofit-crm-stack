@@ -104,6 +104,23 @@ const mergeDonationFormRawProviderEvidence = ({
     : {}),
 });
 
+const toRawProviderMetadata = (
+  metadata: Record<string, string | null | undefined> | null | undefined,
+): Record<string, string> | undefined => {
+  if (!metadata) {
+    return undefined;
+  }
+
+  const normalizedEntries = Object.entries(metadata).filter(
+    (entry): entry is [string, string] =>
+      normalizeString(entry[0]) !== '' && normalizeString(entry[1]) !== '',
+  );
+
+  return normalizedEntries.length === 0
+    ? undefined
+    : Object.fromEntries(normalizedEntries);
+};
+
 export const updateStripeDonationFormGiftStagingWithDependencies = async (
   client: CoreApiClient,
   event: StripeCheckoutSessionCompletedEvent,
@@ -416,14 +433,9 @@ export const updateStripeDonationFormRecurringInvoicePaymentGiftStagingWithDepen
       ...(sourceFingerprint !== '' ? { sourceFingerprint } : {}),
       subscriptionId: providerAgreementId,
       ...(paymentIntentId ? { paymentIntentId } : {}),
-      ...(invoiceMetadata
+      ...(toRawProviderMetadata(invoiceMetadata)
         ? {
-            metadata: Object.fromEntries(
-              Object.entries(invoiceMetadata).filter(
-                ([key, value]) =>
-                  normalizeString(key) !== '' && normalizeString(value) !== '',
-              ),
-            ),
+            metadata: toRawProviderMetadata(invoiceMetadata),
           }
         : {}),
       ...(paymentEconomics ? { paymentEconomics } : {}),

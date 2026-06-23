@@ -4,12 +4,12 @@ import {
   navigate,
   useRecordId,
 } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
+  SummaryStrip,
+  SummaryStripItem,
   actionRowStyle,
   compactDividerSectionStyle,
-  compactMetaGridStyle,
-  compactMetaItemStyle,
   compactWidgetRootStyle,
   labelStyle,
   reviewStateStyle,
@@ -17,7 +17,10 @@ import {
   sectionHeaderStyle,
 } from 'src/front-components/front-component-ui';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
-import { deriveReviewState } from 'src/gift-staging-review/gift-staging-review.model';
+import {
+  deriveReviewIssues,
+  deriveReviewState,
+} from 'src/gift-staging-review/gift-staging-review.model';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
 
 export const GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
@@ -40,6 +43,7 @@ const GiftStagingReviewSummary = () => {
   }
 
   const reviewState = deriveReviewState(record);
+  const reviewIssues = deriveReviewIssues(record);
 
   const handleGoToBatch = async () => {
     if (record.giftBatchId === '') {
@@ -74,7 +78,7 @@ const GiftStagingReviewSummary = () => {
         <div style={actionRowStyle}>
           {record.processingStatus === 'PROCESSED' &&
           record.committedGiftId !== '' ? (
-            <Button
+            <ActionButton
               title="Open gift record"
               variant="primary"
               onClick={() => {
@@ -83,7 +87,7 @@ const GiftStagingReviewSummary = () => {
             />
           ) : null}
           {record.giftBatchId !== '' ? (
-            <Button
+            <ActionButton
               title="Go to batch"
               variant="secondary"
               onClick={() => {
@@ -98,55 +102,59 @@ const GiftStagingReviewSummary = () => {
         {reviewState.reason}
       </div>
 
-      <div style={compactDividerSectionStyle}>
-        <div style={compactMetaGridStyle}>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Amount</div>
-            <div style={secondaryTextStyle}>{record.amountDisplay}</div>
+      {reviewIssues.length > 1 ? (
+        <div style={compactDividerSectionStyle}>
+          <div style={labelStyle}>Blocking issues</div>
+          <div style={{ ...secondaryTextStyle, display: 'grid', gap: '4px' }}>
+            {reviewIssues.map((issue) => (
+              <div key={issue.code}>{issue.label}</div>
+            ))}
           </div>
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Batch</div>
-            <div style={secondaryTextStyle}>
-              {record.giftBatchId === ''
-                ? 'Not in a batch.'
-                : record.giftBatchName}
-            </div>
-          </div>
-          {record.appealName !== '' ? (
-            <div style={compactMetaItemStyle}>
-              <div style={labelStyle}>Appeal</div>
-              <div style={secondaryTextStyle}>{record.appealName}</div>
-            </div>
-          ) : null}
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Gift record</div>
-            <div style={secondaryTextStyle}>
-              {record.processingStatus === 'PROCESSED' &&
-              record.committedGiftId !== ''
-                ? 'Created.'
-                : 'Not created yet.'}
-            </div>
-          </div>
-          {(record.providerAgreementId !== '' ||
-            (isGiftAidEnabled() && record.giftAidRequested)) && (
-            <div style={compactMetaItemStyle}>
-              <div style={labelStyle}>Review notes</div>
-              <div style={secondaryTextStyle}>
-                {record.providerAgreementId !== '' ? 'Recurring giving' : ''}
-                {record.providerAgreementId !== '' &&
-                isGiftAidEnabled() &&
-                record.giftAidRequested
-                  ? ' and '
-                  : ''}
-                {isGiftAidEnabled() && record.giftAidRequested
-                  ? 'Gift Aid'
-                  : ''}
-                {' noted.'}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      ) : null}
+
+      <SummaryStrip>
+        <SummaryStripItem label="Amount">
+          <div style={secondaryTextStyle}>{record.amountDisplay}</div>
+        </SummaryStripItem>
+        <SummaryStripItem label="Batch">
+          <div style={secondaryTextStyle}>
+            {record.giftBatchId === ''
+              ? 'Not in a batch.'
+              : record.giftBatchName}
+          </div>
+        </SummaryStripItem>
+        {record.appealName !== '' ? (
+          <SummaryStripItem label="Appeal">
+            <div style={secondaryTextStyle}>{record.appealName}</div>
+          </SummaryStripItem>
+        ) : null}
+        <SummaryStripItem label="Gift record">
+          <div style={secondaryTextStyle}>
+            {record.processingStatus === 'PROCESSED' &&
+            record.committedGiftId !== ''
+              ? 'Created.'
+              : 'Not created yet.'}
+          </div>
+        </SummaryStripItem>
+        {(record.providerAgreementId !== '' ||
+          (isGiftAidEnabled() && record.giftAidRequested)) && (
+          <SummaryStripItem label="Review notes">
+            <div style={secondaryTextStyle}>
+              {record.providerAgreementId !== '' ? 'Recurring giving' : ''}
+              {record.providerAgreementId !== '' &&
+              isGiftAidEnabled() &&
+              record.giftAidRequested
+                ? ' and '
+                : ''}
+              {isGiftAidEnabled() && record.giftAidRequested
+                ? 'Gift Aid'
+                : ''}
+              {' noted.'}
+            </div>
+          </SummaryStripItem>
+        )}
+      </SummaryStrip>
     </div>
   );
 };

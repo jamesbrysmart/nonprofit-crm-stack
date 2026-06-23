@@ -50,7 +50,7 @@ export const toCurrencyCode = (currency: string | null | undefined): string => {
 export const toAmountMicros = (
   amountMinorUnits: number | null | undefined,
 ): number => {
-  if (!Number.isInteger(amountMinorUnits) || amountMinorUnits <= 0) {
+  if (typeof amountMinorUnits !== 'number' || !Number.isInteger(amountMinorUnits) || amountMinorUnits <= 0) {
     throw new Error('Stripe checkout session must include a positive amount_total');
   }
 

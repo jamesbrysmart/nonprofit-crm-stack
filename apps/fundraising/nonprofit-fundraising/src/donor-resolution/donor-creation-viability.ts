@@ -1,4 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type { PersonSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
 
 export type PeopleByEmailMap = Map<string, PersonSummary>;
@@ -63,10 +64,7 @@ export const loadPeopleByPrimaryEmails = async (
     },
   } as any);
 
-  const people =
-    result?.people?.edges?.map(
-      (edge: { node: PersonSummary }) => edge.node,
-    ) ?? [];
+  const people = extractConnectionNodes<PersonSummary>(result, 'people');
 
   const peopleByEmail = new Map<string, PersonSummary>();
 

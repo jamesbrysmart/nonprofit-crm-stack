@@ -5,10 +5,9 @@ import { useRecordId } from 'twenty-sdk/front-component';
 import { deriveRefundState } from 'src/gift-lifecycle/gift-refund';
 import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
 import {
-  CompactMetaGrid,
-  CompactMetaItem,
+  SummaryStrip,
+  SummaryStripItem,
   badgeStyle,
-  compactDividerSectionStyle,
   compactValueStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
@@ -325,30 +324,28 @@ const GiftRecordSummaryWidget = () => {
         {getPostureMessage(record)}
       </div>
 
-      <div style={compactDividerSectionStyle}>
-        <CompactMetaGrid>
-          <CompactMetaItem
-            label="Provider"
-            value={provider === '' ? 'Manual / not recorded' : provider}
-          />
-          <CompactMetaItem
-            label="Recurring"
-            value={recurringAgreementName === '' ? 'Not linked' : recurringAgreementName}
-          />
-          <CompactMetaItem
-            label="Gift Aid claim"
-            value={claimBatchName === '' ? 'Not in a claim batch' : claimBatchName}
-          />
-          <CompactMetaItem
-            label="Provider reference"
-            value={
-              normalizeString(record.providerPaymentId) === ''
-                ? 'Not recorded'
-                : normalizeString(record.providerPaymentId)
-            }
-          />
-        </CompactMetaGrid>
-      </div>
+      <SummaryStrip>
+        <SummaryStripItem
+          label="Provider"
+          value={provider === '' ? 'Manual / not recorded' : provider}
+        />
+        <SummaryStripItem
+          label="Recurring"
+          value={recurringAgreementName === '' ? 'Not linked' : recurringAgreementName}
+        />
+        <SummaryStripItem
+          label="Gift Aid claim"
+          value={claimBatchName === '' ? 'Not in a claim batch' : claimBatchName}
+        />
+        <SummaryStripItem
+          label="Provider reference"
+          value={
+            normalizeString(record.providerPaymentId) === ''
+              ? 'Not recorded'
+              : normalizeString(record.providerPaymentId)
+          }
+        />
+      </SummaryStrip>
     </div>
   );
 };

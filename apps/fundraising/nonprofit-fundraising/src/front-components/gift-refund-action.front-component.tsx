@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import { recordGiftRefund } from 'src/gift-lifecycle/gift-refund.api';
 import { deriveRefundState } from 'src/gift-lifecycle/gift-refund';
 import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
 import {
+  ActionButton,
   actionRowStyle,
   compactMetaGridStyle,
   compactMetaItemStyle,
@@ -389,7 +389,7 @@ const GiftRefundAction = () => {
           </div>
 
           <div style={actionRowStyle}>
-            <Button
+            <ActionButton
               title={
                 saving
                   ? 'Saving refund...'

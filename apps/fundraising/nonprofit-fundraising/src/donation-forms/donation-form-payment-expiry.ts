@@ -1,4 +1,8 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import {
+  extractConnection,
+  extractConnectionNodes,
+} from 'src/core-api/core-api-results';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 
 const GIFT_STAGING_QUERY_PAGE_SIZE = 200;
@@ -52,10 +56,14 @@ export const loadAwaitingDonationFormPaymentIds = async (
       },
     } as any);
 
-    const pageRows =
-      result?.giftStagings?.edges?.map(
-        (edge: { node: GiftStagingAwaitingPaymentRow }) => edge.node,
-      ) ?? [];
+    const stagingConnection = extractConnection<GiftStagingAwaitingPaymentRow>(
+      result,
+      'giftStagings',
+    );
+    const pageRows = extractConnectionNodes<GiftStagingAwaitingPaymentRow>(
+      result,
+      'giftStagings',
+    );
 
     ids.push(
       ...pageRows
@@ -63,10 +71,10 @@ export const loadAwaitingDonationFormPaymentIds = async (
         .filter((id): id is string => id !== ''),
     );
 
-    hasNextPage = result?.giftStagings?.pageInfo?.hasNextPage === true;
+    hasNextPage = stagingConnection.pageInfo?.hasNextPage === true;
     cursor =
-      typeof result?.giftStagings?.pageInfo?.endCursor === 'string'
-        ? result.giftStagings.pageInfo.endCursor
+      typeof stagingConnection.pageInfo?.endCursor === 'string'
+        ? stagingConnection.pageInfo.endCursor
         : undefined;
   }
 

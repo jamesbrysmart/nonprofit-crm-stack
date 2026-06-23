@@ -1,7 +1,7 @@
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  ActionButton,
   actionRowStyle,
   badgeStyle,
   compactMetaGridStyle,
@@ -241,7 +241,7 @@ const GiftAidClaimBatchSummary = () => {
 
       <div style={actionRowStyle}>
         {isDraft ? (
-          <Button
+          <ActionButton
             title={finalizing ? 'Finalizing...' : 'Finalize draft claim'}
             variant="primary"
             accent="blue"
@@ -256,7 +256,7 @@ const GiftAidClaimBatchSummary = () => {
               {getQueueMessage(latestSubmissionStatus)}
             </div>
             {canQueueSubmissionNow ? (
-              <Button
+              <ActionButton
                 title={
                   queueingSubmission
                     ? 'Queueing submission...'

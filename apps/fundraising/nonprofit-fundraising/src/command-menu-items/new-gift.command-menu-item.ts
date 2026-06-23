@@ -9,7 +9,6 @@ export default defineCommandMenuItem({
   universalIdentifier: NEW_GIFT_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER,
   label: 'New gift',
   shortLabel: 'New gift',
-  icon: 'IconGift',
   isPinned: true,
   availabilityType: 'GLOBAL',
   frontComponentUniversalIdentifier:

@@ -18,6 +18,9 @@ export const RECURRING_AGREEMENT_INTERVAL_COUNT_FIELD_UNIVERSAL_IDENTIFIER =
 export const RECURRING_AGREEMENT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
   'e59f2af4-f981-4256-8cb1-6980e9c1eb4d';
 
+export const RECURRING_AGREEMENT_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER =
+  '26f567c6-9f52-496a-93da-e249f73d994c';
+
 export const RECURRING_AGREEMENT_START_DATE_FIELD_UNIVERSAL_IDENTIFIER =
   '3d8b1af9-bf3a-479b-b6b0-5134b91a1b6a';
 
@@ -172,6 +175,61 @@ export default defineObject({
       label: 'Amount',
       description: 'Expected amount for each recurring fulfillment',
       icon: 'IconCurrencyPound',
+    },
+    {
+      universalIdentifier:
+        RECURRING_AGREEMENT_PAYMENT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'paymentType',
+      label: 'Payment type',
+      description: 'How gifts recorded from this agreement are expected to be paid',
+      icon: 'IconCreditCard',
+      isNullable: true,
+      defaultValue: null,
+      options: [
+        {
+          id: '0c6dae69-4ad5-4100-800d-e74d33799f95',
+          value: 'CARD',
+          label: 'Card',
+          position: 0,
+          color: 'blue',
+        },
+        {
+          id: '024c1b28-5571-4160-865f-a757e89d4321',
+          value: 'DIRECT_DEBIT',
+          label: 'Direct debit',
+          position: 1,
+          color: 'blue',
+        },
+        {
+          id: 'db9bef17-fee5-4c58-9554-56ad373b6768',
+          value: 'BANK_TRANSFER',
+          label: 'Bank transfer',
+          position: 2,
+          color: 'green',
+        },
+        {
+          id: '06f9e56c-d6a3-48b5-94f3-8fb77f0d57cd',
+          value: 'CASH',
+          label: 'Cash',
+          position: 3,
+          color: 'yellow',
+        },
+        {
+          id: '0e692ca6-5e64-489c-8e47-8c6111463769',
+          value: 'CHEQUE',
+          label: 'Cheque',
+          position: 4,
+          color: 'orange',
+        },
+        {
+          id: '2a950ed7-411f-42f3-9cb2-0bb962b7985c',
+          value: 'OTHER',
+          label: 'Other',
+          position: 5,
+          color: 'gray',
+        },
+      ],
     },
     {
       universalIdentifier:

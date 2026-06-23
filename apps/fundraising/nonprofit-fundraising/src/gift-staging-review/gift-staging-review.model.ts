@@ -1,4 +1,5 @@
 import type {
+  DerivedReviewIssue,
   DerivedReviewState,
   DonorResolution,
   GiftStagingReviewRecord,
@@ -7,7 +8,10 @@ import type {
   StoredGiftStagingRecord,
 } from './gift-staging-review.types';
 import type { PersonSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
-import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
+import {
+  classifyBatchPreflight,
+  type BatchPreflightResult,
+} from 'src/batch-processing/batch-processing.preflight';
 import { normalizeGiftReadyStatus } from './gift-ready-status';
 
 const coalesceString = (
@@ -37,6 +41,36 @@ export const buildPersonDisplayName = (person: PersonSummary | null): string => 
   }
 
   return coalesceString(person.emails?.primaryEmail, 'Linked donor');
+};
+
+export const buildAddressDisplay = (
+  address:
+    | {
+        addressStreet1?: string | null;
+        addressStreet2?: string | null;
+        addressCity?: string | null;
+        addressState?: string | null;
+        addressPostcode?: string | null;
+        addressCountry?: string | null;
+      }
+    | null
+    | undefined,
+): string => {
+  if (!address) {
+    return '';
+  }
+
+  return [
+    address.addressStreet1,
+    address.addressStreet2,
+    address.addressCity,
+    address.addressState,
+    address.addressPostcode,
+    address.addressCountry,
+  ]
+    .map((part) => coalesceString(part))
+    .filter((part) => part !== '')
+    .join(', ');
 };
 
 const buildEvidenceName = (
@@ -141,34 +175,41 @@ const mapPaymentState = (
 
 export const buildGiftStagingReviewRecord = (
   stored: StoredGiftStagingRecord,
+  preflightOverride?: BatchPreflightResult,
 ): GiftStagingReviewRecord => {
   const donorFirstName = coalesceString(stored.donorFirstName);
   const donorLastName = coalesceString(stored.donorLastName);
   const donorEmail = coalesceString(stored.donorEmail);
   const linkedDonor = stored.donor ?? null;
-  const preflight = classifyBatchPreflight({
-    amount:
-      typeof stored.amount === 'string' ? null : stored.amount,
-    donor: stored.donor,
-    donorFirstName: stored.donorFirstName,
-    donorLastName: stored.donorLastName,
-    isAnonymousDonor: stored.isAnonymousDonor,
-    donorResolutionState: stored.donorResolutionState,
-    giftDate: stored.giftDate,
-    paymentType: stored.paymentType,
-    processingStatus: stored.processingStatus,
-    provider: stored.provider,
-    providerAgreementId: stored.providerAgreementId,
-    providerIntervalCount: stored.providerIntervalCount,
-    providerIntervalUnit: stored.providerIntervalUnit,
-    appealSourceExternalId: stored.appealSourceExternalId,
-    sourceAppealName: stored.sourceAppealName,
-    sourceFundName: stored.sourceFundName,
-    appeal: stored.appeal,
-    appealSource: stored.appealSource,
-    fund: stored.fund,
-    recurringAgreement: stored.recurringAgreement,
-  });
+  const preflight =
+    preflightOverride ??
+    classifyBatchPreflight({
+      amount:
+        typeof stored.amount === 'string' ? null : stored.amount,
+      donor: stored.donor,
+      donorFirstName: stored.donorFirstName,
+      donorLastName: stored.donorLastName,
+      isAnonymousDonor: stored.isAnonymousDonor,
+      donorResolutionState: stored.donorResolutionState,
+      giftDate: stored.giftDate,
+      paymentType: stored.paymentType,
+      processingStatus: stored.processingStatus,
+      provider: stored.provider,
+      providerAgreementId: stored.providerAgreementId,
+      providerIntervalCount: stored.providerIntervalCount,
+      providerIntervalUnit: stored.providerIntervalUnit,
+      appealSourceExternalId: stored.appealSourceExternalId,
+      sourceAppealName: stored.sourceAppealName,
+      sourceFundName: stored.sourceFundName,
+      appeal: stored.appeal,
+      appealSource: stored.appealSource,
+      fund: stored.fund,
+      recurringAgreement: stored.recurringAgreement,
+    });
+  const giftReadyStatus =
+    preflight.category === 'READY'
+      ? normalizeGiftReadyStatus(stored.giftReadyStatus)
+      : 'NEEDS_REVIEW';
 
   return {
     id: stored.id,
@@ -186,6 +227,9 @@ export const buildGiftStagingReviewRecord = (
     donorEmail,
     donorPhone: coalesceString(stored.donorPhone),
     isAnonymousDonor: stored.isAnonymousDonor === true,
+    donorMailingAddressDisplay: buildAddressDisplay(
+      stored.donorMailingAddress,
+    ),
     externalId: coalesceString(stored.externalId),
     sourceFingerprint: coalesceString(stored.sourceFingerprint),
     providerEventId: coalesceString(stored.providerEventId),
@@ -227,7 +271,7 @@ export const buildGiftStagingReviewRecord = (
     ),
     linkedDonor,
     linkedDonorName: buildPersonDisplayName(linkedDonor),
-    giftReadyStatus: normalizeGiftReadyStatus(stored.giftReadyStatus),
+    giftReadyStatus,
     paymentState: mapPaymentState(stored.paymentState),
     processingStatus: mapProcessingStatus(stored.processingStatus),
     errorDetail: coalesceString(stored.errorDetail),
@@ -248,6 +292,85 @@ export const buildGiftStagingReviewRecord = (
     preflightCategory: preflight.category,
     preflightIssueCodes: preflight.issueCodes,
   };
+};
+
+export const deriveReviewIssues = (
+  record: GiftStagingReviewRecord,
+): DerivedReviewIssue[] => {
+  if (
+    record.processingStatus === 'PROCESSED' ||
+    record.paymentState === 'AWAITING_PAYMENT' ||
+    record.paymentState === 'PAYMENT_EXPIRED'
+  ) {
+    return [];
+  }
+
+  const issueCodes = new Set(record.preflightIssueCodes);
+  const issues: DerivedReviewIssue[] = [];
+  const addIssue = (
+    code: DerivedReviewIssue['code'],
+    label: string,
+  ) => {
+    if (issueCodes.has(code)) {
+      issues.push({ code, label });
+    }
+  };
+
+  addIssue(
+    'DONOR_PRIMARY_EMAIL_CONFLICT',
+    'Email already belongs to an existing donor',
+  );
+  addIssue('DONOR_REVIEW_REQUIRED', 'Possible donor match needs review');
+  addIssue('GIFT_DATE_REQUIRED', 'Gift date is missing');
+  addIssue('PAYMENT_TYPE_REQUIRED', 'Payment type is missing');
+
+  if (
+    issueCodes.has('AMOUNT_REQUIRED') ||
+    issueCodes.has('AMOUNT_INVALID') ||
+    issueCodes.has('CURRENCY_REQUIRED')
+  ) {
+    issues.push({
+      code: issueCodes.has('AMOUNT_REQUIRED')
+        ? 'AMOUNT_REQUIRED'
+        : issueCodes.has('AMOUNT_INVALID')
+          ? 'AMOUNT_INVALID'
+          : 'CURRENCY_REQUIRED',
+      label: 'Amount or currency is incomplete or invalid',
+    });
+  }
+
+  addIssue('DONOR_EVIDENCE_REQUIRED', 'Donor evidence is incomplete');
+  addIssue(
+    'ANONYMOUS_DONOR_RECURRING_UNSUPPORTED',
+    'Anonymous recurring gifts are not supported yet',
+  );
+  addIssue(
+    'RECURRING_INTERVAL_INVALID',
+    'Recurring interval evidence needs review',
+  );
+
+  if (issueCodes.has('APPEAL_SOURCE_REVIEW_REQUIRED')) {
+    issues.push({
+      code: 'APPEAL_SOURCE_REVIEW_REQUIRED',
+      label: 'External appeal source ID is not linked',
+    });
+  }
+
+  if (issueCodes.has('SOURCE_APPEAL_REVIEW_REQUIRED')) {
+    issues.push({
+      code: 'SOURCE_APPEAL_REVIEW_REQUIRED',
+      label: 'Source appeal or campaign is not linked',
+    });
+  }
+
+  if (issueCodes.has('SOURCE_FUND_REVIEW_REQUIRED')) {
+    issues.push({
+      code: 'SOURCE_FUND_REVIEW_REQUIRED',
+      label: 'Source fund or designation is not linked',
+    });
+  }
+
+  return issues;
 };
 
 export const deriveReviewState = (
@@ -296,6 +419,19 @@ export const deriveReviewState = (
   }
 
   if (record.giftReadyStatus === 'NEEDS_REVIEW') {
+    if (record.preflightIssueCodes.includes('DONOR_PRIMARY_EMAIL_CONFLICT')) {
+      return {
+        title: 'Needs review',
+        accent: '#9a6700',
+        background: '#fff8c5',
+        reason:
+          'This email already belongs to an existing donor. Link that donor or change the staged email before this row can create a new donor.',
+        nextAction:
+          'Open donor review to resolve the existing donor match before processing.',
+        hasBlocker: true,
+      };
+    }
+
     if (record.preflightIssueCodes.includes('DONOR_REVIEW_REQUIRED')) {
       if (record.errorDetail !== '') {
         return {
@@ -314,9 +450,9 @@ export const deriveReviewState = (
         accent: '#9a6700',
         background: '#fff8c5',
         reason:
-          'More than one donor could match this gift. Choose the right donor before processing.',
+          'Possible donor matches were found for this gift. Review and choose the right donor before processing.',
         nextAction:
-          'Choose a donor now, or leave this for later review.',
+          'Link the correct donor now, or leave this row for later review.',
         hasBlocker: true,
       };
     }

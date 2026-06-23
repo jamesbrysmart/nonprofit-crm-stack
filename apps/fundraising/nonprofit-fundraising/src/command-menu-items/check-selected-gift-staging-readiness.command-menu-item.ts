@@ -11,7 +11,6 @@ export default defineCommandMenuItem({
     CHECK_SELECTED_GIFT_STAGING_READINESS_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER,
   label: 'Check if ready',
   shortLabel: 'Check ready',
-  icon: 'IconListCheck',
   availabilityType: 'RECORD_SELECTION',
   availabilityObjectUniversalIdentifier:
     GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,

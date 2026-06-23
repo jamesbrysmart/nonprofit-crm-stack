@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   ManualGiftDuplicateCheckRequest,
   ManualGiftDuplicateCheckResponse,
@@ -143,9 +144,7 @@ const handler = async (
     } as any);
 
     const matches = buildCommittedGiftMatches(
-      result?.gifts?.edges?.map(
-        (edge: { node: ManualGiftDuplicateMatch }) => edge.node,
-      ),
+      extractConnectionNodes(result, 'gifts'),
       amountMicros,
       currencyCode,
     );
@@ -222,16 +221,12 @@ const handler = async (
 
   const matches = [
     ...buildCommittedGiftMatches(
-      result?.gifts?.edges?.map(
-        (edge: { node: ManualGiftDuplicateMatch }) => edge.node,
-      ),
+      extractConnectionNodes(result, 'gifts'),
       amountMicros,
       currencyCode,
     ),
     ...buildStagedGiftMatches(
-      result?.giftStagings?.edges?.map(
-        (edge: { node: ManualGiftDuplicateMatch }) => edge.node,
-      ),
+      extractConnectionNodes(result, 'giftStagings'),
       amountMicros,
       currencyCode,
     ),

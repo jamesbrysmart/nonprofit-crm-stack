@@ -1,21 +1,34 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
+import {
+  extractConnectionNodes,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
 import type { GiftStagingLookupRecord } from 'src/stripe/stripe-intake.types';
 import { normalizeString } from 'src/stripe/stripe-intake-utils';
 
 const normalizeGiftStagingLookupRecord = (
-  record: any,
+  record: unknown,
 ): GiftStagingLookupRecord | null => {
-  if (typeof record?.id !== 'string' || record.id === '') {
+  if (typeof record !== 'object' || record === null) {
+    return null;
+  }
+
+  const recordObject = record as {
+    id?: unknown;
+    rawProviderEvidence?: unknown;
+  };
+
+  if (typeof recordObject.id !== 'string' || recordObject.id === '') {
     return null;
   }
 
   return {
-    id: record.id,
+    id: recordObject.id,
     rawProviderEvidence:
-      record.rawProviderEvidence &&
-      typeof record.rawProviderEvidence === 'object' &&
-      !Array.isArray(record.rawProviderEvidence)
-        ? (record.rawProviderEvidence as Record<string, unknown>)
+      recordObject.rawProviderEvidence &&
+      typeof recordObject.rawProviderEvidence === 'object' &&
+      !Array.isArray(recordObject.rawProviderEvidence)
+        ? (recordObject.rawProviderEvidence as Record<string, unknown>)
         : undefined,
   };
 };
@@ -44,7 +57,9 @@ export const findGiftStagingById = async (
     },
   } as any);
 
-  return normalizeGiftStagingLookupRecord(result?.giftStaging);
+  return normalizeGiftStagingLookupRecord(
+    extractQueryRecord(result, 'giftStaging'),
+  );
 };
 
 export const findGiftStagingRecordBySourceFingerprint = async (
@@ -76,7 +91,9 @@ export const findGiftStagingRecordBySourceFingerprint = async (
     },
   } as any);
 
-  return normalizeGiftStagingLookupRecord(result?.giftStagings?.edges?.[0]?.node);
+  return normalizeGiftStagingLookupRecord(
+    extractConnectionNodes(result, 'giftStagings')[0],
+  );
 };
 
 export const findGiftStagingRecordByProviderAgreementId = async (
@@ -108,7 +125,9 @@ export const findGiftStagingRecordByProviderAgreementId = async (
     },
   } as any);
 
-  return normalizeGiftStagingLookupRecord(result?.giftStagings?.edges?.[0]?.node);
+  return normalizeGiftStagingLookupRecord(
+    extractConnectionNodes(result, 'giftStagings')[0],
+  );
 };
 
 export const findGiftStagingBySourceFingerprint = async (

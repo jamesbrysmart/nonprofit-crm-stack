@@ -71,6 +71,19 @@ const RecurringAgreementState = () => {
           value={`${record.intervalCount} x ${formatEnumLabel(record.cadence)}`}
         />
         <CompactMetaItem label="Amount" value={record.amountLabel} />
+        <CompactMetaItem
+          label="Payment type"
+          value={record.paymentType ? formatEnumLabel(record.paymentType) : 'Not set'}
+        />
+        {record.fundName ? (
+          <CompactMetaItem label="Fund" value={record.fundName} />
+        ) : null}
+        {record.appealName ? (
+          <CompactMetaItem label="Appeal" value={record.appealName} />
+        ) : null}
+        {record.appealSourceName ? (
+          <CompactMetaItem label="Appeal source" value={record.appealSourceName} />
+        ) : null}
       </CompactMetaGrid>
     </div>
   );

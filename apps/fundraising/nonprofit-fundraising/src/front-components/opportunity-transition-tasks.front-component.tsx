@@ -3,8 +3,13 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import { MetadataApiClient } from 'twenty-client-sdk/metadata';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
+  extractConnectionNodes,
+  extractMutationRecord,
+  extractQueryRecord,
+} from 'src/core-api/core-api-results';
+import {
+  ActionButton,
   actionRowStyle,
   compactDividerSectionStyle,
   compactMetaGridStyle,
@@ -125,7 +130,7 @@ const loadOpportunity = async (
     },
   } as any);
 
-  return (result?.opportunity as OpportunityTransitionRecord | null) ?? null;
+  return extractQueryRecord<OpportunityTransitionRecord>(result, 'opportunity') ?? null;
 };
 
 const loadOpportunityStageOptions = async (): Promise<StageOption[]> => {
@@ -151,10 +156,16 @@ const loadOpportunityStageOptions = async (): Promise<StageOption[]> => {
   } as any);
 
   const opportunityObject =
-    result?.objects?.edges?.find(
-      (edge: { node?: { nameSingular?: string | null } | null }) =>
-        normalizeString(edge.node?.nameSingular) === 'opportunity',
-    )?.node ?? null;
+    extractConnectionNodes<{
+      nameSingular?: string | null;
+      fieldsList?: Array<{
+        name?: string | null;
+        label?: string | null;
+        options?: unknown;
+      }> | null;
+    }>(result, 'objects').find(
+      (node) => normalizeString(node.nameSingular) === 'opportunity',
+    ) ?? null;
 
   const stageField =
     opportunityObject?.fieldsList?.find(
@@ -350,7 +361,12 @@ const OpportunityTransitionTasks = () => {
           },
         } as any);
 
-        const taskId = normalizeString(createTaskResult?.createTask?.id);
+        const taskId = normalizeString(
+          extractMutationRecord<{ id?: string | null }>(
+            createTaskResult,
+            'createTask',
+          )?.id,
+        );
 
         if (taskId === '') {
           throw new Error('Task creation did not return an id.');
@@ -512,7 +528,7 @@ const OpportunityTransitionTasks = () => {
               disabled={saving}
             />
             <div style={actionRowStyle}>
-              <Button
+              <ActionButton
                 title="Remove"
                 variant="secondary"
                 onClick={() => {
@@ -526,7 +542,7 @@ const OpportunityTransitionTasks = () => {
       </div>
 
       <div style={actionRowStyle}>
-        <Button
+        <ActionButton
           title="Add another task"
           variant="secondary"
           onClick={() => {
@@ -534,7 +550,7 @@ const OpportunityTransitionTasks = () => {
           }}
           disabled={saving}
         />
-        <Button
+        <ActionButton
           title={saving ? 'Applying transition...' : 'Update stage and create tasks'}
           variant="primary"
           onClick={() => {

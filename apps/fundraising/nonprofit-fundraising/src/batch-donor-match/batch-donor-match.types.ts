@@ -42,6 +42,12 @@ export type BatchDonorMatchOutcome =
       candidateCount: number;
     };
 
+export type BatchDonorMatchEvidence = {
+  email: string;
+  nameCandidates: ExactDonorCandidate[];
+  emailCandidates: ExactDonorCandidate[];
+};
+
 export type BatchDonorMatchGroup = {
   firstName: string;
   lastName: string;

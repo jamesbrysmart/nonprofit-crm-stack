@@ -1,6 +1,10 @@
 import type Stripe from 'stripe';
 import type { DonationFormDonationType, DonationFormPublishedConfig } from './donation-form-config';
 
+export type StripeCheckoutSessionInput = Parameters<
+  InstanceType<typeof Stripe>['checkout']['sessions']['create']
+>[0];
+
 export type DonationFormMailingAddress = {
   addressStreet1?: string | null;
   addressStreet2?: string | null;
@@ -50,7 +54,7 @@ export type StripeSessionResult = {
 
 export type StripeCheckoutSessionCreator = {
   createCheckoutSession: (
-    input: Stripe.Checkout.SessionCreateParams,
+    input: StripeCheckoutSessionInput,
   ) => Promise<StripeSessionResult>;
 };
 

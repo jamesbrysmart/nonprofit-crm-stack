@@ -45,6 +45,23 @@ const formatAmount = (
   }).format(amountMicros / 1_000_000);
 };
 
+const formatFundName = (
+  fund: StoredRecurringAgreementRecord['fund'],
+): string | null => {
+  const name = normalizeString(fund?.name);
+  const code = normalizeString(fund?.code);
+
+  if (name === '' && code === '') {
+    return null;
+  }
+
+  if (name === '') {
+    return code;
+  }
+
+  return code === '' ? name : `${name} (${code})`;
+};
+
 export const buildRecurringPersonDisplayName = (
   person:
     | {
@@ -137,6 +154,9 @@ export const deriveRecurringHealth = (
 export const buildRecurringAgreementReviewRecord = (
   record: StoredRecurringAgreementRecord,
 ): RecurringAgreementReviewRecord => {
+  const donorFirstName = normalizeString(record.person?.name?.firstName);
+  const donorLastName = normalizeString(record.person?.name?.lastName);
+
   return {
     id: record.id,
     name: normalizeString(record.name) || 'Unnamed recurring agreement',
@@ -147,16 +167,31 @@ export const buildRecurringAgreementReviewRecord = (
         ? record.intervalCount
         : 1,
     amountLabel: formatAmount(record.amount),
+    amountMicros:
+      typeof record.amount?.amountMicros === 'number' &&
+      Number.isFinite(record.amount.amountMicros)
+        ? record.amount.amountMicros
+        : null,
+    currencyCode: normalizeString(record.amount?.currencyCode) || 'GBP',
     startDate: record.startDate,
     endDate: record.endDate,
     nextExpectedAt: record.nextExpectedAt,
+    paymentType: normalizeString(record.paymentType) || null,
     provider: normalizeString(record.provider) || 'MANUAL',
     providerAgreementId: normalizeString(record.providerAgreementId) || null,
     providerPaymentMethodId:
       normalizeString(record.providerPaymentMethodId) || null,
     mandateReference: normalizeString(record.mandateReference) || null,
+    appealId: normalizeString(record.appeal?.id) || null,
+    appealName: normalizeString(record.appeal?.name) || null,
+    appealSourceId: normalizeString(record.appealSource?.id) || null,
+    appealSourceName: normalizeString(record.appealSource?.name) || null,
+    fundId: normalizeString(record.fund?.id) || null,
+    fundName: formatFundName(record.fund),
     donorName: buildRecurringPersonDisplayName(record.person),
     donorId: normalizeString(record.person?.id) || null,
+    donorFirstName,
+    donorLastName,
     donorEmail: normalizeString(record.person?.emails?.primaryEmail) || null,
     health: deriveRecurringHealth(record),
     recentGifts: record.gifts,

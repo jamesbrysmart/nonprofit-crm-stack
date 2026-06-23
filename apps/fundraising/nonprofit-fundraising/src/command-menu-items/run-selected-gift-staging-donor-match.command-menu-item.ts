@@ -11,7 +11,6 @@ export default defineCommandMenuItem({
     RUN_SELECTED_GIFT_STAGING_DONOR_MATCH_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER,
   label: 'Run donor match',
   shortLabel: 'Donor match',
-  icon: 'IconUserSearch',
   availabilityType: 'RECORD_SELECTION',
   availabilityObjectUniversalIdentifier:
     GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,

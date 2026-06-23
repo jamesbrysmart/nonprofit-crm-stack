@@ -1,5 +1,9 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
+import {
+  extractConnection,
+  extractConnectionNodes,
+} from 'src/core-api/core-api-results';
 import type {
   DatabaseEventPayload,
   ObjectRecordDeleteEvent,
@@ -204,10 +208,10 @@ const loadAppealsByIds = async (
       },
     } as any);
 
-    const appeals =
-      result?.appeals?.edges?.map(
-        (edge: { node: AppealRollupRecord }) => edge.node,
-      ) ?? [];
+    const appeals = extractConnectionNodes<AppealRollupRecord>(
+      result,
+      'appeals',
+    );
 
     for (const appeal of appeals) {
       appealsById.set(appeal.id, appeal);
@@ -266,9 +270,8 @@ const loadCommittedGiftsForAppeals = async (
         },
       } as any);
 
-      const gifts =
-        result?.gifts?.edges?.map((edge: { node: GiftRecord }) => edge.node) ??
-        [];
+      const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
+      const gifts = giftConnection.edges.map((edge) => edge.node);
 
       for (const gift of gifts) {
         const appealId = normalizeString(gift.appeal?.id);
@@ -280,10 +283,10 @@ const loadCommittedGiftsForAppeals = async (
         giftsByAppealId.get(appealId)?.push(gift);
       }
 
-      hasNextPage = result?.gifts?.pageInfo?.hasNextPage === true;
+      hasNextPage = giftConnection.pageInfo?.hasNextPage === true;
       cursor =
-        typeof result?.gifts?.pageInfo?.endCursor === 'string'
-          ? result.gifts.pageInfo.endCursor
+        typeof giftConnection.pageInfo?.endCursor === 'string'
+          ? giftConnection.pageInfo.endCursor
           : undefined;
     }
   }
@@ -337,9 +340,8 @@ const loadAllCommittedGifts = async (
       },
     } as any);
 
-    const gifts =
-      result?.gifts?.edges?.map((edge: { node: GiftRecord }) => edge.node) ??
-      [];
+    const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
+    const gifts = giftConnection.edges.map((edge) => edge.node);
 
     for (const gift of gifts) {
       const appealId = normalizeString(gift.appeal?.id);
@@ -353,10 +355,10 @@ const loadAllCommittedGifts = async (
       giftsByAppealId.set(appealId, appealGifts);
     }
 
-    hasNextPage = result?.gifts?.pageInfo?.hasNextPage === true;
+    hasNextPage = giftConnection.pageInfo?.hasNextPage === true;
     cursor =
-      typeof result?.gifts?.pageInfo?.endCursor === 'string'
-        ? result.gifts.pageInfo.endCursor
+      typeof giftConnection.pageInfo?.endCursor === 'string'
+        ? giftConnection.pageInfo.endCursor
         : undefined;
   }
 
@@ -408,9 +410,11 @@ const loadAppealIdsWithExistingRollups = async (
       },
     } as any);
 
-    const appeals =
-      result?.appeals?.edges?.map((edge: { node: { id: string } }) => edge.node) ??
-      [];
+    const appealConnection = extractConnection<{ id: string }>(
+      result,
+      'appeals',
+    );
+    const appeals = appealConnection.edges.map((edge) => edge.node);
 
     for (const appeal of appeals) {
       const appealId = normalizeString(appeal.id);
@@ -420,10 +424,10 @@ const loadAppealIdsWithExistingRollups = async (
       }
     }
 
-    hasNextPage = result?.appeals?.pageInfo?.hasNextPage === true;
+    hasNextPage = appealConnection.pageInfo?.hasNextPage === true;
     cursor =
-      typeof result?.appeals?.pageInfo?.endCursor === 'string'
-        ? result.appeals.pageInfo.endCursor
+      typeof appealConnection.pageInfo?.endCursor === 'string'
+        ? appealConnection.pageInfo.endCursor
         : undefined;
   }
 

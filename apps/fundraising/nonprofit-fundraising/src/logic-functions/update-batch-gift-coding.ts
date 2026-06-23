@@ -1,16 +1,15 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
-import { loadBatchProcessingContext } from 'src/batch-processing/batch-loaders';
-import {
-  getGiftBatchWorkflowLimitMessage,
-  isGiftBatchOverWorkflowLimit,
-} from 'src/batch-processing/batch-processing.limits';
+import { loadBatchGiftCodingContext } from 'src/batch-processing/batch-loaders';
+import { createBatchRouteLogger } from 'src/batch-processing/batch-route-logging';
 import type {
-  BatchProcessingRow,
+  BatchGiftCodingRow,
   UpdateBatchGiftCodingRequest,
   UpdateBatchGiftCodingResponse,
 } from 'src/batch-processing/batch-processing.types';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
+
+const MAX_BATCH_CODING_WRITEBACKS = 100;
 
 const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
@@ -138,7 +137,7 @@ const buildWritebackForRow = ({
   defaultAppealSourceAppealId,
   defaultFundId,
 }: {
-  row: BatchProcessingRow;
+  row: BatchGiftCodingRow;
   defaultAppealId: string;
   defaultAppealSourceId: string;
   defaultAppealSourceAppealId: string;
@@ -211,111 +210,170 @@ const handler = async (
     throw new Error('giftBatchId is required');
   }
 
-  const client = new CoreApiClient();
-  const defaultAppealSourceAppealId =
-    defaultAppealSourceId === ''
-      ? ''
-      : await loadAppealSourceAppealId(client, defaultAppealSourceId);
-
-  if (defaultAppealSourceId !== '' && defaultAppealSourceAppealId === '') {
-    throw new Error('The selected appeal source is not linked to an appeal.');
-  }
-
-  if (
-    defaultAppealId !== '' &&
-    defaultAppealSourceAppealId !== '' &&
-    defaultAppealId !== defaultAppealSourceAppealId
-  ) {
-    throw new Error(
-      'The selected appeal source does not belong to the selected appeal.',
-    );
-  }
-
-  if (defaultAppealId === '' && defaultAppealSourceAppealId !== '') {
-    defaultAppealId = defaultAppealSourceAppealId;
-  }
-
-  if (defaultAppealId !== '' && defaultFundId === '') {
-    defaultFundId = await loadAppealDefaultFund(client, defaultAppealId);
-  }
-
-  await saveBatchCodingDefaults({
-    client,
+  const logger = createBatchRouteLogger({
+    route: 'update-batch-gift-coding',
     giftBatchId,
-    defaultAppealId,
-    defaultAppealSourceId,
-    defaultFundId,
   });
+  logger.info('started');
 
-  const { batch, rows } = await loadBatchProcessingContext(client, giftBatchId);
+  const client = new CoreApiClient();
+  try {
+    const defaultAppealSourceAppealId =
+      defaultAppealSourceId === ''
+        ? ''
+        : await loadAppealSourceAppealId(client, defaultAppealSourceId);
 
-  if (!batch) {
-    throw new Error('Batch not found');
-  }
+    if (defaultAppealSourceId !== '' && defaultAppealSourceAppealId === '') {
+      throw new Error('The selected appeal source is not linked to an appeal.');
+    }
 
-  if (isGiftBatchOverWorkflowLimit(batch.totalItems)) {
-    throw new Error(getGiftBatchWorkflowLimitMessage(batch.totalItems));
-  }
+    if (
+      defaultAppealId !== '' &&
+      defaultAppealSourceAppealId !== '' &&
+      defaultAppealId !== defaultAppealSourceAppealId
+    ) {
+      throw new Error(
+        'The selected appeal source does not belong to the selected appeal.',
+      );
+    }
 
-  const targetRows = rows.filter(
-    (row) => normalizeString(row.processingStatus) !== 'PROCESSED',
-  );
+    if (defaultAppealId === '' && defaultAppealSourceAppealId !== '') {
+      defaultAppealId = defaultAppealSourceAppealId;
+    }
 
-  if (targetRows.length === 0) {
-    return {
-      giftBatchId,
-      targetedItemCount: 0,
-      updatedRowCount: 0,
-      appealUpdatedCount: 0,
-      appealSourceUpdatedCount: 0,
-      fundUpdatedCount: 0,
-    };
-  }
+    if (defaultAppealId !== '' && defaultFundId === '') {
+      defaultFundId = await loadAppealDefaultFund(client, defaultAppealId);
+    }
 
-  let updatedRowCount = 0;
-  let appealUpdatedCount = 0;
-  let appealSourceUpdatedCount = 0;
-  let fundUpdatedCount = 0;
-  const writebacks: Array<{ id: string } & Record<string, unknown>> = [];
-
-  for (const row of targetRows) {
-    const next = buildWritebackForRow({
-      row,
-      defaultAppealId,
-      defaultAppealSourceId,
-      defaultAppealSourceAppealId,
-      defaultFundId,
+    logger.info('defaults_resolved', {
+      hasDefaultAppeal: defaultAppealId !== '',
+      hasDefaultAppealSource: defaultAppealSourceId !== '',
+      hasDefaultFund: defaultFundId !== '',
     });
 
-    if (!next) {
-      continue;
+    await saveBatchCodingDefaults({
+      client,
+      giftBatchId,
+      defaultAppealId,
+      defaultAppealSourceId,
+      defaultFundId,
+    });
+    logger.info('defaults_saved');
+
+    const { batch, rows } = await loadBatchGiftCodingContext(client, giftBatchId);
+    logger.info('coding_context_loaded', { rowCount: rows.length });
+
+    if (!batch) {
+      throw new Error('Batch not found');
     }
 
-    writebacks.push(next.writeback);
-    updatedRowCount += 1;
-    if (next.appealChanged) {
-      appealUpdatedCount += 1;
+    const targetRows = rows.filter(
+      (row) => normalizeString(row.processingStatus) !== 'PROCESSED',
+    );
+
+    if (targetRows.length === 0) {
+      logger.info('completed', {
+        targetedItemCount: 0,
+        updatedRowCount: 0,
+        rowUpdatesApplied: true,
+      });
+
+      return {
+        giftBatchId,
+        targetedItemCount: 0,
+        updatedRowCount: 0,
+        appealUpdatedCount: 0,
+        appealSourceUpdatedCount: 0,
+        fundUpdatedCount: 0,
+        rowUpdatesApplied: true,
+        rowUpdateMessage:
+          'Batch coding defaults were saved. No unprocessed gifts need coding updates.',
+      };
     }
-    if (next.appealSourceChanged) {
-      appealSourceUpdatedCount += 1;
+
+    let updatedRowCount = 0;
+    let appealUpdatedCount = 0;
+    let appealSourceUpdatedCount = 0;
+    let fundUpdatedCount = 0;
+    const writebacks: Array<{ id: string } & Record<string, unknown>> = [];
+
+    for (const row of targetRows) {
+      const next = buildWritebackForRow({
+        row,
+        defaultAppealId,
+        defaultAppealSourceId,
+        defaultAppealSourceAppealId,
+        defaultFundId,
+      });
+
+      if (!next) {
+        continue;
+      }
+
+      writebacks.push(next.writeback);
+      updatedRowCount += 1;
+      if (next.appealChanged) {
+        appealUpdatedCount += 1;
+      }
+      if (next.appealSourceChanged) {
+        appealSourceUpdatedCount += 1;
+      }
+      if (next.fundChanged) {
+        fundUpdatedCount += 1;
+      }
     }
-    if (next.fundChanged) {
-      fundUpdatedCount += 1;
+    logger.info('writebacks_computed', {
+      targetedItemCount: targetRows.length,
+      writebackCount: writebacks.length,
+      appealUpdatedCount,
+      appealSourceUpdatedCount,
+      fundUpdatedCount,
+    });
+
+    if (writebacks.length > MAX_BATCH_CODING_WRITEBACKS) {
+      logger.warn('row_updates_skipped_over_limit', {
+        targetedItemCount: targetRows.length,
+        writebackCount: writebacks.length,
+        maxWritebacks: MAX_BATCH_CODING_WRITEBACKS,
+      });
+
+      return {
+        giftBatchId,
+        targetedItemCount: targetRows.length,
+        updatedRowCount,
+        appealUpdatedCount,
+        appealSourceUpdatedCount,
+        fundUpdatedCount,
+        rowUpdatesApplied: false,
+        rowUpdateMessage: `Batch coding defaults were saved, but not applied. Applying these defaults would update ${writebacks.length} gifts, which is above the current safe limit of ${MAX_BATCH_CODING_WRITEBACKS}. Review or split the batch, then apply coding in a smaller set.`,
+      };
     }
+
+    await persistGiftStagingBatchUpserts(writebacks, {
+      allowedIds: new Set(targetRows.map((row) => row.id)),
+    });
+    logger.info('writebacks_persisted', { writebackCount: writebacks.length });
+
+    logger.info('completed', {
+      targetedItemCount: targetRows.length,
+      updatedRowCount,
+      rowUpdatesApplied: true,
+    });
+
+    return {
+      giftBatchId,
+      targetedItemCount: targetRows.length,
+      updatedRowCount,
+      appealUpdatedCount,
+      appealSourceUpdatedCount,
+      fundUpdatedCount,
+      rowUpdatesApplied: true,
+      rowUpdateMessage: null,
+    };
+  } catch (error) {
+    logger.fail('failed', error);
+    throw error;
   }
-
-  await persistGiftStagingBatchUpserts(writebacks, {
-    allowedIds: new Set(targetRows.map((row) => row.id)),
-  });
-
-  return {
-    giftBatchId,
-    targetedItemCount: targetRows.length,
-    updatedRowCount,
-    appealUpdatedCount,
-    appealSourceUpdatedCount,
-    fundUpdatedCount,
-  };
 };
 
 export default defineLogicFunction({

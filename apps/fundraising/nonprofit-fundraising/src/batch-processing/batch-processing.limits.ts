@@ -1,4 +1,4 @@
-export const MAX_GIFT_BATCH_ITEMS = 200;
+export const MAX_GIFT_BATCH_ITEMS = 100;
 
 export const isGiftBatchOverWorkflowLimit = (
   totalItems: number | null | undefined,

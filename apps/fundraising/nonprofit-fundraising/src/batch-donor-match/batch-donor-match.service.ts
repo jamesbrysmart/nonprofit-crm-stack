@@ -1,4 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import {
   buildConflictMessage,
   findPrimaryEmailConflict,
@@ -15,7 +16,7 @@ import type {
   ExactDonorCandidate,
 } from './batch-donor-match.types';
 
-const findExistingDonorsByCaseNormalizedName = async ({
+const findExistingDonorsByExactNameEvidence = async ({
   client,
   firstName,
   lastName,
@@ -63,11 +64,7 @@ const findExistingDonorsByCaseNormalizedName = async ({
     },
   } as any);
 
-  return (
-    result?.people?.edges?.map(
-      (edge: { node: ExactDonorCandidate }) => edge.node,
-    ) ?? []
-  );
+  return extractConnectionNodes<ExactDonorCandidate>(result, 'people');
 };
 
 export type DonorMatchRowsResult = {
@@ -112,15 +109,29 @@ export const runDonorMatchOnRows = async (
   );
 
   for (const group of groupedRows) {
-    const candidates = await findExistingDonorsByCaseNormalizedName({
+    const nameCandidates = await findExistingDonorsByExactNameEvidence({
       client,
       firstName: group.firstName,
       lastName: group.lastName,
     });
+    const emailCandidate = group.email === '' ? null : peopleByEmail.get(group.email) ?? null;
+    const emailCandidates =
+      emailCandidate === null
+        ? []
+        : [
+            {
+              ...emailCandidate,
+              emails: {
+                primaryEmail: emailCandidate.emails?.primaryEmail ?? null,
+                additionalEmails: null,
+              },
+            } satisfies ExactDonorCandidate,
+          ];
 
     const outcome = determineBatchDonorMatchOutcome({
       email: group.email,
-      candidates,
+      nameCandidates,
+      emailCandidates,
     });
     const primaryEmailConflict = findPrimaryEmailConflict({
       donorEmail: group.email,

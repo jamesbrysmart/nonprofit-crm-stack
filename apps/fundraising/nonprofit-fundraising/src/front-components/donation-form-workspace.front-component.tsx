@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
-import { Button } from 'twenty-sdk/ui';
 import {
   getAppealIdForAppealSourceSelection,
   getAppealSourceIdsForAppeal,
   getFundIdForAppealSelection,
 } from 'src/gift-coding/gift-coding';
 import {
+  ActionButton,
   badgeStyle,
   fieldGridStyle,
   inputStyle,
@@ -223,7 +223,7 @@ const DonationFormConfigure = () => {
             save before reviewing other tabs.
           </div>
         </div>
-        <Button
+        <ActionButton
           title={saving ? 'Saving draft…' : 'Save draft'}
           variant="secondary"
           onClick={() => {
@@ -438,7 +438,7 @@ const DonationFormConfigure = () => {
               <option value="">No default appeal</option>
               {appeals.map((appeal) => (
                 <option key={appeal.id} value={appeal.id}>
-                  {normalizeString(appeal.name, 'Untitled appeal')}
+                  {normalizeString(appeal.name) || 'Untitled appeal'}
                 </option>
               ))}
             </select>
@@ -456,7 +456,7 @@ const DonationFormConfigure = () => {
               <option value="">No default appeal source</option>
               {appealSources.map((appealSource) => (
                 <option key={appealSource.id} value={appealSource.id}>
-                  {normalizeString(appealSource.name, 'Untitled source')}
+                  {normalizeString(appealSource.name) || 'Untitled source'}
                 </option>
               ))}
             </select>
@@ -474,7 +474,7 @@ const DonationFormConfigure = () => {
               <option value="">No default fund</option>
               {funds.map((fund) => (
                 <option key={fund.id} value={fund.id}>
-                  {normalizeString(fund.name, 'Untitled fund')}
+                  {normalizeString(fund.name) || 'Untitled fund'}
                 </option>
               ))}
             </select>
