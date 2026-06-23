@@ -120,6 +120,7 @@ Review questions:
 - Are logic functions used where cross-record or business-rule boundaries need a stable server-side home?
 - Are shared helpers and domain logic extracted cleanly enough to be reused?
 - Are modules growing into hard-to-reason-about mixed-responsibility files?
+- Is this code larger because it preserves an obsolete path that should simply be removed?
 
 Priority signals:
 
@@ -127,6 +128,7 @@ Priority signals:
 - API access mixed too deeply into rendering code,
 - mutation flows duplicated in multiple places,
 - weak boundaries between transport, orchestration, and domain rules.
+- compatibility shims, fallback aliases, re-export files, ignored-field filters, or legacy branches that exist only because stale references were not deleted.
 
 ### 5.2 Reuse And Repeatable Patterns
 
@@ -135,12 +137,14 @@ Review questions:
 - Do similar workflows use similar shapes?
 - Are we building stable patterns or accumulating one-off implementations?
 - Is a repeated local solution narrow and deliberate, or is it becoming accidental infrastructure?
+- Is an abstraction reducing current complexity, or only preserving a speculative future/legacy case?
 
 Priority signals:
 
 - near-duplicate flows with slightly different mutation logic,
 - multiple ad hoc ways to solve the same app problem,
-- repeated manual fetch/refetch/writeback patterns that should be abstracted.
+- repeated manual fetch/refetch/writeback patterns that should be abstracted,
+- new helper layers that add more code than the current problem justifies.
 
 ### 5.3 Runtime And Data Correctness
 

@@ -182,6 +182,14 @@ These are early working observations, not fixed rules.
 - Variables are not yet proven as the right mechanism for conditional metadata provisioning. Current working assumption: metadata should stay static per app version, while variables control visibility/behavior.
 - The source tree now clearly shows a real native Twenty UI layer (`twenty-ui`) that front components can target through `twenty-sdk/ui`; treat this as the intended native path for host-consistent controls, layout, and theming.
 - The remaining caution is no longer “apps are alpha,” but simple release verification: confirm exact runtime behavior in the scaffolded app/toolchain you are actively building against before broad adoption.
+- Raw app `yarn typecheck` should stay part of the local development loop for app-touching work.
+- Current repo-local understanding:
+  - app-owned type drift can be reduced materially with local cleanup,
+  - but the remaining `Button` export failure from `twenty-sdk/ui` appears to be an upstream SDK type-surface mismatch rather than a reason to stop using Twenty's native UI layer.
+- Practical implication:
+  - keep running raw `yarn typecheck`,
+  - do not replace it with a filtered or custom-ignore variant,
+  - and re-check this mismatch on Twenty SDK/tooling upgrades in case the platform resolves it upstream.
 - For now, the safest practical starting point for Twenty app spikes is:
   - minimal official scaffold,
   - official app-dev server flow,

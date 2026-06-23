@@ -80,12 +80,14 @@ The goal is:
 - strong code and runtime boundaries,
 - reduced future refactor risk,
 - and clear visibility into which current solutions are durable versus provisional.
+- minimal code that preserves the supported product path, especially while the app is still pre-client and unversioned.
 
 That means a review finding can legitimately conclude:
 
 - this is a good long-term app pattern,
 - this is acceptable for now but should be marked provisional,
-- or this should be replaced once Twenty exposes a better native solution.
+- this should be replaced once Twenty exposes a better native solution,
+- or this compatibility/fallback path should be deleted because it is no longer part of the supported product.
 
 ## 5. Revisit Triggers
 

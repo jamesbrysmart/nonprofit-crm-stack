@@ -47,13 +47,13 @@ When updating this doc in regular syncs, keep it lightweight:
 3. Add 2-4 bullet highlights on direction, drift, or breaking-change signals.
 4. Record only current implications; skip deeper migration design discussion.
 
-## Current Extensibility Surface (baseline verified 2026-06-05)
+## Current Extensibility Surface (baseline verified 2026-06-15)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `2.10.0` (current merged repo head is ahead of the latest release tag `v2.9.0`, so repo head, runtime tag, and published package version still need to be treated as distinct signals).
+  - Current package version in-tree: `2.14.0` (current merged repo head is ahead of the latest release tag `v2.13.2`, so repo head, runtime tag, and published package version still need to be treated as distinct signals).
   - CLI command registry now includes: `remote add`, `remote list`, `remote remove`, `remote status`, `remote switch`, `build`, `deploy`, `dev`, `publish`, `install`, `typecheck`, `uninstall`, `add`, `logs`, `exec`, `catalog-sync`, plus `server start|status|logs|stop|reset`.
   - `dev` now explicitly supports `--once` for one-shot build/sync/typed-client generation without a long-running watcher.
   - Local server management now also supports a separate `--test` instance, which gives the app workflow a cleaner isolated integration-test story.
@@ -80,7 +80,7 @@ When updating this doc in regular syncs, keep it lightweight:
     - the front-component renderer explicitly aliases `twenty-sdk/ui` to Twenty UI for example builds, and the built-in front-component story set includes `twenty-ui-example.front-component`.
   - Practical read for app work: treat `twenty-sdk/ui` as the intended native UI surface for front components when the active app-tooling version supports it, but keep the current published app scaffold/version as the compatibility baseline until the version gap closes.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `2.10.0`.
+  - Current package version in-tree: `2.14.0`.
   - Scaffolder now defaults to a minimal app plus test scaffold; richer starting points are example-based (`--example hello-world`, `--example postcard`) rather than `--exhaustive` / `--minimal` mode selection.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
   - Default scaffold now includes application config, a default role, schema/integration test scaffolding with dedicated test-instance setup, and local CI/CD workflow templates; scaffolded source now uses the split SDK import paths (`twenty-sdk/define`, `twenty-sdk/front-component`) consistently.
@@ -124,6 +124,92 @@ When updating this doc in regular syncs, keep it lightweight:
   - CLI naming is still evolving: newer `twenty-sdk` docs and code now prefer colon-style command groups (`docker:*`, `app:*`, `dev:*`, `remote:*`) while older flat commands remain available as deprecated wrappers. Treat repo-local runbooks and prompts as version-sensitive here.
   - Recent SDK changes are now more about package shape, import boundaries, OAuth/registration plumbing, and install/validation ergonomics than about obvious new fundraising-specific platform primitives.
   - Docs/examples move quickly and can drift between releases; verify against `packages/twenty-docs` and `packages/twenty-sdk/README.md` after each upstream sync, especially around CLI/scaffolder command names.
+
+---
+
+## Latest Snapshot — 2026-06-15
+
+**Context:** Updated `services/twenty-core` from merge commit `a100ea0c85` to merge commit `c4f4101517` (local merge on 2026-06-15; fetched upstream head: `5207493cda`; local tags now include `twenty/v2.13.0`, `twenty/v2.13.1`, `twenty/v2.13.2`, and `sdk/v2.13.0`; in-tree `twenty-sdk`, `create-twenty-app`, and `twenty-client-sdk` package versions are `2.14.0`).
+
+**Highlights**
+
+1. **The version split widened again**
+   - Runtime/release line: `v2.13.2`
+   - In-tree app-tooling line: `2.14.0`
+   - Practical read: runtime tags, checked-out tooling, and published npm packages continue to move independently enough that we should keep treating version choice as explicit rather than inferred.
+
+2. **UI capability flags changed in an app-relevant way**
+   - Upstream renamed `isUIReadOnly` to `isUIEditable`
+   - Added `isUICreatable`
+   - Exposed both to app developers
+   - Practical read: this is the most structurally important change in this range for app authors, because object/field UI capability and future permission logic are getting more explicit.
+
+3. **Views and command menu items are moving further toward “overridable entities”**
+   - This range includes `CommandMenuItem overridable entity`
+   - It also includes `convert view to overridable entity`
+   - Practical read: Twenty is continuing to strengthen the “augment existing surfaces” story, not just isolated app-owned pages and views.
+
+4. **SDK front-component ergonomics improved slightly**
+   - `useColorScheme` was added to `twenty-sdk`
+   - Practical read: helpful for front components that want to align with the host theme without bespoke workarounds.
+
+5. **App-dev workflow polish continues**
+   - This period includes:
+     - `dev:generate-client`
+     - upgrade-status cache invalidation fixes
+     - fixes around redundant lambda rebuilds / build-lock failures
+   - Practical read: the local app-dev loop remains an active investment area, which should make future upgrade diagnosis less opaque than the earlier `v2.3`/`v2.4` period.
+
+6. **Frontend/tooling baseline kept moving**
+   - This range includes React 19 migration work and Vite 8 / esbuild baseline changes
+   - Practical read: this is mainly an operational signal, but it increases the chance of front-component compatibility drift between released runtime lines and published app packages.
+
+**Current implications**
+
+1. Keep watching UI capability flags (`isUIEditable`, `isUICreatable`) as the main new app-surface shift.
+2. Treat overridable views and command-menu items as a meaningful direction signal for future nonprofit-fundraising UI composition.
+3. Expect front-component and build/runtime compatibility issues to remain possible while runtime tags and published SDK packages lag each other.
+4. Use the continuing app-dev workflow improvements as a reason to prefer the standard path first on future upgrades before falling back to manual workarounds.
+
+---
+
+## Latest Snapshot — 2026-06-11
+
+**Context:** Updated `services/twenty-core` from merge commit `2da91e95d3` to merge commit `51cb70e8c8` (local merge on 2026-06-11; fetched upstream head: `2da28cb03e`; local tags now include `v2.11.0` and `v2.11.1`; in-tree `twenty-sdk`, `create-twenty-app`, and `twenty-client-sdk` package versions are `2.12.0`).
+
+**Highlights**
+
+1. **The repo is ahead of the release line again**
+   - Runtime/release line: `v2.11.1`
+   - In-tree app-tooling line: `2.12.0`
+   - Practical read: we are back in the familiar state where release tags, checked-out app tooling, and published npm package versions need to be treated as separate signals rather than inferred from each other.
+
+2. **App-dev sync got materially better for debugging**
+   - This range adds dry-run preview, surfaced metadata diffs, named failing migration actions, better sync error hints, flatter entity labels, a clearer dev-mode summary UI, and a per-workspace cache lock to serialize dev sync.
+   - Practical read: the local app-dev workflow is getting better at explaining why sync failed, which should reduce the amount of blind digging we have had to do after runtime upgrades.
+
+3. **Command-menu behavior is still actively being corrected**
+   - This range includes a fix for pinned command-menu actions running with empty selection, more command-menu fast-follows in the new layout, and a `Remove default command` change.
+   - Practical read: command visibility and behavior still need to stay on the short post-upgrade regression list for `nonprofit-fundraising`, especially for `New gift` and any pinned/global actions.
+
+4. **App/runtime trigger ergonomics keep moving**
+   - Upstream added a front-component utility for performing route-trigger logic-function requests.
+   - Practical read: HTTP/route-trigger flows are still becoming more ergonomic, but they remain an area where app-facing patterns can shift between releases.
+
+5. **Client/codegen stability mattered in this range**
+   - `twenty-client-sdk` got a formatter compatibility fix explicitly called out as fixing an app-sync server crash.
+   - Practical read: some upgrade failures in this period are still coming from SDK/build-tooling edges rather than manifest design changes, so version selection remains operationally important.
+
+6. **Object/field metadata semantics are still tightening**
+   - This range includes `isCustom` deprecation work for objects and fields, plus upgrade guards around permission-flag relations.
+   - Practical read: metadata and permission surfaces are still being normalized, which reinforces the need to keep treating role/permission behavior and upgrade-path changes as first-class review topics.
+
+**Current implications**
+
+1. Treat the `v2.11.1` runtime line and the `2.12.0` in-tree app-tooling line as deliberately separate signals.
+2. Expect better app-dev sync diagnostics than before, and use them first if the next upgrade produces migration noise.
+3. Keep command-menu visibility/behavior and route-trigger flows on the immediate regression checklist after upgrades.
+4. Keep watching metadata/permission tightening rather than assuming recent behavior will remain loose.
 
 ---
 

@@ -19,6 +19,8 @@ If you want the best current mental model, read in this order:
 
 - [OVERVIEW.md](docs/apps-migration/OVERVIEW.md)
   - current app position, transition framing, and remaining boundary questions
+- [APP_DEPLOYMENT_RUNBOOK.md](docs/apps-migration/APP_DEPLOYMENT_RUNBOOK.md)
+  - current lightweight install/upgrade process for the shared fundraising app in client workspaces
 - [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
   - phased production-quality implementation plan for the app that now exists as the main fundraising surface
 - [MIGRATION_WORKING_PATTERNS.md](docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
@@ -32,6 +34,12 @@ If you need:
 
 - current app framing and transition status:
   - [OVERVIEW.md](docs/apps-migration/OVERVIEW.md)
+- current install/upgrade/deployment runbook for the shared fundraising app:
+  - [APP_DEPLOYMENT_RUNBOOK.md](docs/apps-migration/APP_DEPLOYMENT_RUNBOOK.md)
+- short operator-facing deployment checklist template:
+  - [APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md](docs/apps-migration/APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md)
+- current umbrella note for how client workspace layers fit together operationally:
+  - [CLIENT_WORKSPACE_OPERATIONS_MODEL.md](docs/apps-migration/CLIENT_WORKSPACE_OPERATIONS_MODEL.md)
 - detailed product decisions and what should survive from earlier implementations:
   - [PRODUCT_REVIEW.md](docs/apps-migration/PRODUCT_REVIEW.md)
 - current implementation plan and slice ordering:
@@ -70,6 +78,9 @@ Use these categories when deciding how much weight to give a doc.
 ### Current App Guidance
 
 - [OVERVIEW.md](docs/apps-migration/OVERVIEW.md)
+- [APP_DEPLOYMENT_RUNBOOK.md](docs/apps-migration/APP_DEPLOYMENT_RUNBOOK.md)
+- [APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md](docs/apps-migration/APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md)
+- [CLIENT_WORKSPACE_OPERATIONS_MODEL.md](docs/apps-migration/CLIENT_WORKSPACE_OPERATIONS_MODEL.md)
 - [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
 - [MIGRATION_WORKING_PATTERNS.md](docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
 - [TWENTY_APP_DEV_WORKFLOW.md](docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)

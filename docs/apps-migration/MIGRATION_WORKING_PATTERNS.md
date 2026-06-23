@@ -46,6 +46,21 @@ Current example:
   - if the platform starts round-tripping nullable text fields as `null`, simplify the integration expectation and remove the special note
   - if we find broader evidence of nullable text fields normalizing to empty string, treat that as a platform-wide read-model constraint rather than a one-off test quirk
 
+Current example:
+
+- `Observation`
+  - raw app `yarn typecheck` now surfaces only `Module '"twenty-sdk/ui"' has no exported member 'Button'` errors, even though `Button` is part of Twenty's documented front-component UI surface and exists at runtime
+- `Current understanding`
+  - this is a current upstream SDK type-surface mismatch rather than a reason to rewrite app UI away from `twenty-sdk/ui`
+- `Impact on app code or tests`
+  - keep raw `yarn typecheck` in the session loop for app-touching work
+  - do not replace it with a filtered command, baseline file, or custom ignore rule just because this one upstream mismatch exists
+  - future sessions should report whether typecheck fails only on this known mismatch or whether new app-owned errors have appeared
+- `What to re-check later`
+  - rerun raw `yarn typecheck` on Twenty SDK/tooling upgrades
+  - remove this note if the upstream type surface is corrected
+  - if Twenty publishes a more standard query/typecheck workflow, prefer that over local convention
+
 ## 1. Native First, Custom Where It Matters
 
 Current leaning:
@@ -238,6 +253,27 @@ Why:
 
 - Twenty can preserve older full-tab/runtime behavior even when the page-layout code now declares a multi-widget tab
 - this has already shown up in pilot work where an existing single-widget tab did not reliably become a normal multi-widget tab until we created a fresh replacement
+
+## 10. Keep Raw Typecheck In The Loop
+
+Current leaning:
+
+- run raw app `yarn typecheck` during app-touching sessions often enough that type drift does not build up unnoticed
+- treat it as a current working guardrail, not a once-in-a-while cleanup exercise
+- do not hide known upstream SDK issues inside filtered commands or custom ignore layers
+
+Why:
+
+- the app can stay functionally "working" while query contracts, nullability assumptions, or refactors drift underneath it
+- once drift compounds across multiple features, the cleanup cost grows much faster than the individual fixes would have
+- a raw signal is more useful than a locally-sanitized one when Twenty itself is still evolving
+
+Current practical rule:
+
+- for app code changes, run raw `yarn typecheck` and report the outcome
+- if it fails only on a currently known upstream mismatch, note that explicitly
+- if any new non-upstream errors appear, treat that as real follow-up work rather than noise
+- when Twenty releases change the SDK/tooling, re-check the known mismatch before assuming local workarounds are still justified
 
 Examples:
 
@@ -473,3 +509,50 @@ Action-semantics guardrail:
 - only scope-specific differences should vary:
   - `giftBatch` adds persisted grouping, provenance, and optional expected count/total semantics
   - bulk selection does not
+
+## 16. Use A Hybrid `CoreApiClient` Result-Typing Pattern
+
+Current leaning:
+
+- do not treat fully schema-typed `CoreApiClient` usage as an immediate repo-wide requirement
+- do not keep expanding ad hoc `result?.field?.edges` access and mutation-result assumptions either
+- use a small hybrid pattern that improves safety now and stays compatible with a stronger future typing model
+
+Why:
+
+- the generated Twenty client can type some query shapes well, but current app code and current internal Twenty apps still mix strict typing, local row types, and `as any`
+- a full migration to schema-driven query typing would be a real refactor stream, not a small tidy-up
+- leaving the current loose result-access pattern unchecked would keep spreading query-boundary drift through the app
+
+Current working pattern:
+
+- keep query shapes local rather than letting raw client results leak broadly
+- where the generated client is ergonomic, prefer:
+  - query helper functions
+  - result types derived from `Awaited<ReturnType<typeof queryHelper>>`
+- where connection-heavy result access is awkward, prefer the app helper in:
+  - [core-api-results.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/core-api/core-api-results.ts)
+- use small helpers such as:
+  - `extractConnection`
+  - `extractConnectionNodes`
+  - `extractQueryRecord`
+  - `extractMutationRecord`
+
+What future sessions should not do by default:
+
+- do not add fresh downstream `result?.x?.edges` chains when the helper pattern would do
+- do not scatter new `as any` plus property access through loaders/services if a local extraction boundary is easy to add
+- do not invent a large custom wrapper around `CoreApiClient` unless the small helper pattern has clearly stopped being enough
+
+Why this is acceptable:
+
+- it already hardens core workflows without changing product behavior
+- it reduces drift between query results and local TypeScript assumptions
+- it keeps open a future path toward stricter schema-derived typing if Twenty's client ergonomics improve or we decide to invest in a deeper migration later
+
+Current proof points in `nonprofit-fundraising`:
+
+- batch processing loaders and fallback create paths
+- Gift Aid claim query/submission loaders
+- donor and appeal rollups
+- supporting query helpers such as appeal-source resolution and donor-viability lookups

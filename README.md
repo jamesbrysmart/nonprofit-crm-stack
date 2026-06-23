@@ -1,143 +1,50 @@
-# Non-Profit CRM Stack
+# Twenty Nonprofit Suite
 
-This repository is the central orchestrator for the AI-first non-profit CRM solution. It uses Docker Compose to manage and run all the necessary services.
+This repository is the coordination layer for the nonprofit stack and its fundraising app work.
 
-The project is composed of multiple repositories linked via Git submodules:
-- **nonprofit-crm-stack** (this repository): The main superproject containing Docker Compose configuration and documentation.
-- **nonprofit-crm-fundraising-service**: A custom service for fundraising functionalities.
-- **nonprofit-crm-twenty-fork**: Our fork of the Twenty CRM core application.
+Current default posture:
 
-## Getting Started
+- product and workflow work is centered on `apps/fundraising/nonprofit-fundraising`
+- `services/twenty-core` remains the main platform dependency
+- `services/fundraising-service` is legacy code that may still exist in the repo, but it is no longer the default local development path and should not be treated as the primary fundraising runtime
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+## Start Here
 
-### Prerequisites
+Before acting, read:
 
-- Git
-- Docker & Docker Compose
-- A GitHub account with access to the project repositories.
+- [docs/INDEX.md](/home/jamesbryant/workspace/dev-stack/docs/INDEX.md)
+- [docs/apps-migration/INDEX.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/INDEX.md)
+- [docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
 
-### Installation
+Those docs are the current source map for how this repo is used.
 
-1.  **Clone the repository with submodules:**
+## Repository Shape
 
-    It is crucial to clone the repository with the `--recurse-submodules` flag to ensure all the component services are downloaded at the correct version.
+- `apps/fundraising/nonprofit-fundraising`
+  Current fundraising app implementation and tests.
+- `services/twenty-core`
+  Forked Twenty core repo.
+- `services/fundraising-service`
+  Legacy hybrid service/runtime kept only as historical or transitional code unless a task explicitly says otherwise.
 
-    ```bash
-    git clone --recurse-submodules https://github.com/jamesbrysmart/nonprofit-crm-stack.git
-    ```
+## Local Development
 
-    If you have already cloned the repository without the flag, you can initialize the submodules by running:
-    ```bash
-    git submodule update --init --recursive
-    ```
+Do not assume the old gateway-based local workflow is current.
 
-2.  **Navigate to the project directory:**
+For current local work:
 
-    ```bash
-    cd nonprofit-crm-stack
-    ```
+- use the Twenty app workflow and app-local tests for `apps/fundraising/nonprofit-fundraising`
+- use [docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md) as the repo-local guidance
+- use Twenty's official app docs as canonical for scaffolding, sync, and app-dev server commands
 
-3.  **Configure Environment Variables:**
+The old local Docker flow involving `fundraising-service`, nginx gateway routing, and host URLs such as `http://localhost:3000` or `http://localhost:4000` is legacy context only. Do not treat it as the default setup unless a task is explicitly about that legacy runtime.
 
-    Copy the example environment files to create your own local configuration.
+## Legacy Note
 
-    ```bash
-    cp .env.example .env
-    cp services/fundraising-service/.env.example services/fundraising-service/.env
-    ```
-    Review the newly created `.env` files and fill in any missing values (e.g., `TOKEN`, `TWENTY_API_KEY`).
+Several older docs in this repo still describe:
 
-4.  **Build and Run the Stack:**
+- `fundraising-service` as the main fundraising runtime
+- gateway-driven local access via `localhost:4000`
+- direct Twenty server access via `localhost:3000`
 
-    Use Docker Compose to build and start the services.
-
-    ```bash
-    docker compose up --build -d
-    ```
-
-    The `--build` flag is necessary on the first run to build the `fundraising-service` image. The `-d` flag starts the services in detached mode.
-    If your local `.env` uses `STORAGE_TYPE=s3` with `STORAGE_S3_ENDPOINT=http://minio:9000`, include `--profile s3` so the local MinIO service is started:
-    ```bash
-    docker compose --profile s3 up --build -d
-    ```
-
-5.  **Accessing the Application:**
-
-    *   **Gateway entrypoint (Twenty + Fundraising)**: [http://localhost:4000](http://localhost:4000)
-    *   **Fundraising UI**: [http://localhost:4000/fundraising](http://localhost:4000/fundraising) (or as configured in `nginx/gateway.conf`)
-
-## Upgrading
-
-To upgrade the version of Twenty CRM, follow these steps:
-
-1.  **Shut down the running services:**
-    ```bash
-    docker compose down
-    ```
-
-2.  **Update the version tag:**
-    Open the `.env` file and change the `TAG` variable to the desired version (e.g., `TAG=v1.5.0`).
-
-3.  **Bring the stack back up:**
-    ```bash
-    docker compose up --build -d
-    ```
-    *   Note: `docker compose up` will pull the new `twentycrm/twenty:${TAG}` image automatically if it’s not already present. Use `docker compose pull` first only if you prefer pulling explicitly.
-    *   If local storage is configured to use the Compose MinIO service (`STORAGE_TYPE=s3` and `STORAGE_S3_ENDPOINT=http://minio:9000`), include `--profile s3` during upgrades so Twenty's workspace upgrade/backfill commands can reach MinIO.
-
-5.  **Accessing the Application:**
-
-    *   **Gateway entrypoint (Twenty + Fundraising)**: [http://localhost:4000](http://localhost:4000)
-    *   **Fundraising UI**: [http://localhost:4000/fundraising](http://localhost:4000/fundraising) (or as configured in `nginx/gateway.conf`)
-
-### Optional local ports
-
-By default, only the gateway is published on the host. If you need local access to internal services (Postgres, Redis, MinIO, or direct server/fundraising ports), opt in with the local Compose file:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
-```
-
-If local storage is configured to use the Compose MinIO service (`STORAGE_TYPE=s3` and `STORAGE_S3_ENDPOINT=http://minio:9000`), include the `s3` profile as part of the same command:
-
-```bash
-docker compose --profile s3 -f docker-compose.yml -f docker-compose.local.yml up -d --build
-```
-
-Note: for local development we keep `SERVER_URL=http://localhost:3000` so metadata scripts (e.g. `setup-schema.mjs`) can call the REST metadata wrapper without 500s. Use the gateway URL (`http://localhost:4000`) as the public entrypoint in hosted deployments.
-
-### Optional n8n profile
-
-The stack supports n8n as an optional companion service. Enable it with:
-
-```bash
-docker compose --profile n8n up -d
-```
-
-Configure n8n-related environment variables in `.env` (see `.env.example`) and review `automations/n8n/runbook.md` for hosting and security guidance.
-
-## Development Workflow
-
-### Pulling Updates
-
-To get the latest changes for the entire project, including all submodules:
-
-```bash
-git pull
-git submodule update --remote --merge
-```
-
-### Making Changes in a Submodule
-
-1.  Navigate to the submodule directory (e.g., `cd services/fundraising-service`).
-2.  Make your changes and commit them as you would in any normal repository.
-3.  Push the changes to the submodule's remote repository.
-4.  Navigate back to the root `nonprofit-crm-stack` directory.
-5.  You will see that Git has detected a new commit in the submodule. Add, commit, and push this change to update the "pointer" in the superproject.
-
-    ```bash
-    git add services/fundraising-service
-    git commit -m "Update fundraising-service to latest version"
-    git push
-    ```
+That material is being retired because it is now actively misleading for normal sessions. If you encounter guidance that assumes that workflow, prefer the app-first docs above and treat the older note as historical unless it is clearly marked current.

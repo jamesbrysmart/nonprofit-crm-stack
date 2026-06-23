@@ -1,6 +1,6 @@
 # Opportunity Funding Pipeline Model
 
-Updated: 2026-06-09
+Updated: 2026-06-23
 Status: Working direction (`exploratory, likely`)
 Purpose: Capture the current intended role of native Twenty `Opportunity` in the fundraising app for grant / bid / ask lifecycle work before payment, without prematurely turning this into a separate grants module.
 
@@ -163,24 +163,27 @@ Those belong later in linked-gift reporting or a fuller award/payment model if e
 
 The app-level value here is not only field creation.
 
-We now have a more funding-aware default Opportunity record experience.
+We now have a more funding-aware Opportunity record experience by extending
+Twenty's standard Opportunity record page with an app-owned `Funding` tab,
+rather than replacing the standard record layout.
 
 Current direction:
 
-- one good funding-aware opportunity page, not radically different page layouts by stage
+- one good funding-aware Opportunity tab, not radically different page layouts by stage
 - strong passive summary first
-- light explicit workflow actions second, but not necessarily as defaults
+- light explicit workflow actions later, once the front-component runtime path is stable
 
 ### Current default record experience should surface
 
 - stage
 - funder / company
+- point of contact
 - owner
 - requested amount
 - awarded amount
 - application deadline
 - submitted date
-- expected decision date
+- funding period start / end
 - linked gifts
 - open tasks / recent activity
 
@@ -189,7 +192,7 @@ This should work for both:
 - pre-award application management
 - awarded but still active grant stewardship
 
-## 8. Explicit Opportunity Actions And Optional Components
+## 8. Explicit Opportunity Actions
 
 One small workflow layer we have now proven as viable is a stage-transition component that can:
 
@@ -205,13 +208,15 @@ This is useful because it is:
 - not dependent on exact stage labels
 - useful even if workspaces configure their own pipeline values.
 
-Important current product decision:
+Current product decision:
 
-- this transition/task helper should **not** be forced into the default Opportunity layout
-- it should remain available as an app-owned component that a workspace can add where useful
-- for example, on a dedicated tab or in a more workflow-specific record layout.
+- this transition/task helper should not be mounted by default while the
+  Twenty front-component renderer has unresolved SDK metadata import issues
+- once stable, it is a likely fit below passive funding context and linked gifts
+- it should remain lightweight and stage-label agnostic
 
-This keeps the default Opportunity experience lightweight while still proving that a stronger transition workflow can be layered on when a client wants it.
+This keeps the standard Opportunity experience intact while still proving that
+a stronger transition workflow can be layered into the fundraising-specific tab.
 
 It should still remain lightweight in v1.
 
@@ -250,9 +255,28 @@ The current likely v1 recommendation is:
 - reuse native `stage`, `amount`, and `closeDate`
 - add only a small set of fundraising-specific opportunity fields
 - avoid stage-name-dependent app logic where possible
-- add value through page design, starter conventions, and optional workflow components rather than a separate grants subsystem
+- add value through page design, starter conventions, and lightweight workflow components rather than a separate grants subsystem
 
-## 11. Current As-Built Note
+## 11. Currency Default Note
+
+Twenty currency fields default to `USD` when their field metadata does not
+provide a default currency code. We tested an app-owned custom currency field
+with:
+
+```ts
+defaultValue: {
+  amountMicros: null,
+  currencyCode: "'GBP'",
+}
+```
+
+That app-level per-field default synced and worked. We are not keeping it in
+the app for now because the preferred product direction is either a
+workspace/app configuration value that can be defined once, or a native Twenty
+workspace default currency if Twenty adds one. For the current client workspace,
+currency labels/defaults can remain manually configured.
+
+## 12. Current As-Built Note
 
 The following are now in the app:
 
@@ -262,9 +286,13 @@ The following are now in the app:
 - `submittedDate`
 - `fundingPeriodStart`
 - `fundingPeriodEnd`
-- a funding-aware Opportunity home fields view (`Funding detail`)
-- a prototype stage-transition task component
+- a funding-aware Opportunity fields view grouped as `Context`, `Application`,
+  and `Award`
+- an app-owned `Funding` tab attached to the standard Opportunity record page
+- a stage-transition task component retained in code but not mounted on the
+  current `Funding` tab
 
-The transition task component is intentionally treated as optional workspace-level workflow tooling, not a universal default on every Opportunity layout.
+The transition task component is paused pending clarification/fix for the
+Twenty front-component SDK metadata import issue.
 
 This remains a working direction, not a locked implementation decision.

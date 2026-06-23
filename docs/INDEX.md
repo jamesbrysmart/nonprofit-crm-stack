@@ -32,6 +32,12 @@ Use this file as the first stop when a session needs repo guidance.
 
 - `apps-migration/INDEX.md`
   Entry point for current fundraising app docs.
+- `apps-migration/APP_DEPLOYMENT_RUNBOOK.md`
+  Current lightweight install/upgrade runbook for deploying the shared fundraising app into client workspaces.
+- `apps-migration/APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md`
+  Short operator-facing checklist template for live deployment sessions.
+- `apps-migration/CLIENT_WORKSPACE_OPERATIONS_MODEL.md`
+  Lightweight umbrella note for how shared app releases, workspace configuration, extension apps, and other client-workspace layers fit together.
 - `apps-migration/MIGRATION_WORKING_PATTERNS.md`
   Working patterns discovered while implementing the app.
 - `apps-migration/UI_COMPONENTS_CATALOG.md`
@@ -45,6 +51,11 @@ Use this file as the first stop when a session needs repo guidance.
   Feature-level product notes. Some files still contain legacy service assumptions and should be read critically.
 - `solutions/`
   As-built or cross-feature solution notes. Validate runtime assumptions against the current app code.
+
+## Product Guidance
+
+- `product/FUNDRAISING_WORKING_GUIDE.md`
+  Working product guide for explaining current fundraising-app behavior through admin/user walkthroughs ahead of polished user documentation.
 
 ## Legacy / Retirement Candidates
 
