@@ -14,6 +14,7 @@ export const panelStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '14px',
+  minWidth: 0,
 };
 
 export const sectionStyle: CSSProperties = {
@@ -21,6 +22,9 @@ export const sectionStyle: CSSProperties = {
   gap: '10px',
   paddingBottom: '14px',
   borderBottom: '1px solid #e6e8eb',
+  minWidth: 0,
+  width: '100%',
+  boxSizing: 'border-box',
 };
 
 export const sectionHeaderRowStyle: CSSProperties = {
@@ -38,6 +42,8 @@ export const warningSectionStyle: CSSProperties = {
   display: 'grid',
   gap: '10px',
   background: '#ffffff',
+  minWidth: 0,
+  boxSizing: 'border-box',
 };
 
 export const bodyTextStyle: CSSProperties = {
@@ -65,6 +71,33 @@ export const inputStyle: CSSProperties = {
   padding: '10px 12px',
   font: 'inherit',
   background: '#ffffff',
+  width: '100%',
+  minWidth: 0,
+  boxSizing: 'border-box',
+};
+
+export const fieldStyle: CSSProperties = {
+  display: 'grid',
+  gap: '6px',
+  minWidth: 0,
+};
+
+export const fieldGridStyle: CSSProperties = {
+  display: 'grid',
+  gap: '12px',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  alignItems: 'start',
+  minWidth: 0,
+  width: '100%',
+};
+
+export const fieldActionGridStyle: CSSProperties = {
+  display: 'grid',
+  gap: '12px',
+  gridTemplateColumns: 'minmax(0, 1fr) auto',
+  alignItems: 'end',
+  minWidth: 0,
+  width: '100%',
 };
 
 export const segmentedControlStyle: CSSProperties = {

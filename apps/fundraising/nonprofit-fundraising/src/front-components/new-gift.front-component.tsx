@@ -21,6 +21,9 @@ import {
   compactMatchInfoStyle,
   compactTextActionStyle,
   CURRENCY_OPTIONS,
+  fieldActionGridStyle,
+  fieldGridStyle,
+  fieldStyle,
   formatAmountMicros,
   getInputEventChecked,
   getInputEventValue,
@@ -212,14 +215,8 @@ const NewGift = () => {
 
         {donorType === 'INDIVIDUAL' ? (
           <>
-            <div
-              style={{
-                display: 'grid',
-                gap: '12px',
-                gridTemplateColumns: '1fr 1fr',
-              }}
-            >
-              <label style={{ display: 'grid', gap: '6px' }}>
+            <div style={fieldGridStyle}>
+              <label style={fieldStyle}>
                 <span style={labelStyle}>First name</span>
                 <input
                   style={inputStyle}
@@ -230,7 +227,7 @@ const NewGift = () => {
                 />
               </label>
 
-              <label style={{ display: 'grid', gap: '6px' }}>
+              <label style={fieldStyle}>
                 <span style={labelStyle}>Last name</span>
                 <input
                   style={inputStyle}
@@ -242,7 +239,7 @@ const NewGift = () => {
               </label>
             </div>
 
-            <label style={{ display: 'grid', gap: '6px' }}>
+            <label style={fieldStyle}>
               <span style={labelStyle}>Email</span>
               <input
                 style={inputStyle}
@@ -366,17 +363,10 @@ const NewGift = () => {
                     Address is only used if this gift creates a new donor.
                     Existing donor addresses are not updated in this flow.
                   </p>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gap: '12px',
-                      gridTemplateColumns: '1fr 1fr',
-                    }}
-                  >
+                  <div style={fieldGridStyle}>
                     <label
                       style={{
-                        display: 'grid',
-                        gap: '6px',
+                        ...fieldStyle,
                         gridColumn: '1 / -1',
                       }}
                     >
@@ -392,8 +382,7 @@ const NewGift = () => {
 
                     <label
                       style={{
-                        display: 'grid',
-                        gap: '6px',
+                        ...fieldStyle,
                         gridColumn: '1 / -1',
                       }}
                     >
@@ -407,7 +396,7 @@ const NewGift = () => {
                       />
                     </label>
 
-                    <label style={{ display: 'grid', gap: '6px' }}>
+                    <label style={fieldStyle}>
                       <span style={labelStyle}>City</span>
                       <input
                         style={inputStyle}
@@ -418,7 +407,7 @@ const NewGift = () => {
                       />
                     </label>
 
-                    <label style={{ display: 'grid', gap: '6px' }}>
+                    <label style={fieldStyle}>
                       <span style={labelStyle}>County / state</span>
                       <input
                         style={inputStyle}
@@ -429,7 +418,7 @@ const NewGift = () => {
                       />
                     </label>
 
-                    <label style={{ display: 'grid', gap: '6px' }}>
+                    <label style={fieldStyle}>
                       <span style={labelStyle}>Postcode</span>
                       <input
                         style={inputStyle}
@@ -440,7 +429,7 @@ const NewGift = () => {
                       />
                     </label>
 
-                    <label style={{ display: 'grid', gap: '6px' }}>
+                    <label style={fieldStyle}>
                       <span style={labelStyle}>Country</span>
                       <input
                         style={inputStyle}
@@ -457,7 +446,7 @@ const NewGift = () => {
           </>
         ) : (
           <>
-            <label style={{ display: 'grid', gap: '6px' }}>
+            <label style={fieldStyle}>
               <span style={labelStyle}>Company name</span>
               <input
                 style={inputStyle}
@@ -638,14 +627,9 @@ const NewGift = () => {
                   </p>
 
                   <div
-                    style={{
-                      display: 'grid',
-                      gap: '12px',
-                      gridTemplateColumns: '1fr auto',
-                      alignItems: 'end',
-                    }}
+                    style={fieldActionGridStyle}
                   >
-                    <label style={{ display: 'grid', gap: '6px' }}>
+                    <label style={fieldStyle}>
                       <span style={labelStyle}>Search opportunities</span>
                       <input
                         style={inputStyle}
@@ -716,14 +700,8 @@ const NewGift = () => {
 
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Gift basics</div>
-        <div
-          style={{
-            display: 'grid',
-            gap: '12px',
-            gridTemplateColumns: '1fr 1fr',
-          }}
-        >
-          <label style={{ display: 'grid', gap: '6px' }}>
+        <div style={fieldGridStyle}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Gift type</span>
             <select
               style={inputStyle}
@@ -740,7 +718,7 @@ const NewGift = () => {
             </select>
           </label>
 
-          <label style={{ display: 'grid', gap: '6px' }}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Amount</span>
             <input
               style={inputStyle}
@@ -751,7 +729,7 @@ const NewGift = () => {
             />
           </label>
 
-          <label style={{ display: 'grid', gap: '6px' }}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Currency</span>
             <select
               style={inputStyle}
@@ -766,7 +744,7 @@ const NewGift = () => {
             </select>
           </label>
 
-          <label style={{ display: 'grid', gap: '6px' }}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Payment type</span>
             <select
               style={inputStyle}
@@ -783,7 +761,7 @@ const NewGift = () => {
             </select>
           </label>
 
-          <label style={{ display: 'grid', gap: '6px' }}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Gift date</span>
             <input
               style={inputStyle}
@@ -803,7 +781,7 @@ const NewGift = () => {
         ) : null}
 
         {giftType === 'GIFT_IN_KIND' ? (
-          <label style={{ display: 'grid', gap: '6px' }}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Description</span>
             <textarea
               style={{
@@ -822,14 +800,8 @@ const NewGift = () => {
           </label>
         ) : null}
 
-        <div
-          style={{
-            display: 'grid',
-            gap: '12px',
-            gridTemplateColumns: '1fr 1fr',
-          }}
-        >
-          <label style={{ display: 'grid', gap: '6px' }}>
+        <div style={fieldGridStyle}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Appeal</span>
             <select
               style={inputStyle}
@@ -851,7 +823,7 @@ const NewGift = () => {
             ) : null}
           </label>
 
-          <label style={{ display: 'grid', gap: '6px' }}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Appeal source</span>
             <select
               style={inputStyle}
@@ -873,7 +845,7 @@ const NewGift = () => {
             ) : null}
           </label>
 
-          <label style={{ display: 'grid', gap: '6px' }}>
+          <label style={fieldStyle}>
             <span style={labelStyle}>Fund</span>
             <select
               style={inputStyle}
@@ -932,14 +904,9 @@ const NewGift = () => {
               agreement.
             </p>
             <div
-              style={{
-                display: 'grid',
-                gap: '12px',
-                gridTemplateColumns: '1fr auto',
-                alignItems: 'end',
-              }}
+              style={fieldActionGridStyle}
             >
-              <label style={{ display: 'grid', gap: '6px' }}>
+              <label style={fieldStyle}>
                 <span style={labelStyle}>Search recurring agreements</span>
                 <input
                   style={inputStyle}
