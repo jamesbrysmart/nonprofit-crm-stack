@@ -4,6 +4,7 @@ import {
   extractMutationRecord,
 } from 'src/core-api/core-api-results';
 import { recomputeDonorRollups } from 'src/donor-rollups/donor-rollups';
+import { buildGiftName } from 'src/gifts/gift-name';
 import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
 import {
   createStripeOneOffGiftStaging,
@@ -317,14 +318,23 @@ export const createStripeRecurringGiftForConfidentMatch = async (
   }
 
   const providerPaymentId = getStripeObjectId(session.payment_intent);
+  const amountMicros = toAmountMicros(session.amount_total);
+  const currencyCode = toCurrencyCode(session.currency);
+  const donorName = `${donorFirstName} ${donorLastName}`.trim();
   const result = await client.mutation({
     createGift: {
       __args: {
         data: {
-          name: `Recurring Stripe gift for ${agreement.name ?? providerAgreementId}`,
+          name: buildGiftName({
+            giftType: 'DONATION',
+            donorName,
+            amountMicros,
+            currencyCode,
+            giftDate,
+          }),
           amount: {
-            currencyCode: toCurrencyCode(session.currency),
-            amountMicros: toAmountMicros(session.amount_total),
+            currencyCode,
+            amountMicros,
           },
           giftDate,
           donorFirstName,

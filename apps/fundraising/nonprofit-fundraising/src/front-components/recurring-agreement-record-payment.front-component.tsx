@@ -174,7 +174,6 @@ const RecurringAgreementRecordPayment = () => {
         currencyCode: record.currencyCode,
         paymentType: paymentType as ManualGiftPaymentType,
         giftDate: giftDate.trim(),
-        ...(note.trim() !== '' ? { description: note.trim() } : {}),
         ...(record.fundId ? { selectedFundId: record.fundId } : {}),
         ...(record.appealId ? { selectedAppealId: record.appealId } : {}),
         ...(record.appealSourceId

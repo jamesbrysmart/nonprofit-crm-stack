@@ -222,10 +222,107 @@ export const loadGiftById = async (giftId: string) => {
           addressCountry: true,
         },
       },
+      company: {
+        id: true,
+        name: true,
+      },
+      opportunity: {
+        id: true,
+        name: true,
+        company: {
+          id: true,
+        },
+      },
     },
   } as any);
 
   return result?.gift ?? null;
+};
+
+export const createCompany = async ({ name }: { name: string }) => {
+  const client = getCoreClient();
+  const result = await client.mutation({
+    createCompany: {
+      __args: {
+        data: {
+          name,
+        },
+      },
+      id: true,
+      name: true,
+    },
+  } as any);
+
+  return result.createCompany as {
+    id: string;
+    name: string;
+  };
+};
+
+export const createOpportunity = async ({
+  name,
+  companyId,
+  fundingType,
+  amountMicros,
+  amountCurrencyCode = 'GBP',
+  awardedAmountMicros,
+  awardedCurrencyCode = 'GBP',
+}: {
+  name: string;
+  companyId: string;
+  fundingType?: string;
+  amountMicros?: number;
+  amountCurrencyCode?: string;
+  awardedAmountMicros?: number;
+  awardedCurrencyCode?: string;
+}) => {
+  const client = getCoreClient();
+  const result = await client.mutation({
+    createOpportunity: {
+      __args: {
+        data: {
+          name,
+          ...(fundingType ? { fundingType } : {}),
+          ...(typeof amountMicros === 'number'
+            ? {
+                amount: {
+                  amountMicros,
+                  currencyCode: amountCurrencyCode,
+                },
+              }
+            : {}),
+          ...(typeof awardedAmountMicros === 'number'
+            ? {
+                awardedAmount: {
+                  amountMicros: awardedAmountMicros,
+                  currencyCode: awardedCurrencyCode,
+                },
+              }
+            : {}),
+          company: {
+            connect: {
+              where: {
+                id: companyId,
+              },
+            },
+          },
+        },
+      },
+      id: true,
+      name: true,
+      fundingType: true,
+      company: {
+        id: true,
+      },
+    },
+  } as any);
+
+  return result.createOpportunity as {
+    id: string;
+    name: string;
+    fundingType?: string | null;
+    company?: { id?: string | null } | null;
+  };
 };
 
 export const loadGiftStagingById = async (giftStagingId: string) => {

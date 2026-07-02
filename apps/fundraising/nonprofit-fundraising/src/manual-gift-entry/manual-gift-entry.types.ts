@@ -94,14 +94,12 @@ export type DuplicateCheckResponse = {
   candidates: PersonSummary[];
 };
 
-export type CompanyDuplicateCheckRequest = {
-  companyName?: string;
+export type SearchCompaniesRequest = {
+  query?: string;
 };
 
-export type CompanyDuplicateCheckResponse = {
-  status: DonorDuplicateCheckStatus;
-  checkedCompanyName: string;
-  candidates: CompanySummary[];
+export type SearchCompaniesResponse = {
+  companies: CompanySummary[];
 };
 
 export type ManualGiftDonorChoice = 'USE_EXISTING' | 'CREATE_NEW';

@@ -6,7 +6,10 @@ import type {
   ManualGiftPaymentType,
   ManualGiftType,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
-import { ActionButton } from 'src/front-components/front-component-ui';
+import {
+  ActionButton,
+  actionRowStyle,
+} from 'src/front-components/front-component-ui';
 import {
   bodyTextStyle,
   buildCompanyDisplayName,
@@ -140,7 +143,9 @@ const NewGift = () => {
     setDonorChoice,
     selectedDonorId,
     setSelectedDonorId,
-    companyDuplicateResult,
+    companyResults,
+    companySearchPerformed,
+    searchingCompanies,
     companyChoice,
     setCompanyChoice,
     selectedCompanyId,
@@ -156,18 +161,23 @@ const NewGift = () => {
     searchingOpportunities,
     duplicateGiftCheckResult,
     duplicateInterruptionVisible,
-    companyDuplicateInterruptionVisible,
     duplicateGiftWarningVisible,
     selectedDonorSummary,
     selectedCompanySummary,
+    canSearchCompanies,
     canSearchRecurring,
     canSearchOpportunities,
     submitting,
     handleSubmit,
+    handleSearchCompanies,
     handleSearchRecurringAgreements,
     handleSearchOpportunities,
   } = useNewGiftController();
   const giftTypeOptions = getGiftTypeOptions(donorType);
+  const canLinkOpportunity =
+    donorType === 'COMPANY' &&
+    companyChoice === 'USE_EXISTING' &&
+    Boolean(selectedCompanyId);
 
   return (
     <div style={panelStyle}>
@@ -456,83 +466,128 @@ const NewGift = () => {
               />
             </label>
             <p style={bodyTextStyle}>
-              Company gifts are matched against existing company records.
+              Search first to avoid creating a duplicate company record.
             </p>
 
-            {companyDuplicateInterruptionVisible && companyDuplicateResult ? (
+            <div style={actionRowStyle}>
+              <ActionButton
+                title={searchingCompanies ? 'Searching...' : 'Search companies'}
+                variant="secondary"
+                onClick={() => {
+                  void handleSearchCompanies();
+                }}
+                disabled={searchingCompanies || submitting || !canSearchCompanies}
+              />
+            </div>
+
+            {companyChoice === 'USE_EXISTING' && selectedCompanySummary ? (
+              <div style={selectedSummaryStyle}>
+                <div style={selectedStateInfoStyle}>
+                  <div style={sectionTitleStyle}>Selected company</div>
+                  <strong>{buildCompanyDisplayName(selectedCompanySummary)}</strong>
+                </div>
+                <button
+                  type="button"
+                  style={compactTextActionStyle}
+                  onClick={() => {
+                    setSelectedCompanyId(null);
+                    setCompanyChoice(null);
+                    setLinkOpportunity(false);
+                    setOpportunitySearchQuery('');
+                    setOpportunityResults([]);
+                    setSelectedOpportunityId(null);
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+            ) : null}
+
+            {companyChoice === 'CREATE_NEW' ? (
+              <div style={selectedSummaryStyle}>
+                <div style={selectedStateInfoStyle}>
+                  <div style={sectionTitleStyle}>New company</div>
+                  <strong>{companyName.trim()}</strong>
+                  <span style={secondaryTextStyle}>
+                    This gift will create a new company record.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  style={compactTextActionStyle}
+                  onClick={() => {
+                    setCompanyChoice(null);
+                    setLinkOpportunity(false);
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+            ) : null}
+
+            {companySearchPerformed && companyChoice !== 'USE_EXISTING' ? (
               <div style={inlineMatchSectionStyle}>
-                <div style={sectionTitleStyle}>Company match</div>
+                <div style={sectionTitleStyle}>Possible company matches</div>
                 <div style={secondaryTextStyle}>
-                  {companyDuplicateResult.status === 'SINGLE_EXACT_MATCH'
-                    ? 'We found one company with this name. Use that company or continue with a new company.'
-                    : 'We found more than one company with this name. Choose the right company or continue with a new company.'}
+                  {companyResults.length === 0
+                    ? 'No existing companies matched this search. Create a new company only if this organisation is not already in the CRM.'
+                    : 'Choose an existing company if one of these is the same organisation.'}
                 </div>
 
-                {companyChoice === 'USE_EXISTING' && selectedCompanySummary ? (
-                  <div style={selectedSummaryStyle}>
-                    <div style={selectedStateInfoStyle}>
-                      <div style={sectionTitleStyle}>Selected company</div>
-                      <strong>{buildCompanyDisplayName(selectedCompanySummary)}</strong>
-                    </div>
-                    <button
-                      type="button"
-                      style={compactTextActionStyle}
-                      onClick={() => {
-                        setSelectedCompanyId(null);
-                        setCompanyChoice(null);
-                      }}
-                    >
-                      Change
-                    </button>
+                {companyResults.length > 0 ? (
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    {companyResults.map((candidate) => {
+                      const isSelected = candidate.id === selectedCompanyId;
+
+                      return (
+                        <button
+                          key={candidate.id}
+                          type="button"
+                          style={
+                            isSelected
+                              ? selectedCandidateButtonStyle
+                              : candidateButtonStyle
+                          }
+                          onClick={() => {
+                            setSelectedCompanyId(candidate.id);
+                            setCompanyChoice('USE_EXISTING');
+                            setLinkOpportunity(false);
+                            setOpportunitySearchQuery('');
+                            setOpportunityResults([]);
+                            setSelectedOpportunityId(null);
+                          }}
+                        >
+                          <div style={compactMatchInfoStyle}>
+                            <strong>{buildCompanyDisplayName(candidate)}</strong>
+                          </div>
+                          <span style={compactMatchActionStyle}>
+                            {isSelected ? 'Selected' : 'Use company'}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                ) : (
-                  <>
-                    <div style={{ display: 'grid', gap: '10px' }}>
-                      {companyDuplicateResult.candidates.map((candidate) => {
-                        const isSelected = candidate.id === selectedCompanyId;
+                ) : null}
 
-                        return (
-                          <button
-                            key={candidate.id}
-                            type="button"
-                            style={
-                              isSelected
-                                ? selectedCandidateButtonStyle
-                                : candidateButtonStyle
-                            }
-                            onClick={() => {
-                              setSelectedCompanyId(candidate.id);
-                              setCompanyChoice('USE_EXISTING');
-                            }}
-                          >
-                            <div style={compactMatchInfoStyle}>
-                              <strong>{buildCompanyDisplayName(candidate)}</strong>
-                            </div>
-                            <span style={compactMatchActionStyle}>
-                              {isSelected ? 'Selected' : 'Use company'}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div style={secondaryChoiceRowStyle}>
-                      <span style={secondaryTextStyle}>
-                        No suitable company listed?
-                      </span>
-                      <button
-                        type="button"
-                        style={compactTextActionStyle}
-                        onClick={() => {
-                          setSelectedCompanyId(null);
-                          setCompanyChoice('CREATE_NEW');
-                        }}
-                      >
-                        Create new company
-                      </button>
-                    </div>
-                  </>
-                )}
+                <div style={secondaryChoiceRowStyle}>
+                  <span style={secondaryTextStyle}>
+                    No suitable company listed?
+                  </span>
+                  <button
+                    type="button"
+                    style={compactTextActionStyle}
+                    onClick={() => {
+                      setSelectedCompanyId(null);
+                      setCompanyChoice('CREATE_NEW');
+                      setLinkOpportunity(false);
+                      setOpportunitySearchQuery('');
+                      setOpportunityResults([]);
+                      setSelectedOpportunityId(null);
+                    }}
+                  >
+                    Create new company
+                  </button>
+                </div>
 
               </div>
             ) : null}
@@ -549,8 +604,13 @@ const NewGift = () => {
               >
                 <input
                   type="checkbox"
-                  checked={linkOpportunity}
+                  checked={canLinkOpportunity && linkOpportunity}
+                  disabled={!canLinkOpportunity}
                   onChange={(event) => {
+                    if (!canLinkOpportunity) {
+                      return;
+                    }
+
                     const checked = getInputEventChecked(event);
                     setLinkOpportunity(checked);
 
@@ -564,7 +624,13 @@ const NewGift = () => {
                 <span>Link an opportunity</span>
               </label>
 
-              {linkOpportunity ? (
+              {!canLinkOpportunity ? (
+                <p style={bodyTextStyle}>
+                  Select an existing company before linking an opportunity.
+                </p>
+              ) : null}
+
+              {canLinkOpportunity && linkOpportunity ? (
                 <>
                   <p style={bodyTextStyle}>
                     Add an opportunity when this gift relates to a grant,

@@ -1,10 +1,14 @@
 import { defineView, ViewKey } from 'twenty-sdk/define';
 import { APPEAL_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-appeal-source.field';
 import {
+  APPEAL_SOURCE_DONOR_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_LAST_GIFT_AT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_PLATFORM_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_SOURCE_CODE_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
@@ -76,6 +80,38 @@ export default defineView({
       position: 6,
       isVisible: true,
       size: 220,
+    },
+    {
+      universalIdentifier: '3e593764-a321-4797-87ad-82463b9702b8',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 7,
+      isVisible: true,
+      size: 160,
+    },
+    {
+      universalIdentifier: '2167e183-3ca7-4006-be72-f9e2a543c184',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 8,
+      isVisible: true,
+      size: 120,
+    },
+    {
+      universalIdentifier: 'ca12ddea-6754-4cde-bbf0-3f2fef43cf38',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_DONOR_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 9,
+      isVisible: true,
+      size: 120,
+    },
+    {
+      universalIdentifier: '26c330af-d6b1-42ea-a247-77082a659d9c',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_LAST_GIFT_AT_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 10,
+      isVisible: true,
+      size: 160,
     },
   ],
 });

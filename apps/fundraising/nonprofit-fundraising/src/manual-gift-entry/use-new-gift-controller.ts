@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { closeSidePanel, enqueueSnackbar } from 'twenty-sdk/front-component';
 import {
-  checkCompanyDuplicates,
   checkDonorDuplicates,
   checkManualGiftDuplicates,
   createManualGift,
+  searchCompanies,
   searchOpportunities,
   searchRecurringAgreements,
 } from './manual-gift-entry.api';
 import type {
-  CompanyDuplicateCheckResponse,
+  CompanySummary,
   DuplicateCheckResponse,
   ManualGiftCompanyChoice,
   ManualGiftDonorChoice,
@@ -88,8 +88,9 @@ export const useNewGiftController = () => {
   const [donorChoice, setDonorChoice] =
     useState<ManualGiftDonorChoice | null>(null);
   const [selectedDonorId, setSelectedDonorId] = useState<string | null>(null);
-  const [companyDuplicateResult, setCompanyDuplicateResult] =
-    useState<CompanyDuplicateCheckResponse | null>(null);
+  const [companyResults, setCompanyResults] = useState<CompanySummary[]>([]);
+  const [companySearchPerformed, setCompanySearchPerformed] = useState(false);
+  const [searchingCompanies, setSearchingCompanies] = useState(false);
   const [companyChoice, setCompanyChoice] =
     useState<ManualGiftCompanyChoice | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
@@ -111,7 +112,8 @@ export const useNewGiftController = () => {
     setDuplicateResult(null);
     setDonorChoice(null);
     setSelectedDonorId(null);
-    setCompanyDuplicateResult(null);
+    setCompanyResults([]);
+    setCompanySearchPerformed(false);
     setCompanyChoice(null);
     setSelectedCompanyId(null);
   }, [donorType]);
@@ -192,7 +194,7 @@ export const useNewGiftController = () => {
     donorType === 'INDIVIDUAL' &&
     trimmedFirstName.length >= 2 &&
     trimmedLastName.length >= 2;
-  const canCheckCompanyDuplicates =
+  const canSearchCompanies =
     donorType === 'COMPANY' && trimmedCompanyName.length >= 2;
   const canSearchRecurring = recurringSearchQuery.trim().length >= 2;
   const canSearchOpportunities = opportunitySearchQuery.trim().length >= 2;
@@ -201,23 +203,15 @@ export const useNewGiftController = () => {
     () => duplicateResult !== null && duplicateResult.status !== 'NO_MATCH',
     [duplicateResult],
   );
-  const companyDuplicateInterruptionVisible = useMemo(
-    () =>
-      companyDuplicateResult !== null &&
-      companyDuplicateResult.status !== 'NO_MATCH',
-    [companyDuplicateResult],
-  );
   const duplicateGiftWarningVisible =
     (duplicateGiftCheckResult?.matches.length ?? 0) > 0;
   const selectedDonorSummary = duplicateResult
     ? findSelectedDonor(duplicateResult.candidates, selectedDonorId)
     : null;
-  const selectedCompanySummary = companyDuplicateResult
-    ? findSelectedCompany(
-        companyDuplicateResult.candidates,
-        selectedCompanyId,
-      )
-    : null;
+  const selectedCompanySummary = findSelectedCompany(
+    companyResults,
+    selectedCompanyId,
+  );
 
   const runDonorDuplicateCheck = async () => {
     if (!canCheckDonorDuplicates) {
@@ -230,20 +224,6 @@ export const useNewGiftController = () => {
     });
 
     setDuplicateResult(result);
-
-    return result;
-  };
-
-  const runCompanyDuplicateCheck = async () => {
-    if (!canCheckCompanyDuplicates) {
-      throw new Error('Enter company name first');
-    }
-
-    const result = await checkCompanyDuplicates({
-      companyName: trimmedCompanyName,
-    });
-
-    setCompanyDuplicateResult(result);
 
     return result;
   };
@@ -279,33 +259,6 @@ export const useNewGiftController = () => {
     trimmedFirstName,
     trimmedLastName,
   ]);
-
-  useEffect(() => {
-    if (donorType !== 'COMPANY') {
-      return;
-    }
-
-    if (!canCheckCompanyDuplicates) {
-      setCompanyDuplicateResult(null);
-      setCompanyChoice(null);
-      setSelectedCompanyId(null);
-      return;
-    }
-
-    let cancelled = false;
-    const timeoutId = setTimeout(() => {
-      void runCompanyDuplicateCheck().catch(() => {
-        if (!cancelled) {
-          setCompanyDuplicateResult(null);
-        }
-      });
-    }, 400);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [donorType, canCheckCompanyDuplicates, trimmedCompanyName]);
 
   const runManualGiftDuplicateCheck = async (args: {
     donorType: ManualGiftDonorType;
@@ -353,15 +306,9 @@ export const useNewGiftController = () => {
     }
 
     let activeDuplicateResult = duplicateResult;
-    let activeCompanyDuplicateResult = companyDuplicateResult;
-
     try {
       if (donorType === 'INDIVIDUAL' && !activeDuplicateResult) {
         activeDuplicateResult = await runDonorDuplicateCheck();
-      }
-
-      if (donorType === 'COMPANY' && !activeCompanyDuplicateResult) {
-        activeCompanyDuplicateResult = await runCompanyDuplicateCheck();
       }
 
       if (
@@ -387,15 +334,11 @@ export const useNewGiftController = () => {
         }
       }
 
-      if (
-        donorType === 'COMPANY' &&
-        activeCompanyDuplicateResult &&
-        activeCompanyDuplicateResult.status !== 'NO_MATCH'
-      ) {
+      if (donorType === 'COMPANY') {
         if (companyChoice === null) {
           await enqueueSnackbar({
             message:
-              'Choose a matching company or continue with a new company before saving.',
+              'Search companies and choose an existing company or create a new one before saving.',
             variant: 'warning',
           });
           return;
@@ -416,10 +359,7 @@ export const useNewGiftController = () => {
           ? 'CREATE_NEW'
           : (donorChoice ?? 'CREATE_NEW');
       const resolvedCompanyChoice: ManualGiftCompanyChoice =
-        donorType === 'COMPANY' &&
-        activeCompanyDuplicateResult?.status === 'NO_MATCH'
-          ? 'CREATE_NEW'
-          : (companyChoice ?? 'CREATE_NEW');
+        donorType === 'COMPANY' ? (companyChoice ?? 'CREATE_NEW') : 'CREATE_NEW';
 
       const duplicateTarget =
         donorType === 'INDIVIDUAL' &&
@@ -588,6 +528,48 @@ export const useNewGiftController = () => {
     }
   };
 
+  const handleSearchCompanies = async () => {
+    if (!canSearchCompanies) {
+      await enqueueSnackbar({
+        message: 'Enter at least two characters to search companies.',
+        variant: 'warning',
+      });
+      return;
+    }
+
+    setSearchingCompanies(true);
+    setCompanyChoice(null);
+    setSelectedCompanyId(null);
+    setSelectedOpportunityId(null);
+    setOpportunityResults([]);
+    setOpportunitySearchQuery('');
+
+    try {
+      const result = await searchCompanies({
+        query: trimmedCompanyName,
+      });
+
+      setCompanyResults(result.companies);
+      setCompanySearchPerformed(true);
+
+      await enqueueSnackbar({
+        message:
+          result.companies.length === 0
+            ? 'No companies matched the current search.'
+            : `Found ${result.companies.length} compan${result.companies.length === 1 ? 'y' : 'ies'}.`,
+        variant: 'info',
+      });
+    } catch (error) {
+      await enqueueSnackbar({
+        message:
+          error instanceof Error ? error.message : 'Unable to search companies.',
+        variant: 'error',
+      });
+    } finally {
+      setSearchingCompanies(false);
+    }
+  };
+
   const handleSearchOpportunities = async () => {
     if (!canSearchOpportunities) {
       await enqueueSnackbar({
@@ -663,6 +645,17 @@ export const useNewGiftController = () => {
     setSelectedAppealSourceId(nextAppealSourceId);
   };
 
+  const handleCompanyNameChange = (nextCompanyName: string) => {
+    setCompanyName(nextCompanyName);
+    setCompanyResults([]);
+    setCompanySearchPerformed(false);
+    setCompanyChoice(null);
+    setSelectedCompanyId(null);
+    setOpportunityResults([]);
+    setOpportunitySearchQuery('');
+    setSelectedOpportunityId(null);
+  };
+
   return {
     donorType,
     setDonorType,
@@ -673,7 +666,7 @@ export const useNewGiftController = () => {
     donorEmail,
     setDonorEmail,
     companyName,
-    setCompanyName,
+    setCompanyName: handleCompanyNameChange,
     giftType,
     setGiftType,
     description,
@@ -741,7 +734,9 @@ export const useNewGiftController = () => {
     setDonorChoice,
     selectedDonorId,
     setSelectedDonorId,
-    companyDuplicateResult,
+    companyResults,
+    companySearchPerformed,
+    searchingCompanies,
     companyChoice,
     setCompanyChoice,
     selectedCompanyId,
@@ -757,14 +752,15 @@ export const useNewGiftController = () => {
     searchingOpportunities,
     duplicateGiftCheckResult,
     duplicateInterruptionVisible,
-    companyDuplicateInterruptionVisible,
     duplicateGiftWarningVisible,
     selectedDonorSummary,
     selectedCompanySummary,
+    canSearchCompanies,
     canSearchRecurring,
     canSearchOpportunities,
     submitting,
     handleSubmit,
+    handleSearchCompanies,
     handleSearchRecurringAgreements,
     handleSearchOpportunities,
   };

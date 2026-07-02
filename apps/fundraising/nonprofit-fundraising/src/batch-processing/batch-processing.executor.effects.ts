@@ -3,6 +3,14 @@ import {
   collectAppealIds,
   recomputeAppealRollups,
 } from 'src/appeal-rollups/appeal-rollups';
+import {
+  collectAppealSourceIds,
+  recomputeAppealSourceRollups,
+} from 'src/appeal-source-rollups/appeal-source-rollups';
+import {
+  collectCompanyIds,
+  recomputeCompanyRollups,
+} from 'src/company-rollups/company-rollups';
 import { attachGiftsToCurrentDraftClaimBatch } from 'src/gift-aid-claims/gift-aid-claim-batch';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import {
@@ -50,6 +58,23 @@ export const runBatchProcessingSideEffects = async (
     }
   }
 
+  const companyIdsToRecompute = collectCompanyIds(
+    successfulWritebacks.map((writeback) => writeback.companyId),
+  );
+
+  if (companyIdsToRecompute.length > 0) {
+    try {
+      const client = new CoreApiClient();
+      await recomputeCompanyRollups(client, companyIdsToRecompute);
+    } catch (error) {
+      console.warn(
+        'Non-blocking company rollup recompute failed after batch processing',
+        companyIdsToRecompute,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
   const appealIdsToRecompute = collectAppealIds(
     successfulWritebacks.map((writeback) => writeback.appealId),
   );
@@ -62,6 +87,23 @@ export const runBatchProcessingSideEffects = async (
       console.warn(
         'Non-blocking appeal rollup recompute failed after batch processing',
         appealIdsToRecompute,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  const appealSourceIdsToRecompute = collectAppealSourceIds(
+    successfulWritebacks.map((writeback) => writeback.appealSourceId),
+  );
+
+  if (appealSourceIdsToRecompute.length > 0) {
+    try {
+      const client = new CoreApiClient();
+      await recomputeAppealSourceRollups(client, appealSourceIdsToRecompute);
+    } catch (error) {
+      console.warn(
+        'Non-blocking appeal source rollup recompute failed after batch processing',
+        appealSourceIdsToRecompute,
         error instanceof Error ? error.message : String(error),
       );
     }

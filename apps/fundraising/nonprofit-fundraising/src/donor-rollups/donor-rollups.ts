@@ -110,6 +110,40 @@ const buildOrDonorFilter = (donorIds: string[]) => ({
   })),
 });
 
+export const buildDonorExistingRollupsFilter = () => ({
+  or: [
+    {
+      giftCount: {
+        gt: 0,
+      },
+    },
+    {
+      firstGiftDate: {
+        is: 'NOT_NULL',
+      },
+    },
+    {
+      lastGiftDate: {
+        is: 'NOT_NULL',
+      },
+    },
+    {
+      lastGiftAmount: {
+        amountMicros: {
+          is: 'NOT_NULL',
+        },
+      },
+    },
+    {
+      largestGiftAmount: {
+        amountMicros: {
+          is: 'NOT_NULL',
+        },
+      },
+    },
+  ],
+});
+
 const areAmountsEqual = (
   left: CurrencyAmount | null | undefined,
   right: CurrencyAmount | null | undefined,
@@ -376,35 +410,7 @@ const loadDonorIdsWithExistingRollups = async (
         __args: {
           first: GIFT_QUERY_PAGE_SIZE,
           ...(cursor ? { after: cursor } : {}),
-          filter: {
-            or: [
-              {
-                giftCount: {
-                  gt: 0,
-                },
-              },
-              {
-                firstGiftDate: {
-                  is: 'NOT_NULL',
-                },
-              },
-              {
-                lastGiftDate: {
-                  is: 'NOT_NULL',
-                },
-              },
-              {
-                lastGiftAmount: {
-                  is: 'NOT_NULL',
-                },
-              },
-              {
-                largestGiftAmount: {
-                  is: 'NOT_NULL',
-                },
-              },
-            ],
-          },
+          filter: buildDonorExistingRollupsFilter(),
         },
         edges: {
           node: {

@@ -2,6 +2,7 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { extractMutationRecord, extractQueryRecord } from 'src/core-api/core-api-results';
 import { recomputeAppealRollups } from 'src/appeal-rollups/appeal-rollups';
+import { recomputeAppealSourceRollups } from 'src/appeal-source-rollups/appeal-source-rollups';
 import { recomputeCompanyRollups } from 'src/company-rollups/company-rollups';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { attachGiftToCurrentDraftIfClaimable } from 'src/gift-aid-claims/gift-aid-claim-batch';
@@ -199,6 +200,50 @@ const resolveCompanyId = async (
   return ensureCompanyForManualGift(client, body);
 };
 
+const validateOpportunityCompany = async (
+  client: CoreApiClient,
+  args: {
+    opportunityId: string;
+    companyId: string | null;
+  },
+) => {
+  if (args.opportunityId === '') {
+    return;
+  }
+
+  const result = await client.query({
+    opportunity: {
+      __args: {
+        filter: {
+          id: { eq: args.opportunityId },
+        },
+      },
+      id: true,
+      company: {
+        id: true,
+      },
+    },
+  } as any);
+
+  const opportunity = extractQueryRecord<{
+    id?: string | null;
+    company?: { id?: string | null } | null;
+  }>(result, 'opportunity');
+
+  if (!opportunity?.id) {
+    throw new Error('Selected opportunity was not found');
+  }
+
+  if (
+    args.companyId !== null &&
+    normalizeString(opportunity.company?.id) !== args.companyId
+  ) {
+    throw new Error(
+      'Selected opportunity does not belong to the selected company',
+    );
+  }
+};
+
 const handler = async (
   event: RoutePayload<ManualGiftEntryRequest>,
 ): Promise<ManualGiftEntryResponse> => {
@@ -282,6 +327,10 @@ const handler = async (
   const opportunityId = normalizeString(
     body.selectedOpportunityId as string | undefined,
   );
+  await validateOpportunityCompany(client, {
+    opportunityId,
+    companyId,
+  });
   const giftData = { ...evaluatedGiftPayload } as Record<string, unknown>;
   delete giftData.donorId;
   delete giftData.companyId;
@@ -475,6 +524,18 @@ const handler = async (
       console.warn(
         'Non-blocking appeal rollup recompute failed after manual gift create',
         appealId,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  if (appealSourceId !== '') {
+    try {
+      await recomputeAppealSourceRollups(client, [appealSourceId]);
+    } catch (error) {
+      console.warn(
+        'Non-blocking appeal source rollup recompute failed after manual gift create',
+        appealSourceId,
         error instanceof Error ? error.message : String(error),
       );
     }

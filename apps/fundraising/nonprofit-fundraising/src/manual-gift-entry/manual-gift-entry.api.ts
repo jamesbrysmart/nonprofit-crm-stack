@@ -1,6 +1,4 @@
 import type {
-  CompanyDuplicateCheckRequest,
-  CompanyDuplicateCheckResponse,
   DuplicateCheckRequest,
   DuplicateCheckResponse,
   ListAppealOptionsResponse,
@@ -11,6 +9,8 @@ import type {
   ManualGiftDuplicateCheckResponse,
   ManualGiftEntryRequest,
   ManualGiftEntryResponse,
+  SearchCompaniesRequest,
+  SearchCompaniesResponse,
   SearchOpportunitiesRequest,
   SearchOpportunitiesResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
@@ -28,11 +28,11 @@ export const checkDonorDuplicates = (
     input,
   );
 
-export const checkCompanyDuplicates = (
-  input: CompanyDuplicateCheckRequest,
-): Promise<CompanyDuplicateCheckResponse> =>
-  postAppRouteJson<CompanyDuplicateCheckResponse>(
-    '/s/company-resolution/check-company-duplicates',
+export const searchCompanies = (
+  input: SearchCompaniesRequest,
+): Promise<SearchCompaniesResponse> =>
+  postAppRouteJson<SearchCompaniesResponse>(
+    '/s/companies/search',
     input,
   );
 

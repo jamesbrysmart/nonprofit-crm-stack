@@ -1,6 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
-import { collectAppealIds, recomputeAppealRollups } from 'src/appeal-rollups/appeal-rollups';
 import { resolveAppealSourceSelection } from 'src/appeal-sources/appeal-source-integrity';
 import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
 import {
@@ -91,7 +90,6 @@ const handler = async (
     throw new Error('Gift not found');
   }
 
-  const previousAppealId = normalizeString(existing.appeal?.id);
   const {
     appealId,
     appealSourceId,
@@ -203,21 +201,6 @@ const handler = async (
     },
   } as any);
 
-  const appealIdsToRecompute = collectAppealIds([previousAppealId, appealId]);
-
-  if (appealIdsToRecompute.length > 0) {
-    try {
-      await recomputeAppealRollups(client, appealIdsToRecompute);
-    } catch (error) {
-      console.warn(
-        'Non-blocking appeal rollup recompute failed after gift coding update',
-        giftId,
-        appealIdsToRecompute.join(','),
-        error instanceof Error ? error.message : String(error),
-      );
-    }
-  }
-
   return {
     giftId,
     appealId: appealId === '' ? null : appealId,
@@ -248,7 +231,7 @@ export default defineLogicFunction({
   universalIdentifier: '981e238e-c099-4d2d-acfa-1d60dbbef9f8',
   name: 'save-gift-coding',
   description:
-    'Updates appeal and fund coding on a committed gift and refreshes affected appeal rollups.',
+    'Updates appeal, fund, and soft-credit coding on a committed gift.',
   timeoutSeconds: 15,
   handler,
   httpRouteTriggerSettings: {

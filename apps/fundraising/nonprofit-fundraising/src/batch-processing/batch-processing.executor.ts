@@ -124,10 +124,24 @@ const createBatchGiftChunk = async (
     id: entry.row.id,
     committedGiftId: giftIds[index],
     donorId: normalizeString(entry.row.donor?.id),
+    ...(normalizeString(entry.payload.companyId as string | undefined) !== ''
+      ? {
+          companyId: normalizeString(
+            entry.payload.companyId as string | undefined,
+          ),
+        }
+      : {}),
     ...(normalizeString(entry.payload.appealId as string | undefined) !== ''
       ? {
           appealId: normalizeString(
             entry.payload.appealId as string | undefined,
+          ),
+        }
+      : {}),
+    ...(normalizeString(entry.payload.appealSourceId as string | undefined) !== ''
+      ? {
+          appealSourceId: normalizeString(
+            entry.payload.appealSourceId as string | undefined,
           ),
         }
       : {}),

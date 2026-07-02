@@ -36,7 +36,7 @@ export default definePageLayout({
         },
         {
           universalIdentifier: '97b9c3c7-55f1-4104-8ea8-4ed898b1a81f',
-          title: 'Gift coding',
+          title: 'Coding corrections',
           type: 'FRONT_COMPONENT',
           configuration: {
             configurationType: 'FRONT_COMPONENT',

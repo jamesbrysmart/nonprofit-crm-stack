@@ -3,7 +3,6 @@ import {
   STANDARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIERS,
   definePageLayoutTab,
 } from 'twenty-sdk/define';
-import { GIFTS_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-opportunity.field';
 import { OPPORTUNITY_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/opportunity-home-core.view';
 
 export default definePageLayoutTab({
@@ -23,16 +22,6 @@ export default definePageLayoutTab({
       configuration: {
         configurationType: 'FIELDS',
         viewUniversalIdentifier: OPPORTUNITY_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
-      },
-    },
-    {
-      universalIdentifier: '30d479d7-42ca-4ca5-9faf-32dc5db735bf',
-      title: 'Linked gifts',
-      type: 'FIELD',
-      configuration: {
-        configurationType: 'FIELD',
-        fieldMetadataId: GIFTS_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
-        fieldDisplayMode: 'FIELD',
       },
     },
   ],

@@ -5,6 +5,8 @@ import type {
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import {
   callAppRoute,
+  createCompany,
+  createOpportunity,
   createRecurringAgreement,
   createPerson,
   loadCurrentGiftAidClaimBatch,
@@ -288,5 +290,104 @@ describe('Manual gift entry routes', () => {
     expect(gift?.recurringAgreement?.id).toBe(recurringAgreement.id);
     expect(response.recurringAgreementId).toBe(recurringAgreement.id);
     expect(gift?.recurringAgreement?.nextExpectedAt).toBe('2026-05-21');
+  });
+
+  it('should create a company gift linked to an existing opportunity', async () => {
+    const suffix = `${Date.now()}-opportunity-gift`;
+    const company = await createCompany({
+      name: `Example Trust ${suffix}`,
+    });
+    const opportunity = await createOpportunity({
+      name: `Example Trust grant ${suffix}`,
+      companyId: company.id,
+      fundingType: 'TRUST_FOUNDATION',
+      awardedAmountMicros: 10_000_000,
+    });
+
+    const response = await callAppRoute<ManualGiftEntryResponse>(
+      '/s/manual-gift-entry/create-gift',
+      {
+        donorType: 'COMPANY',
+        companyName: company.name,
+        amountValue: '1000.00',
+        currencyCode: 'GBP',
+        paymentType: 'BANK_TRANSFER',
+        giftDate: '2026-04-25',
+        giftType: 'GRANT',
+        companyChoice: 'USE_EXISTING',
+        selectedCompanyId: company.id,
+        selectedOpportunityId: opportunity.id,
+      },
+    );
+
+    const gift = await loadGiftById(response.giftId);
+
+    expect(gift?.company?.id).toBe(company.id);
+    expect(gift?.opportunity?.id).toBe(opportunity.id);
+    expect(gift?.opportunity?.company?.id).toBe(company.id);
+    expect(gift?.giftType).toBe('GRANT');
+  });
+
+  it('should reject an opportunity that belongs to another selected company', async () => {
+    const suffix = `${Date.now()}-opportunity-mismatch`;
+    const opportunityCompany = await createCompany({
+      name: `Opportunity company ${suffix}`,
+    });
+    const selectedCompany = await createCompany({
+      name: `Selected company ${suffix}`,
+    });
+    const opportunity = await createOpportunity({
+      name: `Mismatched grant ${suffix}`,
+      companyId: opportunityCompany.id,
+      fundingType: 'GRANT',
+    });
+
+    await expect(
+      callAppRoute<ManualGiftEntryResponse>(
+        '/s/manual-gift-entry/create-gift',
+        {
+          donorType: 'COMPANY',
+          companyName: selectedCompany.name,
+          amountValue: '1000.00',
+          currencyCode: 'GBP',
+          paymentType: 'BANK_TRANSFER',
+          giftDate: '2026-04-25',
+          giftType: 'GRANT',
+          companyChoice: 'USE_EXISTING',
+          selectedCompanyId: selectedCompany.id,
+          selectedOpportunityId: opportunity.id,
+        },
+      ),
+    ).rejects.toThrow(
+      'Selected opportunity does not belong to the selected company',
+    );
+  });
+
+  it('should create a company gift without an opportunity', async () => {
+    const suffix = `${Date.now()}-company-only`;
+    const company = await createCompany({
+      name: `Corporate donor ${suffix}`,
+    });
+
+    const response = await callAppRoute<ManualGiftEntryResponse>(
+      '/s/manual-gift-entry/create-gift',
+      {
+        donorType: 'COMPANY',
+        companyName: company.name,
+        amountValue: '250.00',
+        currencyCode: 'GBP',
+        paymentType: 'BANK_TRANSFER',
+        giftDate: '2026-04-25',
+        giftType: 'DONATION',
+        companyChoice: 'USE_EXISTING',
+        selectedCompanyId: company.id,
+      },
+    );
+
+    const gift = await loadGiftById(response.giftId);
+
+    expect(gift?.company?.id).toBe(company.id);
+    expect(gift?.opportunity ?? null).toBeNull();
+    expect(gift?.giftType).toBe('DONATION');
   });
 });

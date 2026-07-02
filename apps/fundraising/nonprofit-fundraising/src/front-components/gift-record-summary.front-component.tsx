@@ -10,6 +10,7 @@ import {
   badgeStyle,
   compactValueStyle,
   compactWidgetRootStyle,
+  contextMetricStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
 
@@ -18,19 +19,36 @@ export const GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
 
 type GiftRecordSummaryRecord = {
   id: string;
+  giftType?: string | null;
+  paymentType?: string | null;
+  isAnonymousDonor?: boolean | null;
   amount?: {
     amountMicros?: number | null;
     currencyCode?: string | null;
   } | null;
   giftDate?: string | null;
   provider?: string | null;
-  providerPaymentId?: string | null;
+  coveredFeeAmount?: {
+    amountMicros?: number | null;
+    currencyCode?: string | null;
+  } | null;
+  grossPaymentAmount?: {
+    amountMicros?: number | null;
+    currencyCode?: string | null;
+  } | null;
+  processingFeeAmount?: {
+    amountMicros?: number | null;
+    currencyCode?: string | null;
+  } | null;
+  netReceivedAmount?: {
+    amountMicros?: number | null;
+    currencyCode?: string | null;
+  } | null;
   refundedAmount?: {
     amountMicros?: number | null;
     currencyCode?: string | null;
   } | null;
   refundDate?: string | null;
-  giftAidStatus?: string | null;
   donor?: {
     id?: string | null;
     name?: {
@@ -42,14 +60,47 @@ type GiftRecordSummaryRecord = {
     id?: string | null;
     name?: string | null;
   } | null;
+  appeal?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+  appealSource?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+  fund?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+  opportunity?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
   recurringAgreement?: {
     id?: string | null;
     name?: string | null;
   } | null;
+  softCreditPerson?: {
+    id?: string | null;
+    name?: {
+      firstName?: string | null;
+      lastName?: string | null;
+    } | null;
+  } | null;
+  softCreditCompany?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+  softCreditType?: string | null;
   giftAidClaimBatch?: {
     id?: string | null;
     name?: string | null;
   } | null;
+};
+
+type SummaryItem = {
+  label: string;
+  value: string;
 };
 
 const normalizeString = (value: string | null | undefined) =>
@@ -68,8 +119,40 @@ const formatAmount = (amount: GiftRecordSummaryRecord['amount']) => {
     return 'Amount not recorded';
   }
 
-  return `${currency} ${(micros / 1_000_000).toFixed(2)}`;
+  const value = micros / 1_000_000;
+
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency,
+      currencyDisplay: 'narrowSymbol',
+    }).format(value);
+  } catch {
+    return `${currency} ${value.toFixed(2)}`;
+  }
 };
+
+const hasAmount = (amount: GiftRecordSummaryRecord['amount']) =>
+  typeof amount?.amountMicros === 'number';
+
+const hasPositiveAmount = (amount: GiftRecordSummaryRecord['amount']) =>
+  typeof amount?.amountMicros === 'number' && amount.amountMicros > 0;
+
+const amountsDiffer = (
+  first: GiftRecordSummaryRecord['amount'],
+  second: GiftRecordSummaryRecord['amount'],
+) =>
+  typeof first?.amountMicros === 'number' &&
+  typeof second?.amountMicros === 'number' &&
+  first.amountMicros !== second.amountMicros;
+
+const formatSelectValue = (value: string | null | undefined) =>
+  normalizeString(value)
+    .toLowerCase()
+    .split('_')
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
 
 const formatGiftDate = (value: string | null | undefined) => {
   const normalized = normalizeString(value);
@@ -90,6 +173,10 @@ const formatGiftDate = (value: string | null | undefined) => {
 };
 
 const getGiftIdentity = (record: GiftRecordSummaryRecord) => {
+  if (record.isAnonymousDonor === true) {
+    return 'Anonymous donor';
+  }
+
   const donorName = buildPersonName(
     record.donor?.name?.firstName,
     record.donor?.name?.lastName,
@@ -111,19 +198,6 @@ const getGiftIdentity = (record: GiftRecordSummaryRecord) => {
   return 'Gift record';
 };
 
-const getGiftAidSignal = (status: string | null | undefined) => {
-  switch (normalizeString(status).toUpperCase()) {
-    case 'CLAIMABLE':
-      return { tone: 'success' as const, label: 'Gift Aid claimable' };
-    case 'NEEDS_REVIEW':
-      return { tone: 'warning' as const, label: 'Gift Aid needs review' };
-    case 'NOT_CLAIMABLE':
-      return { tone: 'neutral' as const, label: 'Gift Aid not claimable' };
-    default:
-      return null;
-  }
-};
-
 const getRefundSignal = (record: GiftRecordSummaryRecord) => {
   const refundState = deriveRefundState({
     amount: record.amount,
@@ -140,33 +214,66 @@ const getRefundSignal = (record: GiftRecordSummaryRecord) => {
   }
 };
 
-const getPostureMessage = (record: GiftRecordSummaryRecord) => {
-  const refundState = deriveRefundState({
-    amount: record.amount,
-    refundedAmount: record.refundedAmount,
-  });
+const compactItems = (items: Array<SummaryItem | null>) =>
+  items.filter((item): item is SummaryItem => item !== null);
 
-  if (refundState === 'FULLY_REFUNDED') {
-    return 'A refund has been recorded on this gift. Treat it as a lifecycle event rather than an ordinary active gift.';
+const relationshipName = (
+  relation: { name?: string | null } | null | undefined,
+) => {
+  const name = normalizeString(relation?.name);
+  return name === '' ? null : name;
+};
+
+const personRelationshipName = (
+  relation:
+    | {
+        name?: {
+          firstName?: string | null;
+          lastName?: string | null;
+        } | null;
+      }
+    | null
+    | undefined,
+) => {
+  const name = buildPersonName(
+    relation?.name?.firstName,
+    relation?.name?.lastName,
+  );
+  return name === '' ? null : name;
+};
+
+const sectionTitleStyle = {
+  ...secondaryTextStyle,
+  color: '#1f2328',
+  fontWeight: 600,
+};
+
+const renderSummarySection = (title: string, items: SummaryItem[]) =>
+  items.length > 0 ? (
+    <div style={{ display: 'grid', gap: '6px' }}>
+      <div style={sectionTitleStyle}>{title}</div>
+      <SummaryStrip>
+        {items.map((item) => (
+          <SummaryStripItem
+            key={`${title}-${item.label}`}
+            label={item.label}
+            value={item.value}
+          />
+        ))}
+      </SummaryStrip>
+    </div>
+  ) : null;
+
+const getGiftSummaryLine = (record: GiftRecordSummaryRecord) => {
+  const giftType = formatSelectValue(record.giftType) || 'Gift';
+  const identity = getGiftIdentity(record);
+  const giftDate = formatGiftDate(record.giftDate);
+
+  if (identity === 'Gift record') {
+    return `${giftType} · ${giftDate}`;
   }
 
-  if (refundState === 'PARTIALLY_REFUNDED') {
-    return 'A partial refund has been recorded on this gift. Review linked areas before changing key details.';
-  }
-
-  if (normalizeString(record.giftAidClaimBatch?.id) !== '') {
-    return 'This gift is already part of Gift Aid claim work. Review linked areas before changing key details.';
-  }
-
-  if (normalizeString(record.recurringAgreement?.id) !== '') {
-    return 'This gift is linked to a recurring agreement. Review linked areas before changing key details.';
-  }
-
-  if (normalizeString(record.provider) !== '') {
-    return 'This gift came from a tracked source. Review provider details before changing key details.';
-  }
-
-  return 'This gift currently has no linked downstream context and is in a calmer maintenance state.';
+  return `${giftType} from ${identity} · ${giftDate}`;
 };
 
 const loadGift = async (
@@ -181,19 +288,36 @@ const loadGift = async (
         },
       },
       id: true,
+      giftType: true,
+      paymentType: true,
+      isAnonymousDonor: true,
       amount: {
         amountMicros: true,
         currencyCode: true,
       },
       giftDate: true,
       provider: true,
-      providerPaymentId: true,
+      coveredFeeAmount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
+      grossPaymentAmount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
+      processingFeeAmount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
+      netReceivedAmount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
       refundedAmount: {
         amountMicros: true,
         currencyCode: true,
       },
       refundDate: true,
-      giftAidStatus: true,
       donor: {
         id: true,
         name: {
@@ -205,10 +329,38 @@ const loadGift = async (
         id: true,
         name: true,
       },
+      appeal: {
+        id: true,
+        name: true,
+      },
+      appealSource: {
+        id: true,
+        name: true,
+      },
+      fund: {
+        id: true,
+        name: true,
+      },
+      opportunity: {
+        id: true,
+        name: true,
+      },
       recurringAgreement: {
         id: true,
         name: true,
       },
+      softCreditPerson: {
+        id: true,
+        name: {
+          firstName: true,
+          lastName: true,
+        },
+      },
+      softCreditCompany: {
+        id: true,
+        name: true,
+      },
+      softCreditType: true,
       giftAidClaimBatch: {
         id: true,
         name: true,
@@ -292,60 +444,95 @@ const GiftRecordSummaryWidget = () => {
     return <div style={secondaryTextStyle}>Gift not found.</div>;
   }
 
-  const giftAidSignal = getGiftAidSignal(record.giftAidStatus);
   const refundSignal = getRefundSignal(record);
   const provider = normalizeString(record.provider);
   const recurringAgreementName = normalizeString(record.recurringAgreement?.name);
   const claimBatchName = normalizeString(record.giftAidClaimBatch?.name);
+  const appealName = relationshipName(record.appeal);
+  const appealSourceName = relationshipName(record.appealSource);
+  const fundName = relationshipName(record.fund);
+  const opportunityName = relationshipName(record.opportunity);
+  const softCreditPersonName = personRelationshipName(record.softCreditPerson);
+  const softCreditCompanyName = relationshipName(record.softCreditCompany);
+  const softCreditName = softCreditPersonName ?? softCreditCompanyName;
+  const softCreditType = formatSelectValue(record.softCreditType);
+
+  const coreItems = compactItems([
+    {
+      label: 'Gift type',
+      value: formatSelectValue(record.giftType) || 'Donation',
+    },
+    {
+      label: 'Payment type',
+      value: formatSelectValue(record.paymentType) || 'Not recorded',
+    },
+    provider !== '' ? { label: 'Provider', value: provider } : null,
+    record.isAnonymousDonor === true
+      ? { label: 'Donor status', value: 'Anonymous donor' }
+      : null,
+  ]);
+  const fundraisingItems = compactItems([
+    appealSourceName
+      ? { label: 'Appeal source', value: appealSourceName }
+      : null,
+    appealName ? { label: 'Appeal', value: appealName } : null,
+    fundName ? { label: 'Fund', value: fundName } : null,
+    opportunityName ? { label: 'Opportunity', value: opportunityName } : null,
+    recurringAgreementName !== ''
+      ? { label: 'Recurring', value: recurringAgreementName }
+      : null,
+    softCreditName
+      ? {
+          label: softCreditType === '' ? 'Soft credit' : softCreditType,
+          value: softCreditName,
+        }
+      : null,
+  ]);
+  const financialItems = compactItems([
+    hasPositiveAmount(record.refundedAmount)
+      ? { label: 'Refunded', value: formatAmount(record.refundedAmount) }
+      : null,
+    normalizeString(record.refundDate) !== ''
+      ? { label: 'Refund date', value: formatGiftDate(record.refundDate) }
+      : null,
+    hasAmount(record.grossPaymentAmount) &&
+    amountsDiffer(record.grossPaymentAmount, record.amount)
+      ? { label: 'Payment total', value: formatAmount(record.grossPaymentAmount) }
+      : null,
+    hasPositiveAmount(record.coveredFeeAmount)
+      ? { label: 'Covered fees', value: formatAmount(record.coveredFeeAmount) }
+      : null,
+    hasPositiveAmount(record.processingFeeAmount)
+      ? {
+          label: 'Processing fees',
+          value: formatAmount(record.processingFeeAmount),
+        }
+      : null,
+    hasAmount(record.netReceivedAmount) &&
+    amountsDiffer(record.netReceivedAmount, record.amount)
+      ? { label: 'Net received', value: formatAmount(record.netReceivedAmount) }
+      : null,
+    claimBatchName !== ''
+      ? { label: 'Gift Aid claim', value: claimBatchName }
+      : null,
+  ]);
 
   return (
     <div style={compactWidgetRootStyle}>
-      <div style={compactValueStyle}>{getGiftIdentity(record)}</div>
-      <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
-        {formatAmount(record.amount)} · {formatGiftDate(record.giftDate)}
-      </div>
-
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        {giftAidSignal ? (
-          <span style={badgeStyle(giftAidSignal.tone)}>{giftAidSignal.label}</span>
-        ) : null}
-        {refundSignal ? (
+      {refundSignal ? (
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <span style={badgeStyle(refundSignal.tone)}>{refundSignal.label}</span>
-        ) : null}
-        {recurringAgreementName !== '' ? (
-          <span style={badgeStyle('neutral')}>Recurring linked</span>
-        ) : null}
-        {provider !== '' ? (
-          <span style={badgeStyle('neutral')}>Source tracked</span>
-        ) : null}
+        </div>
+      ) : null}
+
+      <div style={contextMetricStyle}>{formatAmount(record.amount)}</div>
+      <div style={{ ...compactValueStyle, color: '#1f2328' }}>
+        {getGiftSummaryLine(record)}
       </div>
 
-      <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
-        {getPostureMessage(record)}
-      </div>
-
-      <SummaryStrip>
-        <SummaryStripItem
-          label="Provider"
-          value={provider === '' ? 'Manual / not recorded' : provider}
-        />
-        <SummaryStripItem
-          label="Recurring"
-          value={recurringAgreementName === '' ? 'Not linked' : recurringAgreementName}
-        />
-        <SummaryStripItem
-          label="Gift Aid claim"
-          value={claimBatchName === '' ? 'Not in a claim batch' : claimBatchName}
-        />
-        <SummaryStripItem
-          label="Provider reference"
-          value={
-            normalizeString(record.providerPaymentId) === ''
-              ? 'Not recorded'
-              : normalizeString(record.providerPaymentId)
-          }
-        />
-      </SummaryStrip>
+      {renderSummarySection('Gift context', coreItems)}
+      {renderSummarySection('Fundraising context', fundraisingItems)}
+      {renderSummarySection('Financial context', financialItems)}
     </div>
   );
 };

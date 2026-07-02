@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildDonorExistingRollupsFilter,
   collectDonorIds,
   computeDonorRollupSummary,
   getAffectedDonorIdsFromGiftDelete,
@@ -20,6 +21,29 @@ describe('collectDonorIds', () => {
         undefined,
       ]),
     ).toEqual(['person_1', 'person_2']);
+  });
+});
+
+describe('buildDonorExistingRollupsFilter', () => {
+  it('uses currency subfield filters for composite amount fields', () => {
+    expect(buildDonorExistingRollupsFilter()).toMatchObject({
+      or: expect.arrayContaining([
+        {
+          lastGiftAmount: {
+            amountMicros: {
+              is: 'NOT_NULL',
+            },
+          },
+        },
+        {
+          largestGiftAmount: {
+            amountMicros: {
+              is: 'NOT_NULL',
+            },
+          },
+        },
+      ]),
+    });
   });
 });
 

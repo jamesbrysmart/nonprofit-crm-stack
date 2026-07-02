@@ -742,10 +742,6 @@ export const recomputeAllCompanyRollups = async (client: CoreApiClient) => {
   return recomputeCompanyRollups(client, companyIds);
 };
 
-export const getAffectedCompanyIdsFromGiftCreate = (
-  event: DatabaseEventPayload<ObjectRecordCreateEvent<GiftCompanyEventRecord>>,
-) => collectCompanyIds([event.properties.after?.companyId]);
-
 export const getAffectedCompanyIdsFromGiftUpdate = (
   event: DatabaseEventPayload<ObjectRecordUpdateEvent<GiftCompanyEventRecord>>,
 ) =>

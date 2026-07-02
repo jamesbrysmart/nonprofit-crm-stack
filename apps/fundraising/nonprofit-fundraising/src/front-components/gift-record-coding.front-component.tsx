@@ -4,10 +4,7 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
 import {
   ActionButton,
-  badgeStyle,
   compactDividerSectionStyle,
-  compactMetaGridStyle,
-  compactMetaItemStyle,
   compactWidgetRootStyle,
   inputStyle,
   labelStyle,
@@ -22,7 +19,6 @@ import {
 import { saveGiftCoding } from 'src/gift-record/gift-coding.api';
 import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
-import type { AppealSourceSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
 
 export const GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '93dc8e25-d8c5-4d41-b43b-f72bf23f1e13';
@@ -45,21 +41,6 @@ type GiftCodingRecord = {
     id?: string | null;
     name?: string | null;
   } | null;
-  softCreditPerson?: {
-    id?: string | null;
-    name?: {
-      firstName?: string | null;
-      lastName?: string | null;
-    } | null;
-    emails?: {
-      primaryEmail?: string | null;
-    } | null;
-  } | null;
-  softCreditCompany?: {
-    id?: string | null;
-    name?: string | null;
-  } | null;
-  softCreditType?: string | null;
 };
 
 const normalizeString = (value: string | null | undefined) =>
@@ -86,50 +67,6 @@ const getInputEventValue = (event: unknown) => {
     'value' in event.target
   ) {
     return String(event.target.value ?? '');
-  }
-
-  return '';
-};
-
-const buildPersonDisplayName = (
-  person: AppealSourceSummary['fundraiserPerson'],
-) => {
-  if (!person) {
-    return '';
-  }
-
-  const firstName = normalizeString(person.name?.firstName);
-  const lastName = normalizeString(person.name?.lastName);
-  const fullName = `${firstName} ${lastName}`.trim();
-
-  if (fullName !== '') {
-    return fullName;
-  }
-
-  return normalizeString(person.emails?.primaryEmail);
-};
-
-const getDerivedSoftCreditLabel = (
-  appealSource: AppealSourceSummary | null,
-) => {
-  if (!appealSource) {
-    return '';
-  }
-
-  const fundraiserPersonName = buildPersonDisplayName(
-    appealSource.fundraiserPerson,
-  );
-
-  if (fundraiserPersonName !== '') {
-    return `Fundraiser: ${fundraiserPersonName}`;
-  }
-
-  const fundraiserCompanyName = normalizeString(
-    appealSource.fundraiserCompany?.name,
-  );
-
-  if (fundraiserCompanyName !== '') {
-    return `Fundraiser: ${fundraiserCompanyName}`;
   }
 
   return '';
@@ -163,21 +100,6 @@ const loadGiftCodingRecord = async (
         id: true,
         name: true,
       },
-      softCreditPerson: {
-        id: true,
-        name: {
-          firstName: true,
-          lastName: true,
-        },
-        emails: {
-          primaryEmail: true,
-        },
-      },
-      softCreditCompany: {
-        id: true,
-        name: true,
-      },
-      softCreditType: true,
     },
   } as any);
 
@@ -192,6 +114,7 @@ const GiftRecordCoding = () => {
   const [selectedAppealId, setSelectedAppealId] = useState('');
   const [selectedAppealSourceId, setSelectedAppealSourceId] = useState('');
   const [selectedFundId, setSelectedFundId] = useState('');
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const {
     appeals,
@@ -274,16 +197,9 @@ const GiftRecordCoding = () => {
     () => appeals.find((appeal) => appeal.id === selectedAppealId) ?? null,
     [appeals, selectedAppealId],
   );
-  const selectedAppealSource = useMemo(
-    () =>
-      appealSources.find(
-        (appealSource) => appealSource.id === selectedAppealSourceId,
-      ) ?? null,
-    [appealSources, selectedAppealSourceId],
-  );
 
   if (loading) {
-    return <div style={secondaryTextStyle}>Loading gift coding...</div>;
+    return <div style={secondaryTextStyle}>Loading coding corrections...</div>;
   }
 
   if (error) {
@@ -297,22 +213,6 @@ const GiftRecordCoding = () => {
   const currentAppealId = normalizeString(record.appeal?.id);
   const currentAppealSourceId = normalizeString(record.appealSource?.id);
   const currentFundId = normalizeString(record.fund?.id);
-  const currentAppealName = normalizeString(record.appeal?.name);
-  const currentAppealSourceName = normalizeString(record.appealSource?.name);
-  const currentFundName = normalizeString(record.fund?.name);
-  const currentSoftCreditPersonName = buildPersonDisplayName(
-    record.softCreditPerson,
-  );
-  const currentSoftCreditCompanyName = normalizeString(
-    record.softCreditCompany?.name,
-  );
-  const currentSoftCreditLabel =
-    currentSoftCreditPersonName !== ''
-      ? `Fundraiser: ${currentSoftCreditPersonName}`
-      : currentSoftCreditCompanyName !== ''
-        ? `Fundraiser: ${currentSoftCreditCompanyName}`
-        : '';
-  const derivedSoftCreditLabel = getDerivedSoftCreditLabel(selectedAppealSource);
   const hasUnsavedChanges =
     selectedAppealId !== currentAppealId ||
     selectedAppealSourceId !== currentAppealSourceId ||
@@ -369,6 +269,7 @@ const GiftRecordCoding = () => {
         message: 'Gift coding saved.',
         variant: 'success',
       });
+      setEditing(false);
     } catch (saveError) {
       await enqueueSnackbar({
         message:
@@ -385,152 +286,144 @@ const GiftRecordCoding = () => {
   return (
     <div style={compactWidgetRootStyle}>
       <div style={sectionHeaderStyle}>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={badgeStyle('neutral')}>Canonical coding</span>
-          {currentAppealName !== '' ? (
-            <span style={badgeStyle('success')}>Appeal set</span>
-          ) : null}
-          {currentAppealSourceName !== '' ? (
-            <span style={badgeStyle('success')}>Source set</span>
-          ) : null}
-          {currentFundName !== '' ? (
-            <span style={badgeStyle('success')}>Fund set</span>
-          ) : null}
+        <div style={{ display: 'grid', gap: '4px' }}>
+          <div style={secondaryTextStyle}>
+            Use only to correct attribution after processing. Most coding should
+            be resolved during gift staging.
+          </div>
         </div>
-        <ActionButton
-          title="Save coding"
-          variant="secondary"
-          onClick={() => {
-            void handleSaveCoding();
-          }}
-          disabled={saving || loadingAppeals || loadingFunds || !hasUnsavedChanges}
-        />
+        {editing ? (
+          <ActionButton
+            title="Cancel"
+            variant="secondary"
+            onClick={() => {
+              setSelectedAppealId(currentAppealId);
+              setSelectedAppealSourceId(currentAppealSourceId);
+              setSelectedFundId(currentFundId);
+              setEditing(false);
+            }}
+            disabled={saving}
+          />
+        ) : (
+          <ActionButton
+            title="Edit coding"
+            variant="secondary"
+            onClick={() => setEditing(true)}
+          />
+        )}
       </div>
 
-      <div style={compactMetaGridStyle}>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Current appeal</div>
-          <div style={secondaryTextStyle}>
-            {currentAppealName === '' ? 'No appeal set.' : currentAppealName}
-          </div>
-        </div>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Current fund</div>
-          <div style={secondaryTextStyle}>
-            {currentFundName === '' ? 'No fund set.' : currentFundName}
-          </div>
-        </div>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Current appeal source</div>
-          <div style={secondaryTextStyle}>
-            {currentAppealSourceName === ''
-              ? 'No appeal source set.'
-              : currentAppealSourceName}
-          </div>
-        </div>
-        <div style={compactMetaItemStyle}>
-          <div style={labelStyle}>Current soft credit</div>
-          <div style={secondaryTextStyle}>
-            {currentSoftCreditLabel === ''
-              ? 'No soft credit set.'
-              : currentSoftCreditLabel}
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gap: '10px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        }}
-      >
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Appeal</span>
-          <select
-            style={inputStyle}
-            value={selectedAppealId}
-            onChange={(event) => handleAppealChange(getInputEventValue(event))}
-            disabled={saving || loadingAppeals}
-          >
-            <option value="">No appeal</option>
-            {appeals.map((appeal) => (
-              <option key={appeal.id} value={appeal.id}>
-                {appeal.name ?? 'Unnamed appeal'}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Fund</span>
-          <select
-            style={inputStyle}
-            value={selectedFundId}
-            onChange={(event) => setSelectedFundId(getInputEventValue(event))}
-            disabled={saving || loadingFunds}
-          >
-            <option value="">No fund</option>
-            {funds.map((fund) => (
-              <option key={fund.id} value={fund.id}>
-                {fund.name ?? 'Unnamed fund'}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Appeal source</span>
-          <select
-            style={inputStyle}
-            value={selectedAppealSourceId}
-            onChange={(event) =>
-              handleAppealSourceChange(getInputEventValue(event))
-            }
-            disabled={saving || loadingAppealSources}
-          >
-            <option value="">No appeal source</option>
-            {appealSources.map((appealSource) => (
-              <option key={appealSource.id} value={appealSource.id}>
-                {appealSource.name ?? 'Unnamed appeal source'}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {selectedAppeal?.defaultFund?.name ? (
+      {editing ? (
         <div style={compactDividerSectionStyle}>
-          <div style={labelStyle}>Appeal default fund</div>
-          <div style={secondaryTextStyle}>
-            {selectedAppeal.defaultFund.name}
-            {selectedFundId === '' ? ' will be used if you leave Fund empty.' : ''}
+          <div
+            style={{
+              display: 'grid',
+              gap: '10px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            }}
+          >
+            <label style={{ display: 'grid', gap: '4px' }}>
+              <span style={labelStyle}>Appeal</span>
+              <select
+                style={inputStyle}
+                value={selectedAppealId}
+                onChange={(event) =>
+                  handleAppealChange(getInputEventValue(event))
+                }
+                disabled={saving || loadingAppeals}
+              >
+                <option value="">No appeal</option>
+                {appeals.map((appeal) => (
+                  <option key={appeal.id} value={appeal.id}>
+                    {appeal.name ?? 'Unnamed appeal'}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ display: 'grid', gap: '4px' }}>
+              <span style={labelStyle}>Fund</span>
+              <select
+                style={inputStyle}
+                value={selectedFundId}
+                onChange={(event) =>
+                  setSelectedFundId(getInputEventValue(event))
+                }
+                disabled={saving || loadingFunds}
+              >
+                <option value="">No fund</option>
+                {funds.map((fund) => (
+                  <option key={fund.id} value={fund.id}>
+                    {fund.name ?? 'Unnamed fund'}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ display: 'grid', gap: '4px' }}>
+              <span style={labelStyle}>Appeal source</span>
+              <select
+                style={inputStyle}
+                value={selectedAppealSourceId}
+                onChange={(event) =>
+                  handleAppealSourceChange(getInputEventValue(event))
+                }
+                disabled={saving || loadingAppealSources}
+              >
+                <option value="">No appeal source</option>
+                {appealSources.map((appealSource) => (
+                  <option key={appealSource.id} value={appealSource.id}>
+                    {appealSource.name ?? 'Unnamed appeal source'}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-        </div>
-      ) : null}
 
-      <div style={compactDividerSectionStyle}>
-        <div style={labelStyle}>Soft credit</div>
-        <div style={secondaryTextStyle}>
-          {derivedSoftCreditLabel !== ''
-            ? `${derivedSoftCreditLabel}. Derived from the selected appeal source.`
-            : selectedAppealSourceId !== ''
-              ? 'No fundraiser soft credit will be derived from the selected appeal source.'
-              : 'Select an appeal source with a linked fundraiser to derive soft credit.'}
-        </div>
-      </div>
+          {selectedAppeal?.defaultFund?.name ? (
+            <div style={compactDividerSectionStyle}>
+              <div style={labelStyle}>Appeal default fund</div>
+              <div style={secondaryTextStyle}>
+                {selectedAppeal.defaultFund.name}
+                {selectedFundId === ''
+                  ? ' will be used if you leave Fund empty.'
+                  : ''}
+              </div>
+            </div>
+          ) : null}
 
-      {appealOptionsError || appealSourceOptionsError || fundOptionsError ? (
-        <div style={compactDividerSectionStyle}>
-          {appealOptionsError ? (
-            <div style={secondaryTextStyle}>{appealOptionsError}</div>
+          {appealOptionsError || appealSourceOptionsError || fundOptionsError ? (
+            <div style={compactDividerSectionStyle}>
+              {appealOptionsError ? (
+                <div style={secondaryTextStyle}>{appealOptionsError}</div>
+              ) : null}
+              {appealSourceOptionsError ? (
+                <div style={secondaryTextStyle}>{appealSourceOptionsError}</div>
+              ) : null}
+              {fundOptionsError ? (
+                <div style={secondaryTextStyle}>{fundOptionsError}</div>
+              ) : null}
+            </div>
           ) : null}
-          {appealSourceOptionsError ? (
-            <div style={secondaryTextStyle}>{appealSourceOptionsError}</div>
-          ) : null}
-          {fundOptionsError ? (
-            <div style={secondaryTextStyle}>{fundOptionsError}</div>
-          ) : null}
+
+          <div style={sectionHeaderStyle}>
+            <div style={secondaryTextStyle}>
+              Save only if the committed gift was coded incorrectly.
+            </div>
+            <ActionButton
+              title="Save coding"
+              variant="secondary"
+              onClick={() => {
+                void handleSaveCoding();
+              }}
+              disabled={
+                saving ||
+                loadingAppeals ||
+                loadingFunds ||
+                !hasUnsavedChanges
+              }
+            />
+          </div>
         </div>
       ) : null}
     </div>
@@ -540,6 +433,6 @@ const GiftRecordCoding = () => {
 export default defineFrontComponent({
   universalIdentifier: GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   name: 'gift-record-coding',
-  description: 'Optional appeal and fund coding widget for committed gifts.',
+  description: 'Correction-only appeal and fund coding widget for committed gifts.',
   component: GiftRecordCoding,
 });

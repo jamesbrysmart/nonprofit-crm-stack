@@ -15,13 +15,16 @@ import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.se
 import type { RecurringAgreementCadence } from 'src/recurring/recurring.types';
 import type { GiftReadyStatus } from 'src/gift-staging-review/gift-ready-status';
 import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
+import { buildGiftName } from 'src/gifts/gift-name';
 import type { BatchProcessingRow } from './batch-processing.types';
 
 export type SuccessfulWriteback = {
   id: string;
   committedGiftId: string;
   donorId: string;
+  companyId?: string;
   appealId?: string;
+  appealSourceId?: string;
   recurringAgreementId?: string;
   processingStatus: 'PROCESSED';
   errorDetail: null;
@@ -251,7 +254,13 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
   }
 
   return {
-    name: row.name,
+    name: buildGiftName({
+      giftType: 'DONATION',
+      donorName: `${donorFirstName} ${donorLastName}`.trim(),
+      amountMicros: Math.round(amountMicros),
+      currencyCode,
+      giftDate,
+    }),
     amount: {
       currencyCode,
       amountMicros: Math.round(amountMicros),
@@ -709,10 +718,14 @@ export const createGiftViaRowFallback = async (
 
   const createData = { ...payload } as Record<string, unknown>;
   delete createData.donorId;
+  delete createData.companyId;
   delete createData.donorMailingAddress;
   delete createData.giftAidDeclarationId;
   delete createData.recurringAgreementId;
   const appealId = normalizeString(payload.appealId as string | undefined);
+  const companyId = normalizeString(
+    (payload as Record<string, unknown>).companyId as string | undefined,
+  );
   const appealSourceId = normalizeString(
     payload.appealSourceId as string | undefined,
   );
@@ -743,6 +756,17 @@ export const createGiftViaRowFallback = async (
                   connect: {
                     where: {
                       id: donorId,
+                    },
+                  },
+                },
+              }
+            : {}),
+          ...(companyId !== ''
+            ? {
+                company: {
+                  connect: {
+                    where: {
+                      id: companyId,
                     },
                   },
                 },
@@ -857,7 +881,9 @@ export const createGiftViaRowFallback = async (
     id: row.id,
     committedGiftId: giftId,
     donorId,
+    ...(companyId !== '' ? { companyId } : {}),
     ...(appealId !== '' ? { appealId } : {}),
+    ...(appealSourceId !== '' ? { appealSourceId } : {}),
     processingStatus: 'PROCESSED',
     errorDetail: null,
     giftReadyStatus: null,

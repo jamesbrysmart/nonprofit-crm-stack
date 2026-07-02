@@ -36,6 +36,18 @@ export const APPEAL_SOURCE_END_DATE_FIELD_UNIVERSAL_IDENTIFIER =
 export const APPEAL_SOURCE_AUDIENCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER =
   '40956cbb-1ee1-4f2a-9e4c-12eb5fd97087';
 
+export const APPEAL_SOURCE_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  'dbd13721-7411-46a7-be6a-814a40fe585a';
+
+export const APPEAL_SOURCE_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '11a7c526-43ce-4f91-8156-529bc10ec1f4';
+
+export const APPEAL_SOURCE_DONOR_COUNT_FIELD_UNIVERSAL_IDENTIFIER =
+  '4026225e-4c4a-48ea-848f-aa0fdc5b76d5';
+
+export const APPEAL_SOURCE_LAST_GIFT_AT_FIELD_UNIVERSAL_IDENTIFIER =
+  '30d2244b-18b9-41f9-b24e-cc4dfe153001';
+
 export default defineObject({
   universalIdentifier: APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
   nameSingular: 'appealSource',
@@ -275,6 +287,51 @@ export default defineObject({
       description:
         'Optional description of the audience, segment, or route associated with this appeal source.',
       icon: 'IconUsersGroup',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        APPEAL_SOURCE_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'raisedAmount',
+      label: 'Raised amount',
+      description:
+        'Materialized total value of committed cash gifts coded to this appeal source.',
+      icon: 'IconCurrencyPound',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier:
+        APPEAL_SOURCE_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.NUMBER,
+      name: 'giftCount',
+      label: 'Gift count',
+      description:
+        'Materialized number of committed cash gifts coded to this appeal source.',
+      icon: 'IconHash',
+      defaultValue: 0,
+    },
+    {
+      universalIdentifier:
+        APPEAL_SOURCE_DONOR_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.NUMBER,
+      name: 'donorCount',
+      label: 'Donor count',
+      description:
+        'Materialized count of distinct contributors linked to gifts on this appeal source.',
+      icon: 'IconUsers',
+      defaultValue: 0,
+    },
+    {
+      universalIdentifier:
+        APPEAL_SOURCE_LAST_GIFT_AT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.DATE,
+      name: 'lastGiftAt',
+      label: 'Last gift date',
+      description: 'Most recent committed gift date coded to this appeal source.',
+      icon: 'IconCalendarStats',
       isNullable: true,
       defaultValue: null,
     },
