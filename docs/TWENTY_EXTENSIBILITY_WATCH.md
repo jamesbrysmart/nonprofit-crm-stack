@@ -47,13 +47,13 @@ When updating this doc in regular syncs, keep it lightweight:
 3. Add 2-4 bullet highlights on direction, drift, or breaking-change signals.
 4. Record only current implications; skip deeper migration design discussion.
 
-## Current Extensibility Surface (baseline verified 2026-06-15)
+## Current Extensibility Surface (baseline verified 2026-06-30)
 
 - **twenty-cli** (packages/twenty-cli):
   - Now deprecated in favor of `twenty-sdk` (see `packages/twenty-cli/README.md`).
   - Command name stays `twenty`, but install guidance now points to `npm install -g twenty-sdk`.
 - **twenty-sdk** (packages/twenty-sdk):
-  - Current package version in-tree: `2.14.0` (current merged repo head is ahead of the latest release tag `v2.13.2`, so repo head, runtime tag, and published package version still need to be treated as distinct signals).
+  - Current package version in-tree: `2.18.0` (current merged repo head is ahead of the latest runtime release line we have been testing locally, so repo head, runtime tag, and published package version still need to be treated as distinct signals).
   - CLI command registry now includes: `remote add`, `remote list`, `remote remove`, `remote status`, `remote switch`, `build`, `deploy`, `dev`, `publish`, `install`, `typecheck`, `uninstall`, `add`, `logs`, `exec`, `catalog-sync`, plus `server start|status|logs|stop|reset`.
   - `dev` now explicitly supports `--once` for one-shot build/sync/typed-client generation without a long-running watcher.
   - Local server management now also supports a separate `--test` instance, which gives the app workflow a cleaner isolated integration-test story.
@@ -65,7 +65,8 @@ When updating this doc in regular syncs, keep it lightweight:
     - `twenty-sdk/front-component` for runtime hooks/functions used inside front components
     - `twenty-sdk/logic-function` for runtime-facing logic-function types and future runtime helpers
     - `twenty-sdk/billing` for credit-charging helpers
-    - `twenty-sdk/ui`, `twenty-sdk/cli`, and the front-component-renderer exports remain separate
+    - `twenty-sdk/cli`, `twenty-sdk/utils`, and the front-component-renderer exports remain separate
+    - `twenty-sdk/ui` has been removed from SDK exports; apps should import Twenty UI primitives directly from `twenty-ui` subpaths
     - There is still no root `"."` export, so root-level `from 'twenty-sdk'` imports should be treated as stale unless explicitly reintroduced upstream.
   - Upstream templates/examples now import from `twenty-sdk/define` and `twenty-sdk/front-component`, so older `from 'twenty-sdk'` examples should be treated as version-sensitive/stale unless verified.
   - `deploy` now carries the direct-to-server install path, while `publish` is npm publication only.
@@ -74,18 +75,20 @@ When updating this doc in regular syncs, keep it lightweight:
     - `POST /metadata` for app lifecycle/sync operations, logic-function execution, application token operations, multipart `uploadApplicationFile`, app tarball upload/install, metadata schema introspection, and `logicFunctionLogs` subscriptions.
     - `POST /graphql` remains the core data API / generated client target for workspace data access.
   - The package now depends directly on `twenty-client-sdk` and exposes a narrower `front-component-renderer` surface plus `front-component-renderer/build`, reinforcing the separation between app authoring APIs and front-component build/runtime internals.
+  - `twenty-client-sdk` is now explicitly documented by the SDK changelog as a build/typecheck-time dependency for apps, not a deployed runtime dependency; new scaffolds put it under `devDependencies`, and `twenty build` warns if it remains under `dependencies`.
 - **twenty-ui** (packages/twenty-ui):
   - This is a real Twenty-owned component/theme system, not just CSS:
     - package exports include `./style.css`, `./theme-light.css`, `./theme-dark.css`, plus component subpackages such as `components`, `input`, `layout`, `navigation`, `feedback`, `display`, and `theme`.
-    - the front-component renderer explicitly aliases `twenty-sdk/ui` to Twenty UI for example builds, and the built-in front-component story set includes `twenty-ui-example.front-component`.
-  - Practical read for app work: treat `twenty-sdk/ui` as the intended native UI surface for front components when the active app-tooling version supports it, but keep the current published app scaffold/version as the compatibility baseline until the version gap closes.
+    - the current scaffold imports front-component UI directly from subpaths such as `twenty-ui/data-display` and `twenty-ui/icon`.
+  - Practical read for app work: treat direct `twenty-ui` imports as the intended native UI surface going forward, not `twenty-sdk/ui`. Keep our app-local `ActionButton` mitigation until we deliberately adopt and prove direct `twenty-ui` against the exact runtime and SDK package combination we deploy.
 - **create-twenty-app** (packages/create-twenty-app):
-  - Current package version in-tree: `2.14.0`.
+  - Current package version in-tree: `2.18.0`.
   - Scaffolder now defaults to a minimal app plus test scaffold; richer starting points are example-based (`--example hello-world`, `--example postcard`) rather than `--exhaustive` / `--minimal` mode selection.
   - Scaffolds a single Yarn entrypoint script (`yarn twenty <command>`) instead of many per-command wrappers.
   - Default scaffold now includes application config, a default role, schema/integration test scaffolding with dedicated test-instance setup, and local CI/CD workflow templates; scaffolded source now uses the split SDK import paths (`twenty-sdk/define`, `twenty-sdk/front-component`) consistently.
   - Scaffolder guidance now offers to start a local Twenty dev server automatically, and the documented manual path uses `yarn twenty server start` plus `yarn twenty remote add --local`.
   - Template dependency currently uses `twenty-sdk: latest` (watch for docs/runtime drift when reproducing examples across versions).
+  - Current scaffold dependency shape puts `twenty-sdk`, `twenty-client-sdk`, and `twenty-ui` in `devDependencies`, matching the SDK changelog and the direct UI import direction.
   - Newer scaffold direction now includes a more opinionated app shell by default: a standalone page layout, a front component, a navigation menu item, and the supporting universal identifiers for those entities.
 - **Manifest/build surface (as of current code):**
   - Manifest shape in `packages/twenty-shared/src/application/manifestType.ts` is:
@@ -100,7 +103,7 @@ When updating this doc in regular syncs, keep it lightweight:
   - Build/upload path remains file-oriented (built logic/front-component files, dependencies, and public assets uploaded through `uploadApplicationFile`), but upstream now also documents npm/tarball/server publication paths around that build output.
   - Build/publish docs now treat `build`, `deploy`, `publish`, `install`, and `catalog-sync` as a coherent distribution lifecycle with explicit semver rules for deploy/install/upgrade.
 - **Front component packaging:**
-  - `twenty-sdk` now exports `./front-component-renderer/build` in addition to `./front-component-renderer` and `./ui`, while more renderer internals have moved out of the root SDK surface.
+  - `twenty-sdk` exports `./front-component-renderer/build` in addition to `./front-component-renderer`; `./ui` has been removed.
   - Root SDK exports still provide the higher-level front-component action/API helpers (`navigate`, `openSidePanelPage`, `enqueueSnackbar`, etc.), indicating a richer packaged UI interaction surface while runtime plumbing gets separated.
   - Front-component authoring/imports are now expected to use `twenty-sdk/front-component` for runtime hooks/actions and `twenty-sdk/define` for the definition wrapper, which is a meaningful packaging clarification for any app code we write locally.
   - Front-component command manifests now include `GLOBAL_OBJECT_CONTEXT`, and navigation menu items can target a specific `pageLayoutUniversalIdentifier`, which is a meaningful UI/navigation signal for app-driven record surfaces.
@@ -122,12 +125,92 @@ When updating this doc in regular syncs, keep it lightweight:
   - REST permission resolution now explicitly accepts application auth context and uses the app default role, which is a positive signal for app-auth batch-path access, but we still need an end-to-end proof against the concrete batch routes we care about.
   - App variable semantics are still moving: docs now explicitly say non-secret `applicationVariables` are injected into front components while secret ones remain logic-function-only, and upstream included a recent `Fix application variable issue` commit (`7ade9e3aab`) that is directly relevant to the secret-variable bootstrap/decryption problem we saw locally. Treat this as promising but not yet proven for our exact repro.
   - CLI naming is still evolving: newer `twenty-sdk` docs and code now prefer colon-style command groups (`docker:*`, `app:*`, `dev:*`, `remote:*`) while older flat commands remain available as deprecated wrappers. Treat repo-local runbooks and prompts as version-sensitive here.
+  - `twenty docker:start [version]` now resolves a Docker image from an explicit version or the app `engines.twenty` range and can trigger an upgrade when the existing local container image does not match; this directly addresses the earlier class of confusion where reset/start paths silently returned to an unexpected older local image.
+  - Metadata API client usage is now documented as a first-class app pattern through `twenty-client-sdk/metadata`, and `twenty-client-sdk` now has a dedicated metadata build path. Treat this as a positive signal for the MetadataApiClient issue we were waiting on, but still verify in our app-dev runtime before changing product code.
   - Recent SDK changes are now more about package shape, import boundaries, OAuth/registration plumbing, and install/validation ergonomics than about obvious new fundraising-specific platform primitives.
   - Docs/examples move quickly and can drift between releases; verify against `packages/twenty-docs` and `packages/twenty-sdk/README.md` after each upstream sync, especially around CLI/scaffolder command names.
 
 ---
 
-## Latest Snapshot — 2026-06-15
+## Latest Snapshot — 2026-06-30
+
+**Context:** Updated `services/twenty-core` from merge commit `ea00cf0f89` to merge commit `c1c4fc112c` (local merge on 2026-06-30; fetched upstream head: `c4a6446757`; local tags now include `twenty/v2.17.1`; in-tree `twenty-sdk`, `create-twenty-app`, and `twenty-client-sdk` package versions are `2.18.0`).
+
+**Highlights**
+
+1. **The in-tree app-tooling line moved to `2.18.0`**
+   - `twenty-sdk`, `create-twenty-app`, and `twenty-client-sdk` now all report `2.18.0`.
+   - Runtime tags fetched locally now include `twenty/v2.17.1`.
+   - Published npm `latest` for `twenty-sdk` / `twenty-client-sdk` is still `2.16.0` as of this check.
+   - Practical read: runtime, checked-out repo head, and published app package versions remain separate decisions; choose each explicitly during local app-dev upgrades.
+
+2. **`twenty-sdk/ui` has been removed**
+   - The SDK no longer exports `./ui`.
+   - The scaffold now adds `twenty-ui@1.0.0-alpha.1` and imports UI directly from `twenty-ui` subpaths.
+   - Practical read: the fix path for our front-component Button issue is not “return to `twenty-sdk/ui`”; it is either keep app-local UI primitives or deliberately adopt direct `twenty-ui` imports after runtime proof.
+
+3. **MetadataApiClient looks more first-class**
+   - Docs now show `MetadataApiClient` from `twenty-client-sdk/metadata` as the metadata/workspace-config client.
+   - `twenty-client-sdk` now builds a dedicated metadata client bundle.
+   - Practical read: this is the likely upstream resolution path for the Metadata API issue we were waiting on, but we should still test against app-dev before depending on it in live app code.
+
+4. **App build/runtime packaging keeps tightening**
+   - The manifest build now mocks `twenty-ui` subpaths directly and handles CSS imports during extraction.
+   - The scaffold adds raw `typecheck` and `test:unit` scripts, with `@typescript/native-preview` included.
+   - Practical read: upstream is making app packages more explicit and more self-contained; our app package should keep following scaffold dependency shape rather than carrying old compatibility assumptions.
+
+5. **Navigation/page-layout validation tightened**
+   - Upstream now rejects `PAGE_LAYOUT` navigation-menu items that do not reference a standalone page layout.
+   - Practical read: this is worth keeping on the smoke-test checklist for any app-owned navigation or page-layout changes, even if it does not obviously affect our current record-tab approach.
+
+**Current implications**
+
+1. Do not reintroduce `twenty-sdk/ui`; keep `ActionButton` or test a deliberate direct `twenty-ui` migration later.
+2. On the next app package upgrade, use the latest published SDK packages unless there is a deliberate reason to test unreleased in-tree package state.
+3. Expect to add/pin `twenty-ui` if we use native Twenty UI components directly.
+4. Smoke-test MetadataApiClient/app-dev behavior before changing fundraising code around metadata access.
+5. Keep navigation/page-layout sync errors on the post-upgrade checklist.
+
+---
+
+## Snapshot — 2026-06-23
+
+**Context:** Updated `services/twenty-core` from merge commit `31a1c21546` to merge commit `ea00cf0f89` (local merge on 2026-06-23; fetched upstream head: `7b45380777`; in-tree `twenty-sdk`, `create-twenty-app`, and `twenty-client-sdk` package versions are `2.16.0`).
+
+**Highlights**
+
+1. **The in-tree app-tooling line moved to `2.16.0`**
+   - `twenty-sdk`, `create-twenty-app`, and `twenty-client-sdk` now all report `2.16.0`.
+   - Practical read: keep treating the app package versions as explicit deployment choices rather than inferring them from the local Twenty runtime tag.
+
+2. **`twenty-client-sdk` is now clearly a dev dependency**
+   - The SDK changelog says `twenty-client-sdk` should live in `devDependencies` even though app code imports it.
+   - The rationale is that Twenty provides it at runtime, while the installed package is needed for typecheck/build.
+   - Practical read: our earlier move of `twenty-client-sdk` out of runtime `dependencies` is aligned with current upstream guidance, not just warning cleanup.
+
+3. **The `twenty-sdk/ui` export path changed materially**
+   - `twenty-sdk/ui` now re-exports from `twenty-ui` instead of `twenty-ui-deprecated`.
+   - Practical read: this is the most relevant upstream change for the front-component `Button` / dynamic React require issue. We should not immediately remove our app-local `ActionButton` mitigation, but the next SDK/runtime upgrade should explicitly retest whether native `twenty-sdk/ui` components are safe again.
+
+4. **Docker start/version resolution improved**
+   - `twenty docker:start [version]` now accepts an optional version and defaults through the app `engines.twenty` range before `latest`.
+   - Existing containers with mismatched images can be upgraded as part of start.
+   - Practical read: this is directly relevant to the earlier reset/start confusion where local app-dev returned to an unexpected old runtime image.
+
+5. **Logic-function input inference is now documented**
+   - New SDK docs explain inferred workflow/AI-tool input schemas, including `TwentyRecord<'objectUniversalIdentifier'>` record inputs.
+   - Practical read: useful for future workflow/AI surfaces, but not an immediate fundraising-app refactor unless we deliberately expose more logic functions as workflow actions or tools.
+
+**Current implications**
+
+1. Keep `twenty-client-sdk` in `devDependencies` for `nonprofit-fundraising`.
+2. Keep app-local front-component buttons until we have runtime proof that `twenty-sdk/ui` no longer produces the React dynamic-require failure in our deployed combination.
+3. On the next local app-dev upgrade, prefer the standard `docker:start` / `docker:upgrade` path again before falling back to manual pinned Docker commands.
+4. Watch `TwentyRecord` input-schema inference if we start exposing fundraising logic functions through workflow or AI-tool surfaces.
+
+---
+
+## Snapshot — 2026-06-15
 
 **Context:** Updated `services/twenty-core` from merge commit `a100ea0c85` to merge commit `c4f4101517` (local merge on 2026-06-15; fetched upstream head: `5207493cda`; local tags now include `twenty/v2.13.0`, `twenty/v2.13.1`, `twenty/v2.13.2`, and `sdk/v2.13.0`; in-tree `twenty-sdk`, `create-twenty-app`, and `twenty-client-sdk` package versions are `2.14.0`).
 

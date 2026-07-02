@@ -212,6 +212,15 @@ Current example:
 - plus a daily cron reconciliation path for import/setup repair and ongoing drift correction,
 - while narrow `databaseEvent` triggers act as integrity backstops for out-of-band edits rather than the main maintenance path.
 
+Rollup maintenance policy for the fundraising app:
+
+- app-owned gift creation paths should explicitly refresh affected rollups once per affected set;
+- bulk gift processing should coalesce rollup side effects after committed gift creation rather than relying on one row-level trigger per created gift;
+- `gift.updated`, `gift.deleted`, and `gift.restored` database-event triggers are integrity backstops for native edits and out-of-band changes;
+- do not register `gift.created` rollup triggers for v1 unless native/out-of-band gift creation becomes a supported create path;
+- if a route mutation updates a committed gift field already covered by a database-event trigger, avoid also running the same rollup recompute inside the route unless testing shows the trigger does not fire for app route writes;
+- full recompute routes remain repair/backfill tools, not the normal hot path.
+
 ## 7. Capability Boundaries Should Stay Visible, Even If Not Fully Solved Yet
 
 Current leaning:
@@ -230,6 +239,32 @@ This means we should aim for:
 - modular capability-specific blocks
 - bounded record tabs or work surfaces where appropriate
 - a strong default layout that does not assume every organisation wants every capability equally prominent
+
+Current platform boundary for workspace customization:
+
+- if the fundraising app manifest defines a metadata entity, app sync/update may reapply that definition later;
+- client/workspace edits to the same app-owned entity should not be treated as durable configuration unless Twenty ships and we verify a native override/precedence model;
+- this applies especially to page layouts, page-layout tabs/widgets, views/view fields, and `SELECT`/enum option lists.
+
+Current understanding from Twenty:
+
+- native app/workspace override ownership is still under active design;
+- apps do not currently have a stable native way to declare "default, but preserve workspace override" behavior;
+- enum options are expected to become syncable entities in a future release, but that is not a current contract we should depend on.
+
+Practical rule for v1:
+
+- use app-owned layouts as product defaults, not as client-owned customization surfaces;
+- if clients need persistent local layout changes, prefer separate client-created layouts/views/tabs where possible rather than editing the app-owned ones;
+- use app-owned `SELECT` fields only for closed workflow state owned by the product, such as processing status, readiness state, or submission status;
+- avoid app-owned `SELECT` for client-extensible or integration-extensible values such as providers, source categories, and local fundraising taxonomies;
+- for client-configurable concepts, prefer records such as `Appeal`, `AppealSource`, and `Fund`, or use text fields when the value is provider/integration supplied.
+
+What to re-check later:
+
+- whether Twenty adds a native app override API or workspace-level configuration-as-code model;
+- whether syncable enum options allow safe app-owned defaults plus workspace-owned additions;
+- whether deployment tooling can preserve or report client edits to app-owned metadata before applying updates.
 
 ## 8. Update This Note As We Learn
 

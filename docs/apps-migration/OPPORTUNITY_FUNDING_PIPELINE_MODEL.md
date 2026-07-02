@@ -164,14 +164,17 @@ Those belong later in linked-gift reporting or a fuller award/payment model if e
 The app-level value here is not only field creation.
 
 We now have a more funding-aware Opportunity record experience by extending
-Twenty's standard Opportunity record page with an app-owned `Funding` tab,
-rather than replacing the standard record layout.
+Twenty's standard Opportunity record page with app-owned tabs rather than
+replacing the standard record layout.
 
 Current direction:
 
 - one good funding-aware Opportunity tab, not radically different page layouts by stage
 - strong passive summary first
-- light explicit workflow actions later, once the front-component runtime path is stable
+- payment recording belongs in a separate `Payments` tab with linked gifts,
+  so the main funding context stays compact
+- stage-transition/task actions remain deferred until the front-component
+  runtime path for metadata-backed stage labels is stable
 
 ### Current default record experience should surface
 
@@ -184,8 +187,24 @@ Current direction:
 - application deadline
 - submitted date
 - funding period start / end
-- linked gifts
 - open tasks / recent activity
+
+### Current app-owned tabs
+
+- `Funding`: grouped funding/application/award fields on the standard
+  Opportunity record page.
+- `Payments`: compact `Record payment` action plus the native linked `Gifts`
+  relation widget.
+
+The `Record payment` action creates a committed company Gift linked to the
+current Opportunity. It derives the Gift type from Opportunity funding type:
+
+- grant / trust / statutory bid -> `GRANT`
+- corporate sponsorship -> `SPONSORSHIP`
+- major gift / other / missing -> `DONATION`
+
+Manual gift entry remains the general fallback for company gifts or payments
+that do not relate to a specific Opportunity.
 
 This should work for both:
 
@@ -212,7 +231,8 @@ Current product decision:
 
 - this transition/task helper should not be mounted by default while the
   Twenty front-component renderer has unresolved SDK metadata import issues
-- once stable, it is a likely fit below passive funding context and linked gifts
+- once stable, it is a likely fit as a lightweight action near the funding
+  context, not as part of the payment-recording surface
 - it should remain lightweight and stage-label agnostic
 
 This keeps the standard Opportunity experience intact while still proving that
