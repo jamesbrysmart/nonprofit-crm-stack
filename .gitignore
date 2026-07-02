@@ -1,4 +1,5 @@
 .env
+.envrc
 .repomixignore
 repomix-output.md
 repomix.config.json
