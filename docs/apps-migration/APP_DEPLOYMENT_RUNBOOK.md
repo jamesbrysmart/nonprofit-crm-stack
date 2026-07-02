@@ -308,12 +308,15 @@ Checks:
 - confirm expected new metadata appears
 - confirm important existing surfaces still load
 - check for obvious sync regressions
+- check whether the release touches app-owned layouts, views, or `SELECT` options that a client may have edited manually
+- if client edits may exist on app-owned metadata, pause and decide whether to preserve them manually, migrate them to client-owned metadata, or accept that the app update will reapply product defaults
 - if anything was intentionally removed, confirm the result matches expectation
 - for early client upgrades, explicitly pause and confirm whether pre-upgrade backup/export posture has been considered before proceeding with metadata-heavy releases
 
 Current caution:
 
 - metadata changes should be treated as higher-risk than pure UI or logic fixes until we have more repeated deployment evidence
+- app-owned metadata should be treated as upgrade-owned metadata: do not promise that manual edits to app-defined layouts, views, or select options will survive app updates until Twenty provides and we verify a native override ownership model
 - current working preference is additive-first evolution for important schema-bearing changes:
   - add first
   - backfill/migrate
@@ -345,6 +348,10 @@ Placeholder:
 ## 11. Deployment Ledger
 
 At `v0`, the ledger can be lightweight, but it should exist.
+
+Current ledger:
+
+- [APP_DEPLOYMENT_LEDGER.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/APP_DEPLOYMENT_LEDGER.md)
 
 Recommended fields:
 

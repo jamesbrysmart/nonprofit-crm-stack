@@ -21,6 +21,8 @@ If you want the best current mental model, read in this order:
   - current app position, transition framing, and remaining boundary questions
 - [APP_DEPLOYMENT_RUNBOOK.md](docs/apps-migration/APP_DEPLOYMENT_RUNBOOK.md)
   - current lightweight install/upgrade process for the shared fundraising app in client workspaces
+- [APP_DEPLOYMENT_LEDGER.md](docs/apps-migration/APP_DEPLOYMENT_LEDGER.md)
+  - lightweight shared-app deployment records for client workspaces
 - [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
   - phased production-quality implementation plan for the app that now exists as the main fundraising surface
 - [MIGRATION_WORKING_PATTERNS.md](docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
@@ -36,6 +38,8 @@ If you need:
   - [OVERVIEW.md](docs/apps-migration/OVERVIEW.md)
 - current install/upgrade/deployment runbook for the shared fundraising app:
   - [APP_DEPLOYMENT_RUNBOOK.md](docs/apps-migration/APP_DEPLOYMENT_RUNBOOK.md)
+- current shared-app deployment records:
+  - [APP_DEPLOYMENT_LEDGER.md](docs/apps-migration/APP_DEPLOYMENT_LEDGER.md)
 - short operator-facing deployment checklist template:
   - [APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md](docs/apps-migration/APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md)
 - current umbrella note for how client workspace layers fit together operationally:
@@ -79,6 +83,7 @@ Use these categories when deciding how much weight to give a doc.
 
 - [OVERVIEW.md](docs/apps-migration/OVERVIEW.md)
 - [APP_DEPLOYMENT_RUNBOOK.md](docs/apps-migration/APP_DEPLOYMENT_RUNBOOK.md)
+- [APP_DEPLOYMENT_LEDGER.md](docs/apps-migration/APP_DEPLOYMENT_LEDGER.md)
 - [APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md](docs/apps-migration/APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md)
 - [CLIENT_WORKSPACE_OPERATIONS_MODEL.md](docs/apps-migration/CLIENT_WORKSPACE_OPERATIONS_MODEL.md)
 - [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)

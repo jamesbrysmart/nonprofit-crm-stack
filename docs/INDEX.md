@@ -34,6 +34,8 @@ Use this file as the first stop when a session needs repo guidance.
   Entry point for current fundraising app docs.
 - `apps-migration/APP_DEPLOYMENT_RUNBOOK.md`
   Current lightweight install/upgrade runbook for deploying the shared fundraising app into client workspaces.
+- `apps-migration/APP_DEPLOYMENT_LEDGER.md`
+  Lightweight shared-app deployment records for client workspaces.
 - `apps-migration/APP_DEPLOYMENT_CHECKLIST_TEMPLATE.md`
   Short operator-facing checklist template for live deployment sessions.
 - `apps-migration/CLIENT_WORKSPACE_OPERATIONS_MODEL.md`
