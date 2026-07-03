@@ -91,7 +91,7 @@ export const deriveRecurringHealth = (
     return {
       state: 'PAUSED',
       label: 'Paused',
-      message: 'This agreement is paused, so no fulfilment is currently expected.',
+      message: 'No payments are expected while this agreement is paused.',
       daysDelta: null,
     };
   }
@@ -99,8 +99,8 @@ export const deriveRecurringHealth = (
   if (status === 'CANCELED') {
     return {
       state: 'CANCELED',
-      label: 'Canceled',
-      message: 'This agreement is canceled and no longer active.',
+      label: 'Cancelled',
+      message: 'This agreement is cancelled and no longer active.',
       daysDelta: null,
     };
   }
@@ -109,7 +109,7 @@ export const deriveRecurringHealth = (
     return {
       state: 'COMPLETED',
       label: 'Completed',
-      message: 'This agreement is completed and no further fulfilment is expected.',
+      message: 'This agreement is complete and no further payments are expected.',
       daysDelta: null,
     };
   }
@@ -126,8 +126,8 @@ export const deriveRecurringHealth = (
   if (!nextExpectedDate) {
     return {
       state: 'NO_EXPECTATION',
-      label: 'No expectation',
-      message: 'No next expected date is set yet.',
+      label: 'No payment date',
+      message: 'No next payment date is set yet.',
       daysDelta: null,
     };
   }
@@ -138,7 +138,16 @@ export const deriveRecurringHealth = (
     return {
       state: 'OVERDUE',
       label: 'Overdue',
-      message: `Next fulfillment appears overdue by ${daysDelta} day${daysDelta === 1 ? '' : 's'}.`,
+      message: `Expected payment is ${daysDelta} day${daysDelta === 1 ? '' : 's'} overdue.`,
+      daysDelta,
+    };
+  }
+
+  if (daysDelta === 0) {
+    return {
+      state: 'DUE_TODAY',
+      label: 'Due today',
+      message: 'Payment is expected today.',
       daysDelta,
     };
   }
@@ -146,7 +155,7 @@ export const deriveRecurringHealth = (
   return {
     state: 'ON_TRACK',
     label: 'On track',
-    message: 'This agreement is within its expected fulfilment window.',
+    message: 'Next payment is not due yet.',
     daysDelta,
   };
 };

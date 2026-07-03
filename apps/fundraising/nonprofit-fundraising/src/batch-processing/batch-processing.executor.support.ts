@@ -257,6 +257,7 @@ export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
     name: buildGiftName({
       giftType: 'DONATION',
       donorName: `${donorFirstName} ${donorLastName}`.trim(),
+      isAnonymousDonor,
       amountMicros: Math.round(amountMicros),
       currencyCode,
       giftDate,

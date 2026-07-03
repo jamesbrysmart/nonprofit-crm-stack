@@ -39,6 +39,7 @@ export const useNewGiftController = () => {
   const [donorFirstName, setDonorFirstName] = useState('');
   const [donorLastName, setDonorLastName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
+  const [isAnonymousDonor, setIsAnonymousDonor] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [giftType, setGiftType] = useState<ManualGiftType>('DONATION');
   const [description, setDescription] = useState('');
@@ -116,6 +117,7 @@ export const useNewGiftController = () => {
     setCompanySearchPerformed(false);
     setCompanyChoice(null);
     setSelectedCompanyId(null);
+    setIsAnonymousDonor(false);
   }, [donorType]);
 
   useEffect(() => {
@@ -141,6 +143,7 @@ export const useNewGiftController = () => {
   }, [
     giftType,
     donorType,
+    isAnonymousDonor,
     amountValue,
     currencyCode,
     giftDate,
@@ -155,6 +158,28 @@ export const useNewGiftController = () => {
       setPaymentType('OTHER');
     }
   }, [giftType, paymentType]);
+
+  useEffect(() => {
+    if (!isAnonymousDonor) {
+      return;
+    }
+
+    setDuplicateResult(null);
+    setDonorChoice(null);
+    setSelectedDonorId(null);
+    setIncludeDonorAddress(false);
+    setGiftAidRequested(false);
+    setGiftAidDeclarationCaptured(false);
+    setGiftAidDeclarationDate('');
+    setGiftAidCoverageScope('');
+    setGiftAidDeclarationSource('');
+    setGiftAidTextVersion('');
+    setLinkRecurringAgreement(false);
+    setRecurringSearchQuery('');
+    setRecurringResults([]);
+    setSelectedRecurringAgreementId(null);
+    setDuplicateGiftCheckResult(null);
+  }, [isAnonymousDonor]);
 
   useEffect(() => {
     if (selectedAppealId === '') {
@@ -192,6 +217,7 @@ export const useNewGiftController = () => {
   const trimmedCompanyName = normalizeName(companyName);
   const canCheckDonorDuplicates =
     donorType === 'INDIVIDUAL' &&
+    !isAnonymousDonor &&
     trimmedFirstName.length >= 2 &&
     trimmedLastName.length >= 2;
   const canSearchCompanies =
@@ -233,6 +259,10 @@ export const useNewGiftController = () => {
       return;
     }
 
+    if (isAnonymousDonor) {
+      return;
+    }
+
     if (!canCheckDonorDuplicates) {
       setDuplicateResult(null);
       setDonorChoice(null);
@@ -255,6 +285,7 @@ export const useNewGiftController = () => {
     };
   }, [
     donorType,
+    isAnonymousDonor,
     canCheckDonorDuplicates,
     trimmedFirstName,
     trimmedLastName,
@@ -284,13 +315,16 @@ export const useNewGiftController = () => {
       amountValue.trim() === '' ||
       giftDate.trim() === '' ||
       (donorType === 'INDIVIDUAL'
-        ? trimmedFirstName === '' || trimmedLastName === ''
+        ? !isAnonymousDonor &&
+          (trimmedFirstName === '' || trimmedLastName === '')
         : trimmedCompanyName === '')
     ) {
       await enqueueSnackbar({
         message:
-          donorType === 'INDIVIDUAL'
+          donorType === 'INDIVIDUAL' && !isAnonymousDonor
             ? 'Enter donor first name, donor last name, amount, and gift date.'
+            : donorType === 'INDIVIDUAL'
+              ? 'Enter amount and gift date.'
             : 'Enter company name, amount, and gift date.',
         variant: 'warning',
       });
@@ -307,12 +341,17 @@ export const useNewGiftController = () => {
 
     let activeDuplicateResult = duplicateResult;
     try {
-      if (donorType === 'INDIVIDUAL' && !activeDuplicateResult) {
+      if (
+        donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
+        !activeDuplicateResult
+      ) {
         activeDuplicateResult = await runDonorDuplicateCheck();
       }
 
       if (
         donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
         activeDuplicateResult &&
         activeDuplicateResult.status !== 'NO_MATCH'
       ) {
@@ -354,15 +393,18 @@ export const useNewGiftController = () => {
       }
 
       const resolvedDonorChoice: ManualGiftDonorChoice =
-        donorType === 'INDIVIDUAL' &&
-        activeDuplicateResult?.status === 'NO_MATCH'
+        isAnonymousDonor
           ? 'CREATE_NEW'
-          : (donorChoice ?? 'CREATE_NEW');
+          : donorType === 'INDIVIDUAL' &&
+              activeDuplicateResult?.status === 'NO_MATCH'
+            ? 'CREATE_NEW'
+            : (donorChoice ?? 'CREATE_NEW');
       const resolvedCompanyChoice: ManualGiftCompanyChoice =
         donorType === 'COMPANY' ? (companyChoice ?? 'CREATE_NEW') : 'CREATE_NEW';
 
       const duplicateTarget =
         donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
         resolvedDonorChoice === 'USE_EXISTING' &&
         selectedDonorId
           ? {
@@ -401,10 +443,11 @@ export const useNewGiftController = () => {
         donorType,
         ...(donorType === 'INDIVIDUAL'
           ? {
-              donorFirstName: trimmedFirstName,
-              donorLastName: trimmedLastName,
-              donorEmail: donorEmail.trim(),
-              donorMailingAddress: includeDonorAddress
+              donorFirstName: isAnonymousDonor ? '' : trimmedFirstName,
+              donorLastName: isAnonymousDonor ? '' : trimmedLastName,
+              donorEmail: isAnonymousDonor ? '' : donorEmail.trim(),
+              isAnonymousDonor,
+              donorMailingAddress: !isAnonymousDonor && includeDonorAddress
                 ? buildMailingAddressInput({
                     addressStreet1,
                     addressStreet2,
@@ -431,24 +474,33 @@ export const useNewGiftController = () => {
         ...(selectedAppealSourceId !== '' ? { selectedAppealSourceId } : {}),
         ...(donorType === 'INDIVIDUAL'
           ? {
-              giftAidRequested,
-              giftAidDeclarationCaptured,
+              giftAidRequested: isAnonymousDonor ? false : giftAidRequested,
+              giftAidDeclarationCaptured: isAnonymousDonor
+                ? false
+                : giftAidDeclarationCaptured,
             }
           : {}),
-        ...(donorType === 'INDIVIDUAL' && giftAidDeclarationDate.trim() !== ''
+        ...(donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
+        giftAidDeclarationDate.trim() !== ''
           ? { giftAidDeclarationDate: giftAidDeclarationDate.trim() }
           : {}),
-        ...(donorType === 'INDIVIDUAL' && giftAidCoverageScope.trim() !== ''
+        ...(donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
+        giftAidCoverageScope.trim() !== ''
           ? { giftAidCoverageScope: giftAidCoverageScope.trim() }
           : {}),
         ...(donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
         giftAidDeclarationSource.trim() !== ''
           ? { giftAidDeclarationSource: giftAidDeclarationSource.trim() }
           : {}),
-        ...(donorType === 'INDIVIDUAL' && giftAidTextVersion.trim() !== ''
+        ...(donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
+        giftAidTextVersion.trim() !== ''
           ? { giftAidTextVersion: giftAidTextVersion.trim() }
           : {}),
-        ...(donorType === 'INDIVIDUAL'
+        ...(donorType === 'INDIVIDUAL' && !isAnonymousDonor
           ? {
               donorChoice: resolvedDonorChoice,
             }
@@ -456,6 +508,7 @@ export const useNewGiftController = () => {
               companyChoice: resolvedCompanyChoice,
             }),
         ...(donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
         resolvedDonorChoice === 'USE_EXISTING' &&
         selectedDonorId
           ? { selectedDonorId }
@@ -470,7 +523,9 @@ export const useNewGiftController = () => {
         selectedOpportunityId
           ? { selectedOpportunityId }
           : {}),
-        ...(linkRecurringAgreement && selectedRecurringAgreementId
+        ...(!isAnonymousDonor &&
+        linkRecurringAgreement &&
+        selectedRecurringAgreementId
           ? { selectedRecurringAgreementId }
           : {}),
       });
@@ -665,6 +720,8 @@ export const useNewGiftController = () => {
     setDonorLastName,
     donorEmail,
     setDonorEmail,
+    isAnonymousDonor,
+    setIsAnonymousDonor,
     companyName,
     setCompanyName: handleCompanyNameChange,
     giftType,

@@ -126,6 +126,7 @@ export type ManualGiftEntryRequest = GiftAidCaptureInput & {
   donorLastName?: string;
   donorEmail?: string;
   donorMailingAddress?: MailingAddressEvidence | null;
+  isAnonymousDonor?: boolean;
   companyName?: string;
   giftType?: ManualGiftType;
   description?: string;
@@ -152,6 +153,7 @@ export type ManualGiftEntryResponse = {
   donorType: ManualGiftDonorType;
   donorId?: string | null;
   companyId?: string | null;
+  isAnonymousDonor?: boolean | null;
   donorChoice?: ManualGiftDonorChoice | null;
   companyChoice?: ManualGiftCompanyChoice | null;
   recurringAgreementId?: string | null;

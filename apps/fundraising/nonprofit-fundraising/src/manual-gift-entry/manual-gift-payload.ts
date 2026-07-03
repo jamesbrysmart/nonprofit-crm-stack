@@ -20,8 +20,14 @@ export const buildManualGiftPayload = (args: {
 }) => {
   const { body, donorType, donorId, companyId } = args;
   const giftType = getManualGiftType(body.giftType);
-  const donorFirstName = normalizeString(body.donorFirstName);
-  const donorLastName = normalizeString(body.donorLastName);
+  const isAnonymousDonor =
+    donorType === 'INDIVIDUAL' && body.isAnonymousDonor === true;
+  const donorFirstName = isAnonymousDonor
+    ? ''
+    : normalizeString(body.donorFirstName);
+  const donorLastName = isAnonymousDonor
+    ? ''
+    : normalizeString(body.donorLastName);
   const donorEmail = normalizeString(body.donorEmail);
   const companyName = normalizeString(body.companyName);
   const description = normalizeString(body.description);
@@ -30,11 +36,15 @@ export const buildManualGiftPayload = (args: {
   const giftDate = normalizeRequiredGiftDate(body.giftDate);
   const donorName = `${donorFirstName} ${donorLastName}`.trim();
 
-  if (donorType === 'INDIVIDUAL') {
-    if (donorFirstName === '' || donorLastName === '') {
-      throw new Error('Donor first name and last name are required');
-    }
-  } else if (companyName === '') {
+  if (
+    donorType === 'INDIVIDUAL' &&
+    !isAnonymousDonor &&
+    (donorFirstName === '' || donorLastName === '')
+  ) {
+    throw new Error('Donor first name and last name are required');
+  }
+
+  if (donorType === 'COMPANY' && companyName === '') {
     throw new Error('Company name is required');
   }
 
@@ -45,6 +55,7 @@ export const buildManualGiftPayload = (args: {
       giftType,
       donorName,
       companyName: donorType === 'COMPANY' ? companyName : null,
+      isAnonymousDonor,
       amountMicros,
       currencyCode,
       giftDate,
@@ -63,8 +74,9 @@ export const buildManualGiftPayload = (args: {
           donorId,
         }
       : {}),
+    ...(isAnonymousDonor ? { isAnonymousDonor: true } : {}),
     paymentType: getManualGiftPaymentType(body.paymentType),
-    ...(donorType === 'INDIVIDUAL' && donorEmail !== ''
+    ...(donorType === 'INDIVIDUAL' && !isAnonymousDonor && donorEmail !== ''
       ? { donorEmail }
       : {}),
     ...(donorType === 'COMPANY' && companyName !== '' ? { companyName } : {}),

@@ -249,9 +249,11 @@ const handler = async (
 ): Promise<ManualGiftEntryResponse> => {
   const body = event.body ?? ({} as ManualGiftEntryRequest);
   const donorType = getManualGiftDonorType(body.donorType);
+  const isAnonymousManualGift =
+    donorType === 'INDIVIDUAL' && body.isAnonymousDonor === true;
   const client = new CoreApiClient();
   const donorChoice =
-    donorType === 'INDIVIDUAL'
+    donorType === 'INDIVIDUAL' && !isAnonymousManualGift
       ? getManualGiftDonorChoice(body.donorChoice)
       : null;
   const companyChoice =
@@ -259,7 +261,7 @@ const handler = async (
       ? getManualGiftCompanyChoice(body.companyChoice)
       : null;
   const donorId =
-    donorType === 'INDIVIDUAL'
+    donorType === 'INDIVIDUAL' && !isAnonymousManualGift
       ? await resolveIndividualDonorId(
           client,
           body,
@@ -274,9 +276,17 @@ const handler = async (
           companyChoice as ManualGiftCompanyChoice,
         )
       : null;
+  if (
+    isAnonymousManualGift &&
+    normalizeString(body.selectedRecurringAgreementId) !== ''
+  ) {
+    throw new Error(
+      'Anonymous donor gifts cannot be linked to recurring agreements',
+    );
+  }
   const giftAidDeclarationService = createGiftAidDeclarationService(client);
   const giftAidInput =
-    donorType === 'INDIVIDUAL'
+    donorType === 'INDIVIDUAL' && !isAnonymousManualGift
       ? body
       : {
           ...body,
@@ -546,6 +556,7 @@ const handler = async (
     donorType,
     donorId,
     companyId,
+    isAnonymousDonor: isAnonymousManualGift,
     donorChoice,
     companyChoice,
     recurringAgreementId: recurringAgreementId === '' ? null : recurringAgreementId,

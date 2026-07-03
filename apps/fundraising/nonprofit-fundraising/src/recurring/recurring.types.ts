@@ -91,6 +91,7 @@ export type StoredRecurringAgreementRecord = RecurringAgreementSummary & {
 
 export type RecurringAgreementHealthState =
   | 'ON_TRACK'
+  | 'DUE_TODAY'
   | 'OVERDUE'
   | 'PAUSED'
   | 'CANCELED'

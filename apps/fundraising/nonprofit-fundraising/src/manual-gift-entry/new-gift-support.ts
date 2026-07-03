@@ -100,6 +100,19 @@ export const fieldActionGridStyle: CSSProperties = {
   width: '100%',
 };
 
+export const checkboxLabelStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  fontSize: '14px',
+  color: '#1f2328',
+};
+
+export const stackedSectionStyle: CSSProperties = {
+  display: 'grid',
+  gap: '10px',
+};
+
 export const segmentedControlStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',

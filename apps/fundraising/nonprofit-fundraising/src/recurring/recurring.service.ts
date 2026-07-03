@@ -248,6 +248,31 @@ export const loadRecurringAgreementById = async (
   };
 };
 
+export const loadRecurringAgreementPaymentHealthInput = async (
+  client: CoreApiClient,
+  recurringAgreementId: string,
+): Promise<Pick<StoredRecurringAgreementRecord, 'status' | 'nextExpectedAt'> | null> => {
+  const result = await client.query({
+    recurringAgreement: {
+      __args: {
+        filter: {
+          id: {
+            eq: recurringAgreementId,
+          },
+        },
+      },
+      status: true,
+      nextExpectedAt: true,
+    },
+  } as any);
+
+  return (
+    extractQueryRecord<
+      Pick<StoredRecurringAgreementRecord, 'status' | 'nextExpectedAt'>
+    >(result, 'recurringAgreement') ?? null
+  );
+};
+
 export const advanceRecurringAgreementExpectation = async (
   client: CoreApiClient,
   recurringAgreementId: string,

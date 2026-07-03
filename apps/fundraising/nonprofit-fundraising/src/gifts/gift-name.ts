@@ -27,11 +27,16 @@ const buildGiftTypeLabel = (giftType: GiftNameGiftType): string => {
 const buildDonorLabel = (args: {
   donorName?: string | null;
   companyName?: string | null;
+  isAnonymousDonor?: boolean | null;
 }): string => {
   const companyName = normalizeString(args.companyName);
 
   if (companyName !== '') {
     return companyName;
+  }
+
+  if (args.isAnonymousDonor === true) {
+    return 'Anonymous donor';
   }
 
   return normalizeString(args.donorName) || 'Unknown donor';
@@ -68,6 +73,7 @@ export const buildGiftName = (args: {
   giftType?: GiftNameGiftType;
   donorName?: string | null;
   companyName?: string | null;
+  isAnonymousDonor?: boolean | null;
   amountMicros?: number | null;
   currencyCode?: string | null;
   giftDate?: string | null;

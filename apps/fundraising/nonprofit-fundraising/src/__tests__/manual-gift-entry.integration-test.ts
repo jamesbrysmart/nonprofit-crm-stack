@@ -152,6 +152,45 @@ describe('Manual gift entry routes', () => {
     expect(gift?.donor?.id).toBe(people[0]?.id);
   });
 
+  it('should create an anonymous one-off gift without a donor link', async () => {
+    const response = await callAppRoute<ManualGiftEntryResponse>(
+      '/s/manual-gift-entry/create-gift',
+      {
+        isAnonymousDonor: true,
+        amountValue: '12.00',
+        currencyCode: 'GBP',
+        paymentType: 'CASH',
+        giftDate: '2026-04-21',
+      },
+    );
+
+    expect(response.giftId).toBeDefined();
+    expect(response.donorId ?? null).toBeNull();
+    expect(response.isAnonymousDonor).toBe(true);
+
+    const gift = await loadGiftById(response.giftId);
+    expect(gift).toBeTruthy();
+    expect(gift?.isAnonymousDonor).toBe(true);
+    expect(gift?.donor?.id ?? null).toBeNull();
+    expect(gift?.donorFirstName ?? '').toBe('');
+    expect(gift?.donorLastName ?? '').toBe('');
+  });
+
+  it('should reject anonymous manual gifts linked to a recurring agreement', async () => {
+    await expect(
+      callAppRoute<ManualGiftEntryResponse>('/s/manual-gift-entry/create-gift', {
+        isAnonymousDonor: true,
+        amountValue: '12.00',
+        currencyCode: 'GBP',
+        paymentType: 'CASH',
+        giftDate: '2026-04-21',
+        selectedRecurringAgreementId: 'recurring_123',
+      }),
+    ).rejects.toThrow(
+      'Anonymous donor gifts cannot be linked to recurring agreements',
+    );
+  });
+
   it('should derive Gift Aid outcome and create a declaration when capture facts are provided', async () => {
     const suffix = `${Date.now()}-gift-aid`;
     const donorFirstName = `Grace${suffix}`;

@@ -10,7 +10,6 @@ import {
   openGiftBatchQueue,
   useGiftBatchReview,
 } from 'src/gift-batch-review/use-gift-batch-review';
-import { MAX_GIFT_BATCH_ITEMS } from 'src/batch-processing/batch-processing.limits';
 
 export const GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   '4432b728-7ae1-4ad2-92f6-49d5b1624398';

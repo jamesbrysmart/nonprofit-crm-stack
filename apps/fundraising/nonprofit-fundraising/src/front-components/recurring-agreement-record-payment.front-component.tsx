@@ -20,6 +20,7 @@ import {
   getInputEventValue,
 } from 'src/manual-gift-entry/new-gift-support';
 import { createRecordNote } from 'src/notes/create-record-note';
+import { broadcastRecurringAgreementInvalidated } from 'src/recurring/recurring-agreement-sync';
 import { useRecurringAgreementReviewRecord } from 'src/recurring/use-recurring-agreement-review-record';
 
 export const RECURRING_AGREEMENT_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
@@ -205,6 +206,8 @@ const RecurringAgreementRecordPayment = () => {
         setGiftDate(getInitialGiftDate(refreshedRecord.nextExpectedAt));
         setPaymentType(refreshedRecord.paymentType ?? '');
       }
+
+      broadcastRecurringAgreementInvalidated(record.id);
 
       if (noteWarning !== '') {
         await enqueueSnackbar({

@@ -61,4 +61,16 @@ describe('buildGiftName', () => {
       }),
     ).toBe('Donation from Ada Lovelace - 2026-06-24');
   });
+
+  it('labels anonymous donor gifts explicitly', () => {
+    expect(
+      buildGiftName({
+        giftType: 'DONATION',
+        isAnonymousDonor: true,
+        amountMicros: 25_000_000,
+        currencyCode: 'GBP',
+        giftDate: '2026-06-24',
+      }),
+    ).toBe('Donation from Anonymous donor - £25 - 2026-06-24');
+  });
 });
