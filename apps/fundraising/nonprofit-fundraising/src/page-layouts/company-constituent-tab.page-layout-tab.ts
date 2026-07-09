@@ -12,14 +12,14 @@ export default definePageLayoutTab({
   pageLayoutUniversalIdentifier:
     STANDARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIERS.companyRecordPage
       .universalIdentifier,
-  title: 'Constituent',
+  title: 'Funding',
   position: 5,
   icon: 'IconHeartHandshake',
   layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
   widgets: [
     {
       universalIdentifier: 'f6e843c1-8430-4732-bb18-64103f789a31',
-      title: 'Company constituent context',
+      title: 'Funding context',
       type: 'FRONT_COMPONENT',
       configuration: {
         configurationType: 'FRONT_COMPONENT',

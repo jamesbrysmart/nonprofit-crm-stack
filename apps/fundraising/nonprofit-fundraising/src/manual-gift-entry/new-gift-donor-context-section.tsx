@@ -175,8 +175,8 @@ export const DonorContextSection = ({
               <div style={sectionTitleStyle}>Donor match</div>
               <div style={secondaryTextStyle}>
                 {duplicateResult.status === 'SINGLE_EXACT_MATCH'
-                  ? 'We found one donor with this name. Use that donor or continue with a new donor.'
-                  : 'We found more than one donor with this name. Choose the right donor or continue with a new donor.'}
+                  ? 'We found one possible existing donor. Use that donor or continue with a new donor.'
+                  : 'We found more than one possible existing donor. Choose the right donor or continue with a new donor.'}
               </div>
 
               {donorChoice === 'USE_EXISTING' && selectedDonorSummary ? (

@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
+import { useRecordId } from 'twenty-sdk/front-component';
 import {
-  AppPath,
-  navigate,
-  useRecordId,
-} from 'twenty-sdk/front-component';
-import {
-  ActionButton,
   SummaryStrip,
   SummaryStripItem,
-  actionRowStyle,
   badgeStyle,
-  compactDividerSectionStyle,
   compactValueStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
@@ -151,35 +144,6 @@ const loadAppealSummary = async (
   return (result?.appeal as AppealSummaryRecord | null) ?? null;
 };
 
-const buildAdvisories = (record: AppealSummaryRecord) => {
-  const advisories: string[] = [];
-  const giftCount = Math.max(0, Math.round(record.giftCount ?? 0));
-  const goalMicros = Math.round(record.goalAmount?.amountMicros ?? 0);
-
-  if (giftCount === 0) {
-    advisories.push('No gifts have been coded to this appeal yet.');
-  } else if (normalizeString(record.status).toUpperCase() === 'ACTIVE') {
-    advisories.push('This appeal is active and receiving coded gifts.');
-  }
-
-  if (goalMicros <= 0) {
-    advisories.push('No goal amount set.');
-  }
-
-  if (normalizeString(record.defaultFund?.id) === '') {
-    advisories.push('No default fund set.');
-  }
-
-  if (
-    normalizeString(record.startDate) === '' &&
-    normalizeString(record.endDate) === ''
-  ) {
-    advisories.push('No date range set.');
-  }
-
-  return advisories;
-};
-
 const buildGoalProgressLabel = (record: AppealSummaryRecord) => {
   const goalMicros = Math.round(record.goalAmount?.amountMicros ?? 0);
   const raisedMicros = Math.round(record.raisedAmount?.amountMicros ?? 0);
@@ -214,14 +178,6 @@ const buildDateRangeLabel = (record: AppealSummaryRecord) => {
 
   return `Ends ${formatDate(endDate)}`;
 };
-
-const buildGiftQueryParams = (appealId: string) => ({
-  'filter[appeal][IS]': [appealId],
-});
-
-const buildGiftStagingQueryParams = (appealId: string) => ({
-  'filter[appeal][IS]': [appealId],
-});
 
 const AppealSummary = () => {
   const recordId = useRecordId();
@@ -277,7 +233,6 @@ const AppealSummary = () => {
     return <div style={secondaryTextStyle}>Appeal not found.</div>;
   }
 
-  const advisories = buildAdvisories(record);
   const goalProgressLabel = buildGoalProgressLabel(record);
   const identityLine = [
     normalizeString(record.defaultFund?.name) !== ''
@@ -287,26 +242,6 @@ const AppealSummary = () => {
   ]
     .filter((value) => value !== '')
     .join(' · ');
-
-  const handleOpenGifts = async () => {
-    await navigate(
-      AppPath.RecordIndexPage,
-      {
-        objectNamePlural: 'gifts',
-      },
-      buildGiftQueryParams(recordId),
-    );
-  };
-
-  const handleOpenGiftStagings = async () => {
-    await navigate(
-      AppPath.RecordIndexPage,
-      {
-        objectNamePlural: 'giftStagings',
-      },
-      buildGiftStagingQueryParams(recordId),
-    );
-  };
 
   return (
     <div style={compactWidgetRootStyle}>
@@ -328,54 +263,28 @@ const AppealSummary = () => {
       </div>
 
       <SummaryStrip>
-        <SummaryStripItem label="Raised">
-          <div style={secondaryTextStyle}>{formatAmount(record.raisedAmount)}</div>
-        </SummaryStripItem>
-        <SummaryStripItem label="Goal">
-          <div style={secondaryTextStyle}>{formatAmount(record.goalAmount)}</div>
-        </SummaryStripItem>
-        <SummaryStripItem label="Progress">
-          <div style={secondaryTextStyle}>{goalProgressLabel ?? 'No goal set'}</div>
-        </SummaryStripItem>
-        <SummaryStripItem label="Gift count">
-          <div style={secondaryTextStyle}>{Math.round(record.giftCount ?? 0)}</div>
-        </SummaryStripItem>
-        <SummaryStripItem label="Donor count">
-          <div style={secondaryTextStyle}>{Math.round(record.donorCount ?? 0)}</div>
-        </SummaryStripItem>
-        <SummaryStripItem label="Last gift">
-          <div style={secondaryTextStyle}>{formatDate(record.lastGiftAt)}</div>
-        </SummaryStripItem>
+        <SummaryStripItem
+          label="Raised"
+          value={formatAmount(record.raisedAmount)}
+        />
+        <SummaryStripItem label="Goal" value={formatAmount(record.goalAmount)} />
+        <SummaryStripItem
+          label="Progress"
+          value={goalProgressLabel ?? 'No goal set'}
+        />
+        <SummaryStripItem
+          label="Gift count"
+          value={Math.round(record.giftCount ?? 0)}
+        />
+        <SummaryStripItem
+          label="Donor count"
+          value={Math.round(record.donorCount ?? 0)}
+        />
+        <SummaryStripItem
+          label="Last gift"
+          value={formatDate(record.lastGiftAt)}
+        />
       </SummaryStrip>
-
-      {advisories.length > 0 ? (
-        <div style={compactDividerSectionStyle}>
-          {advisories.map((advisory) => (
-            <div key={advisory} style={secondaryTextStyle}>
-              {advisory}
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      <div style={compactDividerSectionStyle}>
-        <div style={actionRowStyle}>
-          <ActionButton
-            title="View gifts for this appeal"
-            variant="secondary"
-            onClick={() => {
-              void handleOpenGifts();
-            }}
-          />
-          <ActionButton
-            title="View staged gifts for this appeal"
-            variant="secondary"
-            onClick={() => {
-              void handleOpenGiftStagings();
-            }}
-          />
-        </div>
-      </div>
     </div>
   );
 };
@@ -384,6 +293,6 @@ export default defineFrontComponent({
   universalIdentifier: APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   name: 'appeal-summary',
   description:
-    'Lightweight appeal home summary with factual KPIs and related-work navigation.',
+    'Lightweight appeal home summary with factual KPIs.',
   component: AppealSummary,
 });

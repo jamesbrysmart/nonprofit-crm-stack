@@ -10,13 +10,10 @@ import type {
   BatchPreflightCategory,
   BatchPreflightIssueCode,
 } from 'src/batch-processing/batch-processing.preflight';
+import type { DonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
 import type { GiftReadyStatus } from './gift-ready-status';
 
-export type DonorResolution =
-  | 'UNREVIEWED'
-  | 'AMBIGUOUS'
-  | 'NEW_DONOR'
-  | 'CONFIRMED';
+export type DonorResolution = DonorResolutionState;
 
 export type ProcessingStatus =
   | 'NOT_PROCESSED'

@@ -42,8 +42,8 @@ describe('Manual gift entry routes', () => {
     const adaResult = await callAppRoute<DuplicateCheckResponse>(
       '/s/donor-resolution/check-donor-duplicates',
       {
-        donorFirstName: uniqueAdaFirstName,
-        donorLastName: 'Lovelace',
+        donorFirstName: uniqueAdaFirstName.toLowerCase(),
+        donorLastName: 'LOVELACE',
       },
     );
     expect(adaResult.status).toBe('SINGLE_EXACT_MATCH');
@@ -131,6 +131,7 @@ describe('Manual gift entry routes', () => {
         amountValue: '18.00',
         currencyCode: 'GBP',
         paymentType: 'BANK_TRANSFER',
+        provider: 'JustGiving',
         giftDate: '2026-04-21',
         donorChoice: 'CREATE_NEW',
       },
@@ -144,6 +145,7 @@ describe('Manual gift entry routes', () => {
     expect(gift?.donorFirstName).toBe(donorFirstName);
     expect(gift?.donorLastName).toBe(donorLastName);
     expect(gift?.donorEmail).toBe(donorEmail);
+    expect(gift?.provider).toBe('JustGiving');
     expect(gift?.donor?.id).toBeTruthy();
 
     const people = await loadPeopleByName(donorFirstName, donorLastName);

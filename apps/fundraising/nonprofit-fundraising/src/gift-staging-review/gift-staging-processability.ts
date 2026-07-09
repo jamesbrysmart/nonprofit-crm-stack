@@ -1,3 +1,5 @@
+import { normalizeDonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
+
 type ProcessabilityInput = {
   processingStatus: string | null | undefined;
   paymentState?: string | null | undefined;
@@ -16,6 +18,12 @@ export const hasSufficientDonorEvidenceForNewDonor = (
 ) =>
   normalizeString(input.donorFirstName) !== '' &&
   normalizeString(input.donorLastName) !== '';
+
+export const hasInitialOnlyDonorNamePart = (
+  input: Pick<ProcessabilityInput, 'donorFirstName' | 'donorLastName'>,
+) =>
+  normalizeString(input.donorFirstName).length === 1 ||
+  normalizeString(input.donorLastName).length === 1;
 
 export const hasLinkedDonorForProcessing = (
   input: Pick<ProcessabilityInput, 'linkedDonorId'>,
@@ -37,7 +45,8 @@ export const isGiftStagingProcessable = (input: ProcessabilityInput) => {
   return Boolean(
     input.processingStatus !== 'PROCESSED' &&
       isPaymentConfirmedOrNotRequired(input) &&
-      input.donorResolutionState !== 'AMBIGUOUS' &&
+      normalizeDonorResolutionState(input.donorResolutionState) !==
+        'AMBIGUOUS' &&
       (isExplicitAnonymousDonor(input) ||
         hasLinkedDonorForProcessing(input) ||
         hasSufficientDonorEvidenceForNewDonor(input)),

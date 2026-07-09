@@ -242,6 +242,24 @@ export const findSelectedDonor = (
   selectedId: string | null,
 ) => candidates.find((candidate) => candidate.id === selectedId) ?? null;
 
+export const findPrimaryEmailCandidate = (
+  candidates: PersonSummary[],
+  email: string,
+) => {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (normalizedEmail === '') {
+    return null;
+  }
+
+  return (
+    candidates.find(
+      (candidate) =>
+        candidate.emails?.primaryEmail?.trim().toLowerCase() === normalizedEmail,
+    ) ?? null
+  );
+};
+
 export const findSelectedCompany = (
   candidates: CompanySummary[],
   selectedId: string | null,

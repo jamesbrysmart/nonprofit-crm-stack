@@ -27,9 +27,6 @@ export const GIFT_AID_CLAIM_BATCH_HAS_BLOCKING_ISSUES_FIELD_UNIVERSAL_IDENTIFIER
 export const GIFT_AID_CLAIM_BATCH_BLOCKING_ISSUE_COUNT_FIELD_UNIVERSAL_IDENTIFIER =
   '3d4a5549-b08d-4e4d-9884-c7a46fdd72fb';
 
-export const GIFT_AID_CLAIM_BATCH_NOTES_FIELD_UNIVERSAL_IDENTIFIER =
-  'b104c0b9-f36c-459e-85ba-e1a8f8501d30';
-
 export default defineObject({
   universalIdentifier: GIFT_AID_CLAIM_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
   nameSingular: 'giftAidClaimBatch',
@@ -181,15 +178,6 @@ export default defineObject({
       label: 'Blocking issue count',
       icon: 'IconHash',
       defaultValue: 0,
-    },
-    {
-      universalIdentifier: GIFT_AID_CLAIM_BATCH_NOTES_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.TEXT,
-      name: 'notes',
-      label: 'Notes',
-      icon: 'IconNotes',
-      isNullable: true,
-      defaultValue: null,
     },
   ],
 });

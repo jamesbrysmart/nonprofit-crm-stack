@@ -1,5 +1,7 @@
 import type { BatchProcessingRow } from './batch-processing.types';
+import { normalizeDonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
 import {
+  hasInitialOnlyDonorNamePart,
   hasLinkedDonorForProcessing,
   hasSufficientDonorEvidenceForNewDonor,
   isExplicitAnonymousDonor,
@@ -107,7 +109,9 @@ export const classifyBatchPreflight = (
   }
 
   const issueCodes: BatchPreflightIssueCode[] = [];
-  const donorResolutionState = normalizeString(row.donorResolutionState).toUpperCase();
+  const donorResolutionState = normalizeDonorResolutionState(
+    row.donorResolutionState,
+  );
   const amountMicros = row.amount?.amountMicros;
   const currencyCode = normalizeString(row.amount?.currencyCode);
   const giftDate = normalizeString(row.giftDate);
@@ -121,6 +125,18 @@ export const classifyBatchPreflight = (
 
   if (
     donorResolutionState === 'AMBIGUOUS'
+  ) {
+    issueCodes.push('DONOR_REVIEW_REQUIRED');
+  }
+
+  if (
+    donorResolutionState === 'UNREVIEWED' &&
+    !isExplicitAnonymousDonor({ isAnonymousDonor: row.isAnonymousDonor }) &&
+    !hasLinkedDonorForProcessing({ linkedDonorId: row.donor?.id }) &&
+    hasInitialOnlyDonorNamePart({
+      donorFirstName: row.donorFirstName,
+      donorLastName: row.donorLastName,
+    })
   ) {
     issueCodes.push('DONOR_REVIEW_REQUIRED');
   }

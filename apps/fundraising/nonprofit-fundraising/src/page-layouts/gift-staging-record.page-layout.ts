@@ -69,7 +69,7 @@ export default definePageLayout({
     },
     {
       universalIdentifier: 'c2905869-2c0a-4ace-8f2a-8e7d7d7d339b',
-      title: 'Details v2',
+      title: 'Details',
       position: 50,
       icon: 'IconList',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,

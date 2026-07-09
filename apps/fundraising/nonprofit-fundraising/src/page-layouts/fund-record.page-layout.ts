@@ -2,8 +2,9 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
+import { FUND_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/fund-summary.front-component';
 import { FUND_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/fund.object';
-import { FUND_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/fund-home-core.view';
+import { FUND_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/fund-details.view';
 
 export default definePageLayout({
   universalIdentifier: '8f4cd2d8-b1c2-4b6c-958b-dc3d919e8425',
@@ -21,27 +22,29 @@ export default definePageLayout({
         {
           universalIdentifier: 'fc2ae2d2-dc65-4088-b7be-2d2d6be76a0a',
           title: 'Fund summary',
-          type: 'FIELDS',
+          type: 'FRONT_COMPONENT',
           configuration: {
-            configurationType: 'FIELDS',
-            viewUniversalIdentifier: FUND_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              FUND_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
           },
         },
       ],
     },
     {
       universalIdentifier: 'e7a48b45-30c7-42b3-a7d8-2d5fc3f34fdb',
-      title: 'Fields',
+      title: 'Details',
       position: 100,
-      icon: 'IconList',
+      icon: 'IconListDetails',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
           universalIdentifier: 'ef2d459d-737c-4c14-85f9-78c921f8d565',
-          title: 'Fund fields',
+          title: 'Fund details',
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
+            viewUniversalIdentifier: FUND_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

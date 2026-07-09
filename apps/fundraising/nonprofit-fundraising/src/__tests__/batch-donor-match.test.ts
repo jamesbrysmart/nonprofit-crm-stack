@@ -176,6 +176,20 @@ describe('batch donor match', () => {
 
     expect(
       canEvaluateBatchDonorMatchRow({
+        id: 'row_missing_state',
+        donorFirstName: 'Ada',
+        donorLastName: 'Lovelace',
+        donorEmail: 'ada@example.com',
+        isAnonymousDonor: false,
+        donorResolutionState: null,
+        paymentState: null,
+        processingStatus: 'NOT_PROCESSED',
+        donor: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      canEvaluateBatchDonorMatchRow({
         id: 'row_2',
         donorFirstName: 'Ada',
         donorLastName: 'Lovelace',

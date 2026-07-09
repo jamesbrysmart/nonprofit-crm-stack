@@ -1,10 +1,11 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
-import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import {
   buildConflictMessage,
   findPrimaryEmailConflict,
   loadPeopleByPrimaryEmails,
 } from 'src/donor-resolution/donor-creation-viability';
+import { normalizeDonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
+import { loadPeopleByExactNameEvidence } from 'src/donor-resolution/donor-candidate-discovery';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import { isPaymentConfirmedOrNotRequired } from 'src/gift-staging-review/gift-staging-processability';
 import {
@@ -15,57 +16,6 @@ import type {
   BatchDonorMatchRow,
   ExactDonorCandidate,
 } from './batch-donor-match.types';
-
-const findExistingDonorsByExactNameEvidence = async ({
-  client,
-  firstName,
-  lastName,
-}: {
-  client: CoreApiClient;
-  firstName: string;
-  lastName: string;
-}): Promise<ExactDonorCandidate[]> => {
-  const result = await client.query({
-    people: {
-      __args: {
-        first: 50,
-        filter: {
-          and: [
-            {
-              name: {
-                firstName: {
-                  ilike: firstName,
-                },
-              },
-            },
-            {
-              name: {
-                lastName: {
-                  ilike: lastName,
-                },
-              },
-            },
-          ],
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          name: {
-            firstName: true,
-            lastName: true,
-          },
-          emails: {
-            primaryEmail: true,
-            additionalEmails: true,
-          },
-        },
-      },
-    },
-  } as any);
-
-  return extractConnectionNodes<ExactDonorCandidate>(result, 'people');
-};
 
 export type DonorMatchRowsResult = {
   totalCandidateRows: number;
@@ -82,9 +32,7 @@ const isAlreadyConfirmedDonorMatch = (row: BatchDonorMatchRow) => {
       ? row.processingStatus.trim().toUpperCase()
       : '';
   const donorResolutionState =
-    typeof row.donorResolutionState === 'string'
-      ? row.donorResolutionState.trim().toUpperCase()
-      : '';
+    normalizeDonorResolutionState(row.donorResolutionState);
 
   return (
     processingStatus !== 'PROCESSED' &&
@@ -109,10 +57,14 @@ export const runDonorMatchOnRows = async (
   );
 
   for (const group of groupedRows) {
-    const nameCandidates = await findExistingDonorsByExactNameEvidence({
+    const nameCandidates = await loadPeopleByExactNameEvidence<ExactDonorCandidate>({
       client,
       firstName: group.firstName,
       lastName: group.lastName,
+      options: {
+        first: 50,
+        includeAdditionalEmails: true,
+      },
     });
     const emailCandidate = group.email === '' ? null : peopleByEmail.get(group.email) ?? null;
     const emailCandidates =
@@ -184,10 +136,11 @@ export const runDonorMatchOnRows = async (
       (row) =>
         isPaymentConfirmedOrNotRequired(row) &&
         row.isAnonymousDonor !== true &&
-        typeof row.processingStatus === 'string'
-          ? row.processingStatus.trim() !== 'PROCESSED' &&
-            row.donorResolutionState?.trim() === 'UNREVIEWED'
-          : row.donorResolutionState?.trim() === 'UNREVIEWED',
+        (typeof row.processingStatus === 'string'
+          ? row.processingStatus.trim().toUpperCase()
+          : '') !== 'PROCESSED' &&
+        normalizeDonorResolutionState(row.donorResolutionState) ===
+          'UNREVIEWED',
     ).length,
     evaluatedRows,
     alreadyConfirmedRows: rows.filter(isAlreadyConfirmedDonorMatch).length,

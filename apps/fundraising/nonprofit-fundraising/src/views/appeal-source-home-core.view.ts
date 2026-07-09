@@ -4,7 +4,9 @@ import { FUNDRAISER_COMPANY_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from '
 import { FUNDRAISER_PERSON_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fundraiser-person-on-appeal-source.field';
 import {
   APPEAL_SOURCE_AUDIENCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_DONOR_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_END_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_LAST_GIFT_AT_FIELD_UNIVERSAL_IDENTIFIER,
@@ -12,15 +14,25 @@ import {
   APPEAL_SOURCE_PLATFORM_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_SOURCE_CODE_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_START_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_SOURCE_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_URL_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/objects/appeal-source.object';
 
 export const APPEAL_SOURCE_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER =
   '46edc770-0efa-464f-b8a3-c4c8eead8f1a';
 
-const APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
+const APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
   '395f406e-78b0-4f6a-a841-9622505a7d90';
+const APPEAL_SOURCE_HOME_FUNDRAISER_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
+  '8fd6fb5e-e42e-412d-a983-9d2df0ccf290';
+const APPEAL_SOURCE_HOME_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
+  '38f7860a-119a-4514-9f38-0a7d1931c6c1';
+const APPEAL_SOURCE_HOME_TIMING_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
+  'e4e7f0cf-c03d-4721-8a24-34ad60123c67';
+const APPEAL_SOURCE_HOME_DESCRIPTION_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
+  '877d8fe1-8e86-42f6-a191-a4d2aa4f2eec';
 
 export default defineView({
   universalIdentifier: APPEAL_SOURCE_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
@@ -31,9 +43,37 @@ export default defineView({
   fieldGroups: [
     {
       universalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      name: 'Home core fields',
+        APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      name: 'Source',
       position: 0,
+      isVisible: true,
+    },
+    {
+      universalIdentifier:
+        APPEAL_SOURCE_HOME_FUNDRAISER_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      name: 'Fundraiser',
+      position: 1,
+      isVisible: true,
+    },
+    {
+      universalIdentifier:
+        APPEAL_SOURCE_HOME_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      name: 'Performance',
+      position: 2,
+      isVisible: true,
+    },
+    {
+      universalIdentifier:
+        APPEAL_SOURCE_HOME_TIMING_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      name: 'Timing',
+      position: 3,
+      isVisible: true,
+    },
+    {
+      universalIdentifier:
+        APPEAL_SOURCE_HOME_DESCRIPTION_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      name: 'Description',
+      position: 4,
       isVisible: true,
     },
   ],
@@ -43,7 +83,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 0,
       isVisible: true,
       size: 220,
@@ -53,7 +93,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 1,
       isVisible: true,
       size: 140,
@@ -63,7 +103,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 2,
       isVisible: true,
       size: 160,
@@ -73,7 +113,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_SOURCE_CODE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 3,
       isVisible: true,
       size: 160,
@@ -83,7 +123,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_PLATFORM_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 4,
       isVisible: true,
       size: 180,
@@ -93,18 +133,28 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 5,
       isVisible: true,
       size: 220,
+    },
+    {
+      universalIdentifier: '0d7ee8af-a8b2-48ed-b1c6-eac7d596815f',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_URL_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_SOURCE_HOME_SOURCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 6,
+      isVisible: true,
+      size: 240,
     },
     {
       universalIdentifier: 'ac6381c1-4ec2-4776-8f7a-c81fb6fd89d7',
       fieldMetadataUniversalIdentifier:
         FUNDRAISER_PERSON_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 6,
+        APPEAL_SOURCE_HOME_FUNDRAISER_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 0,
       isVisible: true,
       size: 220,
     },
@@ -113,8 +163,8 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         FUNDRAISER_COMPANY_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 7,
+        APPEAL_SOURCE_HOME_FUNDRAISER_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 1,
       isVisible: true,
       size: 220,
     },
@@ -123,8 +173,8 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 8,
+        APPEAL_SOURCE_HOME_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 0,
       isVisible: true,
       size: 160,
     },
@@ -133,8 +183,8 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 9,
+        APPEAL_SOURCE_HOME_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 1,
       isVisible: true,
       size: 120,
     },
@@ -143,8 +193,8 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_DONOR_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 10,
+        APPEAL_SOURCE_HOME_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 2,
       isVisible: true,
       size: 120,
     },
@@ -153,20 +203,50 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_LAST_GIFT_AT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 11,
+        APPEAL_SOURCE_HOME_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 3,
       isVisible: true,
       size: 140,
+    },
+    {
+      universalIdentifier: '7ade6d61-7d9b-4b68-86bb-f82d615f5f49',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_START_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_SOURCE_HOME_TIMING_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 0,
+      isVisible: true,
+      size: 150,
+    },
+    {
+      universalIdentifier: 'c276338f-c9d2-4298-b5fc-8c3e76e72b17',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_END_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_SOURCE_HOME_TIMING_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 1,
+      isVisible: true,
+      size: 150,
     },
     {
       universalIdentifier: '5e414d71-dfe7-4a6a-9ef9-8981e7fa8e39',
       fieldMetadataUniversalIdentifier:
         APPEAL_SOURCE_AUDIENCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_SOURCE_HOME_CORE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 12,
+        APPEAL_SOURCE_HOME_DESCRIPTION_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 0,
       isVisible: true,
       size: 280,
+    },
+    {
+      universalIdentifier: 'a2782f15-1816-4957-9d0f-05343ef81012',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_SOURCE_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_SOURCE_HOME_DESCRIPTION_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 1,
+      isVisible: true,
+      size: 320,
     },
   ],
 });

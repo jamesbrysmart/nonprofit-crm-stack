@@ -30,9 +30,6 @@ export const APPEAL_BUDGET_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
 export const APPEAL_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER =
   '0d860a8e-f0d7-4ba3-bd4c-6336cf51c80e';
 
-export const APPEAL_NOTES_FIELD_UNIVERSAL_IDENTIFIER =
-  '559d756f-e30a-43b6-a31d-b7c3e49f52f4';
-
 export const APPEAL_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER =
   '639aa87f-45f2-463c-bddb-e223a7261a53';
 
@@ -228,16 +225,6 @@ export default defineObject({
       label: 'External reference',
       description: 'External campaign, page, or platform identifier for this appeal.',
       icon: 'IconExternalLink',
-      isNullable: true,
-      defaultValue: null,
-    },
-    {
-      universalIdentifier: APPEAL_NOTES_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.TEXT,
-      name: 'notes',
-      label: 'Notes',
-      description: 'Operational notes about the appeal.',
-      icon: 'IconNotes',
       isNullable: true,
       defaultValue: null,
     },

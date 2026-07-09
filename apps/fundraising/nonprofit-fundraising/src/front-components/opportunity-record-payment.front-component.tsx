@@ -23,6 +23,7 @@ import {
   getInputEventValue,
 } from 'src/manual-gift-entry/new-gift-support';
 import { deriveGiftTypeForOpportunityPayment } from 'src/opportunity-payments/opportunity-payment-gift-type';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 export const OPPORTUNITY_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
   'dd442e7b-aba3-418d-9717-0c6849d7304a';
@@ -94,13 +95,7 @@ const formatMoney = (amountMicros: number | null, currencyCode: string) => {
     return '-';
   }
 
-  return `${currencyCode} ${(amountMicros / 1_000_000).toLocaleString(
-    undefined,
-    {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    },
-  )}`;
+  return formatCurrencyAmount({ amountMicros, currencyCode }, '-');
 };
 
 const getLinkedGifts = (record: OpportunityPaymentRecord) =>
@@ -365,39 +360,36 @@ const OpportunityRecordPayment = () => {
       </div>
 
       <SummaryStrip>
-        <SummaryStripItem label="Company">
-          <strong>{companyName === '' ? 'No company set' : companyName}</strong>
-        </SummaryStripItem>
-        <SummaryStripItem label="Funding type">
-          <strong>{normalizeString(record.fundingType) || '-'}</strong>
-        </SummaryStripItem>
-        <SummaryStripItem label="Awarded amount">
-          <strong>
-            {formatMoney(
-              paymentContext.awardedAmountMicros,
-              paymentContext.currencyCode,
-            )}
-          </strong>
-        </SummaryStripItem>
-        <SummaryStripItem label="Received so far">
-          <strong>
-            {formatMoney(
-              paymentContext.receivedAmountMicros,
-              paymentContext.currencyCode,
-            )}
-          </strong>
-        </SummaryStripItem>
-        <SummaryStripItem label="Remaining">
-          <strong>
-            {formatMoney(
-              paymentContext.remainingAmountMicros,
-              paymentContext.currencyCode,
-            )}
-          </strong>
-        </SummaryStripItem>
-        <SummaryStripItem label="Gift type">
-          <strong>{GIFT_TYPE_LABELS[giftType]}</strong>
-        </SummaryStripItem>
+        <SummaryStripItem
+          label="Company"
+          value={companyName === '' ? 'No company set' : companyName}
+        />
+        <SummaryStripItem
+          label="Funding type"
+          value={normalizeString(record.fundingType) || '-'}
+        />
+        <SummaryStripItem
+          label="Awarded amount"
+          value={formatMoney(
+            paymentContext.awardedAmountMicros,
+            paymentContext.currencyCode,
+          )}
+        />
+        <SummaryStripItem
+          label="Received so far"
+          value={formatMoney(
+            paymentContext.receivedAmountMicros,
+            paymentContext.currencyCode,
+          )}
+        />
+        <SummaryStripItem
+          label="Remaining"
+          value={formatMoney(
+            paymentContext.remainingAmountMicros,
+            paymentContext.currencyCode,
+          )}
+        />
+        <SummaryStripItem label="Gift type" value={GIFT_TYPE_LABELS[giftType]} />
       </SummaryStrip>
 
       <div

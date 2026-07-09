@@ -44,6 +44,14 @@ const GiftStagingReviewSummary = () => {
 
   const reviewState = deriveReviewState(record);
   const reviewIssues = deriveReviewIssues(record);
+  const hasRecurringGiving = record.providerAgreementId !== '';
+  const hasGiftAidRequest = isGiftAidEnabled() && record.giftAidRequested;
+  const reviewNotes = [
+    hasRecurringGiving ? 'Recurring giving' : '',
+    hasGiftAidRequest ? 'Gift Aid' : '',
+  ]
+    .filter((value) => value !== '')
+    .join(' and ');
 
   const handleGoToBatch = async () => {
     if (record.giftBatchId === '') {
@@ -114,46 +122,31 @@ const GiftStagingReviewSummary = () => {
       ) : null}
 
       <SummaryStrip>
-        <SummaryStripItem label="Amount">
-          <div style={secondaryTextStyle}>{record.amountDisplay}</div>
-        </SummaryStripItem>
-        <SummaryStripItem label="Batch">
-          <div style={secondaryTextStyle}>
-            {record.giftBatchId === ''
-              ? 'Not in a batch.'
-              : record.giftBatchName}
-          </div>
-        </SummaryStripItem>
+        <SummaryStripItem label="Amount" value={record.amountDisplay} />
+        <SummaryStripItem
+          label="Batch"
+          value={
+            record.giftBatchId === '' ? 'Not in a batch.' : record.giftBatchName
+          }
+        />
         {record.appealName !== '' ? (
-          <SummaryStripItem label="Appeal">
-            <div style={secondaryTextStyle}>{record.appealName}</div>
-          </SummaryStripItem>
+          <SummaryStripItem label="Appeal" value={record.appealName} />
         ) : null}
-        <SummaryStripItem label="Gift record">
-          <div style={secondaryTextStyle}>
-            {record.processingStatus === 'PROCESSED' &&
+        <SummaryStripItem
+          label="Gift record"
+          value={
+            record.processingStatus === 'PROCESSED' &&
             record.committedGiftId !== ''
               ? 'Created.'
-              : 'Not created yet.'}
-          </div>
-        </SummaryStripItem>
-        {(record.providerAgreementId !== '' ||
-          (isGiftAidEnabled() && record.giftAidRequested)) && (
-          <SummaryStripItem label="Review notes">
-            <div style={secondaryTextStyle}>
-              {record.providerAgreementId !== '' ? 'Recurring giving' : ''}
-              {record.providerAgreementId !== '' &&
-              isGiftAidEnabled() &&
-              record.giftAidRequested
-                ? ' and '
-                : ''}
-              {isGiftAidEnabled() && record.giftAidRequested
-                ? 'Gift Aid'
-                : ''}
-              {' noted.'}
-            </div>
-          </SummaryStripItem>
-        )}
+              : 'Not created yet.'
+          }
+        />
+        {reviewNotes !== '' ? (
+          <SummaryStripItem
+            label="Review notes"
+            value={`${reviewNotes} noted.`}
+          />
+        ) : null}
       </SummaryStrip>
     </div>
   );

@@ -36,12 +36,6 @@ const inlineFieldStyle: CSSProperties = {
   gap: '4px',
 };
 
-const summaryValueStyle: CSSProperties = {
-  color: '#1f2328',
-  fontSize: '13px',
-  lineHeight: 1.4,
-};
-
 const getInputEventValue = (event: unknown) => {
   if (
     typeof event === 'object' &&
@@ -381,15 +375,9 @@ const GiftBatchCoding = () => {
 
       {!isOverWorkflowLimit && targetCount > 0 && !isExpanded ? (
         <SummaryStrip>
-          <SummaryStripItem label="Appeal">
-            <div style={summaryValueStyle}>{appealSummary}</div>
-          </SummaryStripItem>
-          <SummaryStripItem label="Fund">
-            <div style={summaryValueStyle}>{fundSummary}</div>
-          </SummaryStripItem>
-          <SummaryStripItem label="Appeal source">
-            <div style={summaryValueStyle}>{appealSourceSummary}</div>
-          </SummaryStripItem>
+          <SummaryStripItem label="Appeal" value={appealSummary} />
+          <SummaryStripItem label="Fund" value={fundSummary} />
+          <SummaryStripItem label="Appeal source" value={appealSourceSummary} />
         </SummaryStrip>
       ) : null}
 

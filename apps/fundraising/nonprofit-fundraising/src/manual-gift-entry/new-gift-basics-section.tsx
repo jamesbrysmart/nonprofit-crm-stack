@@ -47,6 +47,8 @@ export const GiftBasicsSection = ({
     setCurrencyCode,
     paymentType,
     setPaymentType,
+    provider,
+    setProvider,
     giftDate,
     setGiftDate,
     fundOptions,
@@ -129,6 +131,16 @@ export const GiftBasicsSection = ({
               </option>
             ))}
           </select>
+        </label>
+
+        <label style={fieldStyle}>
+          <span style={labelStyle}>Payment/source</span>
+          <input
+            style={inputStyle}
+            placeholder="Stripe, JustGiving, bank"
+            value={provider}
+            onChange={(event) => setProvider(getInputEventValue(event))}
+          />
         </label>
 
         <label style={fieldStyle}>

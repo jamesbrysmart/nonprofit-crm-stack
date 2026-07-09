@@ -3,7 +3,6 @@ import {
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
 import { APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal-source.object';
-import { APPEAL_SOURCE_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/appeal-source-details.view';
 import { APPEAL_SOURCE_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/appeal-source-home-core.view';
 
 export default definePageLayout({
@@ -32,27 +31,9 @@ export default definePageLayout({
       ],
     },
     {
-      universalIdentifier: '5e9db30a-0d6d-4b76-aad8-cda26c74979d',
-      title: 'Details',
-      position: 100,
-      icon: 'IconListDetails',
-      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
-      widgets: [
-        {
-          universalIdentifier: '6f640a06-85f0-4313-a6d7-c0d8f38c6aa4',
-          title: 'Appeal source details',
-          type: 'FIELDS',
-          configuration: {
-            configurationType: 'FIELDS',
-            viewUniversalIdentifier: APPEAL_SOURCE_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
-          },
-        },
-      ],
-    },
-    {
       universalIdentifier: '3179df61-c5c8-428b-9068-6240ee6e1d8a',
       title: 'Timeline',
-      position: 200,
+      position: 100,
       icon: 'IconTimelineEvent',
       layoutMode: PageLayoutTabLayoutMode.CANVAS,
       widgets: [
@@ -69,7 +50,7 @@ export default definePageLayout({
     {
       universalIdentifier: 'a9c07f4f-411b-4ca8-b6ee-f9a1c4c89104',
       title: 'Notes',
-      position: 300,
+      position: 200,
       icon: 'IconNotes',
       layoutMode: PageLayoutTabLayoutMode.CANVAS,
       widgets: [

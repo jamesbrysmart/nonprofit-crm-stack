@@ -47,7 +47,6 @@ type SeedFund = {
     | 'OTHER';
   isActive: boolean;
   description?: string;
-  notes?: string;
 };
 
 type SeedAppeal = {
@@ -210,7 +209,6 @@ type SeedGiftAidClaimBatch = {
   hasBlockingIssues: boolean;
   blockingIssueCount: number;
   submittedAt?: string;
-  notes?: string;
 };
 
 type ExistingGiftAidClaimBatchRecord = {
@@ -385,7 +383,6 @@ const SEED_FUNDS: SeedFund[] = [
     restrictionType: 'UNRESTRICTED',
     isActive: true,
     description: 'General unrestricted support for the charity.',
-    notes: 'Default unrestricted destination for broad support appeals.',
   },
   {
     name: 'Emergency Response Fund',
@@ -393,7 +390,6 @@ const SEED_FUNDS: SeedFund[] = [
     restrictionType: 'RESTRICTED',
     isActive: true,
     description: 'Restricted support for time-sensitive frontline response work.',
-    notes: 'Useful for testing appeal default-fund behavior on staging gifts.',
   },
 ];
 
@@ -2323,8 +2319,6 @@ const SEED_GIFT_AID_CLAIM_BATCHES: SeedGiftAidClaimBatch[] = [
     totalAmountMicros: 25_000_000,
     hasBlockingIssues: true,
     blockingIssueCount: 1,
-    notes:
-      'Seeded exploratory draft claim for Gift Aid workspace and gift-record review.',
   },
   {
     name: 'Gift Aid walkthrough clean draft claim',
@@ -2333,8 +2327,6 @@ const SEED_GIFT_AID_CLAIM_BATCHES: SeedGiftAidClaimBatch[] = [
     totalAmountMicros: 31_000_000,
     hasBlockingIssues: false,
     blockingIssueCount: 0,
-    notes:
-      'Seeded clean Gift Aid draft claim for HMRC submission probe validation.',
   },
 ];
 
@@ -2953,7 +2945,6 @@ const seedFunds = async (client: CoreApiClient) => {
               restrictionType: seed.restrictionType,
               isActive: seed.isActive,
               description: seed.description ?? null,
-              notes: seed.notes ?? null,
             },
           },
           id: true,
@@ -2980,7 +2971,6 @@ const seedFunds = async (client: CoreApiClient) => {
             restrictionType: seed.restrictionType,
             isActive: seed.isActive,
             description: seed.description ?? null,
-            notes: seed.notes ?? null,
           },
         },
         id: true,
@@ -3567,7 +3557,6 @@ const seedGiftAidClaimBatches = async (client: CoreApiClient) => {
             hasBlockingIssues: seed.hasBlockingIssues,
             blockingIssueCount: seed.blockingIssueCount,
             ...(seed.submittedAt ? { submittedAt: seed.submittedAt } : {}),
-            ...(seed.notes ? { notes: seed.notes } : {}),
           },
         },
         id: true,

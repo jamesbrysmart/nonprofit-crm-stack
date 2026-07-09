@@ -297,6 +297,10 @@ export const compactValueStyle: CSSProperties = {
   fontSize: '14px',
 };
 
+export const summaryStripValueStyle: CSSProperties = {
+  ...secondaryTextStyle,
+};
+
 export const contextSignalRowStyle: CSSProperties = {
   display: 'flex',
   gap: '6px',
@@ -331,7 +335,7 @@ export const CompactMetaItem = ({
 }) => (
   <div style={compactMetaItemStyle}>
     <div style={labelStyle}>{label}</div>
-    {children ?? <div style={secondaryTextStyle}>{value}</div>}
+    {children ?? <div style={summaryStripValueStyle}>{value}</div>}
   </div>
 );
 

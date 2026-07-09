@@ -21,9 +21,6 @@ export const FUND_IS_ACTIVE_FIELD_UNIVERSAL_IDENTIFIER =
 export const FUND_EXTERNAL_ACCOUNTING_CODE_FIELD_UNIVERSAL_IDENTIFIER =
   '16d00d35-3ba7-4609-98ca-0189b953e9f0';
 
-export const FUND_NOTES_FIELD_UNIVERSAL_IDENTIFIER =
-  'cc4331b1-4801-4fb4-b77d-68a02199ac1d';
-
 export default defineObject({
   universalIdentifier: FUND_OBJECT_UNIVERSAL_IDENTIFIER,
   nameSingular: 'fund',
@@ -127,16 +124,6 @@ export default defineObject({
       label: 'External accounting code',
       description: 'External finance or accounting-system mapping code for the fund.',
       icon: 'IconBuildingBank',
-      isNullable: true,
-      defaultValue: null,
-    },
-    {
-      universalIdentifier: FUND_NOTES_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.TEXT,
-      name: 'notes',
-      label: 'Notes',
-      description: 'Operational notes about using this fund.',
-      icon: 'IconNotes',
       isNullable: true,
       defaultValue: null,
     },

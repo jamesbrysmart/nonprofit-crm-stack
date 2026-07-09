@@ -7,6 +7,7 @@ import { GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/fron
 import { GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-summary.front-component';
 import { GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-worklists.front-component';
 import { GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-batch.object';
+import { GIFT_BATCH_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/gift-batch-details.view';
 
 export default definePageLayout({
   universalIdentifier: 'c8ea69b3-6fcb-44cc-a22a-3ef95cb6ec85',
@@ -65,9 +66,9 @@ export default definePageLayout({
     },
     {
       universalIdentifier: 'dbf57088-cb16-41c7-b7eb-c6c5c21028c4',
-      title: 'Fields',
+      title: 'Details',
       position: 50,
-      icon: 'IconList',
+      icon: 'IconListDetails',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
@@ -76,6 +77,7 @@ export default definePageLayout({
           type: 'FIELDS',
           configuration: {
             configurationType: 'FIELDS',
+            viewUniversalIdentifier: GIFT_BATCH_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

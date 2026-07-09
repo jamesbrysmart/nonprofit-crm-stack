@@ -31,6 +31,7 @@ export const buildManualGiftPayload = (args: {
   const donorEmail = normalizeString(body.donorEmail);
   const companyName = normalizeString(body.companyName);
   const description = normalizeString(body.description);
+  const provider = normalizeString(body.provider);
   const currencyCode = normalizeRequiredCurrencyCode(body.currencyCode);
   const amountMicros = parseRequiredManualGiftAmountMicros(body.amountValue);
   const giftDate = normalizeRequiredGiftDate(body.giftDate);
@@ -67,6 +68,7 @@ export const buildManualGiftPayload = (args: {
     giftDate,
     giftType,
     ...(description !== '' ? { description } : {}),
+    ...(provider !== '' ? { provider } : {}),
     ...(donorType === 'INDIVIDUAL'
       ? {
           donorFirstName,

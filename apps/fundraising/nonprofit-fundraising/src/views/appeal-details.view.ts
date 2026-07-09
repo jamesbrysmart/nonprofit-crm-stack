@@ -3,12 +3,15 @@ import { DEFAULT_FUND_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/de
 import {
   APPEAL_BUDGET_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_DONOR_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_END_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_GOAL_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  APPEAL_LAST_GIFT_AT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER,
-  APPEAL_NOTES_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_OBJECT_UNIVERSAL_IDENTIFIER,
+  APPEAL_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_START_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   APPEAL_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
@@ -17,8 +20,12 @@ import {
 export const APPEAL_DETAILS_VIEW_UNIVERSAL_IDENTIFIER =
   'fd8dfa4b-3df9-4761-b34f-45a36d7d3669';
 
-const APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
+const APPEAL_DETAILS_APPEAL_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
   'ea9f21ee-b677-4882-aa42-f4e1a28966be';
+const APPEAL_DETAILS_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
+  '97f3d5bf-eabf-47c3-ad38-1397209d98ac';
+const APPEAL_DETAILS_REFERENCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
+  'f5028158-f119-4da6-9efe-f630202c5fc0';
 
 export default defineView({
   universalIdentifier: APPEAL_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
@@ -28,9 +35,23 @@ export default defineView({
   position: 101,
   fieldGroups: [
     {
-      universalIdentifier: APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      name: 'Appeal details',
+      universalIdentifier: APPEAL_DETAILS_APPEAL_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      name: 'Appeal',
       position: 0,
+      isVisible: true,
+    },
+    {
+      universalIdentifier:
+        APPEAL_DETAILS_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      name: 'Performance',
+      position: 1,
+      isVisible: true,
+    },
+    {
+      universalIdentifier:
+        APPEAL_DETAILS_REFERENCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      name: 'Reference',
+      position: 2,
       isVisible: true,
     },
   ],
@@ -39,7 +60,7 @@ export default defineView({
       universalIdentifier: 'd4a8cfba-4adf-4d7e-99cf-eb8722aeffbe',
       fieldMetadataUniversalIdentifier: APPEAL_NAME_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_DETAILS_APPEAL_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 0,
       isVisible: true,
       size: 220,
@@ -48,7 +69,7 @@ export default defineView({
       universalIdentifier: '8c6f945d-2d7c-4f92-a8d1-1782cc7cdbe4',
       fieldMetadataUniversalIdentifier: APPEAL_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_DETAILS_APPEAL_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 1,
       isVisible: true,
       size: 140,
@@ -57,7 +78,7 @@ export default defineView({
       universalIdentifier: '634ab281-e218-4758-b957-50c6894a95d4',
       fieldMetadataUniversalIdentifier: APPEAL_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_DETAILS_APPEAL_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 2,
       isVisible: true,
       size: 180,
@@ -67,7 +88,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         DEFAULT_FUND_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_DETAILS_APPEAL_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 3,
       isVisible: true,
       size: 220,
@@ -77,7 +98,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_START_DATE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_DETAILS_APPEAL_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 4,
       isVisible: true,
       size: 150,
@@ -87,7 +108,7 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_END_DATE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+        APPEAL_DETAILS_APPEAL_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 5,
       isVisible: true,
       size: 150,
@@ -97,8 +118,8 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_GOAL_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 6,
+        APPEAL_DETAILS_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 0,
       isVisible: true,
       size: 160,
     },
@@ -107,8 +128,48 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_BUDGET_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 7,
+        APPEAL_DETAILS_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 1,
+      isVisible: true,
+      size: 160,
+    },
+    {
+      universalIdentifier: '46f56c97-8eb4-42a7-b081-ed0922e99f4f',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_RAISED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_DETAILS_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 2,
+      isVisible: true,
+      size: 160,
+    },
+    {
+      universalIdentifier: '02cdd9f4-61e5-43e7-863d-dfb024ca17a8',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_GIFT_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_DETAILS_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 3,
+      isVisible: true,
+      size: 140,
+    },
+    {
+      universalIdentifier: 'a514b019-57ce-4235-a58b-670939836b45',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_DONOR_COUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_DETAILS_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 4,
+      isVisible: true,
+      size: 140,
+    },
+    {
+      universalIdentifier: '913d2bed-9f8a-43d1-82c3-e3d5324bbf1c',
+      fieldMetadataUniversalIdentifier:
+        APPEAL_LAST_GIFT_AT_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        APPEAL_DETAILS_PERFORMANCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 5,
       isVisible: true,
       size: 160,
     },
@@ -117,8 +178,8 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_EXTERNAL_REFERENCE_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 8,
+        APPEAL_DETAILS_REFERENCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 0,
       isVisible: true,
       size: 220,
     },
@@ -127,19 +188,10 @@ export default defineView({
       fieldMetadataUniversalIdentifier:
         APPEAL_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
       viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 9,
+        APPEAL_DETAILS_REFERENCE_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 1,
       isVisible: true,
       size: 320,
-    },
-    {
-      universalIdentifier: '7379a437-57e4-4bf5-a6c9-a985653a34e6',
-      fieldMetadataUniversalIdentifier: APPEAL_NOTES_FIELD_UNIVERSAL_IDENTIFIER,
-      viewFieldGroupUniversalIdentifier:
-        APPEAL_DETAILS_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
-      position: 10,
-      isVisible: true,
-      size: 280,
     },
   ],
 });

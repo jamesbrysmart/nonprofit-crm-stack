@@ -7,7 +7,6 @@ import {
   SummaryStripItem,
   badgeStyle,
   contextSignalRowStyle,
-  compactValueStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
@@ -296,36 +295,31 @@ const PersonRecordSummary = () => {
           </div>
           {giftCount > 0 ? (
             <SummaryStrip>
-              <SummaryStripItem label="Lifetime giving">
-                <div style={compactValueStyle}>
-                  {formatCurrencyAmount(
-                    record.lifetimeGiftAmount,
-                    'Not recorded',
-                  )}
-                </div>
-              </SummaryStripItem>
-              <SummaryStripItem label="Gifts">
-                <div style={compactValueStyle}>{giftCount}</div>
-              </SummaryStripItem>
-              <SummaryStripItem label="Last gift">
-                <div style={compactValueStyle}>
-                  {formatGiftAmountAndDate(
-                    record.lastGiftAmount,
-                    record.lastGiftDate,
-                  )}
-                </div>
-              </SummaryStripItem>
-              <SummaryStripItem label="Largest gift">
-                <div style={compactValueStyle}>
-                  {formatCurrencyAmount(record.largestGiftAmount)}
-                </div>
-              </SummaryStripItem>
+              <SummaryStripItem
+                label="Lifetime giving"
+                value={formatCurrencyAmount(
+                  record.lifetimeGiftAmount,
+                  'Not recorded',
+                )}
+              />
+              <SummaryStripItem label="Gifts" value={giftCount} />
+              <SummaryStripItem
+                label="Last gift"
+                value={formatGiftAmountAndDate(
+                  record.lastGiftAmount,
+                  record.lastGiftDate,
+                )}
+              />
+              <SummaryStripItem
+                label="Largest gift"
+                value={formatCurrencyAmount(record.largestGiftAmount)}
+              />
             </SummaryStrip>
           ) : null}
         </>
       ) : (
         <div style={contextSignalRowStyle}>
-          <span style={badgeStyle('neutral')}>No constituent activity</span>
+          <span style={badgeStyle('neutral')}>No fundraising activity</span>
           <span style={secondaryTextStyle}>Standard CRM contact.</span>
         </div>
       )}

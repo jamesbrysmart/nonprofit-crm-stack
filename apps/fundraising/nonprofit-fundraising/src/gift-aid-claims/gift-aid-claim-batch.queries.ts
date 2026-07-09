@@ -29,7 +29,6 @@ const giftAidClaimBatchSelection = {
   totalAmount: true,
   hasBlockingIssues: true,
   blockingIssueCount: true,
-  notes: true,
 } as const;
 
 const giftAidClaimGiftSelection = {

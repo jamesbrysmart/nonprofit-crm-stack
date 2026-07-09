@@ -1,6 +1,11 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import type { RoutePayload } from 'twenty-sdk/define';
+
+vi.mock('twenty-client-sdk/core', () => ({
+  CoreApiClient: vi.fn(() => ({})),
+}));
+
 import {
   publicStripeWebhookHandler,
   type PublicStripeWebhookResponse,

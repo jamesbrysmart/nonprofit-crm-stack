@@ -38,19 +38,6 @@ const handler = async (
     throw new Error('Gift staging row not found');
   }
 
-  if (row.giftReadyStatus !== 'READY_TO_PROCESS') {
-    return {
-      giftStagingId,
-      processingStatus: 'NOT_PROCESSED',
-      committedGiftId: row.committedGift?.id ?? null,
-      recurringAgreementId: row.recurringAgreement?.id ?? null,
-      executionPath: null,
-      stagingWritebackSucceeded: true,
-      reconciliationError: null,
-      errorDetail: row.errorDetail,
-    };
-  }
-
   const result = await processSingleGiftStagingRow(client, row);
   return {
     giftStagingId,

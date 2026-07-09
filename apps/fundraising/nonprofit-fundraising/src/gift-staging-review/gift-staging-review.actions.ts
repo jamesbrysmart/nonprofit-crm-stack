@@ -220,7 +220,7 @@ export const saveDonorEvidence = async (
         : donorEvidence.donorEmail.trim(),
     isAnonymousDonor: false,
     donorId: null,
-    donorResolutionState: 'NEW_DONOR',
+    donorResolutionState: 'UNREVIEWED',
     giftReadyStatus: 'NEEDS_REVIEW',
     processingStatus: 'NOT_PROCESSED',
   });

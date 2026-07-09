@@ -21,6 +21,7 @@ import {
   RECURRING_AGREEMENT_START_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   RECURRING_AGREEMENT_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/objects/recurring-agreement.object';
+import { APPLICATION_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 
 export const RECURRING_AGREEMENT_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER =
   '3bf36d70-cc2d-4e58-9969-23d4d3e18696';
@@ -36,6 +37,7 @@ const RECURRING_AGREEMENT_HOME_SYSTEM_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
 
 const systemFieldUniversalIdentifier = (fieldName: string) =>
   generateDefaultFieldUniversalIdentifier({
+    applicationUniversalIdentifier: APPLICATION_UNIVERSAL_IDENTIFIER,
     objectUniversalIdentifier: RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER,
     fieldName,
   });

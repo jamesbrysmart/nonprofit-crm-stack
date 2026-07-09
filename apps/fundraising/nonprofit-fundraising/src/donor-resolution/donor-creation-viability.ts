@@ -1,11 +1,9 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
-import { extractConnectionNodes } from 'src/core-api/core-api-results';
+import {
+  loadPeopleByPrimaryEmails,
+  normalizeDonorCandidateEmail,
+  type PeopleByEmailMap,
+} from './donor-candidate-discovery';
 import type { PersonSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
-
-export type PeopleByEmailMap = Map<string, PersonSummary>;
-
-const normalizeEmail = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim().toLowerCase() : '';
 
 const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
@@ -25,59 +23,8 @@ export const buildConflictMessage = (
   return `This row cannot create a new donor because ${email} is already the primary email for an existing donor. Link that donor or change the staged email first.`;
 };
 
-export const loadPeopleByPrimaryEmails = async (
-  client: CoreApiClient,
-  emails: string[],
-): Promise<PeopleByEmailMap> => {
-  const normalizedEmails = [...new Set(emails.map(normalizeEmail).filter(Boolean))];
-
-  if (normalizedEmails.length === 0) {
-    return new Map();
-  }
-
-  const result = await client.query({
-    people: {
-      __args: {
-        first: Math.max(normalizedEmails.length, 20),
-        filter: {
-          or: normalizedEmails.map((email) => ({
-            emails: {
-              primaryEmail: {
-                eq: email,
-              },
-            },
-          })),
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          name: {
-            firstName: true,
-            lastName: true,
-          },
-          emails: {
-            primaryEmail: true,
-          },
-        },
-      },
-    },
-  } as any);
-
-  const people = extractConnectionNodes<PersonSummary>(result, 'people');
-
-  const peopleByEmail = new Map<string, PersonSummary>();
-
-  for (const person of people) {
-    const email = normalizeEmail(person.emails?.primaryEmail);
-
-    if (email !== '') {
-      peopleByEmail.set(email, person);
-    }
-  }
-
-  return peopleByEmail;
-};
+export { loadPeopleByPrimaryEmails };
+export type { PeopleByEmailMap };
 
 export const findPrimaryEmailConflict = ({
   donorEmail,
@@ -88,7 +35,7 @@ export const findPrimaryEmailConflict = ({
   linkedDonorId?: string | null | undefined;
   peopleByEmail: Map<string, PersonSummary>;
 }): PersonSummary | null => {
-  const normalizedEmail = normalizeEmail(donorEmail);
+  const normalizedEmail = normalizeDonorCandidateEmail(donorEmail);
 
   if (normalizedEmail === '') {
     return null;

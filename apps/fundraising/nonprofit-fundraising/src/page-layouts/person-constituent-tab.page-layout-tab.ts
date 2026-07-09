@@ -16,14 +16,14 @@ export default definePageLayoutTab({
   pageLayoutUniversalIdentifier:
     STANDARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIERS.personRecordPage
       .universalIdentifier,
-  title: 'Constituent',
+  title: 'Fundraising',
   position: 5,
   icon: 'IconHeartHandshake',
   layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
   widgets: [
     {
       universalIdentifier: 'fc7a664a-7d5d-4c2a-95d1-412d3cc9261d',
-      title: 'Person constituent context',
+      title: 'Fundraising context',
       type: 'FRONT_COMPONENT',
       configuration: {
         configurationType: 'FRONT_COMPONENT',

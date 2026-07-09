@@ -37,4 +37,24 @@ describe('buildManualGiftPayload', () => {
       }),
     ).toThrow('Donor first name and last name are required');
   });
+
+  it('carries optional payment source/provider evidence onto the gift payload', () => {
+    expect(
+      buildManualGiftPayload({
+        body: {
+          donorFirstName: 'Ada',
+          donorLastName: 'Lovelace',
+          provider: 'JustGiving',
+          amountValue: '25.00',
+          currencyCode: 'GBP',
+          paymentType: 'CARD',
+          giftDate: '2026-04-21',
+        },
+        donorType: 'INDIVIDUAL',
+        donorId: null,
+      }),
+    ).toMatchObject({
+      provider: 'JustGiving',
+    });
+  });
 });

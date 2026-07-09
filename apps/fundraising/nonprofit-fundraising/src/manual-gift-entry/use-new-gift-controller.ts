@@ -22,6 +22,8 @@ import type {
 import type { RecurringAgreementSummary } from 'src/recurring/recurring.types';
 import {
   buildMailingAddressInput,
+  buildPersonDisplayName,
+  findPrimaryEmailCandidate,
   findSelectedCompany,
   findSelectedDonor,
   normalizeName,
@@ -47,6 +49,7 @@ export const useNewGiftController = () => {
   const [currencyCode, setCurrencyCode] = useState('GBP');
   const [paymentType, setPaymentType] =
     useState<ManualGiftPaymentType>('BANK_TRANSFER');
+  const [provider, setProvider] = useState('');
   const [giftDate, setGiftDate] = useState('');
   const [selectedFundId, setSelectedFundId] = useState('');
   const [selectedAppealId, setSelectedAppealId] = useState('');
@@ -214,11 +217,12 @@ export const useNewGiftController = () => {
 
   const trimmedFirstName = normalizeName(donorFirstName);
   const trimmedLastName = normalizeName(donorLastName);
+  const trimmedDonorEmail = donorEmail.trim();
   const trimmedCompanyName = normalizeName(companyName);
   const canCheckDonorDuplicates =
     donorType === 'INDIVIDUAL' &&
     !isAnonymousDonor &&
-    trimmedFirstName.length >= 2 &&
+    trimmedFirstName.length >= 1 &&
     trimmedLastName.length >= 2;
   const canSearchCompanies =
     donorType === 'COMPANY' && trimmedCompanyName.length >= 2;
@@ -234,6 +238,9 @@ export const useNewGiftController = () => {
   const selectedDonorSummary = duplicateResult
     ? findSelectedDonor(duplicateResult.candidates, selectedDonorId)
     : null;
+  const primaryEmailCandidate = duplicateResult
+    ? findPrimaryEmailCandidate(duplicateResult.candidates, trimmedDonorEmail)
+    : null;
   const selectedCompanySummary = findSelectedCompany(
     companyResults,
     selectedCompanyId,
@@ -247,6 +254,7 @@ export const useNewGiftController = () => {
     const result = await checkDonorDuplicates({
       donorFirstName: trimmedFirstName,
       donorLastName: trimmedLastName,
+      donorEmail: trimmedDonorEmail,
     });
 
     setDuplicateResult(result);
@@ -289,6 +297,7 @@ export const useNewGiftController = () => {
     canCheckDonorDuplicates,
     trimmedFirstName,
     trimmedLastName,
+    trimmedDonorEmail,
   ]);
 
   const runManualGiftDuplicateCheck = async (args: {
@@ -402,6 +411,21 @@ export const useNewGiftController = () => {
       const resolvedCompanyChoice: ManualGiftCompanyChoice =
         donorType === 'COMPANY' ? (companyChoice ?? 'CREATE_NEW') : 'CREATE_NEW';
 
+      if (
+        donorType === 'INDIVIDUAL' &&
+        !isAnonymousDonor &&
+        resolvedDonorChoice === 'CREATE_NEW' &&
+        primaryEmailCandidate
+      ) {
+        const donorName = buildPersonDisplayName(primaryEmailCandidate);
+
+        await enqueueSnackbar({
+          message: `This email already belongs to ${donorName}. Select that donor or change the email before creating a new donor.`,
+          variant: 'warning',
+        });
+        return;
+      }
+
       const duplicateTarget =
         donorType === 'INDIVIDUAL' &&
         !isAnonymousDonor &&
@@ -445,7 +469,7 @@ export const useNewGiftController = () => {
           ? {
               donorFirstName: isAnonymousDonor ? '' : trimmedFirstName,
               donorLastName: isAnonymousDonor ? '' : trimmedLastName,
-              donorEmail: isAnonymousDonor ? '' : donorEmail.trim(),
+              donorEmail: isAnonymousDonor ? '' : trimmedDonorEmail,
               isAnonymousDonor,
               donorMailingAddress: !isAnonymousDonor && includeDonorAddress
                 ? buildMailingAddressInput({
@@ -468,6 +492,7 @@ export const useNewGiftController = () => {
         amountValue: amountValue.trim(),
         currencyCode,
         paymentType,
+        ...(provider.trim() !== '' ? { provider: provider.trim() } : {}),
         giftDate: giftDate.trim(),
         ...(selectedFundId !== '' ? { selectedFundId } : {}),
         ...(selectedAppealId !== '' ? { selectedAppealId } : {}),
@@ -734,6 +759,8 @@ export const useNewGiftController = () => {
     setCurrencyCode,
     paymentType,
     setPaymentType,
+    provider,
+    setProvider,
     giftDate,
     setGiftDate,
     fundOptions,

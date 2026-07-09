@@ -15,6 +15,10 @@ const collectIds = vi.hoisted(
     ),
 );
 
+vi.mock('twenty-client-sdk/core', () => ({
+  CoreApiClient: vi.fn(() => ({})),
+}));
+
 vi.mock('src/donor-rollups/donor-rollups', () => ({
   collectDonorIds: collectIds,
   recomputeDonorRollups: recomputeDonorRollupsMock,

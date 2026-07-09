@@ -12,6 +12,8 @@ import {
   classifyBatchPreflight,
   type BatchPreflightResult,
 } from 'src/batch-processing/batch-processing.preflight';
+import { normalizeDonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 import { normalizeGiftReadyStatus } from './gift-ready-status';
 
 const coalesceString = (
@@ -121,9 +123,7 @@ const formatAmountDisplay = (
     return 'Unknown amount';
   }
 
-  const currencyCode = coalesceString(amount.currencyCode, 'GBP');
-
-  return `${currencyCode} ${(amount.amountMicros / 1_000_000).toFixed(2)}`;
+  return formatCurrencyAmount(amount, 'Unknown amount');
 };
 
 const mapDonorResolution = (
@@ -134,16 +134,7 @@ const mapDonorResolution = (
     return 'CONFIRMED';
   }
 
-  switch (storedValue) {
-    case 'CONFIRMED':
-      return 'CONFIRMED';
-    case 'NEW_DONOR':
-      return 'NEW_DONOR';
-    case 'AMBIGUOUS':
-      return 'AMBIGUOUS';
-    default:
-      return 'UNREVIEWED';
-  }
+  return normalizeDonorResolutionState(storedValue);
 };
 
 const mapProcessingStatus = (

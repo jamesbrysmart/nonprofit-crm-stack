@@ -133,6 +133,7 @@ export type ManualGiftEntryRequest = GiftAidCaptureInput & {
   amountValue?: string;
   currencyCode?: string;
   paymentType?: ManualGiftPaymentType;
+  provider?: string;
   giftDate?: string;
   selectedFundId?: string;
   selectedAppealId?: string;

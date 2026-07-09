@@ -5,6 +5,7 @@ import type {
   BatchDonorMatchRow,
   ExactDonorCandidate,
 } from './batch-donor-match.types';
+import { normalizeDonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
 import { isPaymentConfirmedOrNotRequired } from 'src/gift-staging-review/gift-staging-processability';
 
 const normalizeString = (value: string | null | undefined) =>
@@ -17,7 +18,7 @@ export const canEvaluateBatchDonorMatchRow = (row: BatchDonorMatchRow) => {
   return (
     isPaymentConfirmedOrNotRequired(row) &&
     row.isAnonymousDonor !== true &&
-    normalizeString(row.donorResolutionState) === 'UNREVIEWED' &&
+    normalizeDonorResolutionState(row.donorResolutionState) === 'UNREVIEWED' &&
     normalizeString(row.processingStatus) !== 'PROCESSED' &&
     normalizeString(row.donor?.id) === '' &&
     normalizeString(row.donorFirstName) !== '' &&

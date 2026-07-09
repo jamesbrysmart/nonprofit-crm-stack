@@ -41,7 +41,6 @@ export type GiftAidClaimBatchRecord = {
     | null;
   hasBlockingIssues?: boolean | null;
   blockingIssueCount?: number | null;
-  notes?: string | null;
 };
 
 export type GiftAidClaimGiftRecord = {

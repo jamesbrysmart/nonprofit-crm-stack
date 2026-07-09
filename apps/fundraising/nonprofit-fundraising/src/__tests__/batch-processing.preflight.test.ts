@@ -76,6 +76,62 @@ describe('classifyBatchPreflight', () => {
     });
   });
 
+  it('requires explicit review for initial-only donor evidence while unreviewed', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          donorFirstName: 'J',
+          donorLastName: 'Smith',
+          donorResolutionState: 'UNREVIEWED',
+        }),
+      ),
+    ).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['DONOR_REVIEW_REQUIRED'],
+    });
+
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          donorFirstName: 'A',
+          donorLastName: 'M',
+          donorResolutionState: null,
+        }),
+      ),
+    ).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['DONOR_REVIEW_REQUIRED'],
+    });
+
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          donorFirstName: 'James',
+          donorLastName: 'S',
+          donorResolutionState: 'UNREVIEWED',
+        }),
+      ),
+    ).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['DONOR_REVIEW_REQUIRED'],
+    });
+  });
+
+  it('allows reviewed initial-only donor evidence on the new-donor path', () => {
+    expect(
+      classifyBatchPreflight(
+        buildRow({
+          donorFirstName: 'J',
+          donorLastName: 'Smith',
+          donorResolutionState: 'NEW_DONOR',
+        }),
+      ),
+    ).toEqual({
+      category: 'READY',
+      issueCodes: [],
+    });
+  });
+
   it('flags missing core gift fields as needs review', () => {
     expect(
       classifyBatchPreflight(

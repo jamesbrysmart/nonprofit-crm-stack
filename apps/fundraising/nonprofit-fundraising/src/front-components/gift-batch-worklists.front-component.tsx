@@ -54,12 +54,11 @@ const GiftBatchWorklists = () => {
     return <div style={secondaryTextStyle}>Batch not found.</div>;
   }
 
-  const needsReviewItems = record.rows.filter(
-    (row) =>
-      row.processingStatus !== 'PROCESSED' &&
-      row.processingStatus !== 'PROCESS_FAILED' &&
-      row.giftReadyStatus === 'NEEDS_REVIEW',
-  ).length;
+  const hasActiveWorklists =
+    record.ambiguousItems > 0 ||
+    record.needsReviewItems > 0 ||
+    record.readyItems > 0 ||
+    record.failedItems > 0;
 
   const openQueue = (scope: Parameters<typeof openGiftBatchQueue>[1]) => {
     void openGiftBatchQueue(recordId, scope);
@@ -110,59 +109,74 @@ const GiftBatchWorklists = () => {
             </div>
           ) : null}
 
-          <div style={compactDividerSectionStyle}>
-            <div style={queueRowStyle}>
-              <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
-                Needs review
+          {record.needsReviewItems > 0 ? (
+            <div style={compactDividerSectionStyle}>
+              <div style={queueRowStyle}>
+                <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+                  Needs review
+                </div>
+                <div style={queueCountStyle}>
+                  {record.needsReviewItems} gift
+                  {record.needsReviewItems === 1 ? '' : 's'}
+                </div>
+                <button
+                  type="button"
+                  style={queueActionStyle}
+                  onClick={() => openQueue('not-ready')}
+                >
+                  Open
+                </button>
               </div>
-              <div style={queueCountStyle}>
-                {needsReviewItems} gift{needsReviewItems === 1 ? '' : 's'}
-              </div>
-              <button
-                type="button"
-                style={queueActionStyle}
-                onClick={() => openQueue('not-ready')}
-              >
-                Open
-              </button>
             </div>
-          </div>
+          ) : null}
 
-          <div style={compactDividerSectionStyle}>
-            <div style={queueRowStyle}>
-              <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
-                Ready to process
+          {record.readyItems > 0 ? (
+            <div style={compactDividerSectionStyle}>
+              <div style={queueRowStyle}>
+                <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+                  Ready to process
+                </div>
+                <div style={queueCountStyle}>
+                  {record.readyItems} gift{record.readyItems === 1 ? '' : 's'}
+                </div>
+                <button
+                  type="button"
+                  style={queueActionStyle}
+                  onClick={() => openQueue('ready')}
+                >
+                  Open
+                </button>
               </div>
-              <div style={queueCountStyle}>
-                {record.readyItems} gift{record.readyItems === 1 ? '' : 's'}
-              </div>
-              <button
-                type="button"
-                style={queueActionStyle}
-                onClick={() => openQueue('ready')}
-              >
-                Open
-              </button>
             </div>
-          </div>
+          ) : null}
 
-          <div style={compactDividerSectionStyle}>
-            <div style={queueRowStyle}>
-              <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
-                Failed
+          {record.failedItems > 0 ? (
+            <div style={compactDividerSectionStyle}>
+              <div style={queueRowStyle}>
+                <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+                  Failed
+                </div>
+                <div style={queueCountStyle}>
+                  {record.failedItems} gift{record.failedItems === 1 ? '' : 's'}
+                </div>
+                <button
+                  type="button"
+                  style={queueActionStyle}
+                  onClick={() => openQueue('failed')}
+                >
+                  Open
+                </button>
               </div>
-              <div style={queueCountStyle}>
-                {record.failedItems} gift{record.failedItems === 1 ? '' : 's'}
-              </div>
-              <button
-                type="button"
-                style={queueActionStyle}
-                onClick={() => openQueue('failed')}
-              >
-                Open
-              </button>
             </div>
-          </div>
+          ) : null}
+
+          {!hasActiveWorklists ? (
+            <div style={compactDividerSectionStyle}>
+              <div style={secondaryTextStyle}>
+                No active worklists. Open all staged gifts to inspect this batch.
+              </div>
+            </div>
+          ) : null}
         </>
       )}
     </div>

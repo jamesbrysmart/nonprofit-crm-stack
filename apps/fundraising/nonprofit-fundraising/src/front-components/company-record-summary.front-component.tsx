@@ -7,7 +7,6 @@ import {
   SummaryStripItem,
   badgeStyle,
   contextSignalRowStyle,
-  compactValueStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
@@ -208,44 +207,40 @@ const CompanyRecordSummary = () => {
           </div>
           <SummaryStrip>
             {hasGiftValue ? (
-              <SummaryStripItem label="Received">
-                <div style={compactValueStyle}>
-                  {formatAmount(record.lifetimeGiftAmount)}
-                </div>
-              </SummaryStripItem>
+              <SummaryStripItem
+                label="Received"
+                value={formatAmount(record.lifetimeGiftAmount)}
+              />
             ) : null}
             {hasAwardedValue ? (
-              <SummaryStripItem label="Awarded">
-                <div style={compactValueStyle}>
-                  {formatAmount(record.awardedOpportunityAmount)}
-                </div>
-              </SummaryStripItem>
+              <SummaryStripItem
+                label="Awarded"
+                value={formatAmount(record.awardedOpportunityAmount)}
+              />
             ) : null}
             {awardedOpportunityCount > 0 ? (
-              <SummaryStripItem label="Awards">
-                <div style={compactValueStyle}>{awardedOpportunityCount}</div>
-              </SummaryStripItem>
+              <SummaryStripItem
+                label="Awards"
+                value={awardedOpportunityCount}
+              />
             ) : null}
             {normalizeString(record.nextApplicationDeadline) !== '' ? (
-              <SummaryStripItem label="Next deadline">
-                <div style={compactValueStyle}>
-                  {formatDate(record.nextApplicationDeadline)}
-                </div>
-              </SummaryStripItem>
+              <SummaryStripItem
+                label="Next deadline"
+                value={formatDate(record.nextApplicationDeadline)}
+              />
             ) : null}
             {normalizeString(record.lastGiftDate) !== '' ? (
-              <SummaryStripItem label="Last funding">
-                <div style={compactValueStyle}>
-                  {formatDate(record.lastGiftDate)}
-                </div>
-              </SummaryStripItem>
+              <SummaryStripItem
+                label="Last funding"
+                value={formatDate(record.lastGiftDate)}
+              />
             ) : null}
             {normalizeString(record.nextFundingPeriodEnd) !== '' ? (
-              <SummaryStripItem label="Funding ends">
-                <div style={compactValueStyle}>
-                  {formatDate(record.nextFundingPeriodEnd)}
-                </div>
-              </SummaryStripItem>
+              <SummaryStripItem
+                label="Funding ends"
+                value={formatDate(record.nextFundingPeriodEnd)}
+              />
             ) : null}
           </SummaryStrip>
         </>
@@ -263,6 +258,6 @@ export default defineFrontComponent({
   universalIdentifier: COMPANY_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   name: 'company-record-summary',
   description:
-    'General company summary with conditional fundraising context for donor-admin workflows.',
+    'General company summary with conditional funding context for donor-admin workflows.',
   component: CompanyRecordSummary,
 });

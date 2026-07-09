@@ -27,9 +27,6 @@ export const GIFT_AID_DECLARATION_TEXT_VERSION_FIELD_UNIVERSAL_IDENTIFIER =
 export const GIFT_AID_DECLARATION_REVOKED_AT_FIELD_UNIVERSAL_IDENTIFIER =
   'c4794040-643e-4184-bc7d-86ca21f7fd8b';
 
-export const GIFT_AID_DECLARATION_NOTES_FIELD_UNIVERSAL_IDENTIFIER =
-  'b626c1f8-2cb8-441f-a236-2bcc0d05efbe';
-
 export default defineObject({
   universalIdentifier: GIFT_AID_DECLARATION_OBJECT_UNIVERSAL_IDENTIFIER,
   nameSingular: 'giftAidDeclaration',
@@ -148,16 +145,6 @@ export default defineObject({
       label: 'Revoked at',
       description: 'When the declaration was revoked if no longer usable',
       icon: 'IconClockCancel',
-      isNullable: true,
-      defaultValue: null,
-    },
-    {
-      universalIdentifier: GIFT_AID_DECLARATION_NOTES_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.TEXT,
-      name: 'notes',
-      label: 'Notes',
-      description: 'Short notes about the declaration record',
-      icon: 'IconNotes',
       isNullable: true,
       defaultValue: null,
     },
