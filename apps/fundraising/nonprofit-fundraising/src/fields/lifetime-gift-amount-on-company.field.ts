@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const LIFETIME_GIFT_AMOUNT_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER =
-  '7dfe0978-54e4-4504-9a70-df8e50304b04';
+import {
+  LIFETIME_GIFT_AMOUNT_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

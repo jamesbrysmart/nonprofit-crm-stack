@@ -2,12 +2,14 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { GIFT_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-actions.front-component';
-import { GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-coding.front-component';
-import { GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-summary.front-component';
-import { GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-batch-worklists.front-component';
-import { GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-batch.object';
-import { GIFT_BATCH_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/gift-batch-details.view';
+import {
+  GIFT_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: 'c8ea69b3-6fcb-44cc-a22a-3ef95cb6ec85',

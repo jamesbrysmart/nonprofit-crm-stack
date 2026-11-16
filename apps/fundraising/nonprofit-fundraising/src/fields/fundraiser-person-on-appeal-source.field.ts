@@ -5,11 +5,11 @@ import {
   RelationType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-import { FUNDRAISER_APPEAL_SOURCES_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fundraiser-appeal-sources-on-person.field';
-import { APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal-source.object';
-
-export const FUNDRAISER_PERSON_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER =
-  'e8c2f9cd-1ddf-45dc-bc4a-eb1aa4f6515c';
+import {
+  APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
+  FUNDRAISER_APPEAL_SOURCES_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+  FUNDRAISER_PERSON_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

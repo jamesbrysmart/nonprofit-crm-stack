@@ -1,10 +1,10 @@
 import { defineField, FieldType, RelationType } from 'twenty-sdk/define';
-import { RECURRING_AGREEMENT_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/recurring-agreement-on-gift-staging.field';
-import { GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-staging.object';
-import { RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/recurring-agreement.object';
-
-export const GIFT_STAGINGS_ON_RECURRING_AGREEMENT_FIELD_UNIVERSAL_IDENTIFIER =
-  'bb4fc3a1-a2fc-46a8-ad4a-116e33d966b6';
+import {
+  GIFT_STAGINGS_ON_RECURRING_AGREEMENT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENT_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

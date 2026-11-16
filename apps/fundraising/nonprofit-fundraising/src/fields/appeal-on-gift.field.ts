@@ -4,12 +4,12 @@ import {
   OnDeleteAction,
   RelationType,
 } from 'twenty-sdk/define';
-import { GIFTS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-appeal.field';
-import { APPEAL_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal.object';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
-
-export const APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER =
-  '5b203a25-2748-453f-8a67-92f5e609fda8';
+import {
+  APPEAL_OBJECT_UNIVERSAL_IDENTIFIER,
+  APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFTS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,

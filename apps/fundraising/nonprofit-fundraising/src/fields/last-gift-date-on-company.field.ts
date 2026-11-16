@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const LAST_GIFT_DATE_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER =
-  'c90389d5-19f7-4c52-8718-c8a0a17d0c9f';
+import {
+  LAST_GIFT_DATE_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: LAST_GIFT_DATE_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER,

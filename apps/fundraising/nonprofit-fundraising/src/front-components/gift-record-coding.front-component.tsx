@@ -19,9 +19,9 @@ import {
 import { saveGiftCoding } from 'src/gift-record/gift-coding.api';
 import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
-
-export const GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '93dc8e25-d8c5-4d41-b43b-f72bf23f1e13';
+import {
+  GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftCodingRecord = {
   id: string;

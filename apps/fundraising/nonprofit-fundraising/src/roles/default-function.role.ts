@@ -1,7 +1,7 @@
 import { defineApplicationRole } from 'twenty-sdk/define';
-
-export const DEFAULT_ROLE_UNIVERSAL_IDENTIFIER =
-  '406dd485-ec1a-4e7b-8a77-a0a7b7f26fbc';
+import {
+  DEFAULT_ROLE_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineApplicationRole({
   universalIdentifier: DEFAULT_ROLE_UNIVERSAL_IDENTIFIER,

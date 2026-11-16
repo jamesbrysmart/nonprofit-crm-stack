@@ -4,11 +4,13 @@ import {
   type DatabaseEventPayload,
   type ObjectRecordRestoreEvent,
 } from 'twenty-sdk/define';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
 import {
   getAffectedCompanyIdsFromGiftRestore,
   recomputeCompanyRollups,
 } from 'src/company-rollups/company-rollups';
+import {
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftRollupEventRecord = {
   companyId?: string | null;

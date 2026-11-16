@@ -4,12 +4,12 @@ import {
   OnDeleteAction,
   RelationType,
 } from 'twenty-sdk/define';
-import { GIFTS_ON_RECURRING_AGREEMENT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-recurring-agreement.field';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
-import { RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/recurring-agreement.object';
-
-export const RECURRING_AGREEMENT_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER =
-  '0ef04826-dfa7-4615-b661-b636b50a975d';
+import {
+  GIFTS_ON_RECURRING_AGREEMENT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENT_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: RECURRING_AGREEMENT_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,

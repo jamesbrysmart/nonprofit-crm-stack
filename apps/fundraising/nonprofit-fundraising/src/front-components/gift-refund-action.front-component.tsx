@@ -15,9 +15,9 @@ import {
   labelStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
-
-export const GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '6d86a03b-c4ec-4a3c-9a77-56c86fbf0ca6';
+import {
+  GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type RefundActionGiftRecord = {
   id: string;

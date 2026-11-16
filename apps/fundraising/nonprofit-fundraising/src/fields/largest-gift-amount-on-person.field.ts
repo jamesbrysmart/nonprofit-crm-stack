@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const LARGEST_GIFT_AMOUNT_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER =
-  '7257f5d0-182c-4ec2-bc96-bd04ca2d4eb5';
+import {
+  LARGEST_GIFT_AMOUNT_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: LARGEST_GIFT_AMOUNT_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,

@@ -2,10 +2,12 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { GIFTS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-appeal.field';
-import { APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/appeal-summary.front-component';
-import { APPEAL_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal.object';
-import { APPEAL_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/appeal-details.view';
+import {
+  APPEAL_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+  APPEAL_OBJECT_UNIVERSAL_IDENTIFIER,
+  APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFTS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: '4b9dc275-8078-486a-97fb-dfe2f4557010',

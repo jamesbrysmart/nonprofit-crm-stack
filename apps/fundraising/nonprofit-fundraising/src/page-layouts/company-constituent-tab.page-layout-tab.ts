@@ -4,8 +4,10 @@ import {
   STANDARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIERS,
   definePageLayoutTab,
 } from 'twenty-sdk/define';
-import { COMPANY_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/company-record-summary.front-component';
-import { COMPANY_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/company-details.view';
+import {
+  COMPANY_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+  COMPANY_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayoutTab({
   universalIdentifier: '05b7cb59-c032-4511-9e0c-688264bfb169',

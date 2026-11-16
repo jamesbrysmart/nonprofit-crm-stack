@@ -4,11 +4,13 @@ import {
   type DatabaseEventPayload,
   type ObjectRecordDeleteEvent,
 } from 'twenty-sdk/define';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
 import {
   getAffectedAppealIdsFromGiftDelete,
   recomputeAppealRollups,
 } from 'src/appeal-rollups/appeal-rollups';
+import {
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftRollupEventRecord = {
   appealId?: string | null;

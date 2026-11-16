@@ -11,11 +11,9 @@ import {
   broadcastSelectedGiftStagingInvalidated,
   normalizeSelectedRecordIds,
 } from './gift-staging-selection-command-support';
-
-export const CHECK_SELECTED_GIFT_STAGING_READINESS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'dff9c3fe-c7d9-47e2-8b9c-a7ef53497388';
-export const CHECK_SELECTED_GIFT_STAGING_READINESS_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER =
-  'b973061a-b6a6-4c03-9233-fde6acfc214b';
+import {
+  CHECK_SELECTED_GIFT_STAGING_READINESS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const CheckSelectedGiftStagingReadiness = () => {
   const selectedRecordIds = normalizeSelectedRecordIds(useSelectedRecordIds());

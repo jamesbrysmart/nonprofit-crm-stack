@@ -11,9 +11,9 @@ import {
 } from 'src/front-components/front-component-ui';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
-
-export const GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'daa7d7bb-d8ca-471c-b219-3ea699657c5b';
+import {
+  GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const renderValue = (value: string) => {
   return value === '' ? 'Not recorded' : value;

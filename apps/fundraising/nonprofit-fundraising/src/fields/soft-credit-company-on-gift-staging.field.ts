@@ -5,11 +5,11 @@ import {
   RelationType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-import { SOFT_CREDITED_GIFT_STAGINGS_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/soft-credited-gift-stagings-on-company.field';
-import { GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-staging.object';
-
-export const SOFT_CREDIT_COMPANY_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER =
-  'ad1e6b93-0c6c-4213-8f18-bb7279d018e7';
+import {
+  GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
+  SOFT_CREDITED_GIFT_STAGINGS_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER,
+  SOFT_CREDIT_COMPANY_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

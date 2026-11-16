@@ -5,18 +5,16 @@ import {
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
-  COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/fields/company-on-gift.field';
+  getAffectedCompanyIdsFromGiftUpdate,
+  recomputeCompanyRollups,
+} from 'src/company-rollups/company-rollups';
 import {
+  COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/objects/gift.object';
-import {
-  getAffectedCompanyIdsFromGiftUpdate,
-  recomputeCompanyRollups,
-} from 'src/company-rollups/company-rollups';
+} from 'src/constants/universal-identifiers';
 
 type GiftRollupEventRecord = {
   companyId?: string | null;

@@ -11,9 +11,9 @@ import { deriveRecurringHealth } from 'src/recurring/recurring.model';
 import { subscribeToRecurringAgreementInvalidated } from 'src/recurring/recurring-agreement-sync';
 import { loadRecurringAgreementPaymentHealthInput } from 'src/recurring/recurring.service';
 import type { RecurringAgreementHealth } from 'src/recurring/recurring.types';
-
-export const RECURRING_AGREEMENT_PAYMENT_HEALTH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '15e4312f-fadc-41ff-a4bf-a4e98bbdcf20';
+import {
+  RECURRING_AGREEMENT_PAYMENT_HEALTH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const getHealthTone = (
   state: RecurringAgreementHealth['state'],

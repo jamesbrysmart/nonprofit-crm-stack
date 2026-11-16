@@ -4,12 +4,12 @@ import {
   OnDeleteAction,
   RelationType,
 } from 'twenty-sdk/define';
-import { DEFAULT_FUND_GIFT_BATCHES_ON_FUND_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/default-fund-gift-batches-on-fund.field';
-import { FUND_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/fund.object';
-import { GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-batch.object';
-
-export const DEFAULT_FUND_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER =
-  '09e5cfde-1134-4b4e-9331-72d9844af4c8';
+import {
+  DEFAULT_FUND_GIFT_BATCHES_ON_FUND_FIELD_UNIVERSAL_IDENTIFIER,
+  DEFAULT_FUND_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,
+  FUND_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: DEFAULT_FUND_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,

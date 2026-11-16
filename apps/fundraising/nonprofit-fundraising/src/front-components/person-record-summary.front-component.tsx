@@ -10,9 +10,9 @@ import {
   compactWidgetRootStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
-
-export const PERSON_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '1e1c6282-b236-4e3e-ac0d-c6f495fc4476';
+import {
+  PERSON_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type PersonRecordSummaryRecord = {
   id: string;

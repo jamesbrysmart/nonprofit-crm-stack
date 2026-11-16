@@ -5,18 +5,16 @@ import {
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
-  DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/fields/donor-on-gift.field';
+  getAffectedDonorIdsFromGiftUpdate,
+  recomputeDonorRollups,
+} from 'src/donor-rollups/donor-rollups';
 import {
+  DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/objects/gift.object';
-import {
-  getAffectedDonorIdsFromGiftUpdate,
-  recomputeDonorRollups,
-} from 'src/donor-rollups/donor-rollups';
+} from 'src/constants/universal-identifiers';
 
 type GiftRollupEventRecord = {
   donorId?: string | null;

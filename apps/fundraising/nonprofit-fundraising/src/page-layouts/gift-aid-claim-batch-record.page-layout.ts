@@ -2,11 +2,13 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { GIFT_AID_CLAIM_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-actions.front-component';
-import { GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-submission.front-component';
-import { GIFT_AID_CLAIM_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-summary.front-component';
-import { GIFT_AID_CLAIM_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-batch-worklists.front-component';
-import { GIFT_AID_CLAIM_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-aid-claim-batch.object';
+import {
+  GIFT_AID_CLAIM_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_CLAIM_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_CLAIM_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_CLAIM_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: 'cd39d1d5-9de1-471a-ab9f-09166f8ea4b0',

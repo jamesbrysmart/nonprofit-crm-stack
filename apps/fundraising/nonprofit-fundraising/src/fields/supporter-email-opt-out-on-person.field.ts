@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const SUPPORTER_EMAIL_OPT_OUT_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER =
-  'f55d51d3-dc9e-4258-a6b2-0b4bd9838386';
+import {
+  SUPPORTER_EMAIL_OPT_OUT_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

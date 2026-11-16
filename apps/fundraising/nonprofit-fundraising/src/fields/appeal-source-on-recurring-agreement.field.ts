@@ -4,12 +4,12 @@ import {
   OnDeleteAction,
   RelationType,
 } from 'twenty-sdk/define';
-import { RECURRING_AGREEMENTS_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/recurring-agreements-on-appeal-source.field';
-import { APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal-source.object';
-import { RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/recurring-agreement.object';
-
-export const APPEAL_SOURCE_ON_RECURRING_AGREEMENT_FIELD_UNIVERSAL_IDENTIFIER =
-  '98339a73-7ff6-4499-9b8f-e2f0235859a4';
+import {
+  APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_ON_RECURRING_AGREEMENT_FIELD_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENTS_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

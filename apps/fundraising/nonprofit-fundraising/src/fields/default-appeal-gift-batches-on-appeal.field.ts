@@ -1,10 +1,10 @@
 import { defineField, FieldType, RelationType } from 'twenty-sdk/define';
-import { DEFAULT_APPEAL_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/default-appeal-on-gift-batch.field';
-import { APPEAL_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal.object';
-import { GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-batch.object';
-
-export const DEFAULT_APPEAL_GIFT_BATCHES_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER =
-  '717fef0f-b548-4493-868e-e076ae33ee60';
+import {
+  APPEAL_OBJECT_UNIVERSAL_IDENTIFIER,
+  DEFAULT_APPEAL_GIFT_BATCHES_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER,
+  DEFAULT_APPEAL_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

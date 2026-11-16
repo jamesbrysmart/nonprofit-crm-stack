@@ -30,9 +30,9 @@ import {
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
 import { checkDonorDuplicates } from 'src/manual-gift-entry/manual-gift-entry.api';
 import type { DuplicateCheckResponse } from 'src/manual-gift-entry/manual-gift-entry.types';
-
-export const GIFT_STAGING_DONOR_REVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '8f5c7544-8de6-4fb0-a878-353d3881e06f';
+import {
+  GIFT_STAGING_DONOR_REVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const getInputEventValue = (event: unknown) => {
   if (

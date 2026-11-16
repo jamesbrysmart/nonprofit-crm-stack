@@ -5,11 +5,11 @@ import {
   RelationType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-import { GIFTS_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-opportunity.field';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
-
-export const OPPORTUNITY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER =
-  'bce420da-0c0d-4cf8-88ea-a6dbaf85606d';
+import {
+  GIFTS_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  OPPORTUNITY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: OPPORTUNITY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,

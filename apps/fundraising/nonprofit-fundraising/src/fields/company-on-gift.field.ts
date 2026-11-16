@@ -5,11 +5,11 @@ import {
   RelationType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-import { GIFTS_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-company.field';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
-
-export const COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER =
-  '9dbe16f6-bb1a-4552-aea0-f3af49169325';
+import {
+  COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFTS_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,

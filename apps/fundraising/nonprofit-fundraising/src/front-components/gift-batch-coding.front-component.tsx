@@ -20,9 +20,9 @@ import { useGiftBatchReview } from 'src/gift-batch-review/use-gift-batch-review'
 import { broadcastGiftBatchInvalidated } from 'src/gift-batch-review/gift-batch-sync';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
 import { getAppealIdForAppealSourceSelection } from 'src/gift-coding/gift-coding';
-
-export const GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'df218c63-9ad9-4fc2-afca-cd120791befa';
+import {
+  GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const controlGridStyle: CSSProperties = {
   display: 'grid',

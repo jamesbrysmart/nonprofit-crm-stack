@@ -25,9 +25,9 @@ import {
   type PublishedState,
   useDonationFormRecord,
 } from 'src/front-components/donation-form-workspace.shared';
-
-export const DONATION_FORM_PUBLISH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '58f5ba8f-6660-45bd-8387-ca59a779f6b7';
+import {
+  DONATION_FORM_PUBLISH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const DonationFormPublish = () => {
   const recordId = useRecordId();

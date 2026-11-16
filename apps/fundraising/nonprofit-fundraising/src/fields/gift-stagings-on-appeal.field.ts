@@ -1,10 +1,10 @@
 import { defineField, FieldType, RelationType } from 'twenty-sdk/define';
-import { APPEAL_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal.object';
-import { GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-staging.object';
-import { APPEAL_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-gift-staging.field';
-
-export const GIFT_STAGINGS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER =
-  '8aa8f663-9100-4411-baa3-b70c31dbfbbe';
+import {
+  APPEAL_OBJECT_UNIVERSAL_IDENTIFIER,
+  APPEAL_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGINGS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: GIFT_STAGINGS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER,

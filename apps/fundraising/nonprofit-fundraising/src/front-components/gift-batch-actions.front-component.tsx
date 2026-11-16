@@ -20,9 +20,9 @@ import type {
 } from 'src/batch-processing/batch-processing.types';
 import { useGiftBatchReview } from 'src/gift-batch-review/use-gift-batch-review';
 import { broadcastGiftBatchInvalidated } from 'src/gift-batch-review/gift-batch-sync';
-
-export const GIFT_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '8f38c33f-3208-4f01-9472-17406eb2279d';
+import {
+  GIFT_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const buildDonorMatchSummary = (input: RunBatchDonorMatchResponse) => {
   const sentences: string[] = [];

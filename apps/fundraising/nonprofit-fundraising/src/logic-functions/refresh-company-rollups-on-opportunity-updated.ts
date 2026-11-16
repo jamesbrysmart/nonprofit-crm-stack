@@ -6,18 +6,14 @@ import {
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
-  APPLICATION_DEADLINE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/fields/application-deadline-on-opportunity.field';
-import {
-  AWARDED_AMOUNT_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/fields/awarded-amount-on-opportunity.field';
-import {
-  FUNDING_PERIOD_END_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/fields/funding-period-end-on-opportunity.field';
-import {
   getAffectedCompanyIdsFromOpportunityUpdate,
   recomputeCompanyRollups,
 } from 'src/company-rollups/company-rollups';
+import {
+  APPLICATION_DEADLINE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+  AWARDED_AMOUNT_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+  FUNDING_PERIOD_END_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type OpportunityRollupEventRecord = {
   companyId?: string | null;

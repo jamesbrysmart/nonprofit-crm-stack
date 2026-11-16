@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const MAILING_ADDRESS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER =
-  'f5c59cc5-b5ef-4ef2-b722-a9d6f8073ec1';
+import {
+  MAILING_ADDRESS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: MAILING_ADDRESS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,

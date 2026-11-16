@@ -4,11 +4,11 @@ import {
   RelationType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-import { FUNDRAISER_COMPANY_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fundraiser-company-on-appeal-source.field';
-import { APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal-source.object';
-
-export const FUNDRAISER_APPEAL_SOURCES_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER =
-  'f0f78a3b-651c-4088-b9e0-8edb43a0b9f2';
+import {
+  APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
+  FUNDRAISER_APPEAL_SOURCES_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER,
+  FUNDRAISER_COMPANY_ON_APPEAL_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

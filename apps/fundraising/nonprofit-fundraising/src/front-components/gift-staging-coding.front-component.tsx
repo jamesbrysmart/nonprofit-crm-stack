@@ -22,9 +22,9 @@ import {
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
 import type { AppealSourceSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
-
-export const GIFT_STAGING_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'ac717de2-3df8-4d25-9a84-9687c7ca081d';
+import {
+  GIFT_STAGING_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const getInputEventValue = (event: unknown) => {
   if (

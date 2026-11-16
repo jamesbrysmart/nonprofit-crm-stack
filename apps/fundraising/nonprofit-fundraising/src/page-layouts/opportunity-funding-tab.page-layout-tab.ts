@@ -3,7 +3,9 @@ import {
   STANDARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIERS,
   definePageLayoutTab,
 } from 'twenty-sdk/define';
-import { OPPORTUNITY_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/opportunity-home-core.view';
+import {
+  OPPORTUNITY_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayoutTab({
   universalIdentifier: 'f42f11c9-3607-4072-a6e0-0f95b47c7452',

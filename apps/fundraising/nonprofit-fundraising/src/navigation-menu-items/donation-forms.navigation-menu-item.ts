@@ -2,10 +2,10 @@ import {
   defineNavigationMenuItem,
   NavigationMenuItemType,
 } from 'twenty-sdk/define';
-import { DONATION_FORMS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/donation-forms.view';
-
-export const DONATION_FORMS_NAVIGATION_MENU_ITEM_UNIVERSAL_IDENTIFIER =
-  '81f182f6-f15e-4cb8-8f75-73277d69ccb1';
+import {
+  DONATION_FORMS_NAVIGATION_MENU_ITEM_UNIVERSAL_IDENTIFIER,
+  DONATION_FORMS_VIEW_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineNavigationMenuItem({
   universalIdentifier:

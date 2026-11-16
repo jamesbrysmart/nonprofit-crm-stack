@@ -2,10 +2,10 @@ import {
   defineNavigationMenuItem,
   NavigationMenuItemType,
 } from 'twenty-sdk/define';
-import { RECURRING_AGREEMENTS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/recurring-agreements.view';
-
-export const RECURRING_AGREEMENTS_NAVIGATION_MENU_ITEM_UNIVERSAL_IDENTIFIER =
-  '30a4809d-3426-4f85-804a-b57b922868e8';
+import {
+  RECURRING_AGREEMENTS_NAVIGATION_MENU_ITEM_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENTS_VIEW_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineNavigationMenuItem({
   universalIdentifier:

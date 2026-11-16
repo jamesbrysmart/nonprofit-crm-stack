@@ -4,12 +4,12 @@ import {
   OnDeleteAction,
   RelationType,
 } from 'twenty-sdk/define';
-import { GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-batch.object';
-import { GIFT_STAGINGS_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gift-stagings-on-gift-batch.field';
-import { GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-staging.object';
-
-export const GIFT_BATCH_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER =
-  'e6391229-fc0d-47d3-a092-9a4fbd5b2ad5';
+import {
+  GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGINGS_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: GIFT_BATCH_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,

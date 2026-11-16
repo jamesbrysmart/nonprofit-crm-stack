@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const FUNDING_TYPE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER =
-  '86316054-7f56-47c1-9dd6-6aaae4d6fc18';
+import {
+  FUNDING_TYPE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: FUNDING_TYPE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,

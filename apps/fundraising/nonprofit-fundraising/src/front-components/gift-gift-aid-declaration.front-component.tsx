@@ -11,9 +11,9 @@ import {
   labelStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
-
-export const GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'e16aaf4a-97cd-488b-a19e-73635165ad1f';
+import {
+  GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftGiftAidDeclarationRecord = {
   id: string;

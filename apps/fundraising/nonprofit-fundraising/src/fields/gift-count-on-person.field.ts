@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const GIFT_COUNT_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER =
-  '27924290-c4bd-4e4f-8e9d-79f477b7104a';
+import {
+  GIFT_COUNT_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: GIFT_COUNT_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,

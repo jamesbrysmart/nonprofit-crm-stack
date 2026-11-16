@@ -8,9 +8,9 @@ import {
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
 import { useGiftAidClaimWorkspace } from 'src/gift-aid-claims/use-gift-aid-claim-workspace';
-
-export const GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '32185bf5-72e0-44e5-a739-44e4ab4eb8db';
+import {
+  GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const GiftAidClaimBatchSubmission = () => {
   const { workspace, loading, error } = useGiftAidClaimWorkspace();

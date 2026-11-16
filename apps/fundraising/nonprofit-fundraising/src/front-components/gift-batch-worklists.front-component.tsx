@@ -10,9 +10,9 @@ import {
   openGiftBatchQueue,
   useGiftBatchReview,
 } from 'src/gift-batch-review/use-gift-batch-review';
-
-export const GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '4432b728-7ae1-4ad2-92f6-49d5b1624398';
+import {
+  GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const queueRowStyle: CSSProperties = {
   display: 'grid',

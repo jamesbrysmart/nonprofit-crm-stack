@@ -1,10 +1,10 @@
 import { defineField, FieldType, RelationType } from 'twenty-sdk/define';
-import { GIFT_AID_DECLARATION_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gift-aid-declaration-on-gift-staging.field';
-import { GIFT_AID_DECLARATION_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-aid-declaration.object';
-import { GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-staging.object';
-
-export const GIFT_STAGINGS_ON_GIFT_AID_DECLARATION_FIELD_UNIVERSAL_IDENTIFIER =
-  '8e5ff2c9-f40d-46e0-861a-415fa8d0f976';
+import {
+  GIFT_AID_DECLARATION_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_DECLARATION_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGINGS_ON_GIFT_AID_DECLARATION_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

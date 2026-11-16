@@ -24,9 +24,9 @@ import {
 } from 'src/manual-gift-entry/new-gift-support';
 import { deriveGiftTypeForOpportunityPayment } from 'src/opportunity-payments/opportunity-payment-gift-type';
 import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
-
-export const OPPORTUNITY_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'dd442e7b-aba3-418d-9717-0c6849d7304a';
+import {
+  OPPORTUNITY_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type CurrencyAmount = {
   amountMicros?: number | null;

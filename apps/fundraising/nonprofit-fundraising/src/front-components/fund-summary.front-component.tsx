@@ -12,9 +12,9 @@ import {
   secondaryTextStyle,
   sectionHeaderStyle,
 } from 'src/front-components/front-component-ui';
-
-export const FUND_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'e33e61f2-2d5b-4633-a5bb-f39a5699b840';
+import {
+  FUND_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const GIFT_PAGE_SIZE = 100;
 

@@ -4,12 +4,12 @@ import {
   OnDeleteAction,
   RelationType,
 } from 'twenty-sdk/define';
-import { GIFTS_ON_FUND_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-fund.field';
-import { FUND_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/fund.object';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
-
-export const FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER =
-  '51c1028e-2530-40a2-bcf1-c0fab5acb048';
+import {
+  FUND_OBJECT_UNIVERSAL_IDENTIFIER,
+  FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFTS_ON_FUND_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,

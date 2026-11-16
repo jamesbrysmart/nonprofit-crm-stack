@@ -28,9 +28,9 @@ import {
 import {
   getInputEventChecked,
 } from 'src/manual-gift-entry/new-gift-support';
-
-export const DONATION_FORM_PREVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'ebdb945d-16f3-4d12-87ca-29967ca8b11f';
+import {
+  DONATION_FORM_PREVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type PreviewViewportMode = 'DESKTOP' | 'MOBILE';
 

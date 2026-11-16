@@ -3,8 +3,8 @@ import { defineCommandMenuItem } from 'twenty-sdk/define';
 import {
   CHECK_SELECTED_GIFT_STAGING_READINESS_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER,
   CHECK_SELECTED_GIFT_STAGING_READINESS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-} from 'src/front-components/check-selected-gift-staging-readiness.front-component';
-import { GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-staging.object';
+  GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineCommandMenuItem({
   universalIdentifier:

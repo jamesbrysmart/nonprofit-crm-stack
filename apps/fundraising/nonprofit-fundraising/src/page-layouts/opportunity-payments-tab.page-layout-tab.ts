@@ -3,8 +3,10 @@ import {
   STANDARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIERS,
   definePageLayoutTab,
 } from 'twenty-sdk/define';
-import { GIFTS_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-opportunity.field';
-import { OPPORTUNITY_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/opportunity-record-payment.front-component';
+import {
+  GIFTS_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+  OPPORTUNITY_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayoutTab({
   universalIdentifier: '4523849a-d123-4bc3-93bc-d5a408197873',

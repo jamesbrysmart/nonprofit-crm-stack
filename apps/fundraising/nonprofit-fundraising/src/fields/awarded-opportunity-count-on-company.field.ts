@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const AWARDED_OPPORTUNITY_COUNT_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER =
-  'ef818dd3-d306-42f3-8c28-3f7f667117d6';
+import {
+  AWARDED_OPPORTUNITY_COUNT_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

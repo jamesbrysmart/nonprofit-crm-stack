@@ -16,9 +16,9 @@ import {
   labelStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
-
-export const GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '2f9473b3-b340-492f-914f-9224e8616f5d';
+import {
+  GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type MailingAddress = {
   addressStreet1?: string | null;

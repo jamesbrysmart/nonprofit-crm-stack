@@ -20,9 +20,9 @@ import {
   secondaryTextStyle,
   textareaStyle,
 } from 'src/front-components/front-component-ui';
-
-export const OPPORTUNITY_TRANSITION_TASKS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '0e92a94b-c5f3-4af4-b977-99531ce2b015';
+import {
+  OPPORTUNITY_TRANSITION_TASKS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type OpportunityTransitionRecord = {
   id: string;

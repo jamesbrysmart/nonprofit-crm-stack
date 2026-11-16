@@ -4,12 +4,12 @@ import {
   OnDeleteAction,
   RelationType,
 } from 'twenty-sdk/define';
-import { DEFAULT_APPEAL_GIFT_BATCHES_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/default-appeal-gift-batches-on-appeal.field';
-import { APPEAL_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal.object';
-import { GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-batch.object';
-
-export const DEFAULT_APPEAL_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER =
-  'e0d9c795-9460-4f1d-bb49-03f03eddb365';
+import {
+  APPEAL_OBJECT_UNIVERSAL_IDENTIFIER,
+  DEFAULT_APPEAL_GIFT_BATCHES_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER,
+  DEFAULT_APPEAL_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: DEFAULT_APPEAL_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,

@@ -11,9 +11,9 @@ import {
   compactWidgetRootStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
-
-export const GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '867a2364-6eaa-4ef6-a7d3-85759e0e9b93';
+import {
+  GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftAidGiftRecord = {
   id: string;

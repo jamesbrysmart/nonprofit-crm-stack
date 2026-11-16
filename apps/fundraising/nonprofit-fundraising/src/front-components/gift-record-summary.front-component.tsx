@@ -13,9 +13,9 @@ import {
   contextMetricStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
-
-export const GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '9c6fe424-f7a3-4b1f-b4b0-ae10308b9d0a';
+import {
+  GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftRecordSummaryRecord = {
   id: string;

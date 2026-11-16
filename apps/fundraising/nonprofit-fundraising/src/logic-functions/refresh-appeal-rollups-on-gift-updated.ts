@@ -5,23 +5,17 @@ import {
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
-  APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/fields/appeal-on-gift.field';
-import {
-  COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/fields/company-on-gift.field';
-import {
-  DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
-} from 'src/fields/donor-on-gift.field';
-import {
-  GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
-} from 'src/objects/gift.object';
-import {
   getAffectedAppealIdsFromGiftUpdate,
   recomputeAppealRollups,
 } from 'src/appeal-rollups/appeal-rollups';
+import {
+  APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+  COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+  DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftRollupEventRecord = {
   appealId?: string | null;

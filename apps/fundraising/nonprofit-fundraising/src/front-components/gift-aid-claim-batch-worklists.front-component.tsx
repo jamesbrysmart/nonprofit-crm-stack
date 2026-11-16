@@ -7,9 +7,9 @@ import {
 } from 'src/front-components/front-component-ui';
 import { openGiftQueue } from 'src/front-components/gift-aid-claim-batch-ui';
 import { useGiftAidClaimWorkspace } from 'src/gift-aid-claims/use-gift-aid-claim-workspace';
-
-export const GIFT_AID_CLAIM_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '9344eaa5-a55a-4864-b214-739f12b319f5';
+import {
+  GIFT_AID_CLAIM_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const queueRowStyle: CSSProperties = {
   display: 'grid',

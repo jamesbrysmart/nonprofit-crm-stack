@@ -17,9 +17,9 @@ import {
   labelStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
-
-export const GIFT_AID_CLAIM_SUBMISSION_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '0aa4d6b8-59ef-4f5f-a155-0fdcb14318bd';
+import {
+  GIFT_AID_CLAIM_SUBMISSION_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftAidClaimSubmissionRecordView = {
   id: string;

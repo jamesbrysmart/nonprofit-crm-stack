@@ -4,12 +4,12 @@ import {
   OnDeleteAction,
   RelationType,
 } from 'twenty-sdk/define';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
-import { SOURCE_GIFT_STAGINGS_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/source-gift-stagings-on-gift.field';
-import { GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-staging.object';
-
-export const COMMITTED_GIFT_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER =
-  '3f530cc0-65ad-4345-9cc7-7c4d262ff31e';
+import {
+  COMMITTED_GIFT_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
+  SOURCE_GIFT_STAGINGS_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: COMMITTED_GIFT_ON_GIFT_STAGING_FIELD_UNIVERSAL_IDENTIFIER,

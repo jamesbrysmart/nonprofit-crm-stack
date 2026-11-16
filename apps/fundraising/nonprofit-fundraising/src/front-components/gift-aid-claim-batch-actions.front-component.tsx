@@ -12,9 +12,9 @@ import {
   queueGiftAidClaimSubmission,
 } from 'src/gift-aid-claims/gift-aid-claim.api';
 import { useGiftAidClaimWorkspace } from 'src/gift-aid-claims/use-gift-aid-claim-workspace';
-
-export const GIFT_AID_CLAIM_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'fd3b6b63-8d3e-4d92-8e7f-4a943d3de44f';
+import {
+  GIFT_AID_CLAIM_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const GiftAidClaimBatchActions = () => {
   const { recordId, workspace, loading, error, refresh } =

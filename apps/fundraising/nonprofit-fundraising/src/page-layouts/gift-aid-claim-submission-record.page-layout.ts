@@ -2,8 +2,10 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { GIFT_AID_CLAIM_SUBMISSION_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-aid-claim-submission-record.front-component';
-import { GIFT_AID_CLAIM_SUBMISSION_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-aid-claim-submission.object';
+import {
+  GIFT_AID_CLAIM_SUBMISSION_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_CLAIM_SUBMISSION_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: 'd0fe2f42-c1b5-4144-bdad-629fa766bf3e',

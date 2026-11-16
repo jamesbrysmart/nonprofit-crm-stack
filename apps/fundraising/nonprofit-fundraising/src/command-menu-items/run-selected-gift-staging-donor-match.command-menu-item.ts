@@ -1,10 +1,10 @@
 import { defineCommandMenuItem } from 'twenty-sdk/define';
 
 import {
+  GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
   RUN_SELECTED_GIFT_STAGING_DONOR_MATCH_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER,
   RUN_SELECTED_GIFT_STAGING_DONOR_MATCH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-} from 'src/front-components/run-selected-gift-staging-donor-match.front-component';
-import { GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift-staging.object';
+} from 'src/constants/universal-identifiers';
 
 export default defineCommandMenuItem({
   universalIdentifier:

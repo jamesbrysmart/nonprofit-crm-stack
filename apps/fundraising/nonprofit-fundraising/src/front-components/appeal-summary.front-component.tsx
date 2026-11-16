@@ -11,9 +11,9 @@ import {
   secondaryTextStyle,
   sectionHeaderStyle,
 } from 'src/front-components/front-component-ui';
-
-export const APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '1af94784-e9f5-4520-b5a3-3089948f7e35';
+import {
+  APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type AppealSummaryRecord = {
   id: string;

@@ -2,15 +2,15 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-staging-audit.front-component';
-import { GIFT_STAGING_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-staging-coding.front-component';
-import { GIFT_STAGING_DONOR_REVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-staging-donor-review.front-component';
-import { GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-staging-processing.front-component';
-import { GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-staging-record.front-component';
 import {
+  GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_DONOR_REVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
-} from 'src/objects/gift-staging.object';
-import { GIFT_STAGING_REVIEW_CORE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/gift-staging-review-core.view';
+  GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_REVIEW_CORE_VIEW_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: '87c09c20-bbb4-4fa5-b54d-bdb6f9e5e33f',

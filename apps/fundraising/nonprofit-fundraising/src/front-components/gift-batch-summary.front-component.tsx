@@ -18,9 +18,9 @@ import {
 import { broadcastGiftBatchInvalidated } from 'src/gift-batch-review/gift-batch-sync';
 import { useGiftBatchReview } from 'src/gift-batch-review/use-gift-batch-review';
 import { MAX_GIFT_BATCH_ITEMS } from 'src/batch-processing/batch-processing.limits';
-
-export const GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'ad9b4651-f8ea-40a2-b714-bda5d8ef16ce';
+import {
+  GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const getInputEventValue = (event: unknown) => {
   if (

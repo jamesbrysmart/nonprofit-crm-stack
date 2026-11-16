@@ -4,12 +4,14 @@ import {
   STANDARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIERS,
   definePageLayoutTab,
 } from 'twenty-sdk/define';
-import { FUNDRAISER_APPEAL_SOURCES_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/fundraiser-appeal-sources-on-person.field';
-import { GIFT_AID_DECLARATIONS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gift-aid-declarations-on-person.field';
-import { GIFTS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-person.field';
-import { RECURRING_AGREEMENTS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/recurring-agreements-on-person.field';
-import { PERSON_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/person-record-summary.front-component';
-import { PERSON_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/person-details.view';
+import {
+  FUNDRAISER_APPEAL_SOURCES_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFTS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_DECLARATIONS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+  PERSON_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+  PERSON_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENTS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayoutTab({
   universalIdentifier: '70c80506-2d48-4f7d-9f48-77cde12d7baf',

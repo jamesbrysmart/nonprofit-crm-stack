@@ -17,9 +17,9 @@ import {
 } from 'src/gift-aid-claims/gift-aid-claim.api';
 import { useGiftAidClaimWorkspace } from 'src/gift-aid-claims/use-gift-aid-claim-workspace';
 import { useState } from 'react';
-
-export const GIFT_AID_CLAIM_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'aa27b537-9167-497d-b0cc-c7956dd2f78a';
+import {
+  GIFT_AID_CLAIM_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const getOperationalState = (input: {
   status?: string | null;

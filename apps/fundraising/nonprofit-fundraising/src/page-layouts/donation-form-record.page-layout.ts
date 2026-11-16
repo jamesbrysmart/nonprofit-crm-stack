@@ -3,10 +3,12 @@ import {
   PageLayoutTabLayoutMode,
   PageLayoutWidgetVerticalListHeightBehavior,
 } from 'twenty-sdk/define';
-import { DONATION_FORM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/donation-form-workspace.front-component';
-import { DONATION_FORM_PREVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/donation-form-preview.front-component';
-import { DONATION_FORM_PUBLISH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/donation-form-publish.front-component';
-import { DONATION_FORM_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/donation-form.object';
+import {
+  DONATION_FORM_OBJECT_UNIVERSAL_IDENTIFIER,
+  DONATION_FORM_PREVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  DONATION_FORM_PUBLISH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  DONATION_FORM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: 'e2321e62-bfcc-4dd3-ab63-78151b390d37',

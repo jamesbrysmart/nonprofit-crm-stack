@@ -2,9 +2,11 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { FUND_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/fund-summary.front-component';
-import { FUND_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/fund.object';
-import { FUND_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/fund-details.view';
+import {
+  FUND_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+  FUND_OBJECT_UNIVERSAL_IDENTIFIER,
+  FUND_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: '8f4cd2d8-b1c2-4b6c-958b-dc3d919e8425',

@@ -4,11 +4,13 @@ import {
   type DatabaseEventPayload,
   type ObjectRecordRestoreEvent,
 } from 'twenty-sdk/define';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
 import {
   getAffectedAppealSourceIdsFromGiftRestore,
   recomputeAppealSourceRollups,
 } from 'src/appeal-source-rollups/appeal-source-rollups';
+import {
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 type GiftRollupEventRecord = {
   appealSourceId?: string | null;

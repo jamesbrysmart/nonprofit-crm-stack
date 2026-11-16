@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const SUBMITTED_DATE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER =
-  '5d0edc79-0117-41ca-9db8-32f317033bc1';
+import {
+  SUBMITTED_DATE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier: SUBMITTED_DATE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,

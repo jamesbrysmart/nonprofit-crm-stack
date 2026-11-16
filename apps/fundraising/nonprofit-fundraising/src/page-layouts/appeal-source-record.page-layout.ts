@@ -2,8 +2,10 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal-source.object';
-import { APPEAL_SOURCE_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/appeal-source-home-core.view';
+import {
+  APPEAL_SOURCE_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
+  APPEAL_SOURCE_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: 'd1cd6ed6-8147-4bfa-80e9-dd13a7740d37',

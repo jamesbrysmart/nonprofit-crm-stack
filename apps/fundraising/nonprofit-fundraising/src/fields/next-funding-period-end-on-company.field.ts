@@ -3,9 +3,9 @@ import {
   FieldType,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
 } from 'twenty-sdk/define';
-
-export const NEXT_FUNDING_PERIOD_END_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER =
-  'f29441ea-45e5-4357-b7a7-af657fdba29d';
+import {
+  NEXT_FUNDING_PERIOD_END_ON_COMPANY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default defineField({
   universalIdentifier:

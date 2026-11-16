@@ -22,9 +22,9 @@ import {
 import { createRecordNote } from 'src/notes/create-record-note';
 import { broadcastRecurringAgreementInvalidated } from 'src/recurring/recurring-agreement-sync';
 import { useRecurringAgreementReviewRecord } from 'src/recurring/use-recurring-agreement-review-record';
-
-export const RECURRING_AGREEMENT_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'c2245ff9-a21b-419a-a372-f98f3aba10f6';
+import {
+  RECURRING_AGREEMENT_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const todayDate = () => new Date().toISOString().slice(0, 10);
 

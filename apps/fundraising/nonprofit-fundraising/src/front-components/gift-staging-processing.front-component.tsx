@@ -21,9 +21,9 @@ import {
   checkIfReady,
 } from 'src/gift-staging-review/gift-staging-review.actions';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
-
-export const GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'f220540d-7733-4c07-bcb3-35d18c643be7';
+import {
+  GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const getProcessingTone = (processingStatus: string) => {
   if (processingStatus === 'PROCESSED') {

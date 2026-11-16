@@ -2,14 +2,16 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-gift-aid-declaration.front-component';
-import { GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-gift-aid-donor-context.front-component';
-import { GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-gift-aid-state.front-component';
-import { GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-record-coding.front-component';
-import { GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-refund-action.front-component';
-import { GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/gift-record-summary.front-component';
-import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
-import { GIFT_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/gift-details.view';
+import {
+  GIFT_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
+  GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: 'efea5077-df28-4ed8-8c9f-6f6329652fe0',

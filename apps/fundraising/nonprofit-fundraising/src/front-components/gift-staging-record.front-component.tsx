@@ -22,9 +22,9 @@ import {
   deriveReviewState,
 } from 'src/gift-staging-review/gift-staging-review.model';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
-
-export const GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'f5d9953c-1e4a-4113-8bd2-031b97731ab9';
+import {
+  GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const GiftStagingReviewSummary = () => {
   const recordId = useRecordId();

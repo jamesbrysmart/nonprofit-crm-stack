@@ -12,12 +12,9 @@ import {
   panelStyle,
 } from 'src/manual-gift-entry/new-gift-support';
 import { useNewGiftController } from 'src/manual-gift-entry/use-new-gift-controller';
-
-export const NEW_GIFT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  'c813555c-eec2-42df-a29b-cd8817e0f4d6';
-
-export const NEW_GIFT_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER =
-  'ef13b0da-7934-47cf-b09b-57a67695756d';
+import {
+  NEW_GIFT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const NewGift = () => {
   const controller = useNewGiftController();

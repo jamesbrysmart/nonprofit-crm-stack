@@ -2,10 +2,12 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
-import { RECURRING_AGREEMENT_PAYMENT_HEALTH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/recurring-agreement-payment-health.front-component';
-import { RECURRING_AGREEMENT_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/recurring-agreement-record-payment.front-component';
-import { RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/recurring-agreement.object';
-import { RECURRING_AGREEMENT_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/recurring-agreement-home-core.view';
+import {
+  RECURRING_AGREEMENT_HOME_CORE_VIEW_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENT_PAYMENT_HEALTH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  RECURRING_AGREEMENT_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
   universalIdentifier: '75ed715c-b8f5-4218-9574-7592266065d7',

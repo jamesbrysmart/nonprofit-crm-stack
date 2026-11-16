@@ -34,9 +34,9 @@ import {
   getInputEventChecked,
   getInputEventValue,
 } from 'src/manual-gift-entry/new-gift-support';
-
-export const DONATION_FORM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER =
-  '2ebc286a-c1e1-4d1b-a9c2-870868777028';
+import {
+  DONATION_FORM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
 
 const DonationFormConfigure = () => {
   const recordId = useRecordId();
