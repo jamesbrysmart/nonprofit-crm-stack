@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { Response } from 'twenty-sdk/logic-function';
 import {
   buildDonationFormEmbedDocument,
 } from 'src/donation-forms/build-donation-form-embed-document';
@@ -9,7 +10,15 @@ import { loadPublicDonationFormConfigWithClient } from 'src/logic-functions/get-
 const normalizeString = (value: string | null | undefined): string =>
   value?.trim() ?? '';
 
-const handler = async (event: RoutePayload<Record<string, never>>): Promise<string> => {
+// Twenty serves a bare string route result as text/plain, so the page must declare HTML.
+const htmlResponse = (document: string) =>
+  new Response(document, {
+    headers: { 'content-type': 'text/html; charset=utf-8' },
+  });
+
+export const donationFormEmbedFrameHandler = async (
+  event: RoutePayload<Record<string, never>>,
+): Promise<Response> => {
   const publicId = normalizeString(event.queryStringParameters?.publicId);
 
   if (publicId === '') {
@@ -22,19 +31,23 @@ const handler = async (event: RoutePayload<Record<string, never>>): Promise<stri
   );
 
   if (!payload.ok) {
-    return buildDonationFormStaticDocument({
-      cardMarkup:
-        '<div class="eyebrow">Donation form spike</div>' +
-        '<h1>Form unavailable</h1>' +
-        '<p>This donation form is not currently available.</p>',
-    });
+    return htmlResponse(
+      buildDonationFormStaticDocument({
+        cardMarkup:
+          '<div class="eyebrow">Donation form spike</div>' +
+          '<h1>Form unavailable</h1>' +
+          '<p>This donation form is not currently available.</p>',
+      }),
+    );
   }
 
-  return buildDonationFormEmbedDocument({
-    publicId: payload.publicId,
-    publishedVersion: payload.publishedVersion,
-    config: payload.config,
-  });
+  return htmlResponse(
+    buildDonationFormEmbedDocument({
+      publicId: payload.publicId,
+      publishedVersion: payload.publishedVersion,
+      config: payload.config,
+    }),
+  );
 };
 
 export default defineLogicFunction({
@@ -43,7 +56,7 @@ export default defineLogicFunction({
   description:
     'Returns the embeddable donation form iframe document for a published donation form.',
   timeoutSeconds: 10,
-  handler,
+  handler: donationFormEmbedFrameHandler,
   httpRouteTriggerSettings: {
     path: '/donation-forms/embed-frame',
     httpMethod: 'GET',
