@@ -100,7 +100,7 @@ export const createPerson = async ({
       },
       supporterEmailOptOut: true,
     },
-  } as any);
+  });
 
   return result.createPerson as {
     id: string;
@@ -149,7 +149,7 @@ export const loadPeopleByName = async (firstName: string, lastName: string) => {
         },
       },
     },
-  } as any);
+  });
 
   return (
     result?.people?.edges?.map((edge: { node: unknown }) => edge.node) ?? []
@@ -236,7 +236,7 @@ export const loadGiftById = async (giftId: string) => {
         },
       },
     },
-  } as any);
+  });
 
   return result?.gift ?? null;
 };
@@ -253,7 +253,7 @@ export const createCompany = async ({ name }: { name: string }) => {
       id: true,
       name: true,
     },
-  } as any);
+  });
 
   return result.createCompany as {
     id: string;
@@ -272,7 +272,13 @@ export const createOpportunity = async ({
 }: {
   name: string;
   companyId: string;
-  fundingType?: string;
+  fundingType?:
+    | 'GRANT'
+    | 'TRUST_FOUNDATION'
+    | 'STATUTORY_BID'
+    | 'CORPORATE_SPONSORSHIP'
+    | 'MAJOR_GIFT'
+    | 'OTHER';
   amountMicros?: number;
   amountCurrencyCode?: string;
   awardedAmountMicros?: number;
@@ -317,7 +323,7 @@ export const createOpportunity = async ({
         id: true,
       },
     },
-  } as any);
+  });
 
   return result.createOpportunity as {
     id: string;
@@ -378,7 +384,7 @@ export const loadGiftStagingById = async (giftStagingId: string) => {
       paymentState: true,
       processingStatus: true,
     },
-  } as any);
+  });
 
   return result?.giftStaging ?? null;
 };
@@ -424,7 +430,7 @@ export const createRecurringAgreement = async ({
       name: true,
       nextExpectedAt: true,
     },
-  } as any);
+  });
 
   return result.createRecurringAgreement as {
     id: string;
@@ -448,7 +454,7 @@ export const loadRecurringAgreementById = async (recurringAgreementId: string) =
       providerAgreementId: true,
       nextExpectedAt: true,
     },
-  } as any);
+  });
 
   return result?.recurringAgreement ?? null;
 };
@@ -475,7 +481,7 @@ export const loadCurrentGiftAidClaimBatch = async () => {
         },
       },
     },
-  } as any);
+  });
 
   return result?.giftAidClaimBatches?.edges?.[0]?.node ?? null;
 };
@@ -501,7 +507,7 @@ export const loadGiftAidDeclarationsForPerson = async (personId: string) => {
         },
       },
     },
-  } as any);
+  });
 
   return (
     result?.giftAidDeclarations?.edges?.map(
