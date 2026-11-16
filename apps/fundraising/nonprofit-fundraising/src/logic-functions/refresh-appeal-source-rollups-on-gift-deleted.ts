@@ -4,6 +4,7 @@ import {
   type DatabaseEventPayload,
   type ObjectRecordDeleteEvent,
 } from 'twenty-sdk/define';
+import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
 import {
   getAffectedAppealSourceIdsFromGiftDelete,
   recomputeAppealSourceRollups,
@@ -36,7 +37,9 @@ export default defineLogicFunction({
     'Recomputes appeal source rollup fields when a committed gift is deleted.',
   timeoutSeconds: 30,
   handler,
-  databaseEventTriggerSettings: {
-    eventName: 'gift.deleted',
+  eventTriggerSettings: {
+    on: 'recordEvent',
+    objectUniversalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+    action: 'deleted',
   },
 });

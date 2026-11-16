@@ -1,6 +1,7 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
+  STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
   type DatabaseEventPayload,
   type ObjectRecordRestoreEvent,
 } from 'twenty-sdk/define';
@@ -38,7 +39,10 @@ export default defineLogicFunction({
     'Recomputes company rollup fields when an opportunity is restored.',
   timeoutSeconds: 30,
   handler,
-  databaseEventTriggerSettings: {
-    eventName: 'opportunity.restored',
+  eventTriggerSettings: {
+    on: 'recordEvent',
+    objectUniversalIdentifier:
+      STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS.opportunity.universalIdentifier,
+    action: 'restored',
   },
 });

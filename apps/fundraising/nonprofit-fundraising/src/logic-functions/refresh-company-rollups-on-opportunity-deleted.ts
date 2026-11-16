@@ -1,6 +1,7 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
+  STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
   type DatabaseEventPayload,
   type ObjectRecordDeleteEvent,
 } from 'twenty-sdk/define';
@@ -38,7 +39,10 @@ export default defineLogicFunction({
     'Recomputes company rollup fields when an opportunity is deleted.',
   timeoutSeconds: 30,
   handler,
-  databaseEventTriggerSettings: {
-    eventName: 'opportunity.deleted',
+  eventTriggerSettings: {
+    on: 'recordEvent',
+    objectUniversalIdentifier:
+      STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS.opportunity.universalIdentifier,
+    action: 'deleted',
   },
 });

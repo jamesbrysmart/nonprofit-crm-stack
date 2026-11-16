@@ -1,9 +1,19 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
+  STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
   type DatabaseEventPayload,
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
+import {
+  APPLICATION_DEADLINE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/fields/application-deadline-on-opportunity.field';
+import {
+  AWARDED_AMOUNT_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/fields/awarded-amount-on-opportunity.field';
+import {
+  FUNDING_PERIOD_END_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/fields/funding-period-end-on-opportunity.field';
 import {
   getAffectedCompanyIdsFromOpportunityUpdate,
   recomputeCompanyRollups,
@@ -44,14 +54,17 @@ export default defineLogicFunction({
     'Recomputes company rollup fields when an opportunity changes in a way that affects awarded funding or future funding dates.',
   timeoutSeconds: 30,
   handler,
-  databaseEventTriggerSettings: {
-    eventName: 'opportunity.updated',
-    updatedFields: [
-      'company',
-      'companyId',
-      'awardedAmount',
-      'applicationDeadline',
-      'fundingPeriodEnd',
+  eventTriggerSettings: {
+    on: 'recordEvent',
+    objectUniversalIdentifier:
+      STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS.opportunity.universalIdentifier,
+    action: 'updated',
+    watchedFieldUniversalIdentifiers: [
+      STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS.opportunity.fields.company
+        .universalIdentifier,
+      AWARDED_AMOUNT_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+      APPLICATION_DEADLINE_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
+      FUNDING_PERIOD_END_ON_OPPORTUNITY_FIELD_UNIVERSAL_IDENTIFIER,
     ],
   },
 });

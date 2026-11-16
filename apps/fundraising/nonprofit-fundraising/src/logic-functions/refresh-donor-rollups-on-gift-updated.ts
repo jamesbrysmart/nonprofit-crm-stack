@@ -5,6 +5,15 @@ import {
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
+  DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/fields/donor-on-gift.field';
+import {
+  GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/objects/gift.object';
+import {
   getAffectedDonorIdsFromGiftUpdate,
   recomputeDonorRollups,
 } from 'src/donor-rollups/donor-rollups';
@@ -42,8 +51,15 @@ export default defineLogicFunction({
     'Recomputes donor rollup fields when a committed gift changes in a way that affects donor totals or recency.',
   timeoutSeconds: 30,
   handler,
-  databaseEventTriggerSettings: {
-    eventName: 'gift.updated',
-    updatedFields: ['donor', 'donorId', 'amount', 'giftDate', 'giftType'],
+  eventTriggerSettings: {
+    on: 'recordEvent',
+    objectUniversalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+    action: 'updated',
+    watchedFieldUniversalIdentifiers: [
+      DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+      GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+    ],
   },
 });

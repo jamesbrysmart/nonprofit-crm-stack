@@ -5,6 +5,20 @@ import {
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
+  APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/fields/appeal-on-gift.field';
+import {
+  COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/fields/company-on-gift.field';
+import {
+  DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/fields/donor-on-gift.field';
+import {
+  GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/objects/gift.object';
+import {
   getAffectedAppealIdsFromGiftUpdate,
   recomputeAppealRollups,
 } from 'src/appeal-rollups/appeal-rollups';
@@ -43,17 +57,16 @@ export default defineLogicFunction({
     'Recomputes appeal rollup fields when a committed gift changes in a way that affects appeal totals, contributor counts, or recency.',
   timeoutSeconds: 30,
   handler,
-  databaseEventTriggerSettings: {
-    eventName: 'gift.updated',
-    updatedFields: [
-      'appeal',
-      'appealId',
-      'donor',
-      'donorId',
-      'company',
-      'companyId',
-      'amount',
-      'giftDate',
+  eventTriggerSettings: {
+    on: 'recordEvent',
+    objectUniversalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+    action: 'updated',
+    watchedFieldUniversalIdentifiers: [
+      APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
     ],
   },
 });

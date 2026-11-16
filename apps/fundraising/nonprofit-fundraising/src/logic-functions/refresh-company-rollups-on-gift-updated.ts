@@ -5,6 +5,15 @@ import {
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
+  COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/fields/company-on-gift.field';
+import {
+  GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/objects/gift.object';
+import {
   getAffectedCompanyIdsFromGiftUpdate,
   recomputeCompanyRollups,
 } from 'src/company-rollups/company-rollups';
@@ -42,8 +51,15 @@ export default defineLogicFunction({
     'Recomputes company rollup fields when a committed gift changes in a way that affects company totals or recency.',
   timeoutSeconds: 30,
   handler,
-  databaseEventTriggerSettings: {
-    eventName: 'gift.updated',
-    updatedFields: ['company', 'companyId', 'amount', 'giftDate', 'giftType'],
+  eventTriggerSettings: {
+    on: 'recordEvent',
+    objectUniversalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+    action: 'updated',
+    watchedFieldUniversalIdentifiers: [
+      COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+      GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+      GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
+    ],
   },
 });

@@ -4,6 +4,7 @@ import {
   type DatabaseEventPayload,
   type ObjectRecordRestoreEvent,
 } from 'twenty-sdk/define';
+import { GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/gift.object';
 import {
   getAffectedAppealIdsFromGiftRestore,
   recomputeAppealRollups,
@@ -43,7 +44,9 @@ export default defineLogicFunction({
     'Recomputes appeal rollup fields when a committed gift is restored.',
   timeoutSeconds: 30,
   handler,
-  databaseEventTriggerSettings: {
-    eventName: 'gift.restored',
+  eventTriggerSettings: {
+    on: 'recordEvent',
+    objectUniversalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+    action: 'restored',
   },
 });
