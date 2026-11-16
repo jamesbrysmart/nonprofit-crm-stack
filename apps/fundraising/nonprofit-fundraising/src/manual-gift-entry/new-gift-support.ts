@@ -312,35 +312,25 @@ export const PAYMENT_TYPE_OPTIONS: Array<{
 
 export const CURRENCY_OPTIONS = ['GBP', 'USD', 'EUR'];
 
+// The front-component renderer applies a control's value and checked state to
+// event.target, as a browser does.
+const getEventTarget = (event: unknown): Record<string, unknown> | null =>
+  typeof event === 'object' &&
+  event !== null &&
+  'target' in event &&
+  typeof event.target === 'object' &&
+  event.target !== null
+    ? (event.target as Record<string, unknown>)
+    : null;
+
 export const getInputEventValue = (event: unknown) => {
-  if (
-    typeof event === 'object' &&
-    event !== null &&
-    'detail' in event &&
-    typeof event.detail === 'object' &&
-    event.detail !== null &&
-    'value' in event.detail
-  ) {
-    return String(event.detail.value ?? '');
-  }
+  const value = getEventTarget(event)?.value;
 
-  return '';
+  return value === undefined || value === null ? '' : String(value);
 };
 
-export const getInputEventChecked = (event: unknown) => {
-  if (
-    typeof event === 'object' &&
-    event !== null &&
-    'detail' in event &&
-    typeof event.detail === 'object' &&
-    event.detail !== null &&
-    'checked' in event.detail
-  ) {
-    return Boolean(event.detail.checked);
-  }
-
-  return false;
-};
+export const getInputEventChecked = (event: unknown) =>
+  getEventTarget(event)?.checked === true;
 
 export const buildMailingAddressInput = (input: {
   addressStreet1: string;

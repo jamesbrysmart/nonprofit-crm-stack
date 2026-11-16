@@ -1,5 +1,10 @@
 import type { CSSProperties } from 'react';
+import { theme } from 'src/front-components/theme-tokens';
 import type { ManualGiftDonorType } from 'src/manual-gift-entry/manual-gift-entry.types';
+import {
+  getInputEventChecked,
+  getInputEventValue,
+} from 'src/manual-gift-entry/new-gift-support';
 
 type ManualGiftEntryGiftAidCaptureProps = {
   giftAidRequested: boolean;
@@ -26,70 +31,40 @@ const sectionStyle: CSSProperties = {
   display: 'grid',
   gap: '10px',
   paddingBottom: '14px',
-  borderBottom: '1px solid #e6e8eb',
+  borderBottom: `1px solid ${theme.border.color.light}`,
 };
 
 const labelStyle: CSSProperties = {
   fontSize: '12px',
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
-  color: '#57606a',
+  color: theme.font.color.secondary,
 };
 
 const sectionTitleStyle: CSSProperties = {
   ...labelStyle,
-  color: '#1f2328',
+  color: theme.font.color.primary,
 };
 
 const bodyTextStyle: CSSProperties = {
   margin: 0,
   fontSize: '14px',
-  color: '#57606a',
+  color: theme.font.color.secondary,
   lineHeight: 1.5,
 };
 
 const secondaryTextStyle: CSSProperties = {
   fontSize: '13px',
-  color: '#57606a',
+  color: theme.font.color.secondary,
   lineHeight: 1.5,
 };
 
 const inputStyle: CSSProperties = {
-  border: '1px solid #d0d7de',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '6px',
   padding: '10px 12px',
   font: 'inherit',
-  background: '#ffffff',
-};
-
-const getInputEventValue = (event: unknown) => {
-  if (
-    typeof event === 'object' &&
-    event !== null &&
-    'detail' in event &&
-    typeof event.detail === 'object' &&
-    event.detail !== null &&
-    'value' in event.detail
-  ) {
-    return String(event.detail.value ?? '');
-  }
-
-  return '';
-};
-
-const getInputEventChecked = (event: unknown) => {
-  if (
-    typeof event === 'object' &&
-    event !== null &&
-    'detail' in event &&
-    typeof event.detail === 'object' &&
-    event.detail !== null &&
-    'checked' in event.detail
-  ) {
-    return Boolean(event.detail.checked);
-  }
-
-  return false;
+  background: theme.background.primary,
 };
 
 export const ManualGiftEntryGiftAidCapture = ({
@@ -116,7 +91,7 @@ export const ManualGiftEntryGiftAidCapture = ({
           alignItems: 'center',
           gap: '10px',
           fontSize: '14px',
-          color: '#1f2328',
+          color: theme.font.color.primary,
         }}
       >
         <input
@@ -141,7 +116,7 @@ export const ManualGiftEntryGiftAidCapture = ({
               alignItems: 'center',
               gap: '10px',
               fontSize: '14px',
-              color: '#1f2328',
+              color: theme.font.color.primary,
             }}
           >
             <input
