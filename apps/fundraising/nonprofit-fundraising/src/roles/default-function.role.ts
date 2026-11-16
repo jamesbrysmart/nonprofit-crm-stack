@@ -7,10 +7,12 @@ export default defineApplicationRole({
   universalIdentifier: DEFAULT_ROLE_UNIVERSAL_IDENTIFIER,
   label: 'Default function role',
   description: 'Default runtime/admin role for the nonprofit fundraising app',
-  canReadAllObjectRecords: true,
-  canUpdateAllObjectRecords: true,
-  canSoftDeleteAllObjectRecords: true,
-  canDestroyAllObjectRecords: false,
+  recordsPermissions: {
+    canReadAllRecords: true,
+    canUpdateAllRecords: true,
+    canSoftDeleteAllRecords: true,
+    canDestroyAllRecords: false,
+  },
   canBeAssignedToUsers: false,
   canBeAssignedToApiKeys: false,
 });
