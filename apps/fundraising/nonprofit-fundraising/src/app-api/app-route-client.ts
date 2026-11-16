@@ -1,17 +1,7 @@
-const getAppApiConfig = () => {
-  const apiBaseUrl = process.env.TWENTY_API_URL;
-  const token =
-    process.env.TWENTY_APP_ACCESS_TOKEN ?? process.env.TWENTY_API_KEY;
+import { RestApiClient, RestApiClientError } from 'twenty-client-sdk/rest';
 
-  if (!apiBaseUrl || !token) {
-    throw new Error('App API configuration missing');
-  }
-
-  return {
-    apiBaseUrl: apiBaseUrl.replace(/\/$/, ''),
-    token,
-  };
-};
+export const toRawErrorBody = (body: unknown): string =>
+  typeof body === 'string' ? body : body === undefined ? '' : JSON.stringify(body);
 
 const containsHtmlDocument = (message: string) =>
   /<!doctype\s+html/i.test(message) || /<html[\s>]/i.test(message);
@@ -99,21 +89,16 @@ export const postAppRouteJson = async <TResponse>(
   path: string,
   body: Record<string, unknown>,
 ): Promise<TResponse> => {
-  const { apiBaseUrl, token } = getAppApiConfig();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
+  // The SDK client resolves the functions URL and refreshes an expired component token.
+  try {
+    return await new RestApiClient().post<TResponse>(path, body);
+  } catch (error) {
+    if (error instanceof RestApiClientError && error.status !== undefined) {
+      throw new Error(
+        extractRouteErrorMessage(toRawErrorBody(error.body), error.status),
+      );
+    }
 
-  const rawBody = await response.text();
-
-  if (!response.ok) {
-    throw new Error(extractRouteErrorMessage(rawBody, response.status));
+    throw error;
   }
-
-  return JSON.parse(rawBody) as TResponse;
 };

@@ -125,4 +125,37 @@ describe('postAppRouteJson', () => {
       'Twenty API is temporarily unavailable (status 500). Please refresh or try again shortly.',
     );
   });
+
+  it('refreshes an expired component token and retries once', async () => {
+    configureAppApi();
+    const requestAccessTokenRefresh = vi.fn().mockResolvedValue('fresh-token');
+    vi.stubGlobal('frontComponentHostCommunicationApi', {
+      requestAccessTokenRefresh,
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: () => Promise.resolve('{"message":"Token expired"}'),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve('{"options":[]}'),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(postAppRouteJson('/s/funds/options', {})).resolves.toEqual({
+      options: [],
+    });
+
+    expect(requestAccessTokenRefresh).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [url, init] = fetchMock.mock.calls[1];
+    expect(url).toBe('https://api.example.test/s/funds/options');
+    expect(new Headers(init.headers).get('Authorization')).toBe(
+      'Bearer fresh-token',
+    );
+  });
 });

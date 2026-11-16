@@ -1,17 +1,5 @@
-const getTwentyRestConfig = () => {
-  const apiBaseUrl = process.env.TWENTY_API_URL;
-  const token =
-    process.env.TWENTY_APP_ACCESS_TOKEN ?? process.env.TWENTY_API_KEY;
-
-  if (!apiBaseUrl || !token) {
-    throw new Error('Twenty REST configuration missing');
-  }
-
-  return {
-    apiBaseUrl: apiBaseUrl.replace(/\/$/, ''),
-    token,
-  };
-};
+import { RestApiClient, RestApiClientError } from 'twenty-client-sdk/rest';
+import { toRawErrorBody } from 'src/app-api/app-route-client';
 
 export const postTwentyRest = async <TResponse>({
   path,
@@ -20,28 +8,20 @@ export const postTwentyRest = async <TResponse>({
   path: string;
   body: unknown;
 }): Promise<TResponse> => {
-  const { apiBaseUrl, token } = getTwentyRestConfig();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    const result = await new RestApiClient().post<TResponse>(path, body, {
+      headers: { Accept: 'application/json' },
+    });
 
-  const rawBody = await response.text();
+    return (result ?? null) as TResponse;
+  } catch (error) {
+    if (error instanceof RestApiClientError && error.status !== undefined) {
+      throw new Error(
+        toRawErrorBody(error.body) ||
+          `Twenty REST request failed with ${error.status}`,
+      );
+    }
 
-  if (!response.ok) {
-    throw new Error(
-      rawBody || `Twenty REST request failed with ${response.status}`,
-    );
+    throw error;
   }
-
-  if (rawBody.trim() === '') {
-    return null as TResponse;
-  }
-
-  return JSON.parse(rawBody) as TResponse;
 };
