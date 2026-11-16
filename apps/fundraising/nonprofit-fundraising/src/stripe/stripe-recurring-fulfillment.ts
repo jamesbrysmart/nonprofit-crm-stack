@@ -1,4 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { createStripeEventRecord } from 'src/stripe/stripe-event-record';
 import {
   extractConnectionNodes,
   extractMutationRecord,
@@ -304,78 +305,87 @@ export const createStripeRecurringGiftForConfidentMatch = async (
     };
   }
 
-  const existingGiftId = await findGiftBySourceFingerprint(client, eventId);
-  if (existingGiftId) {
+  const record = await createStripeEventRecord({
+    eventId,
+    recordType: 'gift',
+    findExisting: () => findGiftBySourceFingerprint(client, eventId),
+    createRecord: async (id) => {
+      const providerPaymentId = getStripeObjectId(session.payment_intent);
+      const amountMicros = toAmountMicros(session.amount_total);
+      const currencyCode = toCurrencyCode(session.currency);
+      const donorName = `${donorFirstName} ${donorLastName}`.trim();
+      const result = await client.mutation({
+        createGift: {
+          __args: {
+            data: {
+              id,
+              name: buildGiftName({
+                giftType: 'DONATION',
+                donorName,
+                amountMicros,
+                currencyCode,
+                giftDate,
+              }),
+              amount: {
+                currencyCode,
+                amountMicros,
+              },
+              giftDate,
+              donorFirstName,
+              donorLastName,
+              donorEmail:
+                normalizeString(session.customer_details?.email) ||
+                normalizeString(agreement.person?.emails?.primaryEmail) ||
+                null,
+              paymentType: 'CARD',
+              externalId,
+              sourceFingerprint: eventId,
+              provider: STRIPE_PROVIDER,
+              ...(providerPaymentId ? { providerPaymentId } : {}),
+              donor: {
+                connect: {
+                  where: {
+                    id: donorId,
+                  },
+                },
+              },
+              recurringAgreement: {
+                connect: {
+                  where: {
+                    id: agreement.id,
+                  },
+                },
+              },
+            },
+          },
+          id: true,
+        },
+      } as any);
+
+      const giftId = extractMutationRecord<{ id?: string | null }>(
+        result,
+        'createGift',
+      )?.id;
+
+      if (typeof giftId !== 'string' || giftId === '') {
+        throw new Error('Create recurring Stripe gift response missing id');
+      }
+      return giftId;
+    },
+  });
+
+  if (!record.created) {
     return {
       created: false,
       reason: 'DUPLICATE_SOURCE_FINGERPRINT',
-      giftId: existingGiftId,
+      giftId: record.id,
       recurringAgreementId: agreement.id,
       sourceFingerprint: eventId,
       externalId,
       providerAgreementId,
     };
   }
-
-  const providerPaymentId = getStripeObjectId(session.payment_intent);
-  const amountMicros = toAmountMicros(session.amount_total);
-  const currencyCode = toCurrencyCode(session.currency);
-  const donorName = `${donorFirstName} ${donorLastName}`.trim();
-  const result = await client.mutation({
-    createGift: {
-      __args: {
-        data: {
-          name: buildGiftName({
-            giftType: 'DONATION',
-            donorName,
-            amountMicros,
-            currencyCode,
-            giftDate,
-          }),
-          amount: {
-            currencyCode,
-            amountMicros,
-          },
-          giftDate,
-          donorFirstName,
-          donorLastName,
-          donorEmail:
-            normalizeString(session.customer_details?.email) ||
-            normalizeString(agreement.person?.emails?.primaryEmail) ||
-            null,
-          paymentType: 'CARD',
-          externalId,
-          sourceFingerprint: eventId,
-          provider: STRIPE_PROVIDER,
-          ...(providerPaymentId ? { providerPaymentId } : {}),
-          donor: {
-            connect: {
-              where: {
-                id: donorId,
-              },
-            },
-          },
-          recurringAgreement: {
-            connect: {
-              where: {
-                id: agreement.id,
-              },
-            },
-          },
-        },
-      },
-      id: true,
-    },
-  } as any);
-
-  const giftId = extractMutationRecord<{ id?: string | null }>(
-    result,
-    'createGift',
-  )?.id;
-
-  if (typeof giftId !== 'string' || giftId === '') {
-    throw new Error('Create recurring Stripe gift response missing id');
-  }
+  const giftId = record.id;
 
   const nextExpectedAt = await advanceRecurringAgreementExpectation(
     client,

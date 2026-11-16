@@ -1,4 +1,5 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
+import { createStripeEventRecord } from 'src/stripe/stripe-event-record';
 import { extractMutationRecord } from 'src/core-api/core-api-results';
 import {
   STRIPE_INTAKE_SOURCE,
@@ -193,41 +194,28 @@ export const createStripeOneOffGiftStaging = async (
   event: StripeCheckoutSessionCompletedEvent,
 ): Promise<StripeOneOffGiftStagingResult> => {
   const input = buildStripeOneOffGiftStagingInput(event);
-  const existingId = await findGiftStagingBySourceFingerprint(
-    client,
-    input.sourceFingerprint,
-  );
-
-  if (existingId) {
-    return {
-      created: false,
-      giftStagingId: existingId,
-      sourceFingerprint: input.sourceFingerprint,
-      externalId: input.externalId,
-    };
-  }
-
-  const result = await client.mutation({
-    createGiftStaging: {
-      __args: {
-        data: input,
-      },
-      id: true,
+  const record = await createStripeEventRecord({
+    eventId: input.sourceFingerprint,
+    recordType: 'giftStaging',
+    findExisting: () => findGiftStagingBySourceFingerprint(client, input.sourceFingerprint),
+    createRecord: async (id) => {
+      const result = await client.mutation({
+        createGiftStaging: {
+          __args: { data: { ...input, id } },
+          id: true,
+        },
+      } as any);
+      const recordId = extractMutationRecord<{ id?: string | null }>(result, 'createGiftStaging')?.id;
+      if (typeof recordId !== 'string' || recordId === '') {
+        throw new Error('Create gift staging response missing id');
+      }
+      return recordId;
     },
-  } as any);
-
-  const recordId = extractMutationRecord<{ id?: string | null }>(
-    result,
-    'createGiftStaging',
-  )?.id;
-
-  if (typeof recordId !== 'string' || recordId === '') {
-    throw new Error('Create gift staging response missing id');
-  }
+  });
 
   return {
-    created: true,
-    giftStagingId: recordId,
+    created: record.created,
+    giftStagingId: record.id,
     sourceFingerprint: input.sourceFingerprint,
     externalId: input.externalId,
   };
