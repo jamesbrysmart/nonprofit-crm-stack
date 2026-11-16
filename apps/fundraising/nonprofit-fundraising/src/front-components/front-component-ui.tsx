@@ -1,4 +1,6 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
+import { Button } from 'twenty-ui/primitives/input';
+import { theme } from 'src/front-components/theme-tokens';
 
 export const panelStackStyle: CSSProperties = {
   display: 'grid',
@@ -7,12 +9,12 @@ export const panelStackStyle: CSSProperties = {
 };
 
 export const cardStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '8px',
   padding: '16px',
   display: 'grid',
   gap: '12px',
-  background: '#ffffff',
+  background: theme.background.primary,
 };
 
 export const cardWithLooseGapStyle: CSSProperties = {
@@ -24,19 +26,19 @@ export const labelStyle: CSSProperties = {
   fontSize: '12px',
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
-  color: '#57606a',
+  color: theme.font.color.tertiary,
   fontWeight: 500,
 };
 
 export const valueStyle: CSSProperties = {
   fontSize: '15px',
-  color: '#1f2328',
+  color: theme.font.color.primary,
   lineHeight: 1.4,
 };
 
 export const secondaryTextStyle: CSSProperties = {
   fontSize: '13px',
-  color: '#57606a',
+  color: theme.font.color.secondary,
   lineHeight: 1.5,
 };
 
@@ -63,99 +65,45 @@ export const actionRowStyle: CSSProperties = {
   flexWrap: 'wrap',
 };
 
-export const actionButtonStyle = ({
-  variant,
-  accent = 'default',
-  disabled,
-}: {
-  variant: 'primary' | 'secondary';
-  accent?: 'default' | 'blue';
-  disabled?: boolean;
-}): CSSProperties => {
-  const isBlue = accent === 'blue';
-  const primaryBackground = isBlue
-    ? 'var(--t-color-blue, #1967d2)'
-    : 'var(--t-background-secondary, #f6f8fa)';
-  const primaryColor = isBlue
-    ? '#ffffff'
-    : 'var(--t-font-color-secondary, #1f2328)';
-  const secondaryColor = isBlue
-    ? 'var(--t-color-blue, #1967d2)'
-    : 'var(--t-font-color-secondary, #1f2328)';
-  const secondaryBorder = isBlue
-    ? 'var(--t-accent-primary, #1967d2)'
-    : 'var(--t-background-transparent-medium, #d0d7de)';
-
-  return {
-    alignItems: 'center',
-    background: variant === 'primary' ? primaryBackground : 'transparent',
-    border:
-      variant === 'primary'
-        ? '1px solid var(--t-background-transparent-light, rgba(0, 0, 0, 0.08))'
-        : `1px solid ${secondaryBorder}`,
-    borderRadius: 'var(--t-border-radius-sm, 6px)',
-    boxSizing: 'border-box',
-    color: variant === 'primary' ? primaryColor : secondaryColor,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    display: 'inline-flex',
-    font: 'inherit',
-    fontFamily: 'var(--t-font-family, inherit)',
-    fontSize: 'var(--t-font-size-md, 13px)',
-    fontWeight: 500,
-    gap: 'var(--t-spacing-1, 4px)',
-    height: '32px',
-    justifyContent: 'center',
-    lineHeight: 1,
-    opacity: disabled ? 0.55 : 1,
-    padding: '0 var(--t-spacing-2, 8px)',
-    textDecoration: 'none',
-    transition: 'background 0.1s ease',
-    whiteSpace: 'nowrap',
-    width: 'auto',
-  };
-};
-
 export type ActionButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
-  'children'
+  'children' | 'color'
 > & {
   title: ReactNode;
   variant?: 'primary' | 'secondary';
   accent?: 'default' | 'blue';
 };
 
+// Keeps the app's existing button API while rendering Twenty's own Button.
 export const ActionButton = ({
   title,
   variant = 'secondary',
   accent,
-  disabled,
   type = 'button',
-  style,
   ...props
 }: ActionButtonProps) => {
   const effectiveAccent = accent ?? (variant === 'primary' ? 'blue' : 'default');
 
   return (
-    <button
+    <Button
       {...props}
       type={type}
-      disabled={disabled}
-      style={{
-        ...actionButtonStyle({ variant, accent: effectiveAccent, disabled }),
-        ...style,
-      }}
+      size="sm"
+      variant={variant === 'primary' ? 'solid' : 'outline'}
+      color={effectiveAccent === 'blue' ? 'accent' : 'neutral'}
     >
       {title}
-    </button>
+    </Button>
   );
 };
 
 export const inputStyle: CSSProperties = {
-  border: '1px solid #d0d7de',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '6px',
   padding: '10px 12px',
   font: 'inherit',
-  background: '#ffffff',
+  color: theme.font.color.primary,
+  background: theme.background.primary,
   width: '100%',
   boxSizing: 'border-box',
 };
@@ -167,12 +115,12 @@ export const textareaStyle: CSSProperties = {
 };
 
 export const subtlePanelStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '6px',
   padding: '12px',
   display: 'grid',
   gap: '8px',
-  background: '#ffffff',
+  background: theme.background.primary,
 };
 
 export const badgeStyle = (
@@ -180,33 +128,33 @@ export const badgeStyle = (
 ): CSSProperties => ({
   display: 'inline-flex',
   alignItems: 'center',
-  borderRadius: '999px',
+  borderRadius: theme.border.radius.pill,
   padding: '4px 10px',
   fontSize: '12px',
   fontWeight: 600,
   background:
     tone === 'success'
-      ? '#eef9f0'
+      ? theme.color.green3
       : tone === 'danger'
-        ? '#ffebe9'
-      : tone === 'warning'
-        ? '#fff8c5'
-        : '#f6f8fa',
+        ? theme.color.red3
+        : tone === 'warning'
+          ? theme.color.yellow3
+          : theme.background.transparent.light,
   color:
     tone === 'success'
-      ? '#1a7f37'
+      ? theme.color.green11
       : tone === 'danger'
-        ? '#cf222e'
-      : tone === 'warning'
-        ? '#7c5700'
-        : '#57606a',
+        ? theme.color.red11
+        : tone === 'warning'
+          ? theme.color.yellow11
+          : theme.font.color.secondary,
 });
 
 export const pillButtonStyle = (selected: boolean): CSSProperties => ({
-  border: selected ? '1px solid #0d7a5f' : '1px solid #d0d7de',
-  background: selected ? '#e9f6f2' : '#ffffff',
-  color: selected ? '#0d7a5f' : '#1f2328',
-  borderRadius: '999px',
+  border: `1px solid ${selected ? theme.color.green9 : theme.border.color.medium}`,
+  background: selected ? theme.color.green3 : theme.background.primary,
+  color: selected ? theme.color.green11 : theme.font.color.primary,
+  borderRadius: theme.border.radius.pill,
   padding: '8px 12px',
   fontSize: '14px',
   fontWeight: 600,
@@ -217,18 +165,18 @@ export const signalPillStyle: CSSProperties = {
   ...secondaryTextStyle,
   fontSize: '13px',
   padding: '4px 10px',
-  borderRadius: '999px',
-  background: '#ffffff',
-  border: '1px solid #d8dee4',
+  borderRadius: theme.border.radius.pill,
+  background: theme.background.primary,
+  border: `1px solid ${theme.border.color.medium}`,
 };
 
 export const choiceButtonStyle = (selected: boolean): CSSProperties => ({
   width: '100%',
-  border: selected ? '1px solid #1f6feb' : '1px solid #d0d7de',
+  border: `1px solid ${selected ? theme.color.blue : theme.border.color.medium}`,
   borderRadius: '6px',
   padding: '12px',
   textAlign: 'left',
-  background: selected ? '#eef4ff' : '#ffffff',
+  background: selected ? theme.color.blue3 : theme.background.primary,
   cursor: 'pointer',
   display: 'grid',
   gap: '4px',
@@ -242,10 +190,10 @@ export const reviewStateStyle = (
   alignItems: 'center',
   gap: '8px',
   border: `1px solid ${accent}`,
-  borderRadius: '999px',
+  borderRadius: theme.border.radius.pill,
   padding: '8px 12px',
   background,
-  color: '#1f2328',
+  color: theme.font.color.primary,
   fontSize: '14px',
   lineHeight: 1.3,
   fontWeight: 500,
@@ -269,16 +217,16 @@ export const compactDividerSectionStyle: CSSProperties = {
   display: 'grid',
   gap: '6px',
   paddingTop: '6px',
-  borderTop: '1px solid #e6e8eb',
+  borderTop: `1px solid ${theme.border.color.light}`,
 };
 
 export const compactConfirmationCardStyle: CSSProperties = {
   display: 'grid',
   gap: '4px',
   padding: '8px 10px',
-  border: '1px solid #d8dee4',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '6px',
-  background: '#ffffff',
+  background: theme.background.primary,
 };
 
 export const compactMetaGridStyle: CSSProperties = {
@@ -312,12 +260,12 @@ export const contextMetricStyle: CSSProperties = {
   fontSize: '20px',
   lineHeight: 1.2,
   fontWeight: 650,
-  color: '#1f2328',
+  color: theme.font.color.primary,
 };
 
 export const contextSummaryLineStyle: CSSProperties = {
   ...secondaryTextStyle,
-  color: '#57606a',
+  color: theme.font.color.secondary,
 };
 
 export const CompactMetaGrid = ({ children }: { children: ReactNode }) => (
@@ -370,7 +318,7 @@ export const panelStyle: CSSProperties = {
 };
 
 export const linkStyle: CSSProperties = {
-  color: '#0969da',
+  color: theme.color.blue,
   fontSize: '14px',
   fontWeight: 600,
   textDecoration: 'none',
@@ -380,8 +328,8 @@ export const codeBlockStyle: CSSProperties = {
   margin: 0,
   padding: '10px 12px',
   borderRadius: '6px',
-  border: '1px solid #d8dee4',
-  background: '#f6f8fa',
+  border: `1px solid ${theme.border.color.medium}`,
+  background: theme.background.secondary,
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   fontSize: '12px',
   lineHeight: 1.5,
