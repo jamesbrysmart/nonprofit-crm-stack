@@ -35,7 +35,7 @@ export default definePageLayout({
       title: 'Timeline',
       position: 100,
       icon: 'IconTimelineEvent',
-      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
           universalIdentifier: '6589fe25-c617-4a69-b994-a1c178eab727',
@@ -52,7 +52,7 @@ export default definePageLayout({
       title: 'Notes',
       position: 200,
       icon: 'IconNotes',
-      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
           universalIdentifier: '6caf8896-8d7d-4da0-b93a-0f6a9e52c342',

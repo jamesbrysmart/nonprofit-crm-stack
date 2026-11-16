@@ -124,7 +124,7 @@ export default definePageLayout({
       title: 'Timeline',
       position: 100,
       icon: 'IconTimelineEvent',
-      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
           universalIdentifier: '45dd7e3d-77f4-490b-b6d7-8862b2c5feda',
@@ -141,7 +141,7 @@ export default definePageLayout({
       title: 'Tasks',
       position: 150,
       icon: 'IconCheckbox',
-      layoutMode: PageLayoutTabLayoutMode.CANVAS,
+      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
         {
           universalIdentifier: '2f78c02b-e364-4d72-8e59-511d53dc7f0b',
