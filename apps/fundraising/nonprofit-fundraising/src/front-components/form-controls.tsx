@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Field, Input, Select, Textarea } from 'twenty-ui/primitives/input';
+import { theme } from 'src/front-components/theme-tokens';
 
 export type FormSelectOption = { value: string; label: string };
 
@@ -29,7 +30,19 @@ const FormFieldShell = ({
   </Field.Root>
 );
 
-const SELECT_LIST_STYLE: CSSProperties = { maxHeight: 240, overflowY: 'auto' };
+// Base UI sets the --anchor-* and --available-* variables on the positioner. The
+// default popup surface is translucent, so forms need an opaque background.
+const SELECT_POPUP_STYLE: CSSProperties = {
+  boxSizing: 'border-box',
+  width: 'var(--anchor-width, 280px)',
+  maxWidth: 'var(--available-width)',
+  maxHeight: 'min(300px, var(--available-height, 300px))',
+  overflowY: 'auto',
+  background: theme.background.primary,
+  backdropFilter: 'none',
+};
+
+const SELECT_TRIGGER_STYLE: CSSProperties = { width: '100%' };
 
 export const FormSelect = ({
   label,
@@ -72,19 +85,22 @@ export const FormSelect = ({
         items={items}
         disabled={disabled}
       >
-        <Select.Trigger>
+        <Select.Trigger style={SELECT_TRIGGER_STYLE}>
           <Select.Value />
           <Select.Icon />
         </Select.Trigger>
         <Select.Portal>
           {/* Aligning the item with the trigger needs layout reads the sandbox cannot provide. */}
           <Select.Positioner
+            side="bottom"
             align="start"
             sideOffset={4}
             alignItemWithTrigger={false}
+            collisionPadding={8}
+            collisionAvoidance={{ side: 'flip', align: 'none' }}
           >
-            <Select.Popup>
-              <Select.List style={SELECT_LIST_STYLE}>
+            <Select.Popup style={SELECT_POPUP_STYLE}>
+              <Select.List>
                 {items.map((item) => (
                   <Select.Item key={item.value} value={item.value}>
                     <Select.ItemText>{item.label}</Select.ItemText>
