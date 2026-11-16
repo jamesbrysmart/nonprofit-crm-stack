@@ -1,8 +1,8 @@
 # Twenty App Hardening Backlog
 
-Updated: 2026-05-14
+Updated: 2026-10-26
 Status: Working note
-Purpose: Capture the current `fix now` hardening backlog for `apps/fundraising/nonprofit-fundraising` based on the latest structural and runtime review pass.
+Purpose: Track technical hardening for the current app. Marketplace sequencing, evidence and product boundaries are owned by [MARKETPLACE_READINESS.md](MARKETPLACE_READINESS.md).
 
 Use this alongside:
 
@@ -11,27 +11,44 @@ Use this alongside:
 
 This note is not a full findings report.
 
-It is the current execution backlog: the technical changes that look justified to make before broader feature expansion.
+The 13 October current-code review supersedes the May refactor order. Earlier notes below remain context only where current source still supports them; do not repeat already completed extractions or treat old `fix now` labels as release requirements.
 
 ## 1. Current Backlog Ordering
 
-1. Stabilize shared app transport helpers
-2. Centralize batch loaders and query shapes
-3. Remove multi-write staging review actions where possible
-4. Split `new-gift.front-component.tsx` by responsibility
-5. Split `gift-aid-claim-batch.ts` into clearer layers
-6. Split `batch-processing.executor.ts` into internal submodules
-7. Decide a stale-widget refresh policy and apply it selectively
+1. Batch A implementation/unit checks complete: unclassified batch creation retries removed (R1), known recovery IDs retained, and claim pagination fixed (R2). Normal build/runtime validation remains.
+2. Reproduce concurrent Stripe deliveries and select supported atomic replay protection (R3).
+3. Make integration lifecycle tests safe (R4), check app/test TypeScript projects, and add missing financial failure-path tests (R5).
+4. Address relevant native transport/authority/schema changes identified in the July–October compatibility map.
+5. Resolve public fixture seeding, diagnostic exposure and mock submission presentation (R6) with explicit review of installation/product effects.
+6. Validate the release in a clean local workspace; defer layout conversion, broad component refactors and refresh-policy expansion unless a concrete regression requires them.
 
-This order is based on refactor value rather than severity alone.
+See [readiness sections 7–9](MARKETPLACE_READINESS.md#7-bounded-tooling-compatibility-assessment) for source evidence, acceptance criteria and release gates. R1/R2 were reproduced and corrected with unit evidence; R3 still awaits concurrent-delivery reproduction. These failures were not observed on Imara. No newer SDK feature is a mandatory task solely because it exists.
 
-## 2. Backlog Items
+### Deferred Integration Lifecycle Validation
+
+As of 2026-10-26, the TypeScript configuration and standalone CLI integration
+bootstrap have been migrated. Source-and-test typecheck, standalone CLI
+typecheck, lint and 216 unit tests pass, including isolated lifecycle and
+subprocess tests. The real uninstall / apply / uninstall lifecycle has not
+been exercised, so this is not yet end-to-end validation of the new harness.
+
+This check is deliberately deferred, not a current priority: the local Twenty
+workspace is being used to test another app. Do not reset, repurpose or run
+the fundraising integration suite against that workspace.
+
+Resume when a disposable test workspace is available. Confirm the target URL
+and credentials, standalone CLI executable, and SDK/runtime versions before
+running `yarn test` from the fundraising app directory. The suite deletes the
+fundraising app and its data. Follow the [app validation instructions](../../apps/fundraising/nonprofit-fundraising/README.md#local-validation)
+and record the real lifecycle result before treating the harness as proven.
+
+## 2. Structural Follow-ups Reconciled Against Current Code
 
 ### 2.1 Stabilize Shared App Transport Helpers
 
 Status:
 
-- `fix now`
+- `helpers extracted; review native SDK transport in batch C`
 
 Why:
 
@@ -41,8 +58,8 @@ Why:
 
 What to do:
 
-- create one shared helper for front-component route-trigger calls
-- create one shared helper for REST batch calls
+- shared app-route and REST helpers already exist in src/app-api; evaluate the installed twenty-client-sdk/rest contract before extending custom transport
+- preserve domain error messages while testing route/auth/refresh behaviour
 - keep the helpers narrow and explicit rather than building a broad generic client layer
 
 Current examples:
@@ -60,7 +77,7 @@ Current examples:
 
 Status:
 
-- `fix now`
+- `shared loaders exist; address concrete query completeness defects`
 
 Why:
 
@@ -70,7 +87,7 @@ Why:
 
 What to do:
 
-- extract shared batch query/load functions
+- use existing batch-loaders.ts and separate claim-batch query module; inspect remaining duplication before proposing extraction
 - centralize queue-scope query param construction
 - centralize repeated gift-staging row field selections where practical
 
@@ -88,7 +105,7 @@ Current examples:
 
 Status:
 
-- `fix now`
+- `target confirmed correctness risks; generic consolidation deferred`
 
 Why:
 
@@ -110,14 +127,16 @@ Current example:
 
 Status:
 
-- `fix now`
+- `initial extraction implemented; no new release task identified`
 
-Why:
+Current source check: the front component is a 61-line shell with manual-entry sections/hooks/helpers outside it. The original monolithic-file diagnosis below is historical and does not justify repeating the extraction.
+
+Original rationale (superseded by completed extraction):
 
 - the component now mixes UI rendering, duplicate detection, search orchestration, validation, and payload assembly
 - future changes to manual gift entry will become increasingly expensive in this form
 
-What to do:
+Original extraction scope (already implemented):
 
 - extract a workflow hook or controller layer
 - extract payload/validation helpers
@@ -131,14 +150,16 @@ Current file:
 
 Status:
 
-- `fix now`
+- `queries/rollups already extracted; pagination correctness takes priority`
 
-Why:
+Current source check: gift-aid-claim-batch.ts is 170 lines with separate queries and rollup modules. Test complete claim membership and finalisation before further restructuring.
+
+Original rationale (superseded by completed extraction):
 
 - the module currently combines REST transport, rollup calculation, draft-batch lifecycle, workspace loading, and finalization logic
 - the code still works, but the file is now too mixed to scale comfortably
 
-What to do:
+Original extraction scope (already implemented):
 
 - separate transport helpers
 - separate rollup and summary logic
@@ -152,14 +173,16 @@ Current file:
 
 Status:
 
-- `fix now`
+- `support/effects already extracted; fix commit/retry boundary first`
 
-Why:
+Current source check: executor.support.ts and executor.effects.ts exist. More splitting alone would not fix retries after successful gift creation.
+
+Original rationale (superseded by support/effects extraction):
 
 - the executor now combines payload building, fallback donor creation, recurring-agreement helpers, batch-create strategy, writeback persistence, and post-processing side effects
 - this is the kind of file that becomes hard to extend safely if left too long
 
-What to do:
+Original extraction scope (review any remaining duplication only as needed):
 
 - separate payload construction
 - separate donor fallback/enrichment
@@ -253,22 +276,26 @@ Working implication:
 - treat `60` rows as a meaningful current operating boundary, not just an implementation detail
 - treat `100` rows as a real next pressure regime rather than "slightly more of the same"
 
-### 4.2 Keep Recursive Batch Fallback, But Treat It As Pressure-Amplifying
+### 4.2 Validate Batch Failure Outcomes Before Retaining Recursive Fallback
 
 Status:
 
-- `document and watch`
+- `automatic failure fallback removed and unit-checked; runtime validation/recovery remain`
 
 Why:
 
-- recursive chunk splitting and row fallback are the right safety shape for current batch create behavior
-- but they multiply API calls under failure and therefore increase pressure exactly when the path is already unstable
+- the former catch retried uncertain writes by splitting chunks or invoking row creation; regression tests reproduced duplicates after committed-response loss
+- the initial donor-update hypothesis was too broad: actual enrichment helpers already catch/log mutation failures, and their success-preservation regression passed before the fix
+- malformed/duplicate response IDs cannot safely correlate input rows to committed gifts
+- normal processing already excludes PROCESS_FAILED; use that existing review boundary instead of assuming a failed response means rollback
 
 Working implication:
 
-- keep the fallback strategy for now
-- document clearly that failures can amplify pressure
-- avoid layering more automatic work into the same path without accounting for that amplification
+- first fix implemented: no automatic alternate creation after an unclassified outcome; errors explicitly require reconciliation before retry
+- preserve confirmed gift IDs and reconcile staging separately; batch writeback errors now include known staging:gift mappings
+- future recursive isolation/retry requires proof the rejected attempt did not commit, or a supported idempotency mechanism; do not reintroduce it as a performance-only change
+- do not add exception filters, blind retries or compatibility fallbacks to conceal uncertainty
+- prove one financial record per input through targeted executor tests; preserve existing operator semantics
 
 ### 4.3 Avoid Adding More Full-Workspace Auto-Refresh Patterns Without Clear Need
 
@@ -347,6 +374,6 @@ Working implication:
 When implementing this backlog:
 
 - prefer small, compositional refactors over broad rewrites
-- improve shared patterns before touching more feature slices
+- prioritise financial correctness and relevant runtime compatibility before optional structural cleanup
 - keep product-adjacent questions explicit rather than burying them inside refactors
 - and avoid chasing newer Twenty patterns unless they clearly reduce current risk or code complexity
