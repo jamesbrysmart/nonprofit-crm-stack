@@ -2,6 +2,7 @@ import {
   definePageLayout,
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
+import { GIFTS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/gifts-on-appeal.field';
 import { APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/appeal-summary.front-component';
 import { APPEAL_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/objects/appeal.object';
 import { APPEAL_DETAILS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/appeal-details.view';
@@ -55,7 +56,18 @@ export default definePageLayout({
       position: 200,
       icon: 'IconGift',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
-      widgets: [],
+      widgets: [
+        {
+          universalIdentifier: 'fd8f5f4c-a18b-46d3-8186-323673f59736',
+          title: 'Gifts',
+          type: 'FIELD',
+          configuration: {
+            configurationType: 'FIELD',
+            fieldMetadataId: GIFTS_ON_APPEAL_FIELD_UNIVERSAL_IDENTIFIER,
+            fieldDisplayMode: 'TABLE',
+          },
+        },
+      ],
     },
     {
       universalIdentifier: '6fd1b8d6-f66a-4766-a517-dc68bf25587a',
