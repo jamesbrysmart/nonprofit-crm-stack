@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { theme } from 'src/front-components/theme-tokens';
 import type {
   CompanySummary,
   ManualGiftPaymentType,
@@ -10,7 +11,6 @@ import type { MailingAddressEvidence } from 'src/gift-aid/gift-aid.types';
 
 export const panelStyle: CSSProperties = {
   padding: '12px 12px 8px',
-  fontFamily: 'sans-serif',
   display: 'flex',
   flexDirection: 'column',
   gap: '14px',
@@ -21,7 +21,7 @@ export const sectionStyle: CSSProperties = {
   display: 'grid',
   gap: '10px',
   paddingBottom: '14px',
-  borderBottom: '1px solid #e6e8eb',
+  borderBottom: `1px solid ${theme.border.color.light}`,
   minWidth: 0,
   width: '100%',
   boxSizing: 'border-box',
@@ -36,12 +36,12 @@ export const sectionHeaderRowStyle: CSSProperties = {
 };
 
 export const warningSectionStyle: CSSProperties = {
-  border: '1px solid #d8dee4',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '8px',
   padding: '12px',
   display: 'grid',
   gap: '10px',
-  background: '#ffffff',
+  background: theme.background.primary,
   minWidth: 0,
   boxSizing: 'border-box',
 };
@@ -49,7 +49,7 @@ export const warningSectionStyle: CSSProperties = {
 export const bodyTextStyle: CSSProperties = {
   margin: 0,
   fontSize: '14px',
-  color: '#57606a',
+  color: theme.font.color.secondary,
   lineHeight: 1.5,
 };
 
@@ -57,20 +57,20 @@ export const labelStyle: CSSProperties = {
   fontSize: '12px',
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
-  color: '#57606a',
+  color: theme.font.color.secondary,
 };
 
 export const sectionTitleStyle: CSSProperties = {
   ...labelStyle,
-  color: '#1f2328',
+  color: theme.font.color.primary,
 };
 
 export const inputStyle: CSSProperties = {
-  border: '1px solid #d0d7de',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '6px',
   padding: '10px 12px',
   font: 'inherit',
-  background: '#ffffff',
+  background: theme.background.primary,
   width: '100%',
   minWidth: 0,
   boxSizing: 'border-box',
@@ -105,7 +105,7 @@ export const checkboxLabelStyle: CSSProperties = {
   alignItems: 'center',
   gap: '10px',
   fontSize: '14px',
-  color: '#1f2328',
+  color: theme.font.color.primary,
 };
 
 export const stackedSectionStyle: CSSProperties = {
@@ -118,9 +118,9 @@ export const segmentedControlStyle: CSSProperties = {
   alignItems: 'center',
   gap: '4px',
   padding: '4px',
-  border: '1px solid #d0d7de',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '999px',
-  background: '#f6f8fa',
+  background: theme.background.secondary,
   width: 'fit-content',
 };
 
@@ -129,7 +129,7 @@ export const segmentedOptionStyle: CSSProperties = {
   borderRadius: '999px',
   padding: '8px 12px',
   background: 'transparent',
-  color: '#57606a',
+  color: theme.font.color.secondary,
   font: 'inherit',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
@@ -137,18 +137,18 @@ export const segmentedOptionStyle: CSSProperties = {
 
 export const selectedSegmentedOptionStyle: CSSProperties = {
   ...segmentedOptionStyle,
-  background: '#ffffff',
-  color: '#1f2328',
-  boxShadow: '0 0 0 1px #d0d7de',
+  background: theme.background.primary,
+  color: theme.font.color.primary,
+  boxShadow: `0 0 0 1px ${theme.border.color.medium}`,
 };
 
 export const candidateButtonStyle: CSSProperties = {
   width: '100%',
-  border: '1px solid #d8dee4',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '6px',
   padding: '8px 10px',
   textAlign: 'left',
-  background: '#ffffff',
+  background: theme.background.primary,
   cursor: 'pointer',
   display: 'flex',
   justifyContent: 'space-between',
@@ -158,25 +158,25 @@ export const candidateButtonStyle: CSSProperties = {
 
 export const selectedCandidateButtonStyle: CSSProperties = {
   ...candidateButtonStyle,
-  border: '1px solid #1f6feb',
-  background: '#f7fbff',
+  border: `1px solid ${theme.color.blue}`,
+  background: theme.color.blue3,
 };
 
 export const secondaryTextStyle: CSSProperties = {
   fontSize: '13px',
-  color: '#57606a',
+  color: theme.font.color.secondary,
   lineHeight: 1.5,
 };
 
 export const selectedSummaryStyle: CSSProperties = {
-  border: '1px solid #d0d7de',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '6px',
   padding: '8px 10px',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
   gap: '10px',
-  background: '#f6f8fa',
+  background: theme.background.secondary,
 };
 
 export const secondaryChoiceRowStyle: CSSProperties = {
@@ -191,14 +191,14 @@ export const inlineMatchSectionStyle: CSSProperties = {
   display: 'grid',
   gap: '10px',
   paddingTop: '8px',
-  borderTop: '1px solid #e6e8eb',
+  borderTop: `1px solid ${theme.border.color.light}`,
 };
 
 export const compactTextActionStyle: CSSProperties = {
   border: 'none',
   padding: 0,
   background: 'transparent',
-  color: '#1f6feb',
+  color: theme.color.blue,
   font: 'inherit',
   cursor: 'pointer',
   textAlign: 'left',
@@ -213,7 +213,7 @@ export const compactMatchInfoStyle: CSSProperties = {
 export const compactMatchActionStyle: CSSProperties = {
   fontSize: '13px',
   fontWeight: 500,
-  color: '#1f6feb',
+  color: theme.color.blue,
   whiteSpace: 'nowrap',
 };
 

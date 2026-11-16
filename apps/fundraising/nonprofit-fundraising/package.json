@@ -43,6 +43,7 @@
   "frontComponentSharedDependencies": [
     "react",
     "react-dom/client",
+    "twenty-ui/components/feedback",
     "twenty-ui/primitives/input"
   ]
 }

@@ -1,3 +1,9 @@
+import { Callout } from 'twenty-ui/components/feedback';
+import {
+  FormInput,
+  FormSelect,
+  FormTextarea,
+} from 'src/front-components/form-controls';
 import type {
   ManualGiftPaymentType,
   ManualGiftType,
@@ -6,15 +12,9 @@ import type { NewGiftController } from 'src/manual-gift-entry/new-gift-section.t
 import {
   CURRENCY_OPTIONS,
   fieldGridStyle,
-  fieldStyle,
-  getInputEventValue,
-  inputStyle,
-  labelStyle,
   PAYMENT_TYPE_OPTIONS,
-  secondaryTextStyle,
   sectionStyle,
   sectionTitleStyle,
-  warningSectionStyle,
 } from 'src/manual-gift-entry/new-gift-support';
 
 const getGiftTypeOptions = (donorType: 'INDIVIDUAL' | 'COMPANY') =>
@@ -29,6 +29,11 @@ const getGiftTypeOptions = (donorType: 'INDIVIDUAL' | 'COMPANY') =>
         { value: 'DONATION', label: 'Donation' },
         { value: 'GIFT_IN_KIND', label: 'Gift in kind' },
       ];
+
+const CURRENCY_SELECT_OPTIONS = CURRENCY_OPTIONS.map((currency) => ({
+  value: currency,
+  label: currency,
+}));
 
 export const GiftBasicsSection = ({
   controller,
@@ -67,184 +72,104 @@ export const GiftBasicsSection = ({
     appealOptionsError,
     appealSourceOptionsError,
   } = controller;
-  const giftTypeOptions = getGiftTypeOptions(donorType);
 
   return (
     <div style={sectionStyle}>
       <div style={sectionTitleStyle}>Gift basics</div>
       <div style={fieldGridStyle}>
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Gift type</span>
-          <select
-            style={inputStyle}
-            value={giftType}
-            onChange={(event) =>
-              setGiftType(getInputEventValue(event) as ManualGiftType)
-            }
-          >
-            {giftTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Amount</span>
-          <input
-            style={inputStyle}
-            inputMode="decimal"
-            placeholder="25.00"
-            value={amountValue}
-            onChange={(event) => setAmountValue(getInputEventValue(event))}
-          />
-        </label>
-
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Currency</span>
-          <select
-            style={inputStyle}
-            value={currencyCode}
-            onChange={(event) => setCurrencyCode(getInputEventValue(event))}
-          >
-            {CURRENCY_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Payment type</span>
-          <select
-            style={inputStyle}
-            value={paymentType}
-            onChange={(event) =>
-              setPaymentType(getInputEventValue(event) as ManualGiftPaymentType)
-            }
-          >
-            {PAYMENT_TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Payment/source</span>
-          <input
-            style={inputStyle}
-            placeholder="Stripe, JustGiving, bank"
-            value={provider}
-            onChange={(event) => setProvider(getInputEventValue(event))}
-          />
-        </label>
-
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Gift date</span>
-          <input
-            style={inputStyle}
-            type="date"
-            value={giftDate}
-            onChange={(event) => setGiftDate(getInputEventValue(event))}
-          />
-        </label>
+        <FormSelect
+          label="Gift type"
+          value={giftType}
+          onChange={(value) => setGiftType(value as ManualGiftType)}
+          options={getGiftTypeOptions(donorType)}
+        />
+        <FormInput
+          label="Amount"
+          inputMode="decimal"
+          placeholder="25.00"
+          value={amountValue}
+          onChange={setAmountValue}
+        />
+        <FormSelect
+          label="Currency"
+          value={currencyCode}
+          onChange={setCurrencyCode}
+          options={CURRENCY_SELECT_OPTIONS}
+        />
+        <FormSelect
+          label="Payment type"
+          value={paymentType}
+          onChange={(value) => setPaymentType(value as ManualGiftPaymentType)}
+          options={PAYMENT_TYPE_OPTIONS}
+        />
+        <FormInput
+          label="Payment/source"
+          placeholder="Stripe, JustGiving, bank"
+          value={provider}
+          onChange={setProvider}
+        />
+        <FormInput
+          label="Gift date"
+          type="date"
+          value={giftDate}
+          onChange={setGiftDate}
+        />
       </div>
 
       {giftType === 'GIFT_IN_KIND' ? (
-        <div style={warningSectionStyle}>
-          Record the estimated support value for this gift in kind. It will
-          remain visible in CRM context, but it is excluded from default cash
-          donation totals and reconciliation-style views.
-        </div>
-      ) : null}
-
-      {giftType === 'GIFT_IN_KIND' ? (
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Description</span>
-          <textarea
-            style={{
-              ...inputStyle,
-              minHeight: '88px',
-              resize: 'vertical',
-            }}
+        <>
+          <Callout
+            status="warning"
+            title="Gift in kind"
+            description="Record the estimated support value for this gift in kind. It will remain visible in CRM context, but it is excluded from default cash donation totals and reconciliation-style views."
+          />
+          <FormTextarea
+            label="Description"
             placeholder="What was donated?"
             value={description}
-            onChange={(event) => setDescription(getInputEventValue(event))}
+            onChange={setDescription}
+            description="Describe the donated goods or services so the record is meaningful in supporter, company, and appeal context."
           />
-          <span style={secondaryTextStyle}>
-            Describe the donated goods or services so the record is meaningful
-            in supporter, company, and appeal context.
-          </span>
-        </label>
+        </>
       ) : null}
 
       <div style={fieldGridStyle}>
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Appeal</span>
-          <select
-            style={inputStyle}
-            value={selectedAppealId}
-            onChange={(event) => setSelectedAppealId(getInputEventValue(event))}
-            disabled={loadingAppealOptions}
-          >
-            <option value="">No appeal</option>
-            {appealOptions.map((appeal) => (
-              <option key={appeal.id} value={appeal.id}>
-                {appeal.name ?? 'Untitled appeal'}
-              </option>
-            ))}
-          </select>
-          {appealOptionsError ? (
-            <span style={secondaryTextStyle}>{appealOptionsError}</span>
-          ) : null}
-        </label>
-
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Appeal source</span>
-          <select
-            style={inputStyle}
-            value={selectedAppealSourceId}
-            onChange={(event) =>
-              setSelectedAppealSourceId(getInputEventValue(event))
-            }
-            disabled={loadingAppealSourceOptions}
-          >
-            <option value="">No appeal source</option>
-            {appealSourceOptions.map((appealSource) => (
-              <option key={appealSource.id} value={appealSource.id}>
-                {appealSource.name ?? 'Untitled appeal source'}
-              </option>
-            ))}
-          </select>
-          {appealSourceOptionsError ? (
-            <span style={secondaryTextStyle}>{appealSourceOptionsError}</span>
-          ) : null}
-        </label>
-
-        <label style={fieldStyle}>
-          <span style={labelStyle}>Fund</span>
-          <select
-            style={inputStyle}
-            value={selectedFundId}
-            onChange={(event) => setSelectedFundId(getInputEventValue(event))}
-            disabled={loadingFundOptions}
-          >
-            <option value="">No fund</option>
-            {fundOptions.map((fund) => (
-              <option key={fund.id} value={fund.id}>
-                {fund.name ?? 'Untitled fund'}
-                {fund.code ? ` (${fund.code})` : ''}
-              </option>
-            ))}
-          </select>
-          {fundOptionsError ? (
-            <span style={secondaryTextStyle}>{fundOptionsError}</span>
-          ) : null}
-        </label>
+        <FormSelect
+          label="Appeal"
+          value={selectedAppealId}
+          onChange={setSelectedAppealId}
+          emptyOptionLabel="No appeal"
+          options={appealOptions.map((appeal) => ({
+            value: appeal.id,
+            label: appeal.name ?? 'Untitled appeal',
+          }))}
+          disabled={loadingAppealOptions}
+          error={appealOptionsError}
+        />
+        <FormSelect
+          label="Appeal source"
+          value={selectedAppealSourceId}
+          onChange={setSelectedAppealSourceId}
+          emptyOptionLabel="No appeal source"
+          options={appealSourceOptions.map((appealSource) => ({
+            value: appealSource.id,
+            label: appealSource.name ?? 'Untitled appeal source',
+          }))}
+          disabled={loadingAppealSourceOptions}
+          error={appealSourceOptionsError}
+        />
+        <FormSelect
+          label="Fund"
+          value={selectedFundId}
+          onChange={setSelectedFundId}
+          emptyOptionLabel="No fund"
+          options={fundOptions.map((fund) => ({
+            value: fund.id,
+            label: `${fund.name ?? 'Untitled fund'}${fund.code ? ` (${fund.code})` : ''}`,
+          }))}
+          disabled={loadingFundOptions}
+          error={fundOptionsError}
+        />
       </div>
     </div>
   );
