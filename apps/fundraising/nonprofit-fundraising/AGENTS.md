@@ -75,5 +75,18 @@ Prefer the smallest relevant local checks:
 
 Useful local commands:
 
-- `yarn twenty help`
-- `yarn twenty exec --postInstall`
+- `twenty --help`
+- `twenty app typecheck`
+- `twenty app build`
+- `twenty app plan --remote <explicit-target>` before an approved apply
+- `twenty app exec --post-install --remote <disposable-target>` only when fixtures are intentionally needed
+
+Use the globally installed standalone CLI directly; `yarn twenty` can still
+select the legacy binary bundled with the installed SDK. Server management is
+separate from the standalone CLI. See the README and repo workflow guide.
+
+Integration tests uninstall the app and delete its data. Real lifecycle
+validation is deferred while the local workspace is used for another app;
+do not run `yarn test`, reset the server, or sync fundraising there without
+explicit confirmation of a disposable target. The Stripe fixture script also
+mutates records and now requires explicit API URL/key environment variables.
