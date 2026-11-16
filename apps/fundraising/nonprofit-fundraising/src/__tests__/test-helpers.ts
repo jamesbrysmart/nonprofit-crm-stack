@@ -6,7 +6,9 @@ export const getCoreClient = () => new CoreApiClient();
 
 export const getMetadataClient = () => new MetadataApiClient();
 
-export const findInstalledApplication = async () => {
+export const findInstalledApplication = async (): Promise<
+  { id: string; name: string; universalIdentifier: string } | undefined
+> => {
   const client = getMetadataClient();
   const result = await client.query({
     findManyApplications: {

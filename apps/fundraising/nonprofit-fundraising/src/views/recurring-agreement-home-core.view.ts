@@ -1,6 +1,6 @@
 import {
   defineView,
-  generateDefaultFieldUniversalIdentifier,
+  getFieldUniversalIdentifier,
 } from 'twenty-sdk/define';
 import { APPEAL_ON_RECURRING_AGREEMENT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-on-recurring-agreement.field';
 import { APPEAL_SOURCE_ON_RECURRING_AGREEMENT_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/appeal-source-on-recurring-agreement.field';
@@ -36,10 +36,10 @@ const RECURRING_AGREEMENT_HOME_SYSTEM_FIELD_GROUP_UNIVERSAL_IDENTIFIER =
   '29e00eb4-6c83-46f3-8e4f-4fc1fa7b642b';
 
 const systemFieldUniversalIdentifier = (fieldName: string) =>
-  generateDefaultFieldUniversalIdentifier({
+  getFieldUniversalIdentifier({
     applicationUniversalIdentifier: APPLICATION_UNIVERSAL_IDENTIFIER,
     objectUniversalIdentifier: RECURRING_AGREEMENT_OBJECT_UNIVERSAL_IDENTIFIER,
-    fieldName,
+    name: fieldName,
   });
 
 export default defineView({

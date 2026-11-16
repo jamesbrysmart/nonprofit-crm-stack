@@ -19,6 +19,7 @@ describe('stripe-route-probe', () => {
 
     try {
       const response = await stripeRouteProbeHandler({
+        userWorkspaceId: null,
         headers: { 'stripe-signature': signature },
         queryStringParameters: {},
         pathParameters: {},

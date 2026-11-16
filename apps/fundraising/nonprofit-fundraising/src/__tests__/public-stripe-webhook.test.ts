@@ -1,9 +1,11 @@
 import { createHmac } from 'node:crypto';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoutePayload } from 'twenty-sdk/define';
 
 vi.mock('twenty-client-sdk/core', () => ({
-  CoreApiClient: vi.fn(() => ({})),
+  CoreApiClient: vi.fn(function () {
+    return {};
+  }),
 }));
 
 import {
@@ -19,6 +21,7 @@ const buildCheckoutSessionEvent = (
     '{"id":"evt_public_test","type":"checkout.session.completed","data":{"object":{"id":"cs_public_test","subscription":"sub_public_test"}}}';
 
   return {
+    userWorkspaceId: null,
     headers: {
       'stripe-signature': `t=${timestamp},v1=${createStripeSignature(rawBody, timestamp)}`,
     },
@@ -46,6 +49,10 @@ const buildCheckoutSessionEvent = (
 };
 
 describe('handle-public-stripe-webhook', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('rejects invalid signatures without routing the event', async () => {
     const routeSpy = vi.spyOn(stripeEventRouter, 'routeTrustedStripeEvent');
     const event = buildCheckoutSessionEvent();

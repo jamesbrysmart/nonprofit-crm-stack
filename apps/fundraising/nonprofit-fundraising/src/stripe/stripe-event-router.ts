@@ -27,23 +27,9 @@ type StripeCheckoutSessionLike = {
   subscription?: StripeObjectRef;
 };
 
-type StripeInvoicePaymentLike = {
-  invoice?: StripeObjectRef;
-  payment?: {
-    payment_intent?: StripeObjectRef;
-  } | null;
-};
-
-export type TrustedStripeEvent = {
-  id?: string;
-  type?: string;
-  data?: {
-    object?:
-      | StripeCheckoutSessionLike
-      | StripeInvoicePaymentLike
-      | null;
-  } | null;
-};
+export type TrustedStripeEvent =
+  | StripeCheckoutSessionCompletedEvent
+  | StripeInvoicePaymentPaidEvent;
 
 export type StripeEventRoutingResult =
   | {

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import type { StripePaymentEconomicsRetriever } from 'src/stripe/stripe-intake.types';
 
 import {
   buildStripeOneOffGiftStagingInput,
@@ -267,6 +268,18 @@ describe('updateStripeDonationFormGiftStaging', () => {
       mutation,
     } as unknown as CoreApiClient;
     const paymentEconomicsRetriever = {
+      retrievePaymentEconomicsFromPaymentIntentId: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected payment intent lookup')),
+      retrieveInvoiceById: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected invoice lookup')),
+      retrieveInvoicePaymentById: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected invoice payment lookup')),
+      findSubscriptionMetadata: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected subscription lookup')),
       retrievePaymentEconomics: vi.fn().mockResolvedValue({
         paymentIntentId: 'pi_form_economics',
         latestChargeId: 'ch_form_economics',
@@ -284,7 +297,7 @@ describe('updateStripeDonationFormGiftStaging', () => {
           currencyCode: 'GBP',
         },
       }),
-    };
+    } satisfies StripePaymentEconomicsRetriever;
 
     const result = await updateStripeDonationFormGiftStagingWithDependencies(
       client,
@@ -409,8 +422,20 @@ describe('updateStripeDonationFormGiftStaging', () => {
       mutation,
     } as unknown as CoreApiClient;
     const paymentEconomicsRetriever = {
+      retrievePaymentEconomicsFromPaymentIntentId: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected payment intent lookup')),
+      retrieveInvoiceById: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected invoice lookup')),
+      retrieveInvoicePaymentById: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected invoice payment lookup')),
+      findSubscriptionMetadata: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected subscription lookup')),
       retrievePaymentEconomics: vi.fn().mockResolvedValue(null),
-    };
+    } satisfies StripePaymentEconomicsRetriever;
 
     await updateStripeDonationFormGiftStagingWithDependencies(
       client,
@@ -639,6 +664,9 @@ describe('updateStripeDonationFormRecurringInvoicePaymentGiftStaging', () => {
       mutation,
     } as unknown as CoreApiClient;
     const paymentEconomicsRetriever = {
+      retrievePaymentEconomics: vi
+        .fn()
+        .mockRejectedValue(new Error('Unexpected checkout economics lookup')),
       retrieveInvoiceById: vi.fn().mockResolvedValue({
         id: 'in_invoice_payment',
         metadata: {},
@@ -678,7 +706,7 @@ describe('updateStripeDonationFormRecurringInvoicePaymentGiftStaging', () => {
           currencyCode: 'GBP',
         },
       }),
-    };
+    } satisfies StripePaymentEconomicsRetriever;
 
     const result =
       await updateStripeDonationFormRecurringInvoicePaymentGiftStagingWithDependencies(

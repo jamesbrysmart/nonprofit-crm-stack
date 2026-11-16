@@ -87,6 +87,9 @@ describe('Stripe recurring fulfillment intake', () => {
     );
 
     expect(replayResponse.created).toBe(false);
+    if (replayResponse.created) {
+      throw new Error('Expected a duplicate delivery, got a new gift');
+    }
     expect(replayResponse.reason).toBe('DUPLICATE_SOURCE_FINGERPRINT');
     expect(replayResponse.giftId).toBe(firstResponse.giftId);
 
@@ -107,6 +110,9 @@ describe('Stripe recurring fulfillment intake', () => {
     );
 
     expect(response.created).toBe(false);
+    if (response.created) {
+      throw new Error('Expected an unmatched agreement, got a new gift');
+    }
     expect(response.reason).toBe('NO_CONFIDENT_RECURRING_AGREEMENT_MATCH');
     expect(response.providerAgreementId).toBe(`sub_unmatched_${suffix}`);
   });

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { routeTrustedStripeEvent } from 'src/stripe/stripe-event-router';
 import * as oneOffStaging from 'src/stripe/stripe-one-off-staging';
@@ -19,6 +19,10 @@ const buildCheckoutSessionEvent = (subscription?: string) => ({
 });
 
 describe('routeTrustedStripeEvent', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('routes checkout.session.completed without a subscription to one-off staging', async () => {
     const oneOffResult = {
       created: true,

@@ -1,4 +1,7 @@
-import type { MailingAddressEvidence } from 'src/gift-aid/gift-aid.types';
+import type {
+  GiftAidCaptureInput,
+  MailingAddressEvidence,
+} from 'src/gift-aid/gift-aid.types';
 
 export const STRIPE_PROVIDER = 'STRIPE';
 export const STRIPE_INTAKE_SOURCE = 'stripe_webhook';
@@ -178,7 +181,7 @@ export type StripeInvoicePaymentPaidEvent = {
   } | null;
 };
 
-export type StripeOneOffGiftStagingInput = {
+export type StripeOneOffGiftStagingInput = GiftAidCaptureInput & {
   name: string;
   intakeSource: typeof STRIPE_INTAKE_SOURCE;
   amount: {
