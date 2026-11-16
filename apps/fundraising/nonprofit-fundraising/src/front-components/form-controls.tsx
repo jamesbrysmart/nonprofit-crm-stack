@@ -1,5 +1,14 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { Field, Input, Select, Textarea } from 'twenty-ui/primitives/input';
+import { useId, type CSSProperties, type ReactNode } from 'react';
+import {
+  Checkbox,
+  Field,
+  Input,
+  Radio,
+  RadioGroup,
+  Select,
+  Textarea,
+} from 'twenty-ui/primitives/input';
+import { Text } from 'twenty-ui/primitives/typography';
 import { theme } from 'src/front-components/theme-tokens';
 
 export type FormSelectOption = { value: string; label: string };
@@ -191,4 +200,83 @@ export const FormTextarea = ({
       onValueChange={(nextValue) => onChange(nextValue)}
     />
   </FormFieldShell>
+);
+
+const CHECKBOX_LABEL_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 8,
+  cursor: 'pointer',
+};
+
+export const FormCheckbox = ({
+  label,
+  checked,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) => {
+  const checkboxId = useId();
+
+  return (
+    <label htmlFor={checkboxId} style={CHECKBOX_LABEL_STYLE}>
+      <Checkbox
+        id={checkboxId}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={(nextChecked) => onChange(nextChecked)}
+      />
+      <Text render={<span />}>{label}</Text>
+    </label>
+  );
+};
+
+export type ChoiceCardOption = {
+  value: string;
+  title: ReactNode;
+  description?: ReactNode;
+};
+
+const CHOICE_CARD_CONTENT_STYLE: CSSProperties = {
+  display: 'grid',
+  gap: 4,
+  paddingInlineEnd: 24,
+};
+
+// A selectable list of records, such as possible donor matches.
+export const ChoiceCards = ({
+  ariaLabel,
+  value,
+  onChange,
+  options,
+}: {
+  ariaLabel: string;
+  value: string | null;
+  onChange: (value: string) => void;
+  options: ChoiceCardOption[];
+}) => (
+  <RadioGroup
+    aria-label={ariaLabel}
+    value={value ?? ''}
+    onValueChange={(nextValue) => onChange(String(nextValue))}
+  >
+    {options.map((option) => (
+      <Radio key={option.value} variant="card" value={option.value}>
+        <span style={CHOICE_CARD_CONTENT_STYLE}>
+          <Text render={<span />} weight="medium">
+            {option.title}
+          </Text>
+          {option.description ? (
+            <Text render={<span />} color="secondary">
+              {option.description}
+            </Text>
+          ) : null}
+        </span>
+      </Radio>
+    ))}
+  </RadioGroup>
 );

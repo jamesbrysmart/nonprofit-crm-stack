@@ -113,35 +113,6 @@ export const stackedSectionStyle: CSSProperties = {
   gap: '10px',
 };
 
-export const segmentedControlStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  padding: '4px',
-  border: `1px solid ${theme.border.color.medium}`,
-  borderRadius: '999px',
-  background: theme.background.secondary,
-  width: 'fit-content',
-};
-
-export const segmentedOptionStyle: CSSProperties = {
-  border: 'none',
-  borderRadius: '999px',
-  padding: '8px 12px',
-  background: 'transparent',
-  color: theme.font.color.secondary,
-  font: 'inherit',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-};
-
-export const selectedSegmentedOptionStyle: CSSProperties = {
-  ...segmentedOptionStyle,
-  background: theme.background.primary,
-  color: theme.font.color.primary,
-  boxShadow: `0 0 0 1px ${theme.border.color.medium}`,
-};
-
 export const candidateButtonStyle: CSSProperties = {
   width: '100%',
   border: `1px solid ${theme.border.color.medium}`,
@@ -168,17 +139,6 @@ export const secondaryTextStyle: CSSProperties = {
   lineHeight: 1.5,
 };
 
-export const selectedSummaryStyle: CSSProperties = {
-  border: `1px solid ${theme.border.color.medium}`,
-  borderRadius: '6px',
-  padding: '8px 10px',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '10px',
-  background: theme.background.secondary,
-};
-
 export const secondaryChoiceRowStyle: CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
@@ -192,35 +152,6 @@ export const inlineMatchSectionStyle: CSSProperties = {
   gap: '10px',
   paddingTop: '8px',
   borderTop: `1px solid ${theme.border.color.light}`,
-};
-
-export const compactTextActionStyle: CSSProperties = {
-  border: 'none',
-  padding: 0,
-  background: 'transparent',
-  color: theme.color.blue,
-  font: 'inherit',
-  cursor: 'pointer',
-  textAlign: 'left',
-};
-
-export const compactMatchInfoStyle: CSSProperties = {
-  display: 'grid',
-  gap: '2px',
-  minWidth: 0,
-};
-
-export const compactMatchActionStyle: CSSProperties = {
-  fontSize: '13px',
-  fontWeight: 500,
-  color: theme.color.blue,
-  whiteSpace: 'nowrap',
-};
-
-export const selectedStateInfoStyle: CSSProperties = {
-  display: 'grid',
-  gap: '2px',
-  minWidth: 0,
 };
 
 export const buildPersonDisplayName = (person: PersonSummary) => {
