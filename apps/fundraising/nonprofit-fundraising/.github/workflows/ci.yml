@@ -1,3 +1,4 @@
+# Inactive reference template in this monorepo; review paths before enabling.
 name: CI
 
 on:
@@ -11,6 +12,7 @@ permissions:
 
 env:
   TWENTY_VERSION: latest
+  TWENTY_CLI_VERSION: '2.49.0'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -25,7 +27,7 @@ jobs:
 
       - name: Spawn Twenty test instance
         id: twenty
-        uses: twentyhq/twenty/.github/actions/spawn-twenty-app-dev-test@main
+        uses: twentyhq/twenty/.github/actions/spawn-twenty-app-dev-test@06a5c6bc4c7c8291c980aa2358e6c48d88fa0733
         with:
           twenty-version: ${{ env.TWENTY_VERSION }}
 
@@ -38,11 +40,23 @@ jobs:
           node-version-file: '.nvmrc'
           cache: yarn
 
+      - name: Install Twenty CLI
+        run: npm install -g "twenty@${TWENTY_CLI_VERSION}"
+
       - name: Install dependencies
         run: yarn install --immutable
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Typecheck
+        run: yarn typecheck
+
+      - name: Unit tests
+        run: yarn test:unit
 
       - name: Run integration tests
         run: yarn test
         env:
-          TWENTY_API_URL: ${{ steps.twenty.outputs.server-url }}
-          TWENTY_API_KEY: ${{ steps.twenty.outputs.api-key }}
+          TWENTY_INTEGRATION_API_URL: ${{ steps.twenty.outputs.server-url }}
+          TWENTY_INTEGRATION_API_KEY: ${{ steps.twenty.outputs.api-key }}

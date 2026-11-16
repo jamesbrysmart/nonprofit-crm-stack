@@ -1,17 +1,19 @@
+# Inactive reference template; not approval to enable client deployment.
 name: CD
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      api-url:
+        description: Reviewed target workspace URL
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 env:
-  TWENTY_DEPLOY_URL: http://localhost:3000
+  TWENTY_CLI_VERSION: '2.49.0'
 
 concurrency:
   group: cd-${{ github.ref }}
@@ -19,24 +21,21 @@ concurrency:
 
 jobs:
   deploy-and-install:
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && github.event.label.name == 'deploy')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Deploy
-        uses: twentyhq/twenty/.github/actions/deploy-twenty-app@main
+        uses: twentyhq/twenty/.github/actions/deploy-twenty-app@06a5c6bc4c7c8291c980aa2358e6c48d88fa0733
         with:
-          api-url: ${{ env.TWENTY_DEPLOY_URL }}
+          cli-version: ${{ env.TWENTY_CLI_VERSION }}
+          api-url: ${{ inputs.api-url }}
           api-key: ${{ secrets.TWENTY_DEPLOY_API_KEY }}
 
       - name: Install
-        uses: twentyhq/twenty/.github/actions/install-twenty-app@main
+        uses: twentyhq/twenty/.github/actions/install-twenty-app@06a5c6bc4c7c8291c980aa2358e6c48d88fa0733
         with:
-          api-url: ${{ env.TWENTY_DEPLOY_URL }}
+          cli-version: ${{ env.TWENTY_CLI_VERSION }}
+          api-url: ${{ inputs.api-url }}
           api-key: ${{ secrets.TWENTY_DEPLOY_API_KEY }}
