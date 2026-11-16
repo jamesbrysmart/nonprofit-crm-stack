@@ -60,13 +60,6 @@ export type SingleGiftProcessingResult = {
   reconciliationError: string | null;
 };
 
-class CorrelationContractFailure extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'CorrelationContractFailure';
-  }
-}
-
 const sleep = async (delayMs: number) => {
   await new Promise((resolve) => setTimeout(resolve, delayMs));
 };
@@ -85,20 +78,24 @@ const parseCreatedGiftIds = (
     : [];
 
   if (created.length !== expectedLength) {
-    throw new CorrelationContractFailure(
+    throw new Error(
       `Unexpected createGifts response length: expected ${expectedLength}, got ${created.length}`,
     );
   }
 
-  return created.map((record) => {
+  const ids = created.map((record) => {
     if (typeof record?.id !== 'string' || record.id.trim() === '') {
-      throw new CorrelationContractFailure(
-        'Batch create response missing gift id',
-      );
+      throw new Error('Batch create response missing gift id');
     }
 
     return record.id.trim();
   });
+
+  if (new Set(ids).size !== ids.length) {
+    throw new Error('Batch create response contains duplicate gift ids');
+  }
+
+  return ids;
 };
 
 const createBatchGiftChunk = async (
@@ -138,7 +135,8 @@ const createBatchGiftChunk = async (
           ),
         }
       : {}),
-    ...(normalizeString(entry.payload.appealSourceId as string | undefined) !== ''
+    ...(normalizeString(entry.payload.appealSourceId as string | undefined) !==
+    ''
       ? {
           appealSourceId: normalizeString(
             entry.payload.appealSourceId as string | undefined,
@@ -156,7 +154,7 @@ const createBatchGiftChunk = async (
   }));
 };
 
-const chunkArray = <T,>(items: T[], size: number): T[][] => {
+const chunkArray = <T>(items: T[], size: number): T[][] => {
   const chunks: T[][] = [];
 
   for (let index = 0; index < items.length; index += size) {
@@ -184,7 +182,7 @@ const buildFailedWriteback = ({
   };
 };
 
-const createBatchChunkWithFallback = async (
+const executeBatchGiftChunk = async (
   entries: BatchGiftEntry[],
 ): Promise<BatchCreateResult> => {
   if (entries.length === 0) {
@@ -214,77 +212,21 @@ const createBatchChunkWithFallback = async (
       },
     };
   } catch (error) {
-    if (error instanceof CorrelationContractFailure) {
-      return {
-        successfulWritebacks: [],
-        failedWritebacks: entries.map((entry) =>
-          buildFailedWriteback({
-            rowId: entry.row.id,
-            errorDetail: error.message,
-            executionPath: 'BATCH',
-          }),
-        ),
-        metrics: {
-          chunkCount: 1,
-          batchPathProcessed: 0,
-          batchPathFailed: 0,
-          rowFallbackProcessed: 0,
-          rowFallbackFailed: 0,
-        },
-      };
-    }
-
-    if (entries.length === 1) {
-      try {
-        return {
-          successfulWritebacks: [
-            await createGiftViaRowFallback(entries[0].row),
-          ],
-          failedWritebacks: [],
-          metrics: {
-            chunkCount: 1,
-            batchPathProcessed: 0,
-            batchPathFailed: 0,
-            rowFallbackProcessed: 0,
-            rowFallbackFailed: 0,
-          },
-        };
-      } catch (rowError) {
-        return {
-          successfulWritebacks: [],
-          failedWritebacks: [
-            buildFailedWriteback({
-              rowId: entries[0].row.id,
-              errorDetail:
-                rowError instanceof Error
-                  ? rowError.message
-                  : 'Row fallback failed',
-              executionPath: 'ROW_FALLBACK',
-            }),
-          ],
-          metrics: {
-            chunkCount: 1,
-            batchPathProcessed: 0,
-            batchPathFailed: 0,
-            rowFallbackProcessed: 0,
-            rowFallbackFailed: 0,
-          },
-        };
-      }
-    }
-
-    const midpoint = Math.ceil(entries.length / 2);
-    const left = await createBatchChunkWithFallback(entries.slice(0, midpoint));
-    const right = await createBatchChunkWithFallback(entries.slice(midpoint));
-
+    // A failed response does not prove the server rolled back its write.
+    // Splitting or switching to row creation can duplicate committed gifts.
+    const reason =
+      error instanceof Error ? error.message : 'Gift creation failed';
     return {
-      successfulWritebacks: [
-        ...left.successfulWritebacks,
-        ...right.successfulWritebacks,
-      ],
-      failedWritebacks: [...left.failedWritebacks, ...right.failedWritebacks],
+      successfulWritebacks: [],
+      failedWritebacks: entries.map((entry) =>
+        buildFailedWriteback({
+          rowId: entry.row.id,
+          errorDetail: `Gift creation outcome could not be confirmed. Reconcile before retrying. ${reason}`,
+          executionPath: 'BATCH',
+        }),
+      ),
       metrics: {
-        chunkCount: left.metrics.chunkCount + right.metrics.chunkCount,
+        chunkCount: 1,
         batchPathProcessed: 0,
         batchPathFailed: 0,
         rowFallbackProcessed: 0,
@@ -388,7 +330,7 @@ export const executeSingleGiftProcessing = async (
     directRowFallbackSuccesses[0] ?? preflightFailures[0] ?? null;
 
   if (!writeback && entries[0]) {
-    const chunkResult = await createBatchChunkWithFallback([entries[0]]);
+    const chunkResult = await executeBatchGiftChunk([entries[0]]);
     writeback =
       chunkResult.successfulWritebacks[0] ??
       chunkResult.failedWritebacks[0] ??
@@ -442,7 +384,7 @@ export const executeBatchGiftProcessing = async (
   };
 
   for (let index = 0; index < chunks.length; index += 1) {
-    const chunkResult = await createBatchChunkWithFallback(chunks[index]);
+    const chunkResult = await executeBatchGiftChunk(chunks[index]);
     result.successfulWritebacks.push(...chunkResult.successfulWritebacks);
     result.failedWritebacks.push(...chunkResult.failedWritebacks);
     result.metrics.chunkCount += chunkResult.metrics.chunkCount;
@@ -452,10 +394,22 @@ export const executeBatchGiftProcessing = async (
     }
   }
 
-  await persistWritebacks([
-    ...result.successfulWritebacks,
-    ...result.failedWritebacks,
-  ]);
+  try {
+    await persistWritebacks([
+      ...result.successfulWritebacks,
+      ...result.failedWritebacks,
+    ]);
+  } catch (error) {
+    const reason =
+      error instanceof Error ? error.message : 'Staging writeback failed';
+    const committedIds = result.successfulWritebacks
+      .map((writeback) => `${writeback.id}:${writeback.committedGiftId}`)
+      .join(', ');
+    throw new Error(
+      `Staging reconciliation failed. Reconcile before retrying. ${reason}` +
+        (committedIds ? ` Committed staging:gift ids: ${committedIds}` : ''),
+    );
+  }
 
   await runBatchProcessingSideEffects(result.successfulWritebacks);
   finalizeBatchExecutionMetrics({
@@ -480,9 +434,7 @@ export const buildNotReadyWritebacks = (
     }));
 };
 
-export const persistBatchRowWritebacks = async (
-  writebacks: RowWriteback[],
-) => {
+export const persistBatchRowWritebacks = async (writebacks: RowWriteback[]) => {
   if (writebacks.length === 0) {
     return;
   }

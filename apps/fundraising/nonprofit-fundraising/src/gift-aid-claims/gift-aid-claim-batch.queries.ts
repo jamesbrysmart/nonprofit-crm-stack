@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
+  type Connection,
   extractConnectionNodes,
   extractMutationRecord,
   extractQueryRecord,
@@ -122,59 +123,73 @@ export const getOrCreateCurrentDraftClaimBatch = async (
   ) as GiftAidClaimBatchRecord;
 };
 
-export const listGiftsForClaimBatch = async (
+const listClaimGifts = async (
+  client: CoreApiClient,
+  filter: Record<string, unknown>,
+): Promise<GiftAidClaimGiftRecord[]> => {
+  const gifts: GiftAidClaimGiftRecord[] = [];
+  const cursors = new Set<string>();
+  let after: string | undefined;
+
+  while (true) {
+    const result = await client.query({
+      gifts: {
+        __args: {
+          first: 200,
+          filter,
+          ...(after ? { after } : {}),
+        },
+        edges: { node: giftAidClaimGiftSelection },
+        pageInfo: { hasNextPage: true, endCursor: true },
+      },
+    } as any);
+
+    const connection = extractQueryRecord<Connection<GiftAidClaimGiftRecord>>(
+      result,
+      'gifts',
+    );
+    // Financial totals must never treat a malformed/incomplete response as an empty page.
+    if (
+      !Array.isArray(connection?.edges) ||
+      typeof connection.pageInfo?.hasNextPage !== 'boolean'
+    ) {
+      throw new Error('Unable to load complete claim gift connection');
+    }
+
+    gifts.push(...connection.edges.map((edge) => edge.node));
+
+    if (!connection.pageInfo.hasNextPage) return gifts;
+
+    const cursor = connection.pageInfo.endCursor;
+    if (
+      typeof cursor !== 'string' ||
+      cursor.trim() === '' ||
+      cursors.has(cursor)
+    ) {
+      throw new Error(
+        'Unable to continue loading claim gifts: invalid or repeated cursor',
+      );
+    }
+    cursors.add(cursor);
+    after = cursor;
+  }
+};
+
+export const listGiftsForClaimBatch = (
   client: CoreApiClient,
   batchId: string,
-): Promise<GiftAidClaimGiftRecord[]> => {
-  const result = await client.query({
-    gifts: {
-      __args: {
-        first: 200,
-        filter: {
-          giftAidClaimBatchId: {
-            eq: batchId,
-          },
-        },
-      },
-      edges: {
-        node: giftAidClaimGiftSelection,
-      },
-    },
-  } as any);
-
-  return extractConnectionNodes<GiftAidClaimGiftRecord>(result, 'gifts');
-};
+): Promise<GiftAidClaimGiftRecord[]> =>
+  listClaimGifts(client, { giftAidClaimBatchId: { eq: batchId } });
 
 export const listNeedsReviewGiftAidGifts = async (
   client: CoreApiClient,
-): Promise<GiftAidClaimGiftRecord[]> => {
-  const result = await client.query({
-    gifts: {
-      __args: {
-        first: 200,
-        filter: {
-          and: [
-            {
-              giftAidStatus: {
-                eq: 'NEEDS_REVIEW',
-              },
-            },
-            {
-              giftAidClaimBatchId: {
-                is: 'NULL',
-              },
-            },
-          ],
-        },
-      },
-      edges: {
-        node: giftAidClaimGiftSelection,
-      },
-    },
-  } as any);
-
-  return extractConnectionNodes<GiftAidClaimGiftRecord>(result, 'gifts');
-};
+): Promise<GiftAidClaimGiftRecord[]> =>
+  listClaimGifts(client, {
+    and: [
+      { giftAidStatus: { eq: 'NEEDS_REVIEW' } },
+      { giftAidClaimBatchId: { is: 'NULL' } },
+    ],
+  });
 
 export const refreshClaimBatchSummary = async (
   client: CoreApiClient,
@@ -252,12 +267,17 @@ export const loadGiftAidClaimWorkspace = async (
   const submissions = extractConnectionNodes<GiftAidClaimSubmissionRecord>(
     result,
     'giftAidClaimSubmissions',
-  ).sort((left: GiftAidClaimSubmissionRecord, right: GiftAidClaimSubmissionRecord) => {
+  ).sort(
+    (
+      left: GiftAidClaimSubmissionRecord,
+      right: GiftAidClaimSubmissionRecord,
+    ) => {
       const leftTimestamp = left.submittedAt ?? left.completedAt ?? '';
       const rightTimestamp = right.submittedAt ?? right.completedAt ?? '';
 
       return rightTimestamp.localeCompare(leftTimestamp);
-    });
+    },
+  );
 
   if (!batch) {
     return {
@@ -279,7 +299,10 @@ export const loadGiftAidClaimWorkspace = async (
   };
 };
 
-export const loadClaimBatch = async (client: CoreApiClient, batchId: string) => {
+export const loadClaimBatch = async (
+  client: CoreApiClient,
+  batchId: string,
+) => {
   const refreshed = await client.query({
     giftAidClaimBatch: {
       __args: {
@@ -292,7 +315,9 @@ export const loadClaimBatch = async (client: CoreApiClient, batchId: string) => 
   } as any);
 
   return (
-    extractQueryRecord<GiftAidClaimBatchRecord>(refreshed, 'giftAidClaimBatch') ??
-    null
+    extractQueryRecord<GiftAidClaimBatchRecord>(
+      refreshed,
+      'giftAidClaimBatch',
+    ) ?? null
   );
 };
