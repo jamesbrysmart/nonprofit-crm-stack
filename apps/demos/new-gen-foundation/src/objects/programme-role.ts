@@ -1,0 +1,92 @@
+import { defineObject, FieldType } from 'twenty-sdk/define';
+
+export const NAME_FIELD_UNIVERSAL_IDENTIFIER =
+  'c7723852-7d9a-4a5d-84e4-8aab839e943d';
+
+export default defineObject({
+  universalIdentifier: '8ce953a4-b26d-4103-8b18-5b2ecf610796',
+  nameSingular: 'programmeRole',
+  namePlural: 'programmeRoles',
+  labelSingular: 'Programme Role',
+  labelPlural: 'Programme Roles',
+  description: "A person's artistic role in a programme, with dates",
+  icon: 'IconMicrophone2',
+  labelIdentifierFieldMetadataUniversalIdentifier: NAME_FIELD_UNIVERSAL_IDENTIFIER,
+  fields: [
+    {
+      universalIdentifier: NAME_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'name',
+      label: 'Name',
+      icon: 'IconAbc',
+    },
+    {
+      universalIdentifier: 'dca9cdee-7beb-4921-8ec4-8757320b95e7',
+      type: FieldType.SELECT,
+      name: 'artisticRole',
+      label: "Artistic role",
+      icon: 'IconMicrophone2',
+      options: [
+        { value: 'SOPRANO', label: "Soprano", position: 0, color: 'pink' },
+        { value: 'MEZZO_SOPRANO', label: "Mezzo-soprano", position: 1, color: 'pink' },
+        { value: 'TENOR', label: "Tenor", position: 2, color: 'blue' },
+        { value: 'BARITONE', label: "Baritone", position: 3, color: 'blue' },
+        { value: 'PIANIST', label: "Pianist", position: 4, color: 'turquoise' },
+        { value: 'REPETITEUR', label: "Répétiteur", position: 5, color: 'turquoise' },
+        { value: 'CONDUCTOR', label: "Conductor", position: 6, color: 'purple' },
+        { value: 'ENSEMBLE_SINGER', label: "Ensemble singer", position: 7, color: 'sky' },
+        { value: 'DANCER', label: "Dancer", position: 8, color: 'orange' },
+        { value: 'CHOREOGRAPHER', label: "Choreographer", position: 9, color: 'orange' },
+        { value: 'RESEARCHER', label: "Researcher", position: 10, color: 'yellow' },
+        { value: 'MENTOR', label: "Mentor", position: 11, color: 'green' },
+        { value: 'ARTISTIC_DIRECTOR', label: "Artistic director", position: 12, color: 'red' },
+      ],
+      isNullable: true,
+    },
+    {
+      universalIdentifier: '2c4da43a-b7e4-468b-aba1-ec099c35ea79',
+      type: FieldType.SELECT,
+      name: 'status',
+      label: "Status",
+      icon: 'IconProgress',
+      options: [
+        { value: 'CURRENT', label: "Current", position: 0, color: 'green' },
+        { value: 'INCOMING', label: "Incoming", position: 1, color: 'sky' },
+        { value: 'ALUMNI', label: "Alumni", position: 2, color: 'gray' },
+      ],
+      isNullable: true,
+    },
+    {
+      universalIdentifier: 'd174d78d-eec5-4022-9d94-ba80cddb96da',
+      type: FieldType.TEXT,
+      name: 'cohort',
+      label: "Cohort",
+      icon: 'IconUsersGroup',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: 'e4b25d77-b599-46ad-95ec-aed1a44b3f93',
+      type: FieldType.DATE,
+      name: 'startDate',
+      label: "Start date",
+      icon: 'IconCalendarPlus',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: '72a617f3-20b4-4b4b-a4fa-f8be8778e1cc',
+      type: FieldType.DATE,
+      name: 'endDate',
+      label: "End date",
+      icon: 'IconCalendarMinus',
+      isNullable: true,
+    },
+    {
+      universalIdentifier: '613fd79b-bca9-4e49-8a47-e0e6d2a64a16',
+      type: FieldType.TEXT,
+      name: 'notes',
+      label: "Notes",
+      icon: 'IconNotes',
+      isNullable: true,
+    },
+  ],
+});

@@ -1,0 +1,20 @@
+import { defineField, FieldType, RelationType, STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS } from 'twenty-sdk/define';
+
+import { PERSON_ON_RELATIONSHIP_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/person-on-relationship.field';
+
+export const RELATIONSHIPS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER =
+  'd4a8f22b-ff2f-4e85-b2cb-f7f8cc93896c';
+
+export default defineField({
+  universalIdentifier: RELATIONSHIPS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
+  objectUniversalIdentifier: STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS.person.universalIdentifier,
+  type: FieldType.RELATION,
+  name: 'relationships',
+  label: "Relationships",
+  icon: 'IconAffiliate',
+  relationTargetObjectMetadataUniversalIdentifier: '4476f7e2-d564-45c7-98b3-083003c22f36',
+  relationTargetFieldMetadataUniversalIdentifier: PERSON_ON_RELATIONSHIP_FIELD_UNIVERSAL_IDENTIFIER,
+  universalSettings: {
+    relationType: RelationType.ONE_TO_MANY,
+  },
+});
