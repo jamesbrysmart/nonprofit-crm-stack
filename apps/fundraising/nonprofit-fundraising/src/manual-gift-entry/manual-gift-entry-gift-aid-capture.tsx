@@ -1,9 +1,14 @@
-import type { CSSProperties } from 'react';
-import { theme } from 'src/front-components/theme-tokens';
+import {
+  FormCheckbox,
+  FormInput,
+} from 'src/front-components/form-controls';
 import type { ManualGiftDonorType } from 'src/manual-gift-entry/manual-gift-entry.types';
 import {
-  getInputEventChecked,
-  getInputEventValue,
+  bodyTextStyle,
+  fieldGridStyle,
+  secondaryTextStyle,
+  sectionStyle,
+  sectionTitleStyle,
 } from 'src/manual-gift-entry/new-gift-support';
 
 type ManualGiftEntryGiftAidCaptureProps = {
@@ -27,46 +32,6 @@ type ManualGiftEntryGiftAidSectionProps =
     includedInFlow: boolean;
   };
 
-const sectionStyle: CSSProperties = {
-  display: 'grid',
-  gap: '10px',
-  paddingBottom: '14px',
-  borderBottom: `1px solid ${theme.border.color.light}`,
-};
-
-const labelStyle: CSSProperties = {
-  fontSize: '12px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: theme.font.color.secondary,
-};
-
-const sectionTitleStyle: CSSProperties = {
-  ...labelStyle,
-  color: theme.font.color.primary,
-};
-
-const bodyTextStyle: CSSProperties = {
-  margin: 0,
-  fontSize: '14px',
-  color: theme.font.color.secondary,
-  lineHeight: 1.5,
-};
-
-const secondaryTextStyle: CSSProperties = {
-  fontSize: '13px',
-  color: theme.font.color.secondary,
-  lineHeight: 1.5,
-};
-
-const inputStyle: CSSProperties = {
-  border: `1px solid ${theme.border.color.medium}`,
-  borderRadius: '6px',
-  padding: '10px 12px',
-  font: 'inherit',
-  background: theme.background.primary,
-};
-
 export const ManualGiftEntryGiftAidCapture = ({
   giftAidRequested,
   giftAidDeclarationCaptured,
@@ -80,127 +45,60 @@ export const ManualGiftEntryGiftAidCapture = ({
   onGiftAidCoverageScopeChange,
   onGiftAidDeclarationSourceChange,
   onGiftAidTextVersionChange,
-}: ManualGiftEntryGiftAidCaptureProps) => {
-  return (
-    <div style={sectionStyle}>
-      <div style={sectionTitleStyle}>Gift Aid</div>
+}: ManualGiftEntryGiftAidCaptureProps) => (
+  <div style={sectionStyle}>
+    <div style={sectionTitleStyle}>Gift Aid</div>
 
-      <label
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          fontSize: '14px',
-          color: theme.font.color.primary,
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={giftAidRequested}
-          onChange={(event) =>
-            onGiftAidRequestedChange(getInputEventChecked(event))
-          }
+    <FormCheckbox
+      label="Gift Aid applies"
+      checked={giftAidRequested}
+      onChange={onGiftAidRequestedChange}
+    />
+
+    {giftAidRequested ? (
+      <>
+        <p style={bodyTextStyle}>
+          Add Gift Aid details only when they were captured during entry.
+        </p>
+        <FormCheckbox
+          label="Declaration captured during entry"
+          checked={giftAidDeclarationCaptured}
+          onChange={onGiftAidDeclarationCapturedChange}
         />
-        <span>Gift Aid applies</span>
-      </label>
-
-      {giftAidRequested ? (
-        <>
-          <p style={bodyTextStyle}>
-            Add Gift Aid details only when they were captured during entry.
-          </p>
-
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              fontSize: '14px',
-              color: theme.font.color.primary,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={giftAidDeclarationCaptured}
-              onChange={(event) =>
-                onGiftAidDeclarationCapturedChange(getInputEventChecked(event))
-              }
-            />
-            <span>Declaration captured during entry</span>
-          </label>
-
-          <div
-            style={{
-              display: 'grid',
-              gap: '12px',
-              gridTemplateColumns: '1fr 1fr',
-            }}
-          >
-            <label style={{ display: 'grid', gap: '6px' }}>
-              <span style={labelStyle}>Declaration date</span>
-              <input
-                style={inputStyle}
-                type="date"
-                value={giftAidDeclarationDate}
-                onChange={(event) =>
-                  onGiftAidDeclarationDateChange(getInputEventValue(event))
-                }
-              />
-            </label>
-
-            <label style={{ display: 'grid', gap: '6px' }}>
-              <span style={labelStyle}>Coverage scope</span>
-              <input
-                style={inputStyle}
-                value={giftAidCoverageScope}
-                placeholder="Past and future"
-                onChange={(event) =>
-                  onGiftAidCoverageScopeChange(getInputEventValue(event))
-                }
-              />
-            </label>
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gap: '12px',
-              gridTemplateColumns: '1fr 1fr',
-            }}
-          >
-            <label style={{ display: 'grid', gap: '6px' }}>
-              <span style={labelStyle}>Declaration source</span>
-              <input
-                style={inputStyle}
-                value={giftAidDeclarationSource}
-                placeholder="Manual entry"
-                onChange={(event) =>
-                  onGiftAidDeclarationSourceChange(getInputEventValue(event))
-                }
-              />
-            </label>
-
-            <label style={{ display: 'grid', gap: '6px' }}>
-              <span style={labelStyle}>Text version</span>
-              <input
-                style={inputStyle}
-                value={giftAidTextVersion}
-                placeholder="v1"
-                onChange={(event) =>
-                  onGiftAidTextVersionChange(getInputEventValue(event))
-                }
-              />
-            </label>
-          </div>
-        </>
-      ) : (
-        <div style={secondaryTextStyle}>
-          Leave this off unless Gift Aid details were taken during entry.
+        <div style={fieldGridStyle}>
+          <FormInput
+            label="Declaration date"
+            type="date"
+            value={giftAidDeclarationDate}
+            onChange={onGiftAidDeclarationDateChange}
+          />
+          <FormInput
+            label="Coverage scope"
+            placeholder="Past and future"
+            value={giftAidCoverageScope}
+            onChange={onGiftAidCoverageScopeChange}
+          />
+          <FormInput
+            label="Declaration source"
+            placeholder="Manual entry"
+            value={giftAidDeclarationSource}
+            onChange={onGiftAidDeclarationSourceChange}
+          />
+          <FormInput
+            label="Text version"
+            placeholder="v1"
+            value={giftAidTextVersion}
+            onChange={onGiftAidTextVersionChange}
+          />
         </div>
-      )}
-    </div>
-  );
-};
+      </>
+    ) : (
+      <div style={secondaryTextStyle}>
+        Leave this off unless Gift Aid details were taken during entry.
+      </div>
+    )}
+  </div>
+);
 
 export const ManualGiftEntryGiftAidSection = ({
   donorType,

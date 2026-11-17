@@ -1,21 +1,16 @@
 import { ActionButton } from 'src/front-components/front-component-ui';
+import {
+  ChoiceCards,
+  FormCheckbox,
+  FormInput,
+} from 'src/front-components/form-controls';
 import type { NewGiftController } from 'src/manual-gift-entry/new-gift-section.types';
 import {
   bodyTextStyle,
   buildRecurringAgreementDisplayName,
-  candidateButtonStyle,
-  checkboxLabelStyle,
   fieldActionGridStyle,
-  fieldStyle,
-  getInputEventChecked,
-  getInputEventValue,
-  inputStyle,
-  labelStyle,
-  secondaryTextStyle,
   sectionStyle,
   sectionTitleStyle,
-  selectedCandidateButtonStyle,
-  stackedSectionStyle,
 } from 'src/manual-gift-entry/new-gift-support';
 
 export const RecurringLinkageSection = ({
@@ -46,23 +41,19 @@ export const RecurringLinkageSection = ({
     <div style={sectionStyle}>
       <div style={sectionTitleStyle}>Recurring linkage</div>
 
-      <label style={checkboxLabelStyle}>
-        <input
-          type="checkbox"
-          checked={linkRecurringAgreement}
-          onChange={(event) => {
-            const checked = getInputEventChecked(event);
-            setLinkRecurringAgreement(checked);
+      <FormCheckbox
+        label="Link to an existing recurring agreement"
+        checked={linkRecurringAgreement}
+        onChange={(checked) => {
+          setLinkRecurringAgreement(checked);
 
-            if (!checked) {
-              setRecurringResults([]);
-              setSelectedRecurringAgreementId(null);
-              setRecurringSearchQuery('');
-            }
-          }}
-        />
-        <span>Link to an existing recurring agreement</span>
-      </label>
+          if (!checked) {
+            setRecurringResults([]);
+            setSelectedRecurringAgreementId(null);
+            setRecurringSearchQuery('');
+          }
+        }}
+      />
 
       {linkRecurringAgreement ? (
         <>
@@ -71,18 +62,12 @@ export const RecurringLinkageSection = ({
             agreement.
           </p>
           <div style={fieldActionGridStyle}>
-            <label style={fieldStyle}>
-              <span style={labelStyle}>Search recurring agreements</span>
-              <input
-                style={inputStyle}
-                value={recurringSearchQuery}
-                placeholder="Donor name, agreement name, or reference"
-                onChange={(event) =>
-                  setRecurringSearchQuery(getInputEventValue(event))
-                }
-              />
-            </label>
-
+            <FormInput
+              label="Search recurring agreements"
+              placeholder="Donor name, agreement name, or reference"
+              value={recurringSearchQuery}
+              onChange={setRecurringSearchQuery}
+            />
             <div>
               <ActionButton
                 title={searchingRecurring ? 'Searching...' : 'Search'}
@@ -96,33 +81,18 @@ export const RecurringLinkageSection = ({
           </div>
 
           {recurringResults.length > 0 ? (
-            <div style={stackedSectionStyle}>
-              {recurringResults.map((agreement) => {
-                const isSelected = agreement.id === selectedRecurringAgreementId;
-
-                return (
-                  <button
-                    key={agreement.id}
-                    type="button"
-                    style={
-                      isSelected
-                        ? selectedCandidateButtonStyle
-                        : candidateButtonStyle
-                    }
-                    onClick={() => {
-                      setSelectedRecurringAgreementId(agreement.id);
-                    }}
-                  >
-                    <strong>{buildRecurringAgreementDisplayName(agreement)}</strong>
-                    <span style={secondaryTextStyle}>
-                      {agreement.status ?? 'Status unavailable'} ·{' '}
-                      {agreement.nextExpectedAt ?? 'No next date'} ·{' '}
-                      {agreement.provider ?? 'MANUAL'}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <ChoiceCards
+              ariaLabel="Recurring agreements"
+              value={selectedRecurringAgreementId}
+              onChange={setSelectedRecurringAgreementId}
+              options={recurringResults.map((agreement) => ({
+                value: agreement.id,
+                title: buildRecurringAgreementDisplayName(agreement),
+                description: `${agreement.status ?? 'Status unavailable'} · ${
+                  agreement.nextExpectedAt ?? 'No next date'
+                } · ${agreement.provider ?? 'MANUAL'}`,
+              }))}
+            />
           ) : null}
         </>
       ) : null}

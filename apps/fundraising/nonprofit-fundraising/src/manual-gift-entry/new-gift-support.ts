@@ -35,17 +35,6 @@ export const sectionHeaderRowStyle: CSSProperties = {
   flexWrap: 'wrap',
 };
 
-export const warningSectionStyle: CSSProperties = {
-  border: `1px solid ${theme.border.color.medium}`,
-  borderRadius: '8px',
-  padding: '12px',
-  display: 'grid',
-  gap: '10px',
-  background: theme.background.primary,
-  minWidth: 0,
-  boxSizing: 'border-box',
-};
-
 export const bodyTextStyle: CSSProperties = {
   margin: 0,
   fontSize: '14px',
@@ -53,7 +42,7 @@ export const bodyTextStyle: CSSProperties = {
   lineHeight: 1.5,
 };
 
-export const labelStyle: CSSProperties = {
+const labelStyle: CSSProperties = {
   fontSize: '12px',
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
@@ -63,23 +52,6 @@ export const labelStyle: CSSProperties = {
 export const sectionTitleStyle: CSSProperties = {
   ...labelStyle,
   color: theme.font.color.primary,
-};
-
-export const inputStyle: CSSProperties = {
-  border: `1px solid ${theme.border.color.medium}`,
-  borderRadius: '6px',
-  padding: '10px 12px',
-  font: 'inherit',
-  background: theme.background.primary,
-  width: '100%',
-  minWidth: 0,
-  boxSizing: 'border-box',
-};
-
-export const fieldStyle: CSSProperties = {
-  display: 'grid',
-  gap: '6px',
-  minWidth: 0,
 };
 
 export const fieldGridStyle: CSSProperties = {
@@ -100,37 +72,9 @@ export const fieldActionGridStyle: CSSProperties = {
   width: '100%',
 };
 
-export const checkboxLabelStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  fontSize: '14px',
-  color: theme.font.color.primary,
-};
-
 export const stackedSectionStyle: CSSProperties = {
   display: 'grid',
   gap: '10px',
-};
-
-export const candidateButtonStyle: CSSProperties = {
-  width: '100%',
-  border: `1px solid ${theme.border.color.medium}`,
-  borderRadius: '6px',
-  padding: '8px 10px',
-  textAlign: 'left',
-  background: theme.background.primary,
-  cursor: 'pointer',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '10px',
-};
-
-export const selectedCandidateButtonStyle: CSSProperties = {
-  ...candidateButtonStyle,
-  border: `1px solid ${theme.color.blue}`,
-  background: theme.color.blue3,
 };
 
 export const secondaryTextStyle: CSSProperties = {
