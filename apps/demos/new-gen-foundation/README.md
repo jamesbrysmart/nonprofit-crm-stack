@@ -35,6 +35,11 @@ twenty auth login --url http://localhost:2021 --name fundraising-local
 (cd ../../fundraising/nonprofit-fundraising && twenty app apply --create --remote fundraising-local)
 twenty app apply --create --remote fundraising-local
 
+# Workspace settings neither app owns: Gift Aid off, cultivation stages, Organisations label,
+# sidebar folders and order, hidden Gift Aid tab and widget. Safe to rerun, and rerun it after
+# re-applying the fundraising app, which can restore its own sidebar items and tabs.
+scripts/configure-workspace.sh fundraising-local
+
 # Seed the demo world (does nothing if it is already present)
 twenty app exec --name seed-ngf-demo --remote fundraising-local
 

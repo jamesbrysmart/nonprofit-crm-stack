@@ -1,0 +1,231 @@
+import {
+  AggregateOperations,
+  definePageLayout,
+  ObjectRecordGroupByDateGranularity,
+  PageLayoutTabLayoutMode,
+} from 'twenty-sdk/define';
+
+import { UPCOMING_EVENTS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/upcoming-events.view';
+import { STEWARDSHIP_TASKS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/stewardship-tasks.view';
+import { RENEWALS_DUE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/renewals-due.view';
+import { RECENT_GIFTS_VIEW_UNIVERSAL_IDENTIFIER } from 'src/views/recent-gifts.view';
+
+export const DEVELOPMENT_DASHBOARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIER =
+  'e392c247-0cd3-4554-b278-677dd5193556';
+
+export default definePageLayout({
+  universalIdentifier: DEVELOPMENT_DASHBOARD_PAGE_LAYOUT_UNIVERSAL_IDENTIFIER,
+  name: 'Development',
+  type: 'STANDALONE_PAGE',
+  tabs: [
+    {
+      universalIdentifier: '52afed32-3dc6-462a-a3df-1ee62922bb0c',
+      title: 'Overview',
+      position: 0,
+      icon: 'IconChartBar',
+      layoutMode: PageLayoutTabLayoutMode.GRID,
+      widgets: [
+        {
+          universalIdentifier: '6b645bb7-f1bb-4dd2-8c47-b0e5e83621f3',
+          title: "Raised this year",
+          type: 'GRAPH',
+          objectUniversalIdentifier: 'c48159d8-b904-4f31-b2ef-a8a27d0df848',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 0, column: 0, rowSpan: 2, columnSpan: 3 },
+          configuration: {
+            configurationType: 'AGGREGATE_CHART',
+            aggregateFieldMetadataUniversalIdentifier: '85198e1e-135b-47bf-bbd9-83c75f1c3989',
+            aggregateOperation: AggregateOperations.SUM,
+            displayDataLabel: true,
+            filter: { recordFilters: [{ fieldMetadataUniversalIdentifier: '993e89d3-5b1d-4f47-ad42-d438ea9fb326', operand: 'IS_RELATIVE', value: "THIS_1_YEAR" }] },
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: '78deeb47-24ff-4f98-ad02-70b6489f4550',
+          title: "Open pipeline",
+          type: 'GRAPH',
+          objectUniversalIdentifier: '20202020-9549-49dd-b2b2-883999db8938',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 0, column: 3, rowSpan: 2, columnSpan: 3 },
+          configuration: {
+            configurationType: 'AGGREGATE_CHART',
+            aggregateFieldMetadataUniversalIdentifier: '20202020-583e-4642-8533-db761d5fa82f',
+            aggregateOperation: AggregateOperations.SUM,
+            displayDataLabel: true,
+            filter: { recordFilters: [{ fieldMetadataUniversalIdentifier: '20202020-6f76-477d-8551-28cd65b2b4b9', operand: 'IS', value: "[\"NEW\",\"SCREENING\",\"MEETING\",\"PROPOSAL\"]" }] },
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: 'bd49cf52-d945-4e50-8633-200a82152b7c',
+          title: "Active members",
+          type: 'GRAPH',
+          objectUniversalIdentifier: '3aeacd8c-20e3-4649-8de9-606dd3ac60d1',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 0, column: 6, rowSpan: 2, columnSpan: 3 },
+          configuration: {
+            configurationType: 'AGGREGATE_CHART',
+            aggregateFieldMetadataUniversalIdentifier: 'c4ef5fe6-6fae-49af-9d1a-2007b826d867',
+            aggregateOperation: AggregateOperations.COUNT,
+            displayDataLabel: true,
+            filter: { recordFilters: [{ fieldMetadataUniversalIdentifier: '01b4e1f7-17b4-4b87-a55f-42b7edc5a302', operand: 'IS', value: "[\"ACTIVE\",\"RENEWAL_DUE\"]" }] },
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: 'c8a5dea1-595a-41b6-9087-b7323c65f7b2',
+          title: "Confirmed for upcoming events",
+          type: 'GRAPH',
+          objectUniversalIdentifier: 'eb48cdff-bffd-4eda-9e9b-b85ad8e6ded2',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 0, column: 9, rowSpan: 2, columnSpan: 3 },
+          configuration: {
+            configurationType: 'AGGREGATE_CHART',
+            aggregateFieldMetadataUniversalIdentifier: '80f8aa74-e6a4-43df-88b4-27d89a7449d4',
+            aggregateOperation: AggregateOperations.COUNT,
+            displayDataLabel: true,
+            filter: { recordFilters: [{ fieldMetadataUniversalIdentifier: 'a9963296-ed50-488b-92a5-23f82750e8d2', operand: 'IS', value: "[\"ACCEPTED\"]" }] },
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: 'a33364f8-7d70-4ec9-9f63-cd7cea017e16',
+          title: "Income by year",
+          type: 'GRAPH',
+          objectUniversalIdentifier: 'c48159d8-b904-4f31-b2ef-a8a27d0df848',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 2, column: 0, rowSpan: 6, columnSpan: 6 },
+          configuration: {
+            configurationType: 'BAR_CHART',
+            aggregateFieldMetadataUniversalIdentifier: '85198e1e-135b-47bf-bbd9-83c75f1c3989',
+            aggregateOperation: AggregateOperations.SUM,
+            primaryAxisGroupByFieldMetadataUniversalIdentifier: '993e89d3-5b1d-4f47-ad42-d438ea9fb326',
+            layout: 'VERTICAL', axisNameDisplay: 'NONE', color: 'auto', displayDataLabel: true,
+            primaryAxisDateGranularity: ObjectRecordGroupByDateGranularity.YEAR, primaryAxisOrderBy: 'FIELD_ASC',
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: 'cec9d5d0-dcbc-4877-80d9-ad588b71ea7c',
+          title: "Income by fund, this year",
+          type: 'GRAPH',
+          objectUniversalIdentifier: 'c48159d8-b904-4f31-b2ef-a8a27d0df848',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 2, column: 6, rowSpan: 6, columnSpan: 6 },
+          configuration: {
+            configurationType: 'BAR_CHART',
+            aggregateFieldMetadataUniversalIdentifier: '85198e1e-135b-47bf-bbd9-83c75f1c3989',
+            aggregateOperation: AggregateOperations.SUM,
+            primaryAxisGroupByFieldMetadataUniversalIdentifier: '51c1028e-2530-40a2-bcf1-c0fab5acb048',
+            layout: 'HORIZONTAL', axisNameDisplay: 'NONE', color: 'auto', displayDataLabel: true,
+            primaryAxisOrderBy: 'VALUE_DESC', filter: { recordFilters: [{ fieldMetadataUniversalIdentifier: '993e89d3-5b1d-4f47-ad42-d438ea9fb326', operand: 'IS_RELATIVE', value: "THIS_1_YEAR" }] },
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: 'fb0a2929-ed5a-45a8-8b57-78f445d55861',
+          title: "Pipeline by stage",
+          type: 'GRAPH',
+          objectUniversalIdentifier: '20202020-9549-49dd-b2b2-883999db8938',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 8, column: 0, rowSpan: 6, columnSpan: 6 },
+          configuration: {
+            configurationType: 'BAR_CHART',
+            aggregateFieldMetadataUniversalIdentifier: '20202020-583e-4642-8533-db761d5fa82f',
+            aggregateOperation: AggregateOperations.SUM,
+            primaryAxisGroupByFieldMetadataUniversalIdentifier: '20202020-6f76-477d-8551-28cd65b2b4b9',
+            layout: 'VERTICAL', axisNameDisplay: 'NONE', color: 'auto', displayDataLabel: true,
+            filter: { recordFilters: [{ fieldMetadataUniversalIdentifier: '20202020-6f76-477d-8551-28cd65b2b4b9', operand: 'IS_NOT', value: "[\"DECLINED\"]" }] },
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: '90d8792a-75ab-4bf3-907f-de428f640fdd',
+          title: "Income by giving route",
+          type: 'GRAPH',
+          objectUniversalIdentifier: 'c48159d8-b904-4f31-b2ef-a8a27d0df848',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 8, column: 6, rowSpan: 6, columnSpan: 3 },
+          configuration: {
+            configurationType: 'PIE_CHART',
+            aggregateFieldMetadataUniversalIdentifier: '85198e1e-135b-47bf-bbd9-83c75f1c3989',
+            aggregateOperation: AggregateOperations.SUM,
+            groupByFieldMetadataUniversalIdentifier: 'af45e7fc-3dba-4899-bbde-3d801050b081',
+            displayLegend: true,
+            
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: 'ad640413-a0c6-4d44-b4c2-3d400c033c4b',
+          title: "Members by tier",
+          type: 'GRAPH',
+          objectUniversalIdentifier: '3aeacd8c-20e3-4649-8de9-606dd3ac60d1',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 8, column: 9, rowSpan: 6, columnSpan: 3 },
+          configuration: {
+            configurationType: 'PIE_CHART',
+            aggregateFieldMetadataUniversalIdentifier: 'c4ef5fe6-6fae-49af-9d1a-2007b826d867',
+            aggregateOperation: AggregateOperations.COUNT,
+            groupByFieldMetadataUniversalIdentifier: '89c94592-eeda-4723-b230-48bfea482aab',
+            displayLegend: true,
+            filter: { recordFilters: [{ fieldMetadataUniversalIdentifier: '01b4e1f7-17b4-4b87-a55f-42b7edc5a302', operand: 'IS', value: "[\"ACTIVE\",\"RENEWAL_DUE\"]" }] },
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: '66706e0b-cdc9-4442-a6c1-a13f3c847161',
+          title: "Event attendance",
+          type: 'GRAPH',
+          objectUniversalIdentifier: 'eb48cdff-bffd-4eda-9e9b-b85ad8e6ded2',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 14, column: 0, rowSpan: 6, columnSpan: 12 },
+          configuration: {
+            configurationType: 'BAR_CHART',
+            aggregateFieldMetadataUniversalIdentifier: '80f8aa74-e6a4-43df-88b4-27d89a7449d4',
+            aggregateOperation: AggregateOperations.COUNT,
+            primaryAxisGroupByFieldMetadataUniversalIdentifier: '7a151c08-bcde-46f2-8e99-891511475cd7',
+            layout: 'VERTICAL', axisNameDisplay: 'NONE', color: 'auto', displayDataLabel: false,
+            secondaryAxisGroupByFieldMetadataUniversalIdentifier: 'a9963296-ed50-488b-92a5-23f82750e8d2', groupMode: 'STACKED', displayLegend: true,
+            timezone: 'Europe/Rome', firstDayOfTheWeek: 1,
+          },
+        },
+        {
+          universalIdentifier: '8919607a-4e9d-4367-966a-4b972c857ca5',
+          title: "Upcoming events",
+          type: 'RECORD_TABLE',
+          objectUniversalIdentifier: '420545c0-c547-43a1-b729-8e08b3385492',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 20, column: 0, rowSpan: 6, columnSpan: 6 },
+          configuration: {
+            configurationType: 'RECORD_TABLE',
+            viewUniversalIdentifier: UPCOMING_EVENTS_VIEW_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: 'd7825331-31f3-4ec0-9a8a-28f3c475a5b3',
+          title: "Stewardship tasks",
+          type: 'RECORD_TABLE',
+          objectUniversalIdentifier: '20202020-1ba1-48ba-bc83-ef7e5990ed10',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 20, column: 6, rowSpan: 6, columnSpan: 6 },
+          configuration: {
+            configurationType: 'RECORD_TABLE',
+            viewUniversalIdentifier: STEWARDSHIP_TASKS_VIEW_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: 'f83caff8-71dd-4047-bb35-cb99b7301732',
+          title: "Renewals due",
+          type: 'RECORD_TABLE',
+          objectUniversalIdentifier: '3aeacd8c-20e3-4649-8de9-606dd3ac60d1',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 26, column: 0, rowSpan: 6, columnSpan: 6 },
+          configuration: {
+            configurationType: 'RECORD_TABLE',
+            viewUniversalIdentifier: RENEWALS_DUE_VIEW_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: '41e07b4b-1bb4-441e-9deb-ab0339ee4ef3',
+          title: "Recent gifts",
+          type: 'RECORD_TABLE',
+          objectUniversalIdentifier: 'c48159d8-b904-4f31-b2ef-a8a27d0df848',
+          position: { layoutMode: PageLayoutTabLayoutMode.GRID, row: 26, column: 6, rowSpan: 6, columnSpan: 6 },
+          configuration: {
+            configurationType: 'RECORD_TABLE',
+            viewUniversalIdentifier: RECENT_GIFTS_VIEW_UNIVERSAL_IDENTIFIER,
+          },
+        },
+      ],
+    },
+  ],
+});

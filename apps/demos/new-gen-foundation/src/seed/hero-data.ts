@@ -65,8 +65,9 @@ export type SeedOpportunity = {
   key: Key;
   name: string;
   amount: number;
-  // Twenty's standard stage values; relabelled as cultivation stages in the workspace.
-  stage: 'NEW' | 'SCREENING' | 'MEETING' | 'PROPOSAL' | 'CUSTOMER';
+  // Twenty's stage values, relabelled by scripts/configure-workspace.sh: Identification, Qualification,
+  // Cultivation, Solicitation, Pledged / Won, plus Stewardship and Declined.
+  stage: 'NEW' | 'SCREENING' | 'MEETING' | 'PROPOSAL' | 'CUSTOMER' | 'STEWARDSHIP' | 'DECLINED';
   closeDate: string;
   company?: Key;
   pointOfContact?: Key;
@@ -351,8 +352,8 @@ export const APPEALS: SeedAppeal[] = [
 // ---------------------------------------------------------------- opportunities
 
 export const OPPORTUNITIES: SeedOpportunity[] = [
-  { key: 'bardelliScholarship', name: 'Bardelli Scholarship 2025–27', amount: 120000, stage: 'CUSTOMER', closeDate: '2025-07-15', company: 'bardelliFoundation', pointOfContact: 'livia', programme: 'mascarade', fundingType: 'MAJOR_GIFT', awardedAmount: 120000, fundingPeriodStart: '2025-09-01', fundingPeriodEnd: '2027-08-31' },
-  { key: 'galaSponsorship2026', name: 'Gala Concert Sponsorship 2026', amount: 24000, stage: 'CUSTOMER', closeDate: '2026-06-30', company: 'lanificio', pointOfContact: 'elena', programme: 'mascarade', fundingType: 'CORPORATE_SPONSORSHIP', awardedAmount: 24000 },
+  { key: 'bardelliScholarship', name: 'Bardelli Scholarship 2025–27', amount: 120000, stage: 'STEWARDSHIP', closeDate: '2025-07-15', company: 'bardelliFoundation', pointOfContact: 'livia', programme: 'mascarade', fundingType: 'MAJOR_GIFT', awardedAmount: 120000, fundingPeriodStart: '2025-09-01', fundingPeriodEnd: '2027-08-31' },
+  { key: 'galaSponsorship2026', name: 'Gala Concert Sponsorship 2026', amount: 24000, stage: 'STEWARDSHIP', closeDate: '2026-06-30', company: 'lanificio', pointOfContact: 'elena', programme: 'mascarade', fundingType: 'CORPORATE_SPONSORSHIP', awardedAmount: 24000 },
   { key: 'galaSponsorship2027', name: 'Gala Concert Sponsorship 2027', amount: 24000, stage: 'MEETING', closeDate: '2027-04-30', company: 'lanificio', pointOfContact: 'elena', programme: 'mascarade', fundingType: 'CORPORATE_SPONSORSHIP' },
   { key: 'arnoRecording', name: 'Vox Medicea recording project', amount: 40000, stage: 'PROPOSAL', closeDate: '2027-04-30', company: 'arno', pointOfContact: 'francesca', programme: 'vox', fundingType: 'TRUST_FOUNDATION', applicationDeadline: '2027-01-31' },
   { key: 'arno2024', name: 'Mascarade Opera training grant 2024', amount: 30000, stage: 'CUSTOMER', closeDate: '2024-05-31', company: 'arno', pointOfContact: 'francesca', programme: 'mascarade', fundingType: 'TRUST_FOUNDATION', awardedAmount: 30000, submittedDate: '2024-01-29', fundingPeriodStart: '2024-06-01', fundingPeriodEnd: '2025-05-31' },
@@ -360,6 +361,14 @@ export const OPPORTUNITIES: SeedOpportunity[] = [
   { key: 'eleanorRecording', name: 'Whitcombe patronage: Vox Medicea recording', amount: 15000, stage: 'NEW', closeDate: '2027-06-30', pointOfContact: 'eleanor', programme: 'vox', fundingType: 'MAJOR_GIFT' },
   { key: 'marcoRenewal', name: 'Pellegrini: renewed annual support', amount: 5000, stage: 'SCREENING', closeDate: '2027-02-28', pointOfContact: 'marco', programme: 'mascarade', fundingType: 'MAJOR_GIFT' },
   { key: 'lanificio2025', name: 'Spring Recital Sponsorship 2025', amount: 20000, stage: 'CUSTOMER', closeDate: '2025-03-31', company: 'lanificio', pointOfContact: 'elena', programme: 'mascarade', fundingType: 'CORPORATE_SPONSORSHIP', awardedAmount: 20000 },
+  // institutional pipeline around the hero stories (background organisations)
+  { key: 'tarchiani2027', name: 'Tarchiani Scholarship 2027–29', amount: 60000, stage: 'SCREENING', closeDate: '2027-05-31', company: 'org-1', programme: 'mascarade', fundingType: 'TRUST_FOUNDATION' },
+  { key: 'gualtieriMasterclasses', name: 'Mascarade masterclass series', amount: 15000, stage: 'SCREENING', closeDate: '2027-03-31', company: 'org-0', programme: 'mascarade', fundingType: 'TRUST_FOUNDATION' },
+  { key: 'bancaReception', name: 'Friends\' Christmas Reception sponsorship', amount: 8000, stage: 'MEETING', closeDate: '2026-12-05', company: 'org-11', fundingType: 'CORPORATE_SPONSORSHIP' },
+  { key: 'ashworthLondon', name: 'Vox Medicea London concert', amount: 12000, stage: 'PROPOSAL', closeDate: '2027-02-28', company: 'org-16', programme: 'vox', fundingType: 'TRUST_FOUNDATION', applicationDeadline: '2026-12-15', submittedDate: '2026-11-10' },
+  { key: 'kesslerTouring', name: 'New Ballet US touring', amount: 30000, stage: 'NEW', closeDate: '2027-09-30', company: 'org-17', programme: 'ballet', fundingType: 'TRUST_FOUNDATION' },
+  { key: 'morandiniUnder35', name: 'Under-35 membership partnership', amount: 6000, stage: 'NEW', closeDate: '2027-04-30', company: 'org-7', fundingType: 'CORPORATE_SPONSORSHIP' },
+  { key: 'collineConcerts', name: 'Vox Medicea concert season 2025', amount: 20000, stage: 'DECLINED', closeDate: '2025-04-30', company: 'org-2', programme: 'vox', fundingType: 'TRUST_FOUNDATION', submittedDate: '2025-01-31' },
 ];
 
 // ---------------------------------------------------------------- programme roles
