@@ -3,6 +3,7 @@ import { PROGRAMME_ROLES_ON_PROGRAMME_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fie
 import { FOUNDATION_EVENTS_ON_PROGRAMME_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/foundation-events-on-programme.field';
 import { OPPORTUNITIES_ON_PROGRAMME_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/opportunities-on-programme.field';
 import { FUNDS_ON_PROGRAMME_FIELD_UNIVERSAL_IDENTIFIER } from 'src/fields/funds-on-programme.field';
+import { PROGRAMME_OVERVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/front-components/programme-overview.front-component';
 
 export default definePageLayout({
   universalIdentifier: '3cb7fbf5-4f27-4152-a85a-e7d6e0fbb919',
@@ -17,6 +18,15 @@ export default definePageLayout({
       icon: 'IconHome',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
+        {
+          universalIdentifier: 'bd9b1d9e-8532-4153-8ab0-07cd6ca2bde7',
+          title: 'Programme overview',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier: PROGRAMME_OVERVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
         {
           universalIdentifier: '4fd73fe6-55af-4019-afa2-92e8154d6987',
           title: 'Details',
