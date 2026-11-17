@@ -45,6 +45,7 @@
     "react-dom/client",
     "twenty-ui/components/feedback",
     "twenty-ui/components/input",
+    "twenty-ui/primitives/data-display",
     "twenty-ui/primitives/input",
     "twenty-ui/primitives/typography"
   ]

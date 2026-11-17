@@ -9,6 +9,8 @@ import {
   GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_BATCH_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGINGS_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
@@ -24,6 +26,16 @@ export default definePageLayout({
       icon: 'IconHome',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
+        {
+          universalIdentifier: 'd8e23602-8e6c-48cf-acfb-f05d1ae54586',
+          title: 'Batch workspace',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_BATCH_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
         {
           universalIdentifier: '5dedb5a4-a19a-44a2-b03a-ec3f05d5270e',
           title: 'Batch summary',
@@ -62,6 +74,16 @@ export default definePageLayout({
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
               GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
+        {
+          universalIdentifier: '1c9032b9-f836-4a0b-9cc1-2b5387331515',
+          title: 'Staged gifts',
+          type: 'FIELD',
+          configuration: {
+            configurationType: 'FIELD',
+            fieldMetadataId: GIFT_STAGINGS_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,
+            fieldDisplayMode: 'TABLE',
           },
         },
       ],

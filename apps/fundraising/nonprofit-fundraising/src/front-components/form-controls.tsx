@@ -132,6 +132,7 @@ export const FormInput = ({
   type = 'text',
   inputMode,
   placeholder,
+  maxLength,
   description,
   error,
   disabled,
@@ -143,6 +144,7 @@ export const FormInput = ({
   type?: 'text' | 'date' | 'email' | 'tel';
   inputMode?: 'text' | 'decimal' | 'numeric' | 'email' | 'tel';
   placeholder?: string;
+  maxLength?: number;
   description?: ReactNode;
   error?: string | null;
   disabled?: boolean;
@@ -159,6 +161,7 @@ export const FormInput = ({
       type={type}
       inputMode={inputMode}
       placeholder={placeholder}
+      maxLength={maxLength}
       value={value}
       onValueChange={(nextValue) => onChange(nextValue)}
     />
