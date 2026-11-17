@@ -38,6 +38,18 @@ COMPANY_ID=$(metadata '{ objects(paging: { first: 200 }, filter: {}) { edges { n
   python3 -c "import json,sys; print(next(e['node']['id'] for e in json.load(sys.stdin)['objects']['edges'] if e['node']['nameSingular']=='company'))")
 metadata "mutation { updateOneObject(input: { id: \"$COMPANY_ID\", update: { labelSingular: \"Organisation\", labelPlural: \"Organisations\", icon: \"IconBuildingCommunity\" } }) { id } }" >/dev/null
 
+echo "Setting up the campaign sender (eventi@ngf-demo.example.org)"
+SENDING_DOMAIN="ngf-demo.example.org"
+if ! metadata '{ getEmailingDomains { domain } }' | grep -q "\"$SENDING_DOMAIN\""; then
+  metadata "mutation { createEmailGroupChannel(input: { handle: \"eventi@$SENDING_DOMAIN\", displayName: \"New Generation Foundation\" }) { __typename } }" >/dev/null
+fi
+# A local http server can never activate the unsubscribe link host, which Twenty requires before
+# marketing sends. On the disposable local test instance only, mark it active as Twenty's dev seed
+# does; sends there go to the LOG driver and are never delivered.
+if [ "$REMOTE" = "fundraising-local" ] && docker inspect twenty-app-dev-test >/dev/null 2>&1; then
+  docker exec twenty-app-dev-test sh -c "psql \"\$PG_DATABASE_URL\" -q -c \"update core.\\\"emailingDomain\\\" set \\\"unsubscribeHostname\\\" = 'links.$SENDING_DOMAIN', \\\"unsubscribeHostnameStatus\\\" = 'ACTIVE' where domain = '$SENDING_DOMAIN';\""
+fi
+
 echo "Arranging the sidebar"
 REMOTE="$REMOTE" python3 - <<'PYTHON'
 import json, os, subprocess

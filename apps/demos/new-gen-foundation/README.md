@@ -43,6 +43,9 @@ scripts/configure-workspace.sh fundraising-local
 # Seed the demo world (does nothing if it is already present)
 twenty app exec --name seed-ngf-demo --remote fundraising-local
 
+# Open-rehearsal invitation lists (Italian / English by preferred language) and draft campaigns
+twenty app exec --name seed-ngf-campaigns --remote fundraising-local
+
 # Fill the fundraising rollups (donor totals, appeal and company summaries)
 cd ../../fundraising/nonprofit-fundraising
 twenty app exec --name reconcile-donor-rollups-nightly --remote fundraising-local
