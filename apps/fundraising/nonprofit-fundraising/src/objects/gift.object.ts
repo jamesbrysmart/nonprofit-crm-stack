@@ -40,6 +40,9 @@ export default defineObject({
   description:
     'Committed fundraising gift records created directly from trusted manual entry.',
   icon: 'IconGift',
+  // Gifts are created through New gift, gift staging and payment intake, which
+  // apply donor, coding, Gift Aid and rollup handling; hide native create paths.
+  isUICreatable: false,
   labelIdentifierFieldMetadataUniversalIdentifier:
     GIFT_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   fields: [

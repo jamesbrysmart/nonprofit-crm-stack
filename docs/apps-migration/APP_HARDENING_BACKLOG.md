@@ -231,6 +231,22 @@ Why this remains product-adjacent:
 - it depends partly on how much real-time trust or progress visibility the product expects from each record surface
 - do not make this decision purely from technical neatness
 
+### 2.8 Gift Record Integrity (Potential Enhancements)
+
+Added 2026-11-18 after the modernisation review. Gifts should be created through New gift, gift staging and payment intake, which apply donor, coding, Gift Aid and rollup handling. The Gift object now sets `isUICreatable: false`, hiding Twenty's native create paths in the UI. CSV import (to verify), the API and workflows can still create gifts directly.
+
+Current gap: the app has no gift `created` trigger. Only its own creation paths recompute rollups, so a directly created gift leaves donor totals stale until the nightly reconciliation, and appeal, appeal source and company totals are not reconciled. Such gifts also skip Gift Aid evaluation and coding defaults. When the app acts for a user, Twenty records that user as creator (`MANUAL`), so `createdBy` cannot distinguish app-created gifts.
+
+Potential enhancements, not yet agreed:
+
+1. **Safety net.** Add batched gift `created` triggers that recompute rollups for any new gift. Stamp app-created gifts with an origin field (for example staging, New gift, Stripe, recurring) and flag unstamped gifts into a review worklist; decide whether to evaluate Gift Aid on them automatically.
+2. **Lock committed financial data.** Use field-level `disabledFieldPermissionActions: ['canUpdateFieldValue']` on finance-critical gift fields (amount, date, currency, donor, payment and gift type, fund/appeal coding, refund and Gift Aid fields). The server then refuses edits from every user, API key, agent and workflow, and corrections go through the app's own actions. Constraints from the 2.59 source:
+   - The exemption applies only when the app writes as itself, so affected logic functions need `runAs: 'application'`. Each authenticated route must then check that the calling user may perform the action.
+   - Gifts would be attributed to the app, so record who entered or processed each gift in an app field.
+   - Check upgrade behaviour against existing workspace roles that grant gift edits.
+   - Object-level `disabledObjectPermissionActions` is not suitable yet: disabling create also requires disabling all updates.
+3. **Finance posting (feature).** Add an exported/posted state and block or track changes after posting, for example with validation rules using `previous.` values.
+
 ## 3. Document And Watch, Not Refactor Now
 
 These areas should stay visible but do not currently justify hardening refactor by themselves:
