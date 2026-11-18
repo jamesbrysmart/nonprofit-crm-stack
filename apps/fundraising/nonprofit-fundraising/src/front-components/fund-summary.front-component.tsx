@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
+import { theme } from 'src/front-components/theme-tokens';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import {
   SummaryStrip,
   SummaryStripItem,
-  badgeStyle,
   compactValueStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
+  ToneStatus,
 } from 'src/front-components/front-component-ui';
 import {
   FUND_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
@@ -238,7 +239,8 @@ const summarizeGifts = (gifts: FundGiftRecord[]): FundGivingSummary => {
 };
 
 const FundSummary = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<FundSummaryRecord | null>(null);
   const [givingSummary, setGivingSummary] =
     useState<FundGivingSummary | null>(null);
@@ -312,16 +314,16 @@ const FundSummary = () => {
   return (
     <div style={compactWidgetRootStyle}>
       <div style={sectionHeaderStyle}>
-        <span style={badgeStyle(record.isActive === false ? 'neutral' : 'success')}>
+        <ToneStatus tone={record.isActive === false ? 'neutral' : 'success'}>
           {record.isActive === false ? 'Inactive' : 'Active'}
-        </span>
+        </ToneStatus>
       </div>
 
       <div style={compactValueStyle}>
         {normalizeString(record.name) || 'Untitled fund'}
       </div>
 
-      <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+      <div style={{ ...secondaryTextStyle, color: theme.font.color.primary }}>
         {identityLine || 'No fund reference details set'}
       </div>
 

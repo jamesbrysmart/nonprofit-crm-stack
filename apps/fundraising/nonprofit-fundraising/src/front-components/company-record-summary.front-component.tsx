@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   SummaryStrip,
   SummaryStripItem,
-  badgeStyle,
   contextSignalRowStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
+  ToneStatus,
 } from 'src/front-components/front-component-ui';
 import {
   COMPANY_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
@@ -107,7 +107,8 @@ const loadCompany = async (
 };
 
 const CompanyRecordSummary = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<CompanyRecordSummaryRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -200,9 +201,9 @@ const CompanyRecordSummary = () => {
         <>
           <div style={contextSignalRowStyle}>
             {signals.map((signal) => (
-              <span key={signal.label} style={badgeStyle(signal.tone)}>
+              <ToneStatus key={signal.label} tone={signal.tone}>
                 {signal.label}
-              </span>
+              </ToneStatus>
             ))}
           </div>
           <SummaryStrip>
@@ -246,7 +247,7 @@ const CompanyRecordSummary = () => {
         </>
       ) : (
         <div style={contextSignalRowStyle}>
-          <span style={badgeStyle('neutral')}>No funding activity</span>
+          <ToneStatus tone="neutral">No funding activity</ToneStatus>
           <span style={secondaryTextStyle}>Standard CRM company.</span>
         </div>
       )}

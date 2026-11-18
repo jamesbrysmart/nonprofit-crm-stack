@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
+import { theme } from 'src/front-components/theme-tokens';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   SummaryStrip,
   SummaryStripItem,
-  badgeStyle,
   compactValueStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
+  ToneStatus,
 } from 'src/front-components/front-component-ui';
 import {
   APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
@@ -180,7 +181,8 @@ const buildDateRangeLabel = (record: AppealSummaryRecord) => {
 };
 
 const AppealSummary = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<AppealSummaryRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -247,9 +249,9 @@ const AppealSummary = () => {
     <div style={compactWidgetRootStyle}>
       <div style={sectionHeaderStyle}>
         <div style={{ minWidth: 0 }}>
-          <span style={badgeStyle(getStatusTone(record.status))}>
+          <ToneStatus tone={getStatusTone(record.status)}>
             {formatEnumLabel(record.status)}
-          </span>
+          </ToneStatus>
         </div>
       </div>
 
@@ -257,7 +259,7 @@ const AppealSummary = () => {
         {normalizeString(record.name) || 'Untitled appeal'}
       </div>
 
-      <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+      <div style={{ ...secondaryTextStyle, color: theme.font.color.primary }}>
         {formatEnumLabel(record.appealType)}
         {identityLine !== '' ? ` · ${identityLine}` : ''}
       </div>

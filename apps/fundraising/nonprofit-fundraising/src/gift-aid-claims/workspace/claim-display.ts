@@ -30,13 +30,16 @@ const ENVIRONMENT_LABELS: Record<GiftAidClaimSubmissionEnvironment, string> = {
 export const formatClaimStatus = (status?: GiftAidClaimBatchStatus | null) =>
   status ? CLAIM_STATUS_LABELS[status] ?? status : 'Unknown';
 
+const labelFor = (labels: Record<string, string>, value: string) =>
+  labels[value] ?? value;
+
 export const formatSubmissionStatus = (
-  status?: GiftAidClaimSubmissionStatus | null,
-) => (status ? SUBMISSION_STATUS_LABELS[status] ?? status : 'Not queued');
+  status?: GiftAidClaimSubmissionStatus | string | null,
+) => (status ? labelFor(SUBMISSION_STATUS_LABELS, status) : 'Not queued');
 
 export const formatSubmissionEnvironment = (
-  environment?: GiftAidClaimSubmissionEnvironment | null,
-) => (environment ? ENVIRONMENT_LABELS[environment] ?? environment : 'Unknown');
+  environment?: GiftAidClaimSubmissionEnvironment | string | null,
+) => (environment ? labelFor(ENVIRONMENT_LABELS, environment) : 'Unknown');
 
 export const getSubmissionStatusColor = (
   status?: GiftAidClaimSubmissionStatus | null,

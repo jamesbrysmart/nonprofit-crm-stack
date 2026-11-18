@@ -1,5 +1,6 @@
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
+import { theme } from 'src/front-components/theme-tokens';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   compactConfirmationCardStyle,
   compactDividerSectionStyle,
@@ -22,13 +23,13 @@ const renderValue = (value: string) => {
 
 const auditValueStyle = {
   ...secondaryTextStyle,
-  color: '#1f2328',
+  color: theme.font.color.primary,
 };
 
 const sectionTitleStyle = {
   fontSize: '14px',
   fontWeight: 600,
-  color: '#1f2328',
+  color: theme.font.color.primary,
   lineHeight: 1.4,
 };
 
@@ -48,7 +49,8 @@ const humanizeEnum = (value: string) => {
 };
 
 const GiftStagingAudit = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const { record, loading, error, refresh } = useGiftStagingReviewRecord(recordId);
 
   useReloadOnTabChange(() => {
@@ -140,7 +142,7 @@ const GiftStagingAudit = () => {
           {record.errorDetail !== '' ? (
             <div style={{ display: 'grid', gap: '4px' }}>
               <div style={labelStyle}>Last error</div>
-              <div style={{ ...secondaryTextStyle, color: '#b42318' }}>
+              <div style={{ ...secondaryTextStyle, color: theme.color.red11 }}>
                 {record.errorDetail}
               </div>
             </div>

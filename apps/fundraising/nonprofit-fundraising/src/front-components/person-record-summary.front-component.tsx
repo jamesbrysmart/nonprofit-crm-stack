@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   SummaryStrip,
   SummaryStripItem,
-  badgeStyle,
   contextSignalRowStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
+  ToneStatus,
 } from 'src/front-components/front-component-ui';
 import {
   PERSON_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
@@ -182,7 +182,8 @@ const loadPerson = async (
 };
 
 const PersonRecordSummary = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<PersonRecordSummaryRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -288,9 +289,9 @@ const PersonRecordSummary = () => {
         <>
           <div style={contextSignalRowStyle}>
             {signals.map((signal) => (
-              <span key={signal.label} style={badgeStyle(signal.tone)}>
+              <ToneStatus key={signal.label} tone={signal.tone}>
                 {signal.label}
-              </span>
+              </ToneStatus>
             ))}
           </div>
           {giftCount > 0 ? (
@@ -319,7 +320,7 @@ const PersonRecordSummary = () => {
         </>
       ) : (
         <div style={contextSignalRowStyle}>
-          <span style={badgeStyle('neutral')}>No fundraising activity</span>
+          <ToneStatus tone="neutral">No fundraising activity</ToneStatus>
           <span style={secondaryTextStyle}>Standard CRM contact.</span>
         </div>
       )}

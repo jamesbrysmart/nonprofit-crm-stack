@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react';
+import { theme } from 'src/front-components/theme-tokens';
+import {
+  formatDateTime,
+  formatSubmissionEnvironment,
+  formatSubmissionStatus,
+} from 'src/gift-aid-claims/workspace/claim-display';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { extractQueryRecord } from 'src/core-api/core-api-results';
 import {
   AppPath,
   navigate,
-  useRecordId,
+  useSelectedRecordIds,
 } from 'twenty-sdk/front-component';
 import {
   ActionButton,
   actionRowStyle,
-  badgeStyle,
   compactMetaGridStyle,
   compactMetaItemStyle,
   compactWidgetRootStyle,
   labelStyle,
   secondaryTextStyle,
+  ToneStatus,
 } from 'src/front-components/front-component-ui';
 import {
   GIFT_AID_CLAIM_SUBMISSION_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
@@ -116,7 +122,8 @@ const loadSubmissionRecord = async (
 };
 
 const GiftAidClaimSubmissionRecord = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<GiftAidClaimSubmissionRecordView | null>(
     null,
   );
@@ -177,11 +184,11 @@ const GiftAidClaimSubmissionRecord = () => {
 
   return (
     <div style={compactWidgetRootStyle}>
-      <span style={badgeStyle(getSubmissionTone(record.status))}>
-        {record.status ?? 'Unknown'}
-      </span>
+      <ToneStatus tone={getSubmissionTone(record.status)}>
+        {record.status ? formatSubmissionStatus(record.status) : 'Unknown'}
+      </ToneStatus>
 
-      <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+      <div style={{ ...secondaryTextStyle, color: theme.font.color.primary }}>
         {getSubmissionMessage(record.status)}
       </div>
       <div style={secondaryTextStyle}>
@@ -203,7 +210,7 @@ const GiftAidClaimSubmissionRecord = () => {
       <div style={compactMetaGridStyle}>
         <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Environment</div>
-          <div style={secondaryTextStyle}>{record.environment ?? 'Unknown'}</div>
+          <div style={secondaryTextStyle}>{formatSubmissionEnvironment(record.environment)}</div>
         </div>
         <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Claim batch</div>
@@ -213,21 +220,21 @@ const GiftAidClaimSubmissionRecord = () => {
         </div>
         <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Queued</div>
-          <div style={secondaryTextStyle}>{record.submittedAt ?? 'Not recorded'}</div>
+          <div style={secondaryTextStyle}>{formatDateTime(record.submittedAt) ?? 'Not recorded'}</div>
         </div>
         <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Sent to HMRC</div>
           <div style={secondaryTextStyle}>
-            {record.submittedToHmrcAt ?? 'Not recorded'}
+            {formatDateTime(record.submittedToHmrcAt) ?? 'Not recorded'}
           </div>
         </div>
         <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Last polled</div>
-          <div style={secondaryTextStyle}>{record.lastPolledAt ?? 'Not recorded'}</div>
+          <div style={secondaryTextStyle}>{formatDateTime(record.lastPolledAt) ?? 'Not recorded'}</div>
         </div>
         <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Completed</div>
-          <div style={secondaryTextStyle}>{record.completedAt ?? 'Not recorded'}</div>
+          <div style={secondaryTextStyle}>{formatDateTime(record.completedAt) ?? 'Not recorded'}</div>
         </div>
       </div>
 

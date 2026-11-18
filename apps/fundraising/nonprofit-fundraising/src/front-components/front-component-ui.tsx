@@ -1,5 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
+import { Status } from 'twenty-ui/primitives/data-display';
 import { Button } from 'twenty-ui/primitives/input';
+import type { ThemeColor } from 'twenty-ui/theme';
 import { theme } from 'src/front-components/theme-tokens';
 
 export const panelStackStyle: CSSProperties = {
@@ -106,6 +108,28 @@ export const subtlePanelStyle: CSSProperties = {
   gap: '8px',
   background: theme.background.primary,
 };
+
+export type Tone = 'neutral' | 'warning' | 'success' | 'danger';
+
+const TONE_COLORS: Record<Tone, ThemeColor> = {
+  neutral: 'gray',
+  warning: 'amber',
+  success: 'green',
+  danger: 'red',
+};
+
+// Twenty's Status badge, coloured by the app's semantic tones.
+export const ToneStatus = ({
+  tone,
+  children,
+}: {
+  tone: Tone;
+  children: ReactNode;
+}) => (
+  <Status color={TONE_COLORS[tone]} weight="medium">
+    {children}
+  </Status>
+);
 
 export const badgeStyle = (
   tone: 'neutral' | 'warning' | 'success' | 'danger',
