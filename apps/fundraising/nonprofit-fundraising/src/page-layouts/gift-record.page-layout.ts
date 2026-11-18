@@ -9,6 +9,7 @@ import {
   GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_OVERVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
@@ -26,6 +27,16 @@ export default definePageLayout({
       icon: 'IconHome',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
+        {
+          universalIdentifier: 'b9b7a4b4-d3e9-4951-aacc-7dd70638d1cb',
+          title: 'Gift overview',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_OVERVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
         {
           universalIdentifier: '62844f82-5730-4cd1-b0ea-ccca054d326f',
           title: 'Gift summary',
