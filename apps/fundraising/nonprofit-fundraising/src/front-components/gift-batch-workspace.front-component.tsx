@@ -7,7 +7,7 @@ import { BatchActionsSection } from 'src/gift-batch-review/workspace/batch-actio
 import { BatchCodingSection } from 'src/gift-batch-review/workspace/batch-coding-section';
 import { BatchSummarySection } from 'src/gift-batch-review/workspace/batch-summary-section';
 import { BatchWorklistsSection } from 'src/gift-batch-review/workspace/batch-worklists-section';
-import { WorkspaceText } from 'src/gift-batch-review/workspace/workspace-section';
+import { WorkspaceText } from 'src/front-components/workspace-layout';
 
 const ROOT_STYLE: CSSProperties = {
   display: 'grid',

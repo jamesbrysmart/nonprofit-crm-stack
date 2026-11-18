@@ -16,8 +16,8 @@ import type { GiftBatchReviewRecord } from 'src/gift-batch-review/gift-batch-rev
 import {
   WorkspaceSection,
   WorkspaceText,
-  type GiftBatchWorkspaceSectionProps,
-} from 'src/gift-batch-review/workspace/workspace-section';
+} from 'src/front-components/workspace-layout';
+import type { GiftBatchWorkspaceSectionProps } from 'src/gift-batch-review/workspace/workspace-section';
 
 const SETUP_FIELDS_STYLE: CSSProperties = {
   display: 'grid',

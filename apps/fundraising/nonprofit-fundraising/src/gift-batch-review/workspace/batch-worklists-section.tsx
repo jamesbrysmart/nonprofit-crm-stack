@@ -6,8 +6,8 @@ import { openGiftBatchQueue } from 'src/gift-batch-review/use-gift-batch-review'
 import {
   WorkspaceSection,
   WorkspaceText,
-  type GiftBatchWorkspaceSectionProps,
-} from 'src/gift-batch-review/workspace/workspace-section';
+} from 'src/front-components/workspace-layout';
+import type { GiftBatchWorkspaceSectionProps } from 'src/gift-batch-review/workspace/workspace-section';
 
 const QUEUE_ROW_STYLE: CSSProperties = {
   display: 'grid',

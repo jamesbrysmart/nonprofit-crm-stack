@@ -9,6 +9,7 @@ import {
   GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_REVIEW_CORE_VIEW_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
@@ -25,6 +26,16 @@ export default definePageLayout({
       icon: 'IconChecklist',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
+        {
+          universalIdentifier: '93ce69ee-5235-49a0-af70-b2d162b87457',
+          title: 'Staging review',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_STAGING_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
         {
           universalIdentifier: 'a9d5a841-da99-4b89-90f3-e6365896b555',
           title: 'Gift staging review',

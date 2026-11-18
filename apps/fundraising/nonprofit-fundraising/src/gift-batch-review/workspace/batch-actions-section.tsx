@@ -17,8 +17,8 @@ import {
 import {
   WorkspaceSection,
   WorkspaceText,
-  type GiftBatchWorkspaceSectionProps,
-} from 'src/gift-batch-review/workspace/workspace-section';
+} from 'src/front-components/workspace-layout';
+import type { GiftBatchWorkspaceSectionProps } from 'src/gift-batch-review/workspace/workspace-section';
 
 const buildDonorMatchSummary = (input: RunBatchDonorMatchResponse) => {
   const sentences: string[] = [];
