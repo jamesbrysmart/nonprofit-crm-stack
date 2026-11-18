@@ -1,33 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { Status } from 'twenty-ui/primitives/data-display';
+import type { ThemeColor } from 'twenty-ui/theme';
 import {
-  badgeStyle,
   compactWidgetRootStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
+import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 import { deriveRecurringHealth } from 'src/recurring/recurring.model';
-import { subscribeToRecurringAgreementInvalidated } from 'src/recurring/recurring-agreement-sync';
 import { loadRecurringAgreementPaymentHealthInput } from 'src/recurring/recurring.service';
 import type { RecurringAgreementHealth } from 'src/recurring/recurring.types';
 import {
   RECURRING_AGREEMENT_PAYMENT_HEALTH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
-const getHealthTone = (
-  state: RecurringAgreementHealth['state'],
-): 'neutral' | 'warning' | 'success' | 'danger' => {
+const getHealthColor = (state: RecurringAgreementHealth['state']): ThemeColor => {
   switch (state) {
     case 'ON_TRACK':
-      return 'success';
+      return 'green';
     case 'DUE_TODAY':
-      return 'warning';
+      return 'amber';
     case 'OVERDUE':
     case 'DELINQUENT':
-      return 'danger';
+      return 'red';
     default:
-      return 'neutral';
+      return 'gray';
   }
 };
 
@@ -42,12 +41,13 @@ const loadHealth = async (recordId: string) => {
 };
 
 const RecurringAgreementPaymentHealth = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [health, setHealth] = useState<RecurringAgreementHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!recordId) {
       setHealth(null);
       setError('No recurring agreement selected');
@@ -78,24 +78,17 @@ const RecurringAgreementPaymentHealth = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [recordId]);
 
   useEffect(() => {
     void refresh();
-  }, [recordId]);
+  }, [refresh]);
 
-  useEffect(() => {
-    if (!recordId) {
-      return () => {};
-    }
+  useReloadOnTabChange(() => {
+    void refresh();
+  });
 
-    return subscribeToRecurringAgreementInvalidated({
-      recordId,
-      onInvalidate: refresh,
-    });
-  }, [recordId]);
-
-  if (loading) {
+  if (loading && !health) {
     return <div style={secondaryTextStyle}>Loading payment status...</div>;
   }
 
@@ -110,9 +103,9 @@ const RecurringAgreementPaymentHealth = () => {
   return (
     <div style={compactWidgetRootStyle}>
       <div>
-        <span style={badgeStyle(getHealthTone(health.state))}>
+        <Status color={getHealthColor(health.state)} weight="medium">
           {health.label}
-        </span>
+        </Status>
       </div>
       <div style={secondaryTextStyle}>{health.message}</div>
     </div>
