@@ -58,6 +58,13 @@ Use this file as the first stop when a session needs repo guidance.
 
 - `product/FUNDRAISING_WORKING_GUIDE.md`
   Working product guide for explaining current fundraising-app behavior through admin/user walkthroughs ahead of polished user documentation.
+- `product/FEATURE_CANDIDATES.md`
+  Generic feature candidates suggested by client work and demos, not commitments.
+
+## Client Pilots And Demos
+
+- `pilots/`
+  Client-specific working notes. Gitignored: kept locally, not in the repository.
 
 ## Legacy / Retirement Candidates
 
