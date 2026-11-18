@@ -19,6 +19,7 @@ import {
 import {
   GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 
 type MailingAddress = {
   addressStreet1?: string | null;
@@ -247,7 +248,19 @@ const GiftGiftAidDonorContext = () => {
     void run();
   }, [recordId]);
 
-  if (loading) {
+  useReloadOnTabChange(() => {
+    if (!recordId) {
+      return;
+    }
+
+    void loadGift(recordId).then((loaded) => {
+      if (loaded) {
+        setRecord(loaded);
+      }
+    });
+  });
+
+  if (loading && !record) {
     return <div style={textStyle}>Loading donor context...</div>;
   }
 

@@ -14,6 +14,7 @@ import {
 import {
   GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 
 type GiftGiftAidDeclarationRecord = {
   id: string;
@@ -241,7 +242,19 @@ const GiftGiftAidDeclaration = () => {
     void run();
   }, [recordId]);
 
-  if (loading) {
+  useReloadOnTabChange(() => {
+    if (!recordId) {
+      return;
+    }
+
+    void loadGift(recordId).then((loaded) => {
+      if (loaded) {
+        setRecord(loaded);
+      }
+    });
+  });
+
+  if (loading && !record) {
     return <div style={textStyle}>Loading Gift Aid declaration...</div>;
   }
 

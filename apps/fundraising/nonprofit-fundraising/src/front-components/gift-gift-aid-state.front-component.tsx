@@ -2,7 +2,6 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useRecordId } from 'twenty-sdk/front-component';
-import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
 import {
   CompactMetaGrid,
   CompactMetaItem,
@@ -14,6 +13,7 @@ import {
 import {
   GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 
 type GiftAidGiftRecord = {
   id: string;
@@ -254,26 +254,19 @@ const GiftGiftAidState = () => {
     void run();
   }, [recordId]);
 
-  useEffect(() => {
+  useReloadOnTabChange(() => {
     if (!recordId) {
       return;
     }
 
-    return subscribeToGiftRecordInvalidated({
-      recordId,
-      onInvalidate: async () => {
-        const loaded = await loadGift(recordId);
-
-        if (!loaded) {
-          return;
-        }
-
+    void loadGift(recordId).then((loaded) => {
+      if (loaded) {
         setRecord(loaded);
-      },
+      }
     });
-  }, [recordId]);
+  });
 
-  if (loading) {
+  if (loading && !record) {
     return <div style={textStyle}>Loading Gift Aid state...</div>;
   }
 

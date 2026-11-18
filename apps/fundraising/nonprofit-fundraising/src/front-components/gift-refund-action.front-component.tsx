@@ -4,14 +4,16 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
 import { recordGiftRefund } from 'src/gift-lifecycle/gift-refund.api';
 import { deriveRefundState } from 'src/gift-lifecycle/gift-refund';
-import { subscribeToGiftRecordInvalidated } from 'src/gift-record/gift-record-sync';
+import { Callout } from 'twenty-ui/components/feedback';
+import { FormInput, FormTextarea } from 'src/front-components/form-controls';
+import { theme } from 'src/front-components/theme-tokens';
+import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 import {
   ActionButton,
   actionRowStyle,
   compactMetaGridStyle,
   compactMetaItemStyle,
   compactWidgetRootStyle,
-  inputStyle,
   labelStyle,
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
@@ -40,32 +42,6 @@ type RefundActionGiftRecord = {
 
 const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
-
-const getInputEventValue = (event: unknown) => {
-  if (
-    typeof event === 'object' &&
-    event !== null &&
-    'detail' in event &&
-    typeof event.detail === 'object' &&
-    event.detail !== null &&
-    'value' in event.detail
-  ) {
-    return String(event.detail.value ?? '');
-  }
-
-  if (
-    typeof event === 'object' &&
-    event !== null &&
-    'target' in event &&
-    typeof event.target === 'object' &&
-    event.target !== null &&
-    'value' in event.target
-  ) {
-    return String((event.target as { value?: unknown }).value ?? '');
-  }
-
-  return '';
-};
 
 const formatAmount = (amount: RefundActionGiftRecord['amount']) => {
   const micros = amount?.amountMicros;
@@ -195,14 +171,12 @@ const GiftRefundAction = () => {
     void run();
   }, [recordId]);
 
-  useEffect(() => {
+  useReloadOnTabChange(() => {
     if (!recordId) {
       return;
     }
 
-    return subscribeToGiftRecordInvalidated({
-      recordId,
-      onInvalidate: async () => {
+    void (async () => {
         const loaded = await loadGift(recordId);
 
         if (!loaded) {
@@ -215,11 +189,10 @@ const GiftRefundAction = () => {
         );
         setRefundDateInput(toDateInputValue(loaded.refundDate));
         setRefundNoteInput(normalizeString(loaded.refundNote));
-      },
-    });
-  }, [recordId]);
+    })();
+  });
 
-  if (loading) {
+  if (loading && !record) {
     return <div style={secondaryTextStyle}>Loading refund action...</div>;
   }
 
@@ -318,7 +291,7 @@ const GiftRefundAction = () => {
 
   return (
     <div style={compactWidgetRootStyle}>
-      <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
+      <div style={{ ...secondaryTextStyle, color: theme.font.color.primary }}>
         {refundState === 'NOT_REFUNDED'
           ? 'Record a full or partial refund without changing the original gift amount.'
           : refundState === 'PARTIALLY_REFUNDED'
@@ -342,51 +315,38 @@ const GiftRefundAction = () => {
       </div>
 
       {isFinalizedGiftAidClaim ? (
-        <div style={{ ...secondaryTextStyle, color: '#7c5700' }}>
-          {linkedClaimBatchName === ''
-            ? 'This gift is already part of finalized Gift Aid claim work. Refund follow-up for finalized claims is not implemented in this first pass.'
-            : `This gift is already part of finalized Gift Aid claim work (${linkedClaimBatchName}). Refund follow-up for finalized claims is not implemented in this first pass.`}
-        </div>
+        <Callout
+          status="warning"
+          title="Finalized Gift Aid claim"
+          description={
+            linkedClaimBatchName === ''
+              ? 'This gift is already part of finalized Gift Aid claim work. Refund follow-up for finalized claims is not implemented in this first pass.'
+              : `This gift is already part of finalized Gift Aid claim work (${linkedClaimBatchName}). Refund follow-up for finalized claims is not implemented in this first pass.`
+          }
+        />
       ) : (
         <>
           <div style={compactMetaGridStyle}>
-            <div style={compactMetaItemStyle}>
-              <div style={labelStyle}>Refunded amount</div>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={refundedAmountInput}
-                onChange={(event) => {
-                  setRefundedAmountInput(getInputEventValue(event));
-                }}
-                style={inputStyle}
-              />
-            </div>
-            <div style={compactMetaItemStyle}>
-              <div style={labelStyle}>Refund date</div>
-              <input
-                type="date"
-                value={refundDateInput}
-                onChange={(event) => {
-                  setRefundDateInput(getInputEventValue(event));
-                }}
-                style={inputStyle}
-              />
-            </div>
-          </div>
-
-          <div style={compactMetaItemStyle}>
-            <div style={labelStyle}>Refund note</div>
-            <textarea
-              value={refundNoteInput}
-              onChange={(event) => {
-                setRefundNoteInput(getInputEventValue(event));
-              }}
-              rows={3}
-              style={inputStyle}
+            <FormInput
+              label="Refunded amount"
+              inputMode="decimal"
+              value={refundedAmountInput}
+              onChange={setRefundedAmountInput}
+            />
+            <FormInput
+              label="Refund date"
+              type="date"
+              value={refundDateInput}
+              onChange={setRefundDateInput}
             />
           </div>
+
+          <FormTextarea
+            label="Refund note"
+            rows={3}
+            value={refundNoteInput}
+            onChange={setRefundNoteInput}
+          />
 
           <div style={actionRowStyle}>
             <ActionButton
@@ -408,9 +368,11 @@ const GiftRefundAction = () => {
 
           {normalizeString(record.giftAidClaimBatch?.id) !== '' &&
           linkedClaimBatchStatus === 'DRAFT' ? (
-            <div style={{ ...secondaryTextStyle, color: '#1f2328' }}>
-              This gift is currently in draft Gift Aid claim work. Recording a refund will remove it from that draft claim in this first pass.
-            </div>
+            <Callout
+              status="info"
+              title="Draft Gift Aid claim"
+              description="This gift is currently in draft Gift Aid claim work. Recording a refund will remove it from that draft claim in this first pass."
+            />
           ) : null}
         </>
       )}

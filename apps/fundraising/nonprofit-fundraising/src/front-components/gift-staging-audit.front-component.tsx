@@ -11,6 +11,7 @@ import {
 } from 'src/front-components/front-component-ui';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
+import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 import {
   GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
@@ -48,9 +49,13 @@ const humanizeEnum = (value: string) => {
 
 const GiftStagingAudit = () => {
   const recordId = useRecordId();
-  const { record, loading, error } = useGiftStagingReviewRecord(recordId);
+  const { record, loading, error, refresh } = useGiftStagingReviewRecord(recordId);
 
-  if (loading) {
+  useReloadOnTabChange(() => {
+    void refresh();
+  });
+
+  if (loading && !record) {
     return <div style={secondaryTextStyle}>Loading audit view...</div>;
   }
 
