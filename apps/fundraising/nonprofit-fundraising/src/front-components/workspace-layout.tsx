@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { Button } from 'twenty-ui/primitives/input';
 import { Text } from 'twenty-ui/primitives/typography';
 import { theme } from 'src/front-components/theme-tokens';
 
@@ -47,4 +48,40 @@ export const WorkspaceText = ({
   <Text render={<div />} size="sm" color={color}>
     {children}
   </Text>
+);
+
+const QUEUE_ROW_STYLE: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr) auto auto',
+  alignItems: 'center',
+  gap: 8,
+};
+
+const QUEUE_COUNT_STYLE: CSSProperties = {
+  textAlign: 'right',
+  minWidth: 56,
+};
+
+const giftCount = (count: number) => `${count} gift${count === 1 ? '' : 's'}`;
+
+export const WorkspaceQueueRow = ({
+  label,
+  count,
+  onOpen,
+}: {
+  label: string;
+  count: number;
+  onOpen: () => void;
+}) => (
+  <div style={QUEUE_ROW_STYLE}>
+    <Text render={<span />} size="sm">
+      {label}
+    </Text>
+    <Text render={<span />} size="sm" color="secondary" style={QUEUE_COUNT_STYLE}>
+      {giftCount(count)}
+    </Text>
+    <Button variant="link" size="sm" onClick={onOpen}>
+      Open
+    </Button>
+  </div>
 );

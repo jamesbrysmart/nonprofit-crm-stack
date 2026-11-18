@@ -8,6 +8,7 @@ import {
   GIFT_AID_CLAIM_BATCH_SUBMISSION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_AID_CLAIM_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_AID_CLAIM_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_CLAIM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
 export default definePageLayout({
@@ -23,6 +24,16 @@ export default definePageLayout({
       icon: 'IconHome',
       layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
       widgets: [
+        {
+          universalIdentifier: 'bb93432e-a22e-4982-ac46-196913cb8fa3',
+          title: 'Claim workspace',
+          type: 'FRONT_COMPONENT',
+          configuration: {
+            configurationType: 'FRONT_COMPONENT',
+            frontComponentUniversalIdentifier:
+              GIFT_AID_CLAIM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+          },
+        },
         {
           universalIdentifier: '2ff1b81d-aab7-4526-8b3d-fc15093cc7e8',
           title: 'Claim summary',

@@ -44,7 +44,8 @@ export const buildGiftQueryParams = (
       break;
     case 'needs-review-outside-claim':
       queryParams['filter[giftAidStatus][IS]'] = ['NEEDS_REVIEW'];
-      queryParams['filter[giftAidClaimBatch][IS_NOT]'] = [batchId];
+      // Matches the count: needs-review gifts not in any claim.
+      queryParams['filter[giftAidClaimBatch][IS_EMPTY]'] = [];
       break;
     default:
       break;
