@@ -1,26 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { extractQueryRecord } from 'src/core-api/core-api-results';
 import {
   ActionButton,
   actionRowStyle,
-  badgeStyle,
   compactDividerSectionStyle,
   compactWidgetRootStyle,
-  inputStyle,
-  labelStyle,
   secondaryTextStyle,
   SummaryStrip,
   SummaryStripItem,
-  textareaStyle,
+  ToneStatus,
 } from 'src/front-components/front-component-ui';
+import {
+  FormInput,
+  FormSelect,
+  FormTextarea,
+} from 'src/front-components/form-controls';
 import { createManualGift } from 'src/manual-gift-entry/manual-gift-entry.api';
 import type { ManualGiftPaymentType } from 'src/manual-gift-entry/manual-gift-entry.types';
 import {
   PAYMENT_TYPE_OPTIONS,
-  getInputEventValue,
 } from 'src/manual-gift-entry/new-gift-support';
 import { deriveGiftTypeForOpportunityPayment } from 'src/opportunity-payments/opportunity-payment-gift-type';
 import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
@@ -179,7 +180,8 @@ const loadOpportunity = async (
 };
 
 const OpportunityRecordPayment = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<OpportunityPaymentRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -354,9 +356,9 @@ const OpportunityRecordPayment = () => {
   return (
     <div style={compactWidgetRootStyle}>
       <div style={actionRowStyle}>
-        <span style={badgeStyle(companyId === '' ? 'warning' : 'neutral')}>
+        <ToneStatus tone={companyId === '' ? 'warning' : 'neutral'}>
           Record payment
-        </span>
+        </ToneStatus>
       </div>
 
       <SummaryStrip>
@@ -399,53 +401,36 @@ const OpportunityRecordPayment = () => {
           gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
         }}
       >
-        <label style={{ display: 'grid', gap: '6px' }}>
-          <span style={labelStyle}>Amount</span>
-          <input
-            style={inputStyle}
-            value={amountValue}
-            inputMode="decimal"
-            onChange={(event) => setAmountValue(getInputEventValue(event))}
-          />
-        </label>
-        <label style={{ display: 'grid', gap: '6px' }}>
-          <span style={labelStyle}>Gift date</span>
-          <input
-            style={inputStyle}
-            type="date"
-            value={giftDate}
-            onChange={(event) => setGiftDate(getInputEventValue(event))}
-          />
-        </label>
-        <label style={{ display: 'grid', gap: '6px' }}>
-          <span style={labelStyle}>Payment type</span>
-          <select
-            style={inputStyle}
-            value={paymentType}
-            onChange={(event) =>
-              setPaymentType(
-                getInputEventValue(event) as ManualGiftPaymentType,
-              )
-            }
-          >
-            {PAYMENT_TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FormInput
+          label="Amount"
+          inputMode="decimal"
+          value={amountValue}
+          onChange={setAmountValue}
+        />
+        <FormInput
+          label="Gift date"
+          type="date"
+          value={giftDate}
+          onChange={setGiftDate}
+        />
+        <FormSelect
+          label="Payment type"
+          value={paymentType}
+          onChange={(value) => setPaymentType(value as ManualGiftPaymentType)}
+          options={PAYMENT_TYPE_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />
       </div>
 
-      <label style={{ display: 'grid', gap: '6px' }}>
-        <span style={labelStyle}>Gift description</span>
-        <textarea
-          style={{ ...textareaStyle, minHeight: '64px' }}
-          value={description}
-          placeholder="Optional description saved on the created gift, e.g. first instalment of 3"
-          onChange={(event) => setDescription(getInputEventValue(event))}
-        />
-      </label>
+      <FormTextarea
+        label="Gift description"
+        rows={2}
+        value={description}
+        placeholder="Optional description saved on the created gift, e.g. first instalment of 3"
+        onChange={setDescription}
+      />
 
       {companyId === '' || duplicateLinkedGift ? (
         <div style={compactDividerSectionStyle}>
