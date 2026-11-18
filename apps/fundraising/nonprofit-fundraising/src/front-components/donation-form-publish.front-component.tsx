@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { publishDonationForm } from 'src/donation-forms/donation-form-publish.api';
 import { DEFAULT_STRIPE_PROVIDER_CONFIG_KEY } from 'src/donation-forms/donation-form-checkout-stripe';
 import {
   ActionButton,
-  badgeStyle,
   labelStyle,
   panelStackStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
   valueStyle,
+  ToneStatus,
 } from 'src/front-components/front-component-ui';
 import {
   compactMetaGridStyle,
@@ -30,7 +30,8 @@ import {
 } from 'src/constants/universal-identifiers';
 
 const DonationFormPublish = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const { record, setRecord, loading, error } = useDonationFormRecord(recordId);
   const [publishing, setPublishing] = useState(false);
   const [publishedState, setPublishedState] = useState<PublishedState | null>(null);
@@ -120,7 +121,7 @@ const DonationFormPublish = () => {
       <div style={panelStyle}>
         <div style={sectionHeaderStyle}>
           <div style={{ display: 'grid', gap: '6px' }}>
-            <div style={badgeStyle(stateBadge.tone)}>{stateBadge.label}</div>
+            <ToneStatus tone={stateBadge.tone}>{stateBadge.label}</ToneStatus>
             <div style={{ ...valueStyle, fontWeight: 600 }}>
               {publishSummaryLine}
             </div>

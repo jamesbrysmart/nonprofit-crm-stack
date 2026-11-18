@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { Tag } from 'twenty-ui/primitives/data-display';
+import { Button } from 'twenty-ui/primitives/input';
+import { FormCheckbox } from 'src/front-components/form-controls';
+import { theme } from 'src/front-components/theme-tokens';
 import { buildDonationFormPreviewDocument } from 'src/donation-forms/donation-form-rendering';
 import {
   labelStyle,
   panelStackStyle,
-  pillButtonStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
-  signalPillStyle,
-  valueStyle,
 } from 'src/front-components/front-component-ui';
 import {
   buildPreviewConfig,
@@ -25,9 +26,6 @@ import {
   type PreviewDonationType,
   useDonationFormRecord,
 } from 'src/front-components/donation-form-workspace.shared';
-import {
-  getInputEventChecked,
-} from 'src/manual-gift-entry/new-gift-support';
 import {
   DONATION_FORM_PREVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
@@ -59,7 +57,8 @@ const previewNotesRowStyle = {
 };
 
 const DonationFormPreview = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const { record, loading, error } = useDonationFormRecord(recordId);
   const [previewDonationType, setPreviewDonationType] =
     useState<PreviewDonationType>('ONE_OFF');
@@ -166,14 +165,16 @@ const DonationFormPreview = () => {
                     const label = option === 'RECURRING' ? 'Monthly' : 'One-off';
 
                     return (
-                      <button
+                      <Button
                         key={option}
-                        type="button"
+                        size="sm"
+                        variant={active ? 'solid' : 'outline'}
+                        color={active ? 'accent' : 'neutral'}
+                        aria-pressed={active}
                         onClick={() => setPreviewDonationType(option)}
-                        style={pillButtonStyle(active)}
                       >
                         {label}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -198,14 +199,16 @@ const DonationFormPreview = () => {
                   const active = previewViewportMode === mode;
 
                   return (
-                    <button
+                    <Button
                       key={mode}
-                      type="button"
+                      size="sm"
+                      variant={active ? 'solid' : 'outline'}
+                      color={active ? 'accent' : 'neutral'}
+                      aria-pressed={active}
                       onClick={() => setPreviewViewportMode(mode)}
-                      style={pillButtonStyle(active)}
                     >
                       {label}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -221,21 +224,21 @@ const DonationFormPreview = () => {
             >
               <div style={labelStyle}>Preview notes</div>
               <div style={previewNotesRowStyle}>
-                <div style={signalPillStyle}>
+                <Tag color="gray" variant="soft">
                   {previewAmountOptions.length > 0
                     ? `${previewAmountOptions.length} suggested amounts shown`
                     : 'No suggested amounts configured yet'}
-                </div>
-                <div style={signalPillStyle}>{previewViewportLabel}</div>
-                <div style={signalPillStyle}>
+                </Tag>
+                <Tag color="gray" variant="soft">{previewViewportLabel}</Tag>
+                <Tag color="gray" variant="soft">
                   {getPreviewAddressModeLabel({
                     requireAddress: savedDraftState.requireAddress,
                     giftAidEnabled: savedDraftState.giftAidEnabled,
                   })}
-                </div>
-                <div style={signalPillStyle}>
+                </Tag>
+                <Tag color="gray" variant="soft">
                   Primary action: {previewPrimaryButtonLabel}
-                </div>
+                </Tag>
               </div>
             </div>
           ) : (
@@ -247,21 +250,21 @@ const DonationFormPreview = () => {
             >
               <div style={labelStyle}>Preview notes</div>
               <div style={previewNotesRowStyle}>
-                <div style={signalPillStyle}>
+                <Tag color="gray" variant="soft">
                   {previewAmountOptions.length > 0
                     ? `${previewAmountOptions.length} suggested amounts shown`
                     : 'No suggested amounts configured yet'}
-                </div>
-                <div style={signalPillStyle}>{previewViewportLabel}</div>
-                <div style={signalPillStyle}>
+                </Tag>
+                <Tag color="gray" variant="soft">{previewViewportLabel}</Tag>
+                <Tag color="gray" variant="soft">
                   {getPreviewAddressModeLabel({
                     requireAddress: savedDraftState.requireAddress,
                     giftAidEnabled: savedDraftState.giftAidEnabled,
                   })}
-                </div>
-                <div style={signalPillStyle}>
+                </Tag>
+                <Tag color="gray" variant="soft">
                   Primary action: {previewPrimaryButtonLabel}
-                </div>
+                </Tag>
               </div>
             </div>
           )}
@@ -274,31 +277,15 @@ const DonationFormPreview = () => {
               }}
             >
               <div style={labelStyle}>Gift Aid preview state</div>
-              <label
-                style={{
-                  display: 'flex',
-                  gap: '10px',
-                  alignItems: 'flex-start',
-                  cursor: 'pointer',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={previewGiftAidSelected}
-                  onChange={(event) =>
-                    setPreviewGiftAidSelected(getInputEventChecked(event))
-                  }
-                />
-                <div style={{ display: 'grid', gap: '4px' }}>
-                  <div style={{ ...valueStyle, fontWeight: 600 }}>
-                    Show the opted-in Gift Aid state
-                  </div>
-                  <div style={previewHintStyle}>
-                    This toggles the shared preview between the default and Gift
-                    Aid-selected address state.
-                  </div>
-                </div>
-              </label>
+              <FormCheckbox
+                label="Show the opted-in Gift Aid state"
+                checked={previewGiftAidSelected}
+                onChange={setPreviewGiftAidSelected}
+              />
+              <div style={previewHintStyle}>
+                This toggles the shared preview between the default and Gift
+                Aid-selected address state.
+              </div>
             </div>
           ) : null}
         </div>
@@ -307,7 +294,7 @@ const DonationFormPreview = () => {
           style={{
             ...previewStageStyle,
             border: '0',
-            background: '#f6f8fb',
+            background: theme.background.secondary,
             padding: '12px 0 0',
             borderRadius: '0',
           }}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { theme } from 'src/front-components/theme-tokens';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import type {
   AppealSourceSummary,
@@ -596,8 +597,8 @@ export const previewFrameStyle = {
 
 export const previewStageStyle = {
   borderRadius: '20px',
-  background: 'linear-gradient(180deg, #f6f8fb 0%, #edf3f8 100%)',
-  border: '1px solid #d8dee4',
+  background: theme.background.secondary,
+  border: `1px solid ${theme.border.color.medium}`,
   padding: '24px',
   minHeight: '100%',
   boxSizing: 'border-box' as const,
@@ -606,7 +607,7 @@ export const previewStageStyle = {
 export const previewIframeStyle = {
   width: '100%',
   maxWidth: '640px',
-  border: '1px solid #d8dee4',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '20px',
   background: '#ffffff',
   minHeight: '1100px',
@@ -622,9 +623,9 @@ export const previewControlGridStyle = {
 };
 
 export const previewSubtleCardStyle = {
-  border: '1px solid #d8dee4',
+  border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '12px',
-  background: '#f6f8fa',
+  background: theme.background.secondary,
   padding: '12px',
   display: 'grid',
   gap: '8px',

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   getAppealIdForAppealSourceSelection,
   getAppealSourceIdsForAppeal,
@@ -8,14 +8,18 @@ import {
 } from 'src/gift-coding/gift-coding';
 import {
   ActionButton,
-  badgeStyle,
   fieldGridStyle,
-  inputStyle,
-  labelStyle,
   secondaryTextStyle,
   sectionHeaderStyle,
-  valueStyle,
+  ToneStatus,
 } from 'src/front-components/front-component-ui';
+import {
+  FormCheckbox,
+  FormInput,
+  FormSelect,
+  FormTextarea,
+} from 'src/front-components/form-controls';
+import { theme } from 'src/front-components/theme-tokens';
 import {
   buildUpdatedDraftConfig,
   compactSectionStyle,
@@ -25,21 +29,35 @@ import {
   panelStyle,
   saveDonationFormDraft,
   stableStringify,
-  textareaStyle,
   type DonationFormWorkspaceState,
   useDonationFormRecord,
 } from 'src/front-components/donation-form-workspace.shared';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
-import {
-  getInputEventChecked,
-  getInputEventValue,
-} from 'src/manual-gift-entry/new-gift-support';
+import { getInputEventValue } from 'src/manual-gift-entry/new-gift-support';
 import {
   DONATION_FORM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
+const COLOUR_FIELD_STYLE: CSSProperties = {
+  display: 'grid',
+  gap: '8px',
+  gridTemplateColumns: '64px minmax(0, 1fr)',
+  alignItems: 'end',
+};
+
+const COLOUR_SWATCH_STYLE: CSSProperties = {
+  width: '64px',
+  height: '32px',
+  border: `1px solid ${theme.border.color.medium}`,
+  borderRadius: '6px',
+  background: theme.background.primary,
+  padding: '2px',
+  cursor: 'pointer',
+};
+
 const DonationFormConfigure = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const { record, setRecord, loading, error } = useDonationFormRecord(recordId);
   const [state, setState] = useState<DonationFormWorkspaceState | null>(null);
   const [savedState, setSavedState] = useState<DonationFormWorkspaceState | null>(
@@ -210,13 +228,8 @@ const DonationFormConfigure = () => {
     <div style={panelStyle}>
       <div style={sectionHeaderStyle}>
         <div style={{ display: 'grid', gap: '6px' }}>
-          <div
-            style={{
-              ...badgeStyle(stateBadge.tone),
-              alignSelf: 'flex-start',
-            }}
-          >
-            {stateBadge.label}
+          <div style={{ alignSelf: 'flex-start' }}>
+            <ToneStatus tone={stateBadge.tone}>{stateBadge.label}</ToneStatus>
           </div>
           <div style={secondaryTextStyle}>
             Edit the saved draft here. Preview and Publish use the saved draft, so
@@ -234,191 +247,105 @@ const DonationFormConfigure = () => {
       </div>
 
       <div style={compactSectionStyle}>
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Internal name</span>
+        <FormInput
+          label="Internal name"
+          value={state.internalName}
+          onChange={(value) => handleFieldChange('internalName', value)}
+        />
+        <FormInput
+          label="Donor-facing title"
+          value={state.title}
+          onChange={(value) => handleFieldChange('title', value)}
+        />
+        <FormTextarea
+          label="Description"
+          value={state.description}
+          onChange={(value) => handleFieldChange('description', value)}
+        />
+        <FormTextarea
+          label="Thank-you message"
+          value={state.thankYouMessage}
+          onChange={(value) => handleFieldChange('thankYouMessage', value)}
+        />
+        <div style={COLOUR_FIELD_STYLE}>
+          {/* twenty-ui has no colour picker, so keep the native one, themed. */}
           <input
-            style={inputStyle}
-            value={state.internalName}
+            type="color"
+            aria-label="Primary colour picker"
+            style={COLOUR_SWATCH_STYLE}
+            value={state.primaryColor}
             onChange={(event) =>
-              handleFieldChange('internalName', getInputEventValue(event))
+              handleFieldChange('primaryColor', getInputEventValue(event))
             }
           />
-        </label>
-
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Donor-facing title</span>
-          <input
-            style={inputStyle}
-            value={state.title}
-            onChange={(event) =>
-              handleFieldChange('title', getInputEventValue(event))
-            }
+          <FormInput
+            label="Primary colour"
+            value={state.primaryColor}
+            onChange={(value) => handleFieldChange('primaryColor', value)}
+            placeholder="#0d7a5f"
           />
-        </label>
-
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Description</span>
-          <textarea
-            style={textareaStyle}
-            value={state.description}
-            onChange={(event) =>
-              handleFieldChange('description', getInputEventValue(event))
-            }
-          />
-        </label>
-
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Thank-you message</span>
-          <textarea
-            style={textareaStyle}
-            value={state.thankYouMessage}
-            onChange={(event) =>
-              handleFieldChange('thankYouMessage', getInputEventValue(event))
-            }
-          />
-        </label>
-
-        <label style={{ display: 'grid', gap: '6px' }}>
-          <span style={labelStyle}>Primary colour</span>
-          <div
-            style={{
-              display: 'grid',
-              gap: '8px',
-              gridTemplateColumns: '64px minmax(0, 1fr)',
-              alignItems: 'center',
-            }}
-          >
-            <input
-              type="color"
-              style={{
-                width: '64px',
-                height: '40px',
-                border: '1px solid #d0d7de',
-                borderRadius: '8px',
-                background: '#ffffff',
-                padding: '4px',
-                cursor: 'pointer',
-              }}
-              value={state.primaryColor}
-              onChange={(event) =>
-                handleFieldChange('primaryColor', getInputEventValue(event))
-              }
-            />
-            <input
-              style={inputStyle}
-              value={state.primaryColor}
-              onChange={(event) =>
-                handleFieldChange('primaryColor', getInputEventValue(event))
-              }
-              placeholder="#0d7a5f"
-            />
-          </div>
-        </label>
+        </div>
       </div>
 
       <div style={fieldGridStyle}>
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Donation types</span>
-          <select
-            style={inputStyle}
-            value={state.mode}
-            onChange={(event) =>
-              handleFieldChange(
-                'mode',
-                getInputEventValue(
-                  event,
-                ) as DonationFormWorkspaceState['mode'],
-              )
-            }
-          >
-            <option value="ONE_OFF">One-off only</option>
-            <option value="ONE_OFF_AND_MONTHLY">One-off and monthly</option>
-            <option value="RECURRING">Monthly only</option>
-          </select>
-        </label>
-
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Suggested amounts (GBP)</span>
-          <input
-            style={inputStyle}
-            value={state.amountOptionsText}
-            onChange={(event) =>
-              handleFieldChange('amountOptionsText', getInputEventValue(event))
-            }
-            placeholder="10, 25, 50"
-          />
-        </label>
-
-        <label style={{ display: 'grid', gap: '4px' }}>
-          <span style={labelStyle}>Minimum custom amount (GBP)</span>
-          <input
-            style={inputStyle}
-            value={state.minimumAmountText}
-            onChange={(event) =>
-              handleFieldChange('minimumAmountText', getInputEventValue(event))
-            }
-            placeholder="5"
-          />
-        </label>
-
+        <FormSelect
+          label="Donation types"
+          value={state.mode}
+          onChange={(value) =>
+            handleFieldChange('mode', value as DonationFormWorkspaceState['mode'])
+          }
+          options={[
+            { value: 'ONE_OFF', label: 'One-off only' },
+            { value: 'ONE_OFF_AND_MONTHLY', label: 'One-off and monthly' },
+            { value: 'RECURRING', label: 'Monthly only' },
+          ]}
+        />
+        <FormInput
+          label="Suggested amounts (GBP)"
+          value={state.amountOptionsText}
+          onChange={(value) => handleFieldChange('amountOptionsText', value)}
+          placeholder="10, 25, 50"
+        />
+        <FormInput
+          label="Minimum custom amount (GBP)"
+          inputMode="decimal"
+          value={state.minimumAmountText}
+          onChange={(value) => handleFieldChange('minimumAmountText', value)}
+          placeholder="5"
+        />
       </div>
 
       <div style={fieldGridStyle}>
-        <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={state.allowCustomAmount}
-            onChange={(event) =>
-              handleFieldChange('allowCustomAmount', getInputEventChecked(event))
-            }
-          />
-          <span style={valueStyle}>Allow custom amount</span>
-        </label>
-        <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={state.giftAidEnabled}
-            onChange={(event) =>
-              handleFieldChange('giftAidEnabled', getInputEventChecked(event))
-            }
-          />
-          <span style={valueStyle}>Enable Gift Aid</span>
-        </label>
-        <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={state.requireAddress}
-            onChange={(event) =>
-              handleFieldChange('requireAddress', getInputEventChecked(event))
-            }
-          />
-          <span style={valueStyle}>Always require address</span>
-        </label>
-        <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={state.collectPhone}
-            onChange={(event) =>
-              handleFieldChange('collectPhone', getInputEventChecked(event))
-            }
-          />
-          <span style={valueStyle}>Collect phone</span>
-        </label>
+        <FormCheckbox
+          label="Allow custom amount"
+          checked={state.allowCustomAmount}
+          onChange={(checked) => handleFieldChange('allowCustomAmount', checked)}
+        />
+        <FormCheckbox
+          label="Enable Gift Aid"
+          checked={state.giftAidEnabled}
+          onChange={(checked) => handleFieldChange('giftAidEnabled', checked)}
+        />
+        <FormCheckbox
+          label="Always require address"
+          checked={state.requireAddress}
+          onChange={(checked) => handleFieldChange('requireAddress', checked)}
+        />
+        <FormCheckbox
+          label="Collect phone"
+          checked={state.collectPhone}
+          onChange={(checked) => handleFieldChange('collectPhone', checked)}
+        />
       </div>
 
       {state.giftAidEnabled ? (
         <div style={compactSectionStyle}>
-          <label style={{ display: 'grid', gap: '4px' }}>
-            <span style={labelStyle}>Gift Aid text version</span>
-            <input
-              style={inputStyle}
-              value={state.giftAidTextVersion}
-              onChange={(event) =>
-                handleFieldChange('giftAidTextVersion', getInputEventValue(event))
-              }
-              placeholder="ga-2026-05"
-            />
-          </label>
+          <FormInput
+            label="Gift Aid text version"
+            value={state.giftAidTextVersion}
+            onChange={(value) => handleFieldChange('giftAidTextVersion', value)}
+            placeholder="ga-2026-05"
+          />
         </div>
       ) : null}
 
@@ -428,57 +355,36 @@ const DonationFormConfigure = () => {
           or set them for appeal- or source-specific forms.
         </div>
         <div style={fieldGridStyle}>
-          <label style={{ display: 'grid', gap: '4px' }}>
-            <span style={labelStyle}>Default appeal</span>
-            <select
-              style={inputStyle}
-              value={state.selectedAppealId}
-              onChange={(event) => handleAppealChange(getInputEventValue(event))}
-            >
-              <option value="">No default appeal</option>
-              {appeals.map((appeal) => (
-                <option key={appeal.id} value={appeal.id}>
-                  {normalizeString(appeal.name) || 'Untitled appeal'}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label style={{ display: 'grid', gap: '4px' }}>
-            <span style={labelStyle}>Default appeal source</span>
-            <select
-              style={inputStyle}
-              value={state.selectedAppealSourceId}
-              onChange={(event) =>
-                handleAppealSourceChange(getInputEventValue(event))
-              }
-            >
-              <option value="">No default appeal source</option>
-              {appealSources.map((appealSource) => (
-                <option key={appealSource.id} value={appealSource.id}>
-                  {normalizeString(appealSource.name) || 'Untitled source'}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label style={{ display: 'grid', gap: '4px' }}>
-            <span style={labelStyle}>Default fund</span>
-            <select
-              style={inputStyle}
-              value={state.selectedFundId}
-              onChange={(event) =>
-                handleFieldChange('selectedFundId', getInputEventValue(event))
-              }
-            >
-              <option value="">No default fund</option>
-              {funds.map((fund) => (
-                <option key={fund.id} value={fund.id}>
-                  {normalizeString(fund.name) || 'Untitled fund'}
-                </option>
-              ))}
-            </select>
-          </label>
+          <FormSelect
+            label="Default appeal"
+            value={state.selectedAppealId}
+            onChange={handleAppealChange}
+            emptyOptionLabel="No default appeal"
+            options={appeals.map((appeal) => ({
+              value: appeal.id,
+              label: normalizeString(appeal.name) || 'Untitled appeal',
+            }))}
+          />
+          <FormSelect
+            label="Default appeal source"
+            value={state.selectedAppealSourceId}
+            onChange={handleAppealSourceChange}
+            emptyOptionLabel="No default appeal source"
+            options={appealSources.map((appealSource) => ({
+              value: appealSource.id,
+              label: normalizeString(appealSource.name) || 'Untitled source',
+            }))}
+          />
+          <FormSelect
+            label="Default fund"
+            value={state.selectedFundId}
+            onChange={(value) => handleFieldChange('selectedFundId', value)}
+            emptyOptionLabel="No default fund"
+            options={funds.map((fund) => ({
+              value: fund.id,
+              label: normalizeString(fund.name) || 'Untitled fund',
+            }))}
+          />
         </div>
         {loadingAppeals || loadingAppealSources || loadingFunds ? (
           <div style={secondaryTextStyle}>Loading appeal and fund options…</div>

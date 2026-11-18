@@ -131,53 +131,6 @@ export const ToneStatus = ({
   </Status>
 );
 
-export const badgeStyle = (
-  tone: 'neutral' | 'warning' | 'success' | 'danger',
-): CSSProperties => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  borderRadius: theme.border.radius.pill,
-  padding: '4px 10px',
-  fontSize: '12px',
-  fontWeight: 600,
-  background:
-    tone === 'success'
-      ? theme.color.green3
-      : tone === 'danger'
-        ? theme.color.red3
-        : tone === 'warning'
-          ? theme.color.yellow3
-          : theme.background.transparent.light,
-  color:
-    tone === 'success'
-      ? theme.color.green11
-      : tone === 'danger'
-        ? theme.color.red11
-        : tone === 'warning'
-          ? theme.color.yellow11
-          : theme.font.color.secondary,
-});
-
-export const pillButtonStyle = (selected: boolean): CSSProperties => ({
-  border: `1px solid ${selected ? theme.color.green9 : theme.border.color.medium}`,
-  background: selected ? theme.color.green3 : theme.background.primary,
-  color: selected ? theme.color.green11 : theme.font.color.primary,
-  borderRadius: theme.border.radius.pill,
-  padding: '8px 12px',
-  fontSize: '14px',
-  fontWeight: 600,
-  cursor: 'pointer',
-});
-
-export const signalPillStyle: CSSProperties = {
-  ...secondaryTextStyle,
-  fontSize: '13px',
-  padding: '4px 10px',
-  borderRadius: theme.border.radius.pill,
-  background: theme.background.primary,
-  border: `1px solid ${theme.border.color.medium}`,
-};
-
 export const sectionHeaderStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
