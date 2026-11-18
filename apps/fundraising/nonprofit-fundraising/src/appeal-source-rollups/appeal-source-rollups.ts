@@ -5,7 +5,6 @@ import {
   extractConnectionNodes,
 } from 'src/core-api/core-api-results';
 import type {
-  DatabaseEventPayload,
   ObjectRecordDeleteEvent,
   ObjectRecordRestoreEvent,
   ObjectRecordUpdateEvent,
@@ -556,7 +555,7 @@ export const recomputeAllAppealSourceRollups = async (client: CoreApiClient) => 
 };
 
 export const getAffectedAppealSourceIdsFromGiftUpdate = (
-  event: DatabaseEventPayload<ObjectRecordUpdateEvent<GiftEventRecord>>,
+  event: ObjectRecordUpdateEvent<GiftEventRecord>,
 ) =>
   collectAppealSourceIds([
     event.properties.before?.appealSourceId,
@@ -564,7 +563,7 @@ export const getAffectedAppealSourceIdsFromGiftUpdate = (
   ]);
 
 export const getAffectedAppealSourceIdsFromGiftDelete = (
-  event: DatabaseEventPayload<ObjectRecordDeleteEvent<GiftEventRecord>>,
+  event: ObjectRecordDeleteEvent<GiftEventRecord>,
 ) =>
   collectAppealSourceIds([
     event.properties.before?.appealSourceId,
@@ -572,7 +571,7 @@ export const getAffectedAppealSourceIdsFromGiftDelete = (
   ]);
 
 export const getAffectedAppealSourceIdsFromGiftRestore = (
-  event: DatabaseEventPayload<ObjectRecordRestoreEvent<GiftEventRecord>>,
+  event: ObjectRecordRestoreEvent<GiftEventRecord>,
 ) =>
   collectAppealSourceIds([
     event.properties.before?.appealSourceId,

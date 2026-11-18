@@ -1,7 +1,7 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
-  type DatabaseEventPayload,
+  type DatabaseEventBatchPayload,
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
@@ -29,15 +29,15 @@ type GiftRollupEventRecord = {
 };
 
 const handler = async (
-  event: DatabaseEventPayload<ObjectRecordUpdateEvent<GiftRollupEventRecord>>,
+  batch: DatabaseEventBatchPayload<ObjectRecordUpdateEvent<GiftRollupEventRecord>>,
 ) => {
-  const appealIds = getAffectedAppealIdsFromGiftUpdate(event);
+  const appealIds = batch.events.flatMap(getAffectedAppealIdsFromGiftUpdate);
 
   if (appealIds.length === 0) {
     return {
       scannedAppealCount: 0,
       updatedAppealCount: 0,
-      skipped: 'No affected appeal ids in event payload',
+      skipped: 'No affected appeal ids in event batch',
     };
   }
 
@@ -49,12 +49,13 @@ export default defineLogicFunction({
   name: 'refresh-appeal-rollups-on-gift-updated',
   description:
     'Recomputes appeal rollup fields when a committed gift changes in a way that affects appeal totals, contributor counts, or recency.',
-  timeoutSeconds: 30,
+  timeoutSeconds: 60,
   handler,
   eventTriggerSettings: {
     on: 'recordEvent',
     objectUniversalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
     action: 'updated',
+    batchMode: true,
     watchedFieldUniversalIdentifiers: [
       APPEAL_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
       DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,

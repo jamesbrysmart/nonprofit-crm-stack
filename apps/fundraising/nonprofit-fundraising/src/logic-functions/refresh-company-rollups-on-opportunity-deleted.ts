@@ -2,7 +2,7 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
-  type DatabaseEventPayload,
+  type DatabaseEventBatchPayload,
   type ObjectRecordDeleteEvent,
 } from 'twenty-sdk/define';
 import {
@@ -15,17 +15,17 @@ type OpportunityRollupEventRecord = {
 };
 
 const handler = async (
-  event: DatabaseEventPayload<
+  batch: DatabaseEventBatchPayload<
     ObjectRecordDeleteEvent<OpportunityRollupEventRecord>
   >,
 ) => {
-  const companyIds = getAffectedCompanyIdsFromOpportunityDelete(event);
+  const companyIds = batch.events.flatMap(getAffectedCompanyIdsFromOpportunityDelete);
 
   if (companyIds.length === 0) {
     return {
       scannedCompanyCount: 0,
       updatedCompanyCount: 0,
-      skipped: 'No affected company ids in event payload',
+      skipped: 'No affected company ids in event batch',
     };
   }
 
@@ -37,12 +37,13 @@ export default defineLogicFunction({
   name: 'refresh-company-rollups-on-opportunity-deleted',
   description:
     'Recomputes company rollup fields when an opportunity is deleted.',
-  timeoutSeconds: 30,
+  timeoutSeconds: 60,
   handler,
   eventTriggerSettings: {
     on: 'recordEvent',
     objectUniversalIdentifier:
       STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS.opportunity.universalIdentifier,
     action: 'deleted',
+    batchMode: true,
   },
 });

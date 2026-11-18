@@ -5,7 +5,6 @@ import {
   extractConnectionNodes,
 } from 'src/core-api/core-api-results';
 import type {
-  DatabaseEventPayload,
   ObjectRecordDeleteEvent,
   ObjectRecordRestoreEvent,
   ObjectRecordUpdateEvent,
@@ -561,7 +560,7 @@ export const recomputeAllDonorRollups = async (client: CoreApiClient) => {
 };
 
 export const getAffectedDonorIdsFromGiftUpdate = (
-  event: DatabaseEventPayload<ObjectRecordUpdateEvent<GiftEventRecord>>,
+  event: ObjectRecordUpdateEvent<GiftEventRecord>,
 ) =>
   collectDonorIds([
     event.properties.before?.donorId,
@@ -569,7 +568,7 @@ export const getAffectedDonorIdsFromGiftUpdate = (
   ]);
 
 export const getAffectedDonorIdsFromGiftDelete = (
-  event: DatabaseEventPayload<ObjectRecordDeleteEvent<GiftEventRecord>>,
+  event: ObjectRecordDeleteEvent<GiftEventRecord>,
 ) =>
   collectDonorIds([
     event.properties.before?.donorId,
@@ -577,7 +576,7 @@ export const getAffectedDonorIdsFromGiftDelete = (
   ]);
 
 export const getAffectedDonorIdsFromGiftRestore = (
-  event: DatabaseEventPayload<ObjectRecordRestoreEvent<GiftEventRecord>>,
+  event: ObjectRecordRestoreEvent<GiftEventRecord>,
 ) =>
   collectDonorIds([
     event.properties.before?.donorId,

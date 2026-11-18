@@ -1,7 +1,7 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
-  type DatabaseEventPayload,
+  type DatabaseEventBatchPayload,
   type ObjectRecordDeleteEvent,
 } from 'twenty-sdk/define';
 import {
@@ -17,15 +17,15 @@ type GiftRollupEventRecord = {
 };
 
 const handler = async (
-  event: DatabaseEventPayload<ObjectRecordDeleteEvent<GiftRollupEventRecord>>,
+  batch: DatabaseEventBatchPayload<ObjectRecordDeleteEvent<GiftRollupEventRecord>>,
 ) => {
-  const appealSourceIds = getAffectedAppealSourceIdsFromGiftDelete(event);
+  const appealSourceIds = batch.events.flatMap(getAffectedAppealSourceIdsFromGiftDelete);
 
   if (appealSourceIds.length === 0) {
     return {
       scannedAppealSourceCount: 0,
       updatedAppealSourceCount: 0,
-      skipped: 'No affected appeal source ids in event payload',
+      skipped: 'No affected appeal source ids in event batch',
     };
   }
 
@@ -37,11 +37,12 @@ export default defineLogicFunction({
   name: 'refresh-appeal-source-rollups-on-gift-deleted',
   description:
     'Recomputes appeal source rollup fields when a committed gift is deleted.',
-  timeoutSeconds: 30,
+  timeoutSeconds: 60,
   handler,
   eventTriggerSettings: {
     on: 'recordEvent',
     objectUniversalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
     action: 'deleted',
+    batchMode: true,
   },
 });

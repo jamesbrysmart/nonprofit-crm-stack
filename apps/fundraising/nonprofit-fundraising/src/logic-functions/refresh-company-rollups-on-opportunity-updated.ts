@@ -2,7 +2,7 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
-  type DatabaseEventPayload,
+  type DatabaseEventBatchPayload,
   type ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import {
@@ -26,17 +26,17 @@ type OpportunityRollupEventRecord = {
 };
 
 const handler = async (
-  event: DatabaseEventPayload<
+  batch: DatabaseEventBatchPayload<
     ObjectRecordUpdateEvent<OpportunityRollupEventRecord>
   >,
 ) => {
-  const companyIds = getAffectedCompanyIdsFromOpportunityUpdate(event);
+  const companyIds = batch.events.flatMap(getAffectedCompanyIdsFromOpportunityUpdate);
 
   if (companyIds.length === 0) {
     return {
       scannedCompanyCount: 0,
       updatedCompanyCount: 0,
-      skipped: 'No affected company ids in event payload',
+      skipped: 'No affected company ids in event batch',
     };
   }
 
@@ -48,13 +48,14 @@ export default defineLogicFunction({
   name: 'refresh-company-rollups-on-opportunity-updated',
   description:
     'Recomputes company rollup fields when an opportunity changes in a way that affects awarded funding or future funding dates.',
-  timeoutSeconds: 30,
+  timeoutSeconds: 60,
   handler,
   eventTriggerSettings: {
     on: 'recordEvent',
     objectUniversalIdentifier:
       STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS.opportunity.universalIdentifier,
     action: 'updated',
+    batchMode: true,
     watchedFieldUniversalIdentifiers: [
       STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS.opportunity.fields.company
         .universalIdentifier,

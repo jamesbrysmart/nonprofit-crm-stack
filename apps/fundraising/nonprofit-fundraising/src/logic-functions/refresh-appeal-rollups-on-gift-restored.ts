@@ -1,7 +1,7 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
-  type DatabaseEventPayload,
+  type DatabaseEventBatchPayload,
   type ObjectRecordRestoreEvent,
 } from 'twenty-sdk/define';
 import {
@@ -24,15 +24,15 @@ type GiftRollupEventRecord = {
 };
 
 const handler = async (
-  event: DatabaseEventPayload<ObjectRecordRestoreEvent<GiftRollupEventRecord>>,
+  batch: DatabaseEventBatchPayload<ObjectRecordRestoreEvent<GiftRollupEventRecord>>,
 ) => {
-  const appealIds = getAffectedAppealIdsFromGiftRestore(event);
+  const appealIds = batch.events.flatMap(getAffectedAppealIdsFromGiftRestore);
 
   if (appealIds.length === 0) {
     return {
       scannedAppealCount: 0,
       updatedAppealCount: 0,
-      skipped: 'No affected appeal ids in event payload',
+      skipped: 'No affected appeal ids in event batch',
     };
   }
 
@@ -44,11 +44,12 @@ export default defineLogicFunction({
   name: 'refresh-appeal-rollups-on-gift-restored',
   description:
     'Recomputes appeal rollup fields when a committed gift is restored.',
-  timeoutSeconds: 30,
+  timeoutSeconds: 60,
   handler,
   eventTriggerSettings: {
     on: 'recordEvent',
     objectUniversalIdentifier: GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
     action: 'restored',
+    batchMode: true,
   },
 });

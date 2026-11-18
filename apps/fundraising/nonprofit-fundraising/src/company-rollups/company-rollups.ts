@@ -5,7 +5,6 @@ import {
   extractConnectionNodes,
 } from 'src/core-api/core-api-results';
 import type {
-  DatabaseEventPayload,
   ObjectRecordCreateEvent,
   ObjectRecordDeleteEvent,
   ObjectRecordRestoreEvent,
@@ -743,7 +742,7 @@ export const recomputeAllCompanyRollups = async (client: CoreApiClient) => {
 };
 
 export const getAffectedCompanyIdsFromGiftUpdate = (
-  event: DatabaseEventPayload<ObjectRecordUpdateEvent<GiftCompanyEventRecord>>,
+  event: ObjectRecordUpdateEvent<GiftCompanyEventRecord>,
 ) =>
   collectCompanyIds([
     event.properties.before?.companyId,
@@ -751,7 +750,7 @@ export const getAffectedCompanyIdsFromGiftUpdate = (
   ]);
 
 export const getAffectedCompanyIdsFromGiftDelete = (
-  event: DatabaseEventPayload<ObjectRecordDeleteEvent<GiftCompanyEventRecord>>,
+  event: ObjectRecordDeleteEvent<GiftCompanyEventRecord>,
 ) =>
   collectCompanyIds([
     event.properties.before?.companyId,
@@ -759,7 +758,7 @@ export const getAffectedCompanyIdsFromGiftDelete = (
   ]);
 
 export const getAffectedCompanyIdsFromGiftRestore = (
-  event: DatabaseEventPayload<ObjectRecordRestoreEvent<GiftCompanyEventRecord>>,
+  event: ObjectRecordRestoreEvent<GiftCompanyEventRecord>,
 ) =>
   collectCompanyIds([
     event.properties.before?.companyId,
@@ -767,15 +766,11 @@ export const getAffectedCompanyIdsFromGiftRestore = (
   ]);
 
 export const getAffectedCompanyIdsFromOpportunityCreate = (
-  event: DatabaseEventPayload<
-    ObjectRecordCreateEvent<OpportunityCompanyEventRecord>
-  >,
+  event: ObjectRecordCreateEvent<OpportunityCompanyEventRecord>,
 ) => collectCompanyIds([event.properties.after?.companyId]);
 
 export const getAffectedCompanyIdsFromOpportunityUpdate = (
-  event: DatabaseEventPayload<
-    ObjectRecordUpdateEvent<OpportunityCompanyEventRecord>
-  >,
+  event: ObjectRecordUpdateEvent<OpportunityCompanyEventRecord>,
 ) =>
   collectCompanyIds([
     event.properties.before?.companyId,
@@ -783,9 +778,7 @@ export const getAffectedCompanyIdsFromOpportunityUpdate = (
   ]);
 
 export const getAffectedCompanyIdsFromOpportunityDelete = (
-  event: DatabaseEventPayload<
-    ObjectRecordDeleteEvent<OpportunityCompanyEventRecord>
-  >,
+  event: ObjectRecordDeleteEvent<OpportunityCompanyEventRecord>,
 ) =>
   collectCompanyIds([
     event.properties.before?.companyId,
@@ -793,9 +786,7 @@ export const getAffectedCompanyIdsFromOpportunityDelete = (
   ]);
 
 export const getAffectedCompanyIdsFromOpportunityRestore = (
-  event: DatabaseEventPayload<
-    ObjectRecordRestoreEvent<OpportunityCompanyEventRecord>
-  >,
+  event: ObjectRecordRestoreEvent<OpportunityCompanyEventRecord>,
 ) =>
   collectCompanyIds([
     event.properties.before?.companyId,
