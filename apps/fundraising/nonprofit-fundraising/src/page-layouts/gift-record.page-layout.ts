@@ -8,9 +8,7 @@ import {
   GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
-  GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_OVERVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
@@ -35,26 +33,6 @@ export default definePageLayout({
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
               GIFT_OVERVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '62844f82-5730-4cd1-b0ea-ccca054d326f',
-          title: 'Gift summary',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '97b9c3c7-55f1-4104-8ea8-4ed898b1a81f',
-          title: 'Coding corrections',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_RECORD_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
           },
         },
       ],
