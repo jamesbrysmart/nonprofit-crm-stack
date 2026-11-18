@@ -5,7 +5,6 @@ import {
   loadGiftBatchReview,
   type GiftStagingQueueScope,
 } from 'src/gift-batch-review/gift-batch-review.data';
-import { subscribeToGiftBatchInvalidated } from 'src/gift-batch-review/gift-batch-sync';
 import type { GiftBatchReviewRecord } from 'src/gift-batch-review/gift-batch-review.types';
 
 export const openGiftBatchQueue = async (
@@ -68,17 +67,6 @@ export const useGiftBatchReview = (recordId: string | null | undefined) => {
 
   useEffect(() => {
     void refresh();
-  }, [recordId]);
-
-  useEffect(() => {
-    if (!recordId) {
-      return;
-    }
-
-    return subscribeToGiftBatchInvalidated({
-      recordId,
-      onInvalidate: refresh,
-    });
   }, [recordId]);
 
   return {

@@ -3,12 +3,8 @@ import {
   PageLayoutTabLayoutMode,
 } from 'twenty-sdk/define';
 import {
-  GIFT_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,
-  GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_BATCH_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGINGS_ON_GIFT_BATCH_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
@@ -34,46 +30,6 @@ export default definePageLayout({
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
               GIFT_BATCH_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '5dedb5a4-a19a-44a2-b03a-ec3f05d5270e',
-          title: 'Batch summary',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_BATCH_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '7c090dca-254e-46d9-aeca-7fdb0056efa5',
-          title: 'Batch actions',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_BATCH_ACTIONS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '5fb23f0f-f9d1-471d-8fe2-a90b0650316a',
-          title: 'Gift coding',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_BATCH_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '2028153c-f90a-42d3-8fd6-c9e80273cd5d',
-          title: 'Worklist links',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_BATCH_WORKLISTS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
           },
         },
         {
