@@ -196,8 +196,7 @@ export type GiftStagingReviewRecord = {
 
 export type DerivedReviewState = {
   title: string;
-  accent: string;
-  background: string;
+  tone: 'success' | 'neutral' | 'warning' | 'danger';
   reason: string;
   nextAction: string;
   hasBlocker: boolean;

@@ -4,11 +4,7 @@ import {
 } from 'twenty-sdk/define';
 import {
   GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  GIFT_STAGING_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  GIFT_STAGING_DONOR_REVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_OBJECT_UNIVERSAL_IDENTIFIER,
-  GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_REVIEW_CORE_VIEW_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
@@ -34,46 +30,6 @@ export default definePageLayout({
             configurationType: 'FRONT_COMPONENT',
             frontComponentUniversalIdentifier:
               GIFT_STAGING_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: 'a9d5a841-da99-4b89-90f3-e6365896b555',
-          title: 'Gift staging review',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_STAGING_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: 'c5a25f61-3881-4d15-919e-1046259683db',
-          title: 'Donor review',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_STAGING_DONOR_REVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '2922e7de-d1fb-4f9e-96cc-491042ba0151',
-          title: 'Gift coding',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_STAGING_CODING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '1f047388-0331-413b-8d96-576dc6919140',
-          title: 'Processing',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_STAGING_PROCESSING_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

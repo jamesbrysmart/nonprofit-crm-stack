@@ -17,11 +17,6 @@ export const cardStyle: CSSProperties = {
   background: theme.background.primary,
 };
 
-export const cardWithLooseGapStyle: CSSProperties = {
-  ...cardStyle,
-  gap: '16px',
-};
-
 export const labelStyle: CSSProperties = {
   fontSize: '12px',
   textTransform: 'uppercase',
@@ -42,21 +37,10 @@ export const secondaryTextStyle: CSSProperties = {
   lineHeight: 1.5,
 };
 
-export const fieldStackStyle: CSSProperties = {
-  display: 'grid',
-  gap: '10px',
-};
-
 export const fieldGridStyle: CSSProperties = {
   display: 'grid',
   gap: '12px',
   gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-};
-
-export const detailsGridStyle: CSSProperties = {
-  display: 'grid',
-  gap: '12px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
 };
 
 export const actionRowStyle: CSSProperties = {
@@ -170,35 +154,6 @@ export const signalPillStyle: CSSProperties = {
   border: `1px solid ${theme.border.color.medium}`,
 };
 
-export const choiceButtonStyle = (selected: boolean): CSSProperties => ({
-  width: '100%',
-  border: `1px solid ${selected ? theme.color.blue : theme.border.color.medium}`,
-  borderRadius: '6px',
-  padding: '12px',
-  textAlign: 'left',
-  background: selected ? theme.color.blue3 : theme.background.primary,
-  cursor: 'pointer',
-  display: 'grid',
-  gap: '4px',
-});
-
-export const reviewStateStyle = (
-  accent: string,
-  background: string,
-): CSSProperties => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '8px',
-  border: `1px solid ${accent}`,
-  borderRadius: theme.border.radius.pill,
-  padding: '8px 12px',
-  background,
-  color: theme.font.color.primary,
-  fontSize: '14px',
-  lineHeight: 1.3,
-  fontWeight: 500,
-});
-
 export const sectionHeaderStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -261,11 +216,6 @@ export const contextMetricStyle: CSSProperties = {
   lineHeight: 1.2,
   fontWeight: 650,
   color: theme.font.color.primary,
-};
-
-export const contextSummaryLineStyle: CSSProperties = {
-  ...secondaryTextStyle,
-  color: theme.font.color.secondary,
 };
 
 export const CompactMetaGrid = ({ children }: { children: ReactNode }) => (

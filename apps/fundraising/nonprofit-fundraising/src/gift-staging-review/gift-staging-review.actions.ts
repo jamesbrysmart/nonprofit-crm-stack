@@ -6,7 +6,6 @@ import {
   evaluateGiftReadyRow,
   type GiftReadyStatus,
 } from './gift-ready-status';
-import { broadcastGiftStagingRecordInvalidated } from './gift-staging-record-sync';
 import { resolveAppealSourceSelection } from 'src/appeal-sources/appeal-source-integrity';
 import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
 import {
@@ -58,8 +57,6 @@ const updateGiftStaging = async (
       id: true,
     },
   } as any);
-
-  broadcastGiftStagingRecordInvalidated(recordId);
 };
 
 const loadGiftStagingForReadinessCheck = async (recordId: string) => {

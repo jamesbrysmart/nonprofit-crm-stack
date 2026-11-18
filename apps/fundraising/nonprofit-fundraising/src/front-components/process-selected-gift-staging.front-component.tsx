@@ -8,7 +8,6 @@ import {
 } from 'twenty-sdk/front-component';
 import { processSelectedGiftStaging } from 'src/gift-staging-review/gift-staging-selection.api';
 import {
-  broadcastSelectedGiftStagingInvalidated,
   normalizeSelectedRecordIds,
 } from './gift-staging-selection-command-support';
 import {
@@ -30,7 +29,6 @@ const ProcessSelectedGiftStaging = () => {
           giftStagingIds: selectedRecordIds,
         });
         await updateProgress(1);
-        broadcastSelectedGiftStagingInvalidated(selectedRecordIds);
         await enqueueSnackbar({
           message: `Selected rows processed: ${result.processedItems} processed, ${result.failedItems} failed, ${result.notReadyItems} not ready.`,
           variant: 'success',

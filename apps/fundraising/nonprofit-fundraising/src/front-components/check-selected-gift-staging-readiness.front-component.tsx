@@ -8,7 +8,6 @@ import {
 } from 'twenty-sdk/front-component';
 import { checkSelectedGiftStagingReadiness } from 'src/gift-staging-review/gift-staging-selection.api';
 import {
-  broadcastSelectedGiftStagingInvalidated,
   normalizeSelectedRecordIds,
 } from './gift-staging-selection-command-support';
 import {
@@ -30,7 +29,6 @@ const CheckSelectedGiftStagingReadiness = () => {
           giftStagingIds: selectedRecordIds,
         });
         await updateProgress(1);
-        broadcastSelectedGiftStagingInvalidated(selectedRecordIds);
         await enqueueSnackbar({
           message: `Readiness checked: ${result.readyItems} ready, ${result.needsReviewItems} need review, ${result.failedItems} failed previously.`,
           variant: 'success',

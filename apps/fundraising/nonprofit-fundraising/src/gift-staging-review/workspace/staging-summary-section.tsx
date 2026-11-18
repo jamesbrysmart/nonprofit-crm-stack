@@ -18,14 +18,14 @@ import {
 } from 'src/gift-staging-review/gift-staging-review.model';
 import type { GiftStagingWorkspaceSectionProps } from 'src/gift-staging-review/workspace/workspace-section';
 
-// deriveReviewState still returns hex accents for the original widget; map them
-// to theme colours until that widget is retired and the model can return a tone.
-const REVIEW_STATE_COLORS: Record<string, ThemeColor> = {
-  '#1a7f37': 'green',
-  '#57606a': 'gray',
-  '#7c5d00': 'amber',
-  '#9a6700': 'amber',
-  '#8a2d2d': 'red',
+const REVIEW_TONE_COLORS: Record<
+  ReturnType<typeof deriveReviewState>['tone'],
+  ThemeColor
+> = {
+  success: 'green',
+  neutral: 'gray',
+  warning: 'amber',
+  danger: 'red',
 };
 
 export const StagingSummarySection = ({
@@ -49,7 +49,7 @@ export const StagingSummarySection = ({
       title="Review summary"
       headerAction={
         <Status
-          color={REVIEW_STATE_COLORS[reviewState.accent] ?? 'gray'}
+          color={REVIEW_TONE_COLORS[reviewState.tone]}
           weight="medium"
         >
           {reviewState.title}

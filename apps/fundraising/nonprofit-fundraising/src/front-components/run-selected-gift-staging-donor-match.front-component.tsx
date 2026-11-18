@@ -8,7 +8,6 @@ import {
 } from 'twenty-sdk/front-component';
 import { runSelectedGiftStagingDonorMatch } from 'src/gift-staging-review/gift-staging-selection.api';
 import {
-  broadcastSelectedGiftStagingInvalidated,
   normalizeSelectedRecordIds,
 } from './gift-staging-selection-command-support';
 import {
@@ -30,7 +29,6 @@ const RunSelectedGiftStagingDonorMatch = () => {
           giftStagingIds: selectedRecordIds,
         });
         await updateProgress(1);
-        broadcastSelectedGiftStagingInvalidated(selectedRecordIds);
         await enqueueSnackbar({
           message: `Donor match complete: ${result.autoLinkedRows} linked, ${result.ambiguousRows} ambiguous, ${result.unchangedRows} still unreviewed.`,
           variant: 'success',

@@ -1,4 +1,3 @@
-import { broadcastGiftStagingRecordInvalidated } from './gift-staging-record-sync';
 import { postAppRouteJson } from 'src/app-api/app-route-client';
 
 type ProcessGiftStagingRowRequest = {
@@ -22,8 +21,4 @@ export const processGiftStagingRow = (
   postAppRouteJson<ProcessGiftStagingRowResponse>(
     '/s/gift-staging/process-row',
     input,
-  ).then((response) => {
-    broadcastGiftStagingRecordInvalidated(input.giftStagingId);
-
-    return response;
-  });
+  );

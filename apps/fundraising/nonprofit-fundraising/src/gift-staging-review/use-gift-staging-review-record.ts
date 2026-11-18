@@ -7,7 +7,6 @@ import {
   evaluateGiftReadyRow,
 } from 'src/gift-staging-review/gift-ready-status';
 import { loadPeopleByPrimaryEmails } from 'src/donor-resolution/donor-creation-viability';
-import { subscribeToGiftStagingRecordInvalidated } from './gift-staging-record-sync';
 import type {
   GiftStagingReviewRecord,
   StoredGiftStagingRecord,
@@ -215,19 +214,6 @@ export const useGiftStagingReviewRecord = (recordId: string | null) => {
 
   useEffect(() => {
     void refresh();
-  }, [recordId]);
-
-  useEffect(() => {
-    if (!recordId) {
-      return;
-    }
-
-    return subscribeToGiftStagingRecordInvalidated({
-      recordId,
-      onInvalidate: () => {
-        void refresh();
-      },
-    });
   }, [recordId]);
 
   return {

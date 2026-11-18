@@ -372,8 +372,7 @@ export const deriveReviewState = (
   if (record.processingStatus === 'PROCESSED') {
     return {
       title: 'Processed',
-      accent: '#1a7f37',
-      background: '#eef9f0',
+      tone: 'success',
       reason: 'This gift has already been processed into a gift record.',
       nextAction:
         record.committedGiftId !== ''
@@ -386,8 +385,7 @@ export const deriveReviewState = (
   if (record.paymentState === 'AWAITING_PAYMENT') {
     return {
       title: 'Awaiting payment',
-      accent: '#57606a',
-      background: '#f6f8fa',
+      tone: 'neutral',
       reason:
         'This donation attempt has not finished payment confirmation yet, so it is not ready for review or processing.',
       nextAction:
@@ -399,8 +397,7 @@ export const deriveReviewState = (
   if (record.paymentState === 'PAYMENT_EXPIRED') {
     return {
       title: 'Payment expired',
-      accent: '#57606a',
-      background: '#f6f8fa',
+      tone: 'neutral',
       reason:
         'This donation attempt did not complete payment and has been marked expired.',
       nextAction:
@@ -413,8 +410,7 @@ export const deriveReviewState = (
     if (record.preflightIssueCodes.includes('DONOR_PRIMARY_EMAIL_CONFLICT')) {
       return {
         title: 'Needs review',
-        accent: '#9a6700',
-        background: '#fff8c5',
+        tone: 'warning',
         reason:
           'This email already belongs to an existing donor. Link that donor or change the staged email before this row can create a new donor.',
         nextAction:
@@ -427,8 +423,7 @@ export const deriveReviewState = (
       if (record.errorDetail !== '') {
         return {
           title: 'Needs review',
-          accent: '#9a6700',
-          background: '#fff8c5',
+          tone: 'warning',
           reason: record.errorDetail,
           nextAction:
             'Review the donor candidate, link the right donor, or correct the staged donor details before processing.',
@@ -438,8 +433,7 @@ export const deriveReviewState = (
 
       return {
         title: 'Needs review',
-        accent: '#9a6700',
-        background: '#fff8c5',
+        tone: 'warning',
         reason:
           'Possible donor matches were found for this gift. Review and choose the right donor before processing.',
         nextAction:
@@ -451,8 +445,7 @@ export const deriveReviewState = (
     if (record.preflightIssueCodes.includes('GIFT_DATE_REQUIRED')) {
       return {
         title: 'Needs review',
-        accent: '#7c5d00',
-        background: '#fff8e1',
+        tone: 'warning',
         reason:
           'Gift date is missing. Add the date before processing this gift.',
         nextAction:
@@ -464,8 +457,7 @@ export const deriveReviewState = (
     if (record.preflightIssueCodes.includes('PAYMENT_TYPE_REQUIRED')) {
       return {
         title: 'Needs review',
-        accent: '#7c5d00',
-        background: '#fff8e1',
+        tone: 'warning',
         reason:
           'Payment type is missing. Set how this gift was paid before processing the row.',
         nextAction:
@@ -481,8 +473,7 @@ export const deriveReviewState = (
     ) {
       return {
         title: 'Needs review',
-        accent: '#7c5d00',
-        background: '#fff8e1',
+        tone: 'warning',
         reason:
           'Amount details are incomplete or invalid. Fix the gift amount before processing this row.',
         nextAction:
@@ -494,8 +485,7 @@ export const deriveReviewState = (
     if (record.preflightIssueCodes.includes('DONOR_EVIDENCE_REQUIRED')) {
       return {
         title: 'Needs review',
-        accent: '#7c5d00',
-        background: '#fff8e1',
+        tone: 'warning',
         reason:
           'Donor evidence is incomplete. Add enough donor details before this gift can be processed.',
         nextAction:
@@ -511,8 +501,7 @@ export const deriveReviewState = (
     ) {
       return {
         title: 'Needs review',
-        accent: '#7c5d00',
-        background: '#fff8e1',
+        tone: 'warning',
         reason:
           'Anonymous donor processing is not yet supported for recurring gifts.',
         nextAction:
@@ -524,8 +513,7 @@ export const deriveReviewState = (
     if (record.preflightIssueCodes.includes('RECURRING_INTERVAL_INVALID')) {
       return {
         title: 'Needs review',
-        accent: '#7c5d00',
-        background: '#fff8e1',
+        tone: 'warning',
         reason:
           'Recurring interval evidence is not in a supported shape for processing.',
         nextAction:
@@ -565,8 +553,7 @@ export const deriveReviewState = (
 
       return {
         title: 'Needs review',
-        accent: '#7c5d00',
-        background: '#fff8e1',
+        tone: 'warning',
         reason,
         nextAction:
           needsAppealSource
@@ -580,8 +567,7 @@ export const deriveReviewState = (
   if (record.isAnonymousDonor) {
     return {
       title: 'Anonymous donor',
-      accent: '#57606a',
-      background: '#f6f8fa',
+      tone: 'neutral',
       reason:
         'This gift is explicitly marked anonymous, so it will not link or create a donor when processed.',
       nextAction:
@@ -598,8 +584,7 @@ export const deriveReviewState = (
         record.giftReadyStatus === 'READY_TO_PROCESS'
           ? 'Ready to process'
           : 'Can likely be processed',
-      accent: '#1a7f37',
-      background: '#eef9f0',
+      tone: 'success',
       reason:
         record.giftReadyStatus === 'READY_TO_PROCESS'
           ? 'This gift has passed the current readiness checks and can be processed.'
@@ -615,8 +600,7 @@ export const deriveReviewState = (
   if (record.processingStatus === 'PROCESS_FAILED') {
     return {
       title: 'Processing failed',
-      accent: '#8a2d2d',
-      background: '#fff5f5',
+      tone: 'danger',
       reason:
         'A previous processing attempt failed, so this gift needs attention before you try again.',
       nextAction:
@@ -628,8 +612,7 @@ export const deriveReviewState = (
   if (!hasLinkedDonor && record.donorResolution === 'UNREVIEWED') {
     return {
       title: 'Needs donor review',
-      accent: '#7c5d00',
-      background: '#fff8e1',
+      tone: 'warning',
       reason:
         'No donor has been confirmed yet. Review possible matches or confirm this as a new donor.',
       nextAction:
@@ -641,8 +624,7 @@ export const deriveReviewState = (
   if (!hasLinkedDonor && record.donorResolution === 'NEW_DONOR') {
     return {
       title: 'New donor on processing',
-      accent: '#57606a',
-      background: '#f6f8fa',
+      tone: 'neutral',
       reason:
         'No existing donor was chosen. If this row is otherwise ready, processing will create a new donor.',
       nextAction:
@@ -653,8 +635,7 @@ export const deriveReviewState = (
 
   return {
     title: 'Active review',
-    accent: '#57606a',
-    background: '#f6f8fa',
+    tone: 'neutral',
     reason:
       'The donor has been set, but this gift still needs a readiness check before processing.',
     nextAction:
