@@ -252,7 +252,7 @@ Potential enhancements, not yet agreed:
 Added 2026-11-19. `REPORTING_CURRENCY` is the organisation's reporting and default currency. App-built entry points use it: New gift, donation forms, batch setup and missing-currency fallbacks. Twenty's native currency inputs cannot follow it.
 
 - A currency field's default comes from the app manifest. It is fixed at build time and is the same in every workspace.
-- `defaultValue` is not a workspace-overridable field property (2.59 source). App sync rebuilds each app field from the manifest and writes back differences, so a default an administrator sets on an app-owned field is expected to be reset by the next apply or upgrade. To confirm on 2021.
+- `defaultValue` is not a workspace-overridable field property (2.59 source). App sync rebuilds each app field from the manifest and writes back differences, so a default an administrator sets on an app-owned field is reset by the next apply or upgrade. Confirmed on 2021 (2026-11-19): after Appeal → Goal amount was set to EUR, `twenty app plan` showed `defaultValue … 'EUR' -> null`. Opportunity → Amount, a standard field, was not affected.
 - An app could re-apply defaults from a post-install hook with `shouldRunOnVersionUpgrade: true`, but this needs the broad `DATA_MODEL` permission flag. Rejected for v1 as disproportionate for a Marketplace app.
 
 Affected app-owned entry fields, which default to USD in native inputs:
@@ -265,7 +265,7 @@ Affected app-owned entry fields, which default to USD in native inputs:
 
 Workspace-owned standard fields, such as Opportunity → Amount, are configured by administrators in Settings → Data model and belong in setup documentation.
 
-Decision (v1): accept the limitation and raise it upstream. Do not document administrator changes to app-owned defaults as a setup step unless the 2021 check shows they survive apply.
+Decision (v1): accept the limitation and raise it upstream. Do not document administrator changes to app-owned defaults as a setup step.
 
 Upstream request (draft):
 
