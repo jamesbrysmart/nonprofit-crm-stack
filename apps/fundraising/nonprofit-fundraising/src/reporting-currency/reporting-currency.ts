@@ -1,3 +1,4 @@
+import { readAppVariable } from 'src/app-variables/read-app-variable';
 // Financial totals are kept in one organisational reporting currency. A gift
 // only contributes when it has a value in that currency; others are excluded
 // from totals rather than added at face value.
@@ -18,7 +19,9 @@ export const normalizeCurrencyCode = (value: string | null | undefined) =>
 // Null until an admin sets REPORTING_CURRENCY: totals are then left untouched
 // rather than computed in an assumed currency.
 export const getReportingCurrencyCode = (): string | null => {
-  const configured = normalizeCurrencyCode(process.env.REPORTING_CURRENCY);
+  const configured = normalizeCurrencyCode(
+    readAppVariable('REPORTING_CURRENCY'),
+  );
 
   return CURRENCY_CODE_PATTERN.test(configured) ? configured : null;
 };

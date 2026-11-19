@@ -170,8 +170,7 @@ export const buildRecurringAgreementDisplayName = (
 
 export const normalizeName = (value: string) => value.trim();
 
-export const isGiftAidEnabled =
-  (process.env.GIFT_AID_ENABLED ?? 'true').toLowerCase() === 'true';
+export { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 
 export const PAYMENT_TYPE_OPTIONS: Array<{
   value: ManualGiftPaymentType;

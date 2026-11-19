@@ -26,7 +26,7 @@ const NewGift = () => {
       <RecurringLinkageSection controller={controller} />
       <ManualGiftEntryGiftAidSection
         donorType={controller.donorType}
-        includedInFlow={isGiftAidEnabled && !controller.isAnonymousDonor}
+        includedInFlow={isGiftAidEnabled() && !controller.isAnonymousDonor}
         giftAidRequested={controller.giftAidRequested}
         giftAidDeclarationCaptured={controller.giftAidDeclarationCaptured}
         giftAidDeclarationDate={controller.giftAidDeclarationDate}

@@ -72,7 +72,8 @@ export const DEFAULT_DONATION_FORM_WORKSPACE_STATE: DonationFormWorkspaceState =
   primaryColor: '#0d7a5f',
   thankYouMessage: 'Thank you for your donation. Your support helps fund our work.',
   mode: 'ONE_OFF_AND_MONTHLY',
-  currencyCode: getDefaultCurrencyCode(),
+  // Read when a form is derived, once the app's settings are available.
+  currencyCode: '',
   amountOptionsText: '10, 25, 50',
   allowCustomAmount: true,
   minimumAmountText: '5',
@@ -139,7 +140,7 @@ export const deriveWorkspaceState = (
     currencyCode:
       normalizeString(
         typeof config.currencyCode === 'string' ? config.currencyCode : undefined,
-      ).toUpperCase() || DEFAULT_DONATION_FORM_WORKSPACE_STATE.currencyCode,
+      ).toUpperCase() || getDefaultCurrencyCode(),
     internalName:
       normalizeString(record.name) ||
       DEFAULT_DONATION_FORM_WORKSPACE_STATE.internalName,

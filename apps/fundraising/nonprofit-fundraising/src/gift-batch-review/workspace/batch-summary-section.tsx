@@ -27,8 +27,6 @@ const SETUP_FIELDS_STYLE: CSSProperties = {
   alignItems: 'end',
 };
 
-const DEFAULT_BATCH_CURRENCY_CODE = getDefaultCurrencyCode();
-
 const microsToDecimalInput = (amountMicros?: number | null) =>
   typeof amountMicros === 'number' && Number.isFinite(amountMicros)
     ? (amountMicros / 1_000_000).toFixed(2)
@@ -83,7 +81,7 @@ const updateGiftBatchSetup = async (
               : {
                   amountMicros,
                   currencyCode:
-                    input.currencyCode.trim() || DEFAULT_BATCH_CURRENCY_CODE,
+                    input.currencyCode.trim() || getDefaultCurrencyCode(),
                 },
         },
       },
@@ -180,7 +178,7 @@ export const BatchSummarySection = ({
   const [expectedItemCountInput, setExpectedItemCountInput] = useState('');
   const [expectedTotalAmountInput, setExpectedTotalAmountInput] = useState('');
   const [expectedTotalCurrencyCode, setExpectedTotalCurrencyCode] =
-    useState(DEFAULT_BATCH_CURRENCY_CODE);
+    useState(getDefaultCurrencyCode);
   const [savingSetup, setSavingSetup] = useState(false);
 
   useEffect(() => {
@@ -192,7 +190,7 @@ export const BatchSummarySection = ({
     );
     setExpectedTotalCurrencyCode(
       record.expectedTotalAmount?.currencyCode?.trim() ||
-        DEFAULT_BATCH_CURRENCY_CODE,
+        getDefaultCurrencyCode(),
     );
   }, [record]);
 
@@ -280,7 +278,7 @@ export const BatchSummarySection = ({
             />
             <FormInput
               label="Currency"
-              placeholder={DEFAULT_BATCH_CURRENCY_CODE}
+              placeholder={getDefaultCurrencyCode()}
               maxLength={3}
               value={expectedTotalCurrencyCode}
               onChange={(value) =>
