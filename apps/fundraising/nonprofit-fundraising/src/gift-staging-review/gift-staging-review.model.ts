@@ -210,6 +210,13 @@ export const buildGiftStagingReviewRecord = (
     ),
     intakeSource: coalesceString(stored.intakeSource, 'Unknown source'),
     amountDisplay: formatAmountDisplay(stored.amount),
+    amountCurrencyCode:
+      typeof stored.amount === 'object' && stored.amount
+        ? coalesceString(stored.amount.currencyCode).toUpperCase()
+        : '',
+    hasReportingAmount:
+      typeof stored.reportingAmount?.amountMicros === 'number' &&
+      coalesceString(stored.reportingAmount.currencyCode) !== '',
     giftDate: coalesceString(stored.giftDate),
     donationType: coalesceString(stored.donationType),
     paymentType: coalesceString(stored.paymentType),

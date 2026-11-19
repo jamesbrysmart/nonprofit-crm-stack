@@ -12,6 +12,7 @@ import {
   GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_PROVIDER_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_PROVIDER_PAYMENT_ID_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
 export default defineView({
@@ -35,6 +36,14 @@ export default defineView({
       position: 1,
       isVisible: true,
       size: 160,
+    },
+    {
+      universalIdentifier: '4c800c3c-91d6-4c0a-b4e2-4143693170f5',
+      fieldMetadataUniversalIdentifier:
+        GIFT_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      position: 1.5,
+      isVisible: true,
+      size: 170,
     },
     {
       universalIdentifier: '51452011-fbac-4b4d-a357-44ddbb20db8a',

@@ -12,6 +12,7 @@ import {
   WorkspaceText,
 } from 'src/front-components/workspace-layout';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
+import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import {
   deriveReviewIssues,
   deriveReviewState,
@@ -41,6 +42,13 @@ export const StagingSummarySection = ({
   ]
     .filter((value) => value !== '')
     .join(' and ');
+  const reportingCurrencyCode = getReportingCurrencyCode();
+  const needsReportingAmount =
+    reportingCurrencyCode !== null &&
+    record.amountCurrencyCode !== '' &&
+    record.amountCurrencyCode !== reportingCurrencyCode &&
+    !record.hasReportingAmount &&
+    record.processingStatus !== 'PROCESSED';
   const hasCommittedGift =
     record.processingStatus === 'PROCESSED' && record.committedGiftId !== '';
 
@@ -65,6 +73,12 @@ export const StagingSummarySection = ({
             <WorkspaceText key={issue.code}>{issue.label}</WorkspaceText>
           ))}
         </>
+      ) : null}
+
+      {needsReportingAmount ? (
+        <WorkspaceText>
+          {`This gift is in ${record.amountCurrencyCode}. Add its ${reportingCurrencyCode} value as the Reporting amount on the Details tab before processing, or later on the gift; until then it is left out of ${reportingCurrencyCode} totals.`}
+        </WorkspaceText>
       ) : null}
 
       <SummaryStrip>

@@ -27,6 +27,7 @@ import {
   findSelectedCompany,
   findSelectedDonor,
   normalizeName,
+  getCurrencyOptions,
 } from './new-gift-support';
 import {
   getAppealIdForAppealSourceSelection,
@@ -34,6 +35,7 @@ import {
   getFundIdForAppealSelection,
 } from 'src/gift-coding/gift-coding';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
+import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 export const useNewGiftController = () => {
   const [donorType, setDonorType] =
@@ -46,7 +48,13 @@ export const useNewGiftController = () => {
   const [giftType, setGiftType] = useState<ManualGiftType>('DONATION');
   const [description, setDescription] = useState('');
   const [amountValue, setAmountValue] = useState('');
-  const [currencyCode, setCurrencyCode] = useState('GBP');
+  const reportingCurrencyCode = getReportingCurrencyCode();
+  const [currencyCode, setCurrencyCode] = useState(
+    () => getCurrencyOptions(reportingCurrencyCode)[0],
+  );
+  const [reportingAmountValue, setReportingAmountValue] = useState('');
+  const needsReportingAmount =
+    reportingCurrencyCode !== null && currencyCode !== reportingCurrencyCode;
   const [paymentType, setPaymentType] =
     useState<ManualGiftPaymentType>('BANK_TRANSFER');
   const [provider, setProvider] = useState('');
@@ -491,6 +499,9 @@ export const useNewGiftController = () => {
           : {}),
         amountValue: amountValue.trim(),
         currencyCode,
+        ...(needsReportingAmount && reportingAmountValue.trim() !== ''
+          ? { reportingAmountValue: reportingAmountValue.trim() }
+          : {}),
         paymentType,
         ...(provider.trim() !== '' ? { provider: provider.trim() } : {}),
         giftDate: giftDate.trim(),
@@ -757,6 +768,10 @@ export const useNewGiftController = () => {
     setAmountValue,
     currencyCode,
     setCurrencyCode,
+    reportingCurrencyCode,
+    needsReportingAmount,
+    reportingAmountValue,
+    setReportingAmountValue,
     paymentType,
     setPaymentType,
     provider,

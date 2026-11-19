@@ -21,6 +21,7 @@ import {
   normalizeDonationFormMode,
   normalizeDonationFormString,
 } from 'src/donation-forms/donation-form-config';
+import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 export type DonationFormWorkspaceRecord = {
   id?: string | null;
@@ -42,6 +43,7 @@ export type DonationFormWorkspaceState = {
   primaryColor: string;
   thankYouMessage: string;
   mode: 'ONE_OFF' | 'ONE_OFF_AND_MONTHLY' | 'RECURRING';
+  currencyCode: string;
   amountOptionsText: string;
   allowCustomAmount: boolean;
   minimumAmountText: string;
@@ -70,6 +72,7 @@ export const DEFAULT_DONATION_FORM_WORKSPACE_STATE: DonationFormWorkspaceState =
   primaryColor: '#0d7a5f',
   thankYouMessage: 'Thank you for your donation. Your support helps fund our work.',
   mode: 'ONE_OFF_AND_MONTHLY',
+  currencyCode: getReportingCurrencyCode() ?? 'GBP',
   amountOptionsText: '10, 25, 50',
   allowCustomAmount: true,
   minimumAmountText: '5',
@@ -133,6 +136,10 @@ export const deriveWorkspaceState = (
       : null;
 
   return {
+    currencyCode:
+      normalizeString(
+        typeof config.currencyCode === 'string' ? config.currencyCode : undefined,
+      ).toUpperCase() || DEFAULT_DONATION_FORM_WORKSPACE_STATE.currencyCode,
     internalName:
       normalizeString(record.name) ||
       DEFAULT_DONATION_FORM_WORKSPACE_STATE.internalName,
@@ -438,12 +445,7 @@ export const buildUpdatedDraftConfig = ({
   return {
     ...currentConfig,
     mode: state.mode,
-    currencyCode:
-      normalizeString(
-        typeof currentConfig.currencyCode === 'string'
-          ? currentConfig.currencyCode
-          : undefined,
-      ) || 'GBP',
+    currencyCode: state.currencyCode,
     amountOptions,
     allowCustomAmount: state.allowCustomAmount,
     ...(state.allowCustomAmount && minimumAmount
@@ -675,18 +677,13 @@ export const getPreviewAddressModeLabel = ({
 };
 
 export const buildPreviewConfig = ({
-  currentConfig,
+  currentConfig: _currentConfig,
   state,
 }: {
   currentConfig: Record<string, unknown>;
   state: DonationFormWorkspaceState;
 }) => {
-  const currencyCode =
-    normalizeString(
-      typeof currentConfig.currencyCode === 'string'
-        ? currentConfig.currencyCode
-        : undefined,
-    ) || 'GBP';
+  const currencyCode = state.currencyCode;
 
   const amountOptions = (() => {
     try {

@@ -73,6 +73,10 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
         amountMicros: true,
         currencyCode: true,
       },
+      reportingAmount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
       donorFirstName: true,
       donorLastName: true,
       donorEmail: true,

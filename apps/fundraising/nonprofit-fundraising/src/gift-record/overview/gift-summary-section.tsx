@@ -35,6 +35,11 @@ type GiftRecordSummaryRecord = {
     amountMicros?: number | null;
     currencyCode?: string | null;
   } | null;
+  reportingAmount?: {
+    amountMicros?: number | null;
+    currencyCode?: string | null;
+  } | null;
+  reportingAmountStatus?: string | null;
   netReceivedAmount?: {
     amountMicros?: number | null;
     currencyCode?: string | null;
@@ -304,6 +309,11 @@ const loadGift = async (
         amountMicros: true,
         currencyCode: true,
       },
+      reportingAmount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
+      reportingAmountStatus: true,
       netReceivedAmount: {
         amountMicros: true,
         currencyCode: true,
@@ -364,6 +374,36 @@ const loadGift = async (
   } as any);
 
   return (result?.gift as GiftRecordSummaryRecord | null) ?? null;
+};
+
+const REPORTING_SOURCE_LABELS: Record<string, string> = {
+  PROVIDER_SETTLEMENT: 'from payment provider',
+  MANUAL: 'entered manually',
+};
+
+// Only shown when the gift is not in the reporting currency.
+const getReportingItem = (record: GiftRecordSummaryRecord) => {
+  const status = record.reportingAmountStatus ?? '';
+
+  if (status === '' || status === 'SAME_CURRENCY') {
+    return null;
+  }
+
+  if (status === 'MISSING' || !hasAmount(record.reportingAmount)) {
+    return {
+      label: 'Reporting amount',
+      value: 'Needed: not yet in fundraising totals',
+    };
+  }
+
+  const source = REPORTING_SOURCE_LABELS[status];
+
+  return {
+    label: 'Reporting amount',
+    value: source
+      ? `${formatAmount(record.reportingAmount)} (${source})`
+      : formatAmount(record.reportingAmount),
+  };
 };
 
 export const GiftSummarySection = ({
@@ -482,6 +522,7 @@ export const GiftSummarySection = ({
       : null,
   ]);
   const financialItems = compactItems([
+    getReportingItem(record),
     hasPositiveAmount(record.refundedAmount)
       ? { label: 'Refunded', value: formatAmount(record.refundedAmount) }
       : null,

@@ -185,7 +185,15 @@ export const PAYMENT_TYPE_OPTIONS: Array<{
   { value: 'OTHER', label: 'Other' },
 ];
 
-export const CURRENCY_OPTIONS = ['GBP', 'USD', 'EUR'];
+const COMMON_CURRENCY_OPTIONS = ['GBP', 'EUR', 'USD'];
+
+// The reporting currency comes first, so it is the default for a new gift.
+export const getCurrencyOptions = (reportingCurrencyCode: string | null) => [
+  ...new Set([
+    ...(reportingCurrencyCode ? [reportingCurrencyCode] : []),
+    ...COMMON_CURRENCY_OPTIONS,
+  ]),
+];
 
 // The front-component renderer applies a control's value and checked state to
 // event.target, as a browser does.

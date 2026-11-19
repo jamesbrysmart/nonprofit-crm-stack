@@ -10,7 +10,7 @@ import type {
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import type { NewGiftController } from 'src/manual-gift-entry/new-gift-section.types';
 import {
-  CURRENCY_OPTIONS,
+  getCurrencyOptions,
   fieldGridStyle,
   PAYMENT_TYPE_OPTIONS,
   sectionStyle,
@@ -30,11 +30,6 @@ const getGiftTypeOptions = (donorType: 'INDIVIDUAL' | 'COMPANY') =>
         { value: 'GIFT_IN_KIND', label: 'Gift in kind' },
       ];
 
-const CURRENCY_SELECT_OPTIONS = CURRENCY_OPTIONS.map((currency) => ({
-  value: currency,
-  label: currency,
-}));
-
 export const GiftBasicsSection = ({
   controller,
 }: {
@@ -50,6 +45,10 @@ export const GiftBasicsSection = ({
     setAmountValue,
     currencyCode,
     setCurrencyCode,
+    reportingCurrencyCode,
+    needsReportingAmount,
+    reportingAmountValue,
+    setReportingAmountValue,
     paymentType,
     setPaymentType,
     provider,
@@ -94,8 +93,21 @@ export const GiftBasicsSection = ({
           label="Currency"
           value={currencyCode}
           onChange={setCurrencyCode}
-          options={CURRENCY_SELECT_OPTIONS}
+          options={getCurrencyOptions(reportingCurrencyCode).map((currency) => ({
+            value: currency,
+            label: currency,
+          }))}
         />
+        {needsReportingAmount ? (
+          <FormInput
+            label={`Amount in ${reportingCurrencyCode}`}
+            inputMode="decimal"
+            placeholder="Optional"
+            description={`What the gift is worth in ${reportingCurrencyCode}, for example the amount credited to the bank. Without it the gift is recorded but left out of ${reportingCurrencyCode} totals until a reporting amount is added.`}
+            value={reportingAmountValue}
+            onChange={setReportingAmountValue}
+          />
+        ) : null}
         <FormSelect
           label="Payment type"
           value={paymentType}

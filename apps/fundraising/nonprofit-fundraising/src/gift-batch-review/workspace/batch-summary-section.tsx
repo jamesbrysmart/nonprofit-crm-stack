@@ -18,6 +18,7 @@ import {
   WorkspaceText,
 } from 'src/front-components/workspace-layout';
 import type { GiftBatchWorkspaceSectionProps } from 'src/gift-batch-review/workspace/workspace-section';
+import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 const SETUP_FIELDS_STYLE: CSSProperties = {
   display: 'grid',
@@ -25,6 +26,8 @@ const SETUP_FIELDS_STYLE: CSSProperties = {
   gridTemplateColumns: 'minmax(120px, 1fr) minmax(150px, 1fr) 84px',
   alignItems: 'end',
 };
+
+const DEFAULT_BATCH_CURRENCY_CODE = getReportingCurrencyCode() ?? 'GBP';
 
 const microsToDecimalInput = (amountMicros?: number | null) =>
   typeof amountMicros === 'number' && Number.isFinite(amountMicros)
@@ -79,7 +82,8 @@ const updateGiftBatchSetup = async (
               ? null
               : {
                   amountMicros,
-                  currencyCode: input.currencyCode.trim() || 'GBP',
+                  currencyCode:
+                    input.currencyCode.trim() || DEFAULT_BATCH_CURRENCY_CODE,
                 },
         },
       },
@@ -176,7 +180,7 @@ export const BatchSummarySection = ({
   const [expectedItemCountInput, setExpectedItemCountInput] = useState('');
   const [expectedTotalAmountInput, setExpectedTotalAmountInput] = useState('');
   const [expectedTotalCurrencyCode, setExpectedTotalCurrencyCode] =
-    useState('GBP');
+    useState(DEFAULT_BATCH_CURRENCY_CODE);
   const [savingSetup, setSavingSetup] = useState(false);
 
   useEffect(() => {
@@ -187,7 +191,8 @@ export const BatchSummarySection = ({
       microsToDecimalInput(record.expectedTotalAmount?.amountMicros),
     );
     setExpectedTotalCurrencyCode(
-      record.expectedTotalAmount?.currencyCode?.trim() || 'GBP',
+      record.expectedTotalAmount?.currencyCode?.trim() ||
+        DEFAULT_BATCH_CURRENCY_CODE,
     );
   }, [record]);
 
@@ -275,7 +280,7 @@ export const BatchSummarySection = ({
             />
             <FormInput
               label="Currency"
-              placeholder="GBP"
+              placeholder={DEFAULT_BATCH_CURRENCY_CODE}
               maxLength={3}
               value={expectedTotalCurrencyCode}
               onChange={(value) =>

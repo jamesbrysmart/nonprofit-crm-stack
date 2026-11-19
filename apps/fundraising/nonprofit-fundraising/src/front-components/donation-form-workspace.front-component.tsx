@@ -37,6 +37,8 @@ import { getInputEventValue } from 'src/manual-gift-entry/new-gift-support';
 import {
   DONATION_FORM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { getCurrencyOptions } from 'src/manual-gift-entry/new-gift-support';
+import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 const COLOUR_FIELD_STYLE: CSSProperties = {
   display: 'grid',
@@ -300,14 +302,25 @@ const DonationFormConfigure = () => {
             { value: 'RECURRING', label: 'Monthly only' },
           ]}
         />
+        <FormSelect
+          label="Currency"
+          value={state.currencyCode}
+          onChange={(value) => handleFieldChange('currencyCode', value)}
+          options={[
+            ...new Set([
+              state.currencyCode,
+              ...getCurrencyOptions(getReportingCurrencyCode()),
+            ]),
+          ].map((currency) => ({ value: currency, label: currency }))}
+        />
         <FormInput
-          label="Suggested amounts (GBP)"
+          label={`Suggested amounts (${state.currencyCode})`}
           value={state.amountOptionsText}
           onChange={(value) => handleFieldChange('amountOptionsText', value)}
           placeholder="10, 25, 50"
         />
         <FormInput
-          label="Minimum custom amount (GBP)"
+          label={`Minimum custom amount (${state.currencyCode})`}
           inputMode="decimal"
           value={state.minimumAmountText}
           onChange={(value) => handleFieldChange('minimumAmountText', value)}

@@ -42,6 +42,7 @@ type FundGiftRecord = {
   giftDate?: string | null;
   giftType?: string | null;
   amount?: CurrencyAmount;
+  reportingAmount?: CurrencyAmount;
 };
 
 type FundGivingSummary = {
@@ -162,6 +163,10 @@ const loadFundGifts = async (fundId: string): Promise<FundGiftRecord[]> => {
             giftDate: true,
             giftType: true,
             amount: {
+              amountMicros: true,
+              currencyCode: true,
+            },
+            reportingAmount: {
               amountMicros: true,
               currencyCode: true,
             },

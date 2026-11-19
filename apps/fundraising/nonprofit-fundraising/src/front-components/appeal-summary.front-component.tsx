@@ -15,6 +15,7 @@ import {
 import {
   APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
 
 type AppealSummaryRecord = {
   id: string;
@@ -292,6 +293,7 @@ const AppealSummary = () => {
           value={formatDate(record.lastGiftAt)}
         />
       </SummaryStrip>
+      <ReportingExclusionNotice relation="appeal" recordId={recordId} />
     </div>
   );
 };

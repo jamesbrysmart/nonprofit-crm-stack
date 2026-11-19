@@ -6,6 +6,8 @@ import {
   DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
   FUND_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_REPORTING_AMOUNT_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_COVERED_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DESCRIPTION_FIELD_UNIVERSAL_IDENTIFIER,
@@ -86,6 +88,26 @@ export default defineView({
       viewFieldGroupUniversalIdentifier:
         GIFT_DETAILS_GIFT_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
       position: 0,
+      isVisible: true,
+      size: 160,
+    },
+    {
+      universalIdentifier: '239a32fc-de72-4865-8819-a7680f592b87',
+      fieldMetadataUniversalIdentifier:
+        GIFT_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        GIFT_DETAILS_GIFT_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 0.5,
+      isVisible: true,
+      size: 160,
+    },
+    {
+      universalIdentifier: '52b05392-3092-48e1-9e24-27184617b1b7',
+      fieldMetadataUniversalIdentifier:
+        GIFT_REPORTING_AMOUNT_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
+      viewFieldGroupUniversalIdentifier:
+        GIFT_DETAILS_GIFT_FIELD_GROUP_UNIVERSAL_IDENTIFIER,
+      position: 0.6,
       isVisible: true,
       size: 160,
     },

@@ -30,6 +30,10 @@ const loadStoredRecord = async (
         amountMicros: true,
         currencyCode: true,
       },
+      reportingAmount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
       giftDate: true,
       donationType: true,
       paymentType: true,

@@ -13,6 +13,7 @@ import {
 import {
   COMPANY_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
 
 type CompanyRecordSummaryRecord = {
   id: string;
@@ -244,6 +245,9 @@ const CompanyRecordSummary = () => {
               />
             ) : null}
           </SummaryStrip>
+          {recordId ? (
+            <ReportingExclusionNotice relation="company" recordId={recordId} />
+          ) : null}
         </>
       ) : (
         <div style={contextSignalRowStyle}>

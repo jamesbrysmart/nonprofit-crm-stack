@@ -37,6 +37,10 @@ export type StoredGiftStagingRecord = {
       }
     | string
     | null;
+  reportingAmount?: {
+    amountMicros?: number | null;
+    currencyCode?: string | null;
+  } | null;
   giftDate: string | null;
   donationType: string | null;
   paymentType: string | null;
@@ -137,6 +141,8 @@ export type GiftStagingReviewRecord = {
   name: string;
   intakeSource: string;
   amountDisplay: string;
+  amountCurrencyCode: string;
+  hasReportingAmount: boolean;
   giftDate: string;
   donationType: string;
   paymentType: string;
