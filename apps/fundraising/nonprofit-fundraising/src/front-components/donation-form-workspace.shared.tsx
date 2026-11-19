@@ -21,7 +21,7 @@ import {
   normalizeDonationFormMode,
   normalizeDonationFormString,
 } from 'src/donation-forms/donation-form-config';
-import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 export type DonationFormWorkspaceRecord = {
   id?: string | null;
@@ -72,7 +72,7 @@ export const DEFAULT_DONATION_FORM_WORKSPACE_STATE: DonationFormWorkspaceState =
   primaryColor: '#0d7a5f',
   thankYouMessage: 'Thank you for your donation. Your support helps fund our work.',
   mode: 'ONE_OFF_AND_MONTHLY',
-  currencyCode: getReportingCurrencyCode() ?? 'GBP',
+  currencyCode: getDefaultCurrencyCode(),
   amountOptionsText: '10, 25, 50',
   allowCustomAmount: true,
   minimumAmountText: '5',

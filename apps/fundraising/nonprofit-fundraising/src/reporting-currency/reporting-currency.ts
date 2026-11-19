@@ -23,6 +23,11 @@ export const getReportingCurrencyCode = (): string | null => {
   return CURRENCY_CODE_PATTERN.test(configured) ? configured : null;
 };
 
+// The organisation's currency also serves as the default for new monetary
+// values and for amounts stored without a currency. GBP is only a fallback
+// while the app is not yet configured.
+export const getDefaultCurrencyCode = () => getReportingCurrencyCode() ?? 'GBP';
+
 export const valueInCurrency = (money: Money, currencyCode: string) =>
   money &&
   normalizeCurrencyCode(money.currencyCode) === currencyCode &&

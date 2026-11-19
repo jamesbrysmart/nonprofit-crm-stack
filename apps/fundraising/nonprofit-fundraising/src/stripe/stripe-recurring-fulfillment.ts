@@ -14,10 +14,12 @@ import {
 import {
   withGiftReportingValue,
 } from 'src/reporting-currency/gift-reporting-value';
-import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import {
+  getDefaultCurrencyCode,
+  getReportingCurrencyCode,
+} from 'src/reporting-currency/reporting-currency';
 
 const STRIPE_PROVIDER = 'STRIPE';
-const DEFAULT_CURRENCY_CODE = 'GBP';
 
 type StripeCheckoutSessionCustomerDetails = {
   email?: string | null;
@@ -107,7 +109,7 @@ const formatUnixDate = (timestampSeconds: number): string =>
 const toCurrencyCode = (currency: string | null | undefined): string => {
   const normalized = normalizeString(currency).toUpperCase();
 
-  return normalized === '' ? DEFAULT_CURRENCY_CODE : normalized;
+  return normalized === '' ? getDefaultCurrencyCode() : normalized;
 };
 
 const toAmountMicros = (amountMinorUnits: number | null | undefined): number => {

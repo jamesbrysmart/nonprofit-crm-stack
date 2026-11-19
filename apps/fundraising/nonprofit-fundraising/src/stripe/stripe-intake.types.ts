@@ -6,7 +6,6 @@ import type {
 export const STRIPE_PROVIDER = 'STRIPE';
 export const STRIPE_INTAKE_SOURCE = 'stripe_webhook';
 export const STRIPE_GIFT_AID_SOURCE = 'stripe_checkout';
-export const DEFAULT_CURRENCY_CODE = 'GBP';
 
 export type StripeCheckoutSessionCustomerDetails = {
   email?: string | null;

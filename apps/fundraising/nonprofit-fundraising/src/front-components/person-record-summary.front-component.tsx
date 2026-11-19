@@ -14,6 +14,7 @@ import {
   PERSON_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 type PersonRecordSummaryRecord = {
   id: string;
@@ -66,7 +67,7 @@ const formatCurrencyAmount = (
   emptyLabel = 'Not recorded',
 ) => {
   const micros = amount?.amountMicros;
-  const currency = normalizeString(amount?.currencyCode) || 'GBP';
+  const currency = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
 
   if (typeof micros !== 'number') {
     return emptyLabel;

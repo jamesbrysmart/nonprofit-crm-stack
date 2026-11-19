@@ -1,8 +1,8 @@
 import {
-  DEFAULT_CURRENCY_CODE,
   type StripeCheckoutSession,
   type StripeInvoiceObject,
 } from 'src/stripe/stripe-intake.types';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 export const normalizeString = (value: string | null | undefined): string =>
   value?.trim() ?? '';
@@ -44,7 +44,7 @@ export const formatUnixDate = (timestampSeconds: number): string =>
 export const toCurrencyCode = (currency: string | null | undefined): string => {
   const normalized = normalizeString(currency).toUpperCase();
 
-  return normalized === '' ? DEFAULT_CURRENCY_CODE : normalized;
+  return normalized === '' ? getDefaultCurrencyCode() : normalized;
 };
 
 export const toAmountMicros = (

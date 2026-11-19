@@ -3,6 +3,7 @@ import { postTwentyRest } from 'src/app-api/twenty-rest-client';
 import {
   getReportingCurrencyCode,
   sumReportingValues,
+  getDefaultCurrencyCode,
 } from 'src/reporting-currency/reporting-currency';
 import {
   extractConnection,
@@ -78,7 +79,7 @@ const normalizeString = (value: string | null | undefined) =>
 const normalizeCurrencyCode = (value: string | null | undefined) => {
   const normalized = normalizeString(value).toUpperCase();
 
-  return normalized === '' ? 'GBP' : normalized;
+  return normalized === '' ? getDefaultCurrencyCode() : normalized;
 };
 
 const includeInCashRollups = (giftType: string | null | undefined) =>

@@ -11,6 +11,7 @@ import {
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
 import { theme } from 'src/front-components/theme-tokens';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 type GiftRecordSummaryRecord = {
   id: string;
@@ -113,7 +114,7 @@ const buildPersonName = (
 
 const formatAmount = (amount: GiftRecordSummaryRecord['amount']) => {
   const micros = amount?.amountMicros;
-  const currency = normalizeString(amount?.currencyCode) || 'GBP';
+  const currency = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
 
   if (typeof micros !== 'number') {
     return 'Amount not recorded';

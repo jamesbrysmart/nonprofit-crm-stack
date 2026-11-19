@@ -16,6 +16,7 @@ import {
   APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 type AppealSummaryRecord = {
   id: string;
@@ -59,7 +60,7 @@ const formatAmount = (
 
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
-    currency: amount.currencyCode ?? 'GBP',
+    currency: amount.currencyCode || getDefaultCurrencyCode(),
   }).format(amount.amountMicros / 1_000_000);
 };
 

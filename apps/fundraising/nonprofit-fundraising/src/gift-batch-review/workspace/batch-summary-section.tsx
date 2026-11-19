@@ -18,7 +18,7 @@ import {
   WorkspaceText,
 } from 'src/front-components/workspace-layout';
 import type { GiftBatchWorkspaceSectionProps } from 'src/gift-batch-review/workspace/workspace-section';
-import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 const SETUP_FIELDS_STYLE: CSSProperties = {
   display: 'grid',
@@ -27,7 +27,7 @@ const SETUP_FIELDS_STYLE: CSSProperties = {
   alignItems: 'end',
 };
 
-const DEFAULT_BATCH_CURRENCY_CODE = getReportingCurrencyCode() ?? 'GBP';
+const DEFAULT_BATCH_CURRENCY_CODE = getDefaultCurrencyCode();
 
 const microsToDecimalInput = (amountMicros?: number | null) =>
   typeof amountMicros === 'number' && Number.isFinite(amountMicros)

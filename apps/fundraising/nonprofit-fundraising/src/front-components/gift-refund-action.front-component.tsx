@@ -20,6 +20,7 @@ import {
 import {
   GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 type RefundActionGiftRecord = {
   id: string;
@@ -45,7 +46,7 @@ const normalizeString = (value: string | null | undefined) =>
 
 const formatAmount = (amount: RefundActionGiftRecord['amount']) => {
   const micros = amount?.amountMicros;
-  const currency = normalizeString(amount?.currencyCode) || 'GBP';
+  const currency = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
 
   if (typeof micros !== 'number') {
     return 'Amount not recorded';
@@ -220,7 +221,7 @@ const GiftRefundAction = () => {
     0,
     originalAmountMicros - refundedAmountMicros,
   );
-  const currencyCode = normalizeString(record.amount?.currencyCode) || 'GBP';
+  const currencyCode = normalizeString(record.amount?.currencyCode) || getDefaultCurrencyCode();
   const linkedClaimBatchStatus = normalizeString(record.giftAidClaimBatch?.status);
   const linkedClaimBatchName = normalizeString(record.giftAidClaimBatch?.name);
   const isFinalizedGiftAidClaim = linkedClaimBatchStatus === 'FINALIZED';

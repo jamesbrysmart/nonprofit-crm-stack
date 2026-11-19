@@ -6,6 +6,7 @@ import type {
   RecordGiftRefundRequest,
   RecordGiftRefundResponse,
 } from 'src/gift-lifecycle/gift-refund.types';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 type GiftRefundRecord = {
   id: string;
@@ -108,7 +109,7 @@ const handler = async (
   }
 
   const originalAmountMicros = normalizeAmountMicros(gift.amount?.amountMicros);
-  const currencyCode = normalizeString(gift.amount?.currencyCode) || 'GBP';
+  const currencyCode = normalizeString(gift.amount?.currencyCode) || getDefaultCurrencyCode();
 
   if (originalAmountMicros <= 0) {
     throw new Error('Gift amount is missing or invalid');

@@ -14,6 +14,7 @@ import {
   COMPANY_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 type CompanyRecordSummaryRecord = {
   id: string;
@@ -64,7 +65,7 @@ const formatAmount = (
     return emptyLabel;
   }
 
-  const currencyCode = normalizeString(amount?.currencyCode) || 'GBP';
+  const currencyCode = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
   const amountMicros = Math.round(amount?.amountMicros ?? 0);
 
   try {

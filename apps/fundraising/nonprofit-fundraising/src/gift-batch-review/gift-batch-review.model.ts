@@ -10,6 +10,7 @@ import {
 } from 'src/batch-processing/batch-processing.limits';
 import { isGiftStagingProcessable } from 'src/gift-staging-review/gift-staging-processability';
 import { normalizeGiftReadyStatus } from 'src/gift-staging-review/gift-ready-status';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 const coalesceString = (
   value: string | null | undefined,
@@ -43,7 +44,7 @@ const formatAmountDisplay = (
     return 'Unknown amount';
   }
 
-  return `${coalesceString(amount.currencyCode, 'GBP')} ${(
+  return `${coalesceString(amount.currencyCode, getDefaultCurrencyCode())} ${(
     amount.amountMicros / 1_000_000
   ).toFixed(2)}`;
 };
@@ -65,14 +66,14 @@ const formatTotalValueDisplay = (rows: BatchReviewRow[]): string => {
   }
 
   const distinctCurrencies = new Set(
-    rowsWithAmount.map((row) => coalesceString(row.amount.currencyCode, 'GBP')),
+    rowsWithAmount.map((row) => coalesceString(row.amount.currencyCode, getDefaultCurrencyCode())),
   );
 
   if (distinctCurrencies.size !== 1) {
     return 'Mixed currencies';
   }
 
-  const currencyCode = [...distinctCurrencies][0] ?? 'GBP';
+  const currencyCode = [...distinctCurrencies][0] ?? getDefaultCurrencyCode();
   const totalAmountMicros = rowsWithAmount.reduce(
     (sum, row) => sum + row.amount.amountMicros,
     0,
@@ -88,7 +89,7 @@ const formatExpectedTotalValueDisplay = (
     return '';
   }
 
-  return `${coalesceString(amount.currencyCode, 'GBP')} ${(
+  return `${coalesceString(amount.currencyCode, getDefaultCurrencyCode())} ${(
     amount.amountMicros / 1_000_000
   ).toFixed(2)}`;
 };

@@ -19,6 +19,7 @@ import {
 import {
   getReportingCurrencyCode,
   getReportingValueMicros,
+  getDefaultCurrencyCode,
 } from 'src/reporting-currency/reporting-currency';
 
 const GIFT_PAGE_SIZE = 100;
@@ -73,7 +74,10 @@ const formatEnumLabel = (value: string | null | undefined) => {
     .join(' ');
 };
 
-const formatAmount = (amountMicros: number, currencyCode = 'GBP') =>
+const formatAmount = (
+  amountMicros: number,
+  currencyCode = getDefaultCurrencyCode(),
+) =>
   new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: currencyCode,

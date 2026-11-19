@@ -3,6 +3,7 @@ import type {
   RecurringAgreementReviewRecord,
   StoredRecurringAgreementRecord,
 } from './recurring.types';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
@@ -33,7 +34,7 @@ const formatAmount = (
     | undefined,
 ) => {
   const amountMicros = amount?.amountMicros;
-  const currencyCode = normalizeString(amount?.currencyCode) || 'GBP';
+  const currencyCode = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
 
   if (typeof amountMicros !== 'number' || !Number.isFinite(amountMicros)) {
     return 'Unknown amount';
@@ -181,7 +182,7 @@ export const buildRecurringAgreementReviewRecord = (
       Number.isFinite(record.amount.amountMicros)
         ? record.amount.amountMicros
         : null,
-    currencyCode: normalizeString(record.amount?.currencyCode) || 'GBP',
+    currencyCode: normalizeString(record.amount?.currencyCode) || getDefaultCurrencyCode(),
     startDate: record.startDate,
     endDate: record.endDate,
     nextExpectedAt: record.nextExpectedAt,

@@ -1,3 +1,4 @@
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 type CurrencyAmount = {
   amountMicros?: number | null;
   currencyCode?: string | null;
@@ -6,7 +7,7 @@ type CurrencyAmount = {
 const normalizeCurrencyCode = (value: string | null | undefined) => {
   const normalized = typeof value === 'string' ? value.trim() : '';
 
-  return normalized === '' ? 'GBP' : normalized;
+  return normalized === '' ? getDefaultCurrencyCode() : normalized;
 };
 
 export const formatCurrencyAmount = (

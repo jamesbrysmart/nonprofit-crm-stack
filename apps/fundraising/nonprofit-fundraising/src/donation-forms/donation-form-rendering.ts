@@ -5,6 +5,7 @@ import {
   resolveDonationFormDonationTypes,
 } from 'src/donation-forms/donation-form-config';
 import { DONATION_FORM_RENDER_STYLES } from 'src/donation-forms/donation-form-rendering-styles';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 export type DonationFormRenderDonationType = DonationFormDonationType;
 
@@ -217,7 +218,7 @@ export const buildDonationFormCardMarkup = ({
   giftAidRequested?: boolean;
 }): string => {
   const amountOptions = resolveAmountOptions(config.amountOptions);
-  const currencyCode = normalizeString(config.currencyCode).toUpperCase() || 'GBP';
+  const currencyCode = normalizeString(config.currencyCode).toUpperCase() || getDefaultCurrencyCode();
   const donationTypeOptions = resolveDonationTypeOptions(config.mode);
   const selectedDonationType =
     donationTypeOptions.includes(donationType ?? 'ONE_OFF')

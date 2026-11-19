@@ -28,6 +28,7 @@ import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 import {
   OPPORTUNITY_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 type CurrencyAmount = {
   amountMicros?: number | null;
@@ -83,12 +84,14 @@ const parseAmountMicros = (amountValue: string) => {
 const normalizeCurrencyCode = (currencyCode: string | null | undefined) => {
   const normalized = normalizeString(currencyCode).toUpperCase();
 
-  return normalized === '' ? 'GBP' : normalized;
+  return normalized === '' ? getDefaultCurrencyCode() : normalized;
 };
 
 const getOpportunityCurrencyCode = (record: OpportunityPaymentRecord) =>
   normalizeCurrencyCode(
-    record.awardedAmount?.currencyCode ?? record.amount?.currencyCode ?? 'GBP',
+    record.awardedAmount?.currencyCode ||
+      record.amount?.currencyCode ||
+      getDefaultCurrencyCode(),
   );
 
 const formatMoney = (amountMicros: number | null, currencyCode: string) => {
