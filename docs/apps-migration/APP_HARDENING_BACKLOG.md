@@ -247,6 +247,30 @@ Potential enhancements, not yet agreed:
    - Object-level `disabledObjectPermissionActions` is not suitable yet: disabling create also requires disabling all updates.
 3. **Finance posting (feature).** Add an exported/posted state and block or track changes after posting, for example with validation rules using `previous.` values.
 
+### 2.9 Currency Defaults On App-Owned Fields (Platform Limitation)
+
+Added 2026-11-19. `REPORTING_CURRENCY` is the organisation's reporting and default currency. App-built entry points use it: New gift, donation forms, batch setup and missing-currency fallbacks. Twenty's native currency inputs cannot follow it.
+
+- A currency field's default comes from the app manifest. It is fixed at build time and is the same in every workspace.
+- `defaultValue` is not a workspace-overridable field property (2.59 source). App sync rebuilds each app field from the manifest and writes back differences, so a default an administrator sets on an app-owned field is expected to be reset by the next apply or upgrade. To confirm on 2021.
+- An app could re-apply defaults from a post-install hook with `shouldRunOnVersionUpgrade: true`, but this needs the broad `DATA_MODEL` permission flag. Rejected for v1 as disproportionate for a Marketplace app.
+
+Affected app-owned entry fields, which default to USD in native inputs:
+
+- Opportunity → Awarded amount (an app field on a standard object)
+- Appeal → Goal amount and Budget amount
+- Recurring agreement → Amount
+- Gift staging → Amount
+- Gift batch → Expected total amount
+
+Workspace-owned standard fields, such as Opportunity → Amount, are configured by administrators in Settings → Data model and belong in setup documentation.
+
+Decision (v1): accept the limitation and raise it upstream. Do not document administrator changes to app-owned defaults as a setup step unless the 2021 check shows they survive apply.
+
+Upstream request (draft):
+
+> **Workspace-specific currency defaults for app-owned fields.** Apps cannot give a currency field a per-workspace default. A field's `defaultValue` is fixed in the manifest, and app sync resets any change an administrator makes, because `defaultValue` is not workspace-overridable. International apps therefore cannot preselect an organisation's currency, and native inputs fall back to USD. Either of these would solve it, without the broad `DATA_MODEL` permission: (1) a workspace default currency that currency fields without an explicit default use; or (2) `defaultValue` as a workspace-overridable property for app fields, preserved across sync like labels and select options.
+
 ## 3. Document And Watch, Not Refactor Now
 
 These areas should stay visible but do not currently justify hardening refactor by themselves:
