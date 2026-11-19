@@ -2,7 +2,7 @@
 // only contributes when it has a value in that currency; others are excluded
 // from totals rather than added at face value.
 
-type Money =
+export type Money =
   | {
       amountMicros?: number | null;
       currencyCode?: string | null;
@@ -23,7 +23,7 @@ export const getReportingCurrencyCode = (): string | null => {
   return CURRENCY_CODE_PATTERN.test(configured) ? configured : null;
 };
 
-const valueInCurrency = (money: Money, currencyCode: string) =>
+export const valueInCurrency = (money: Money, currencyCode: string) =>
   money &&
   normalizeCurrencyCode(money.currencyCode) === currencyCode &&
   typeof money.amountMicros === 'number' &&

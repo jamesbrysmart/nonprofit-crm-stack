@@ -31,6 +31,11 @@ import {
   normalizeString,
 } from 'src/manual-gift-entry/manual-gift-normalization';
 import { buildManualGiftPayload } from 'src/manual-gift-entry/manual-gift-payload';
+import {
+  withGiftReportingValue,
+} from 'src/reporting-currency/gift-reporting-value';
+import { parseManualGiftAmountMicros } from 'src/manual-gift-entry/manual-gift-normalization';
+import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 const resolveAppealAndFundSelection = async (
   client: CoreApiClient,
@@ -348,11 +353,26 @@ const handler = async (
   delete giftData.giftAidDeclarationId;
   delete giftData.recurringAgreementId;
 
+  const reportingCurrencyCode = getReportingCurrencyCode();
+  const enteredReportingAmountMicros = parseManualGiftAmountMicros(
+    body.reportingAmountValue,
+  );
+  const giftDataWithReporting = withGiftReportingValue(
+    giftData as { amount?: { amountMicros?: number | null; currencyCode?: string | null } },
+    reportingCurrencyCode && enteredReportingAmountMicros !== null
+      ? {
+          amountMicros: enteredReportingAmountMicros,
+          currencyCode: reportingCurrencyCode,
+        }
+      : null,
+    reportingCurrencyCode,
+  );
+
   const result = await client.mutation({
     createGift: {
       __args: {
         data: {
-          ...giftData,
+          ...giftDataWithReporting,
           ...(donorId
             ? {
                 donor: {

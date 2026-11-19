@@ -30,6 +30,7 @@ type GiftRecord = {
   giftDate?: string | null;
   giftType?: string | null;
   amount?: CurrencyAmount | null;
+  reportingAmount?: CurrencyAmount | null;
   donor?: {
     id?: string | null;
   } | null;
@@ -289,6 +290,10 @@ const loadCommittedGiftsForDonors = async (
                 amountMicros: true,
                 currencyCode: true,
               },
+              reportingAmount: {
+                amountMicros: true,
+                currencyCode: true,
+              },
               donor: {
                 id: true,
               },
@@ -350,6 +355,10 @@ const loadAllCommittedGifts = async (
             giftDate: true,
             giftType: true,
             amount: {
+              amountMicros: true,
+              currencyCode: true,
+            },
+            reportingAmount: {
               amountMicros: true,
               currencyCode: true,
             },

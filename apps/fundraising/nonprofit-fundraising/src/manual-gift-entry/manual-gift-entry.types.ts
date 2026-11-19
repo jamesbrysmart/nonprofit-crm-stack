@@ -132,6 +132,8 @@ export type ManualGiftEntryRequest = GiftAidCaptureInput & {
   description?: string;
   amountValue?: string;
   currencyCode?: string;
+  // Value in the reporting currency, for a gift in another currency.
+  reportingAmountValue?: string;
   paymentType?: ManualGiftPaymentType;
   provider?: string;
   giftDate?: string;

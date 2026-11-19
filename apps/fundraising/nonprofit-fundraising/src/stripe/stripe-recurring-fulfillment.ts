@@ -11,6 +11,10 @@ import {
   createStripeOneOffGiftStaging,
   type StripeOneOffGiftStagingResult,
 } from 'src/stripe/stripe-one-off-staging';
+import {
+  withGiftReportingValue,
+} from 'src/reporting-currency/gift-reporting-value';
+import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 const STRIPE_PROVIDER = 'STRIPE';
 const DEFAULT_CURRENCY_CODE = 'GBP';
@@ -326,10 +330,11 @@ export const createStripeRecurringGiftForConfidentMatch = async (
                 currencyCode,
                 giftDate,
               }),
-              amount: {
-                currencyCode,
-                amountMicros,
-              },
+              ...withGiftReportingValue(
+                { amount: { currencyCode, amountMicros } },
+                null,
+                getReportingCurrencyCode(),
+              ),
               giftDate,
               donorFirstName,
               donorLastName,

@@ -15,6 +15,7 @@ import {
   GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 
 type GiftRollupEventRecord = {
@@ -57,6 +58,7 @@ export default defineLogicFunction({
     action: 'updated',
     batchMode: true,
     watchedFieldUniversalIdentifiers: [
+      GIFT_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
       APPEAL_SOURCE_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
       DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
       COMPANY_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,

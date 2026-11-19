@@ -1,6 +1,7 @@
 import { defineObject, FieldType } from 'twenty-sdk/define';
 import {
   GIFT_STAGING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_STAGING_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_APPEAL_SOURCE_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_COVERED_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_STAGING_DONATION_FORM_ID_FIELD_UNIVERSAL_IDENTIFIER,
@@ -81,8 +82,18 @@ export default defineObject({
       type: FieldType.CURRENCY,
       name: 'amount',
       label: 'Amount',
-      description: 'Captured staged gift amount',
+      description: 'Amount the donor gave, in the currency they gave it in',
       icon: 'IconCurrencyPound',
+    },
+    {
+      universalIdentifier: GIFT_STAGING_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'reportingAmount',
+      label: 'Reporting amount',
+      description:
+        "Optional value in the organisation's reporting currency for a gift in another currency, carried to the gift when it is processed.",
+      icon: 'IconCoins',
+      isNullable: true,
     },
     {
       universalIdentifier: GIFT_STAGING_GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,

@@ -75,6 +75,12 @@ export type BatchProcessingRow = {
         currencyCode?: string | null;
       }
     | null;
+  reportingAmount?:
+    | {
+        amountMicros?: number | null;
+        currencyCode?: string | null;
+      }
+    | null;
   processingFeeAmount:
     | {
         amountMicros?: number | null;

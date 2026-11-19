@@ -1,6 +1,8 @@
 import { defineObject, FieldType } from 'twenty-sdk/define';
 import {
   GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_REPORTING_AMOUNT_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_COMPANY_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_COVERED_FEE_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
@@ -69,8 +71,35 @@ export default defineObject({
       type: FieldType.CURRENCY,
       name: 'amount',
       label: 'Amount',
-      description: 'Gift amount',
+      description: 'Amount the donor gave, in the currency they gave it in',
       icon: 'IconCurrencyPound',
+    },
+    {
+      universalIdentifier: GIFT_REPORTING_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.CURRENCY,
+      name: 'reportingAmount',
+      label: 'Reporting amount',
+      description:
+        "The gift's value in the organisation's reporting currency, used for fundraising totals. Set automatically when the gift is in that currency or the payment provider settled it in that currency; otherwise enter it.",
+      icon: 'IconCoins',
+      isNullable: true,
+    },
+    {
+      universalIdentifier:
+        GIFT_REPORTING_AMOUNT_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'reportingAmountStatus',
+      label: 'Reporting amount status',
+      description:
+        'Where the reporting amount came from, or that it is still needed before the gift counts towards totals.',
+      icon: 'IconCoins',
+      isNullable: true,
+      options: [
+        { id: 'b5b6fa4d-55d1-47d8-b9ff-e35afc89e935', value: 'SAME_CURRENCY', label: 'Same currency', position: 0, color: 'gray' },
+        { id: 'c52a5cf6-683d-4f22-91a9-3b63ba9bc8fc', value: 'PROVIDER_SETTLEMENT', label: 'From payment provider', position: 1, color: 'blue' },
+        { id: 'c94b8d20-5818-4abf-8a97-7ecb6dbf3918', value: 'MANUAL', label: 'Entered manually', position: 2, color: 'purple' },
+        { id: '9044f4b1-1acd-4a2d-8f1b-2c44832d6ac7', value: 'MISSING', label: 'Needs reporting value', position: 3, color: 'orange' },
+      ],
     },
     {
       universalIdentifier: GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,

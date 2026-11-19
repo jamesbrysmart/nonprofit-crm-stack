@@ -97,6 +97,10 @@ export const loadBatchProcessingContext = async (
             amountMicros: true,
             currencyCode: true,
           },
+          reportingAmount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
           processingFeeAmount: {
             amountMicros: true,
             currencyCode: true,

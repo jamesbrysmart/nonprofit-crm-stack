@@ -17,6 +17,10 @@ import type { GiftReadyStatus } from 'src/gift-staging-review/gift-ready-status'
 import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
 import { buildGiftName } from 'src/gifts/gift-name';
 import type { BatchProcessingRow } from './batch-processing.types';
+import {
+  withGiftReportingValue,
+} from 'src/reporting-currency/gift-reporting-value';
+import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 
 export type SuccessfulWriteback = {
   id: string;
@@ -186,7 +190,14 @@ export const deriveRecurringCadenceFromProviderEvidence = ({
   );
 };
 
-export const buildGiftPayloadFromRow = (row: BatchProcessingRow) => {
+export const buildGiftPayloadFromRow = (row: BatchProcessingRow) =>
+  withGiftReportingValue(
+    buildGiftPayloadWithoutReporting(row),
+    row.reportingAmount,
+    getReportingCurrencyCode(),
+  );
+
+const buildGiftPayloadWithoutReporting = (row: BatchProcessingRow) => {
   const amountMicros = row.amount?.amountMicros;
   const currencyCode = normalizeString(row.amount?.currencyCode);
   const donorId = normalizeString(row.donor?.id);
