@@ -56,7 +56,7 @@ const buildSnapshot = async (
       donorEmail: gift.donorEmail ?? null,
       donorMailingAddress: gift.donor?.mailingAddress ?? null,
       amountMicros: gift.amount?.amountMicros ?? 0,
-      currencyCode: gift.amount?.currencyCode ?? 'GBP',
+      currencyCode: gift.amount?.currencyCode ?? '',
     })),
     environment: getSubmissionEnvironment(),
   };

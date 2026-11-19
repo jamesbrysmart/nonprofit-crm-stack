@@ -14,6 +14,7 @@ import type {
   HmrcCharitiesRegulator,
   HmrcCharitiesSoftwareIdentity,
 } from 'src/hmrc-charities/types';
+import { isSterlingAmount } from 'src/gift-aid/gift-aid-currency';
 
 type SubmissionMode =
   | 'mock_success'
@@ -128,6 +129,12 @@ const buildDonation = (
 
   if (giftDate === '') {
     throw new Error(`Gift ${gift.id} is missing giftDate required for HMRC submission`);
+  }
+
+  if (!isSterlingAmount({ currencyCode: gift.currencyCode })) {
+    throw new Error(
+      `Gift ${gift.id} is not in sterling; Gift Aid can only be claimed on GBP amounts`,
+    );
   }
 
   if (house === '') {

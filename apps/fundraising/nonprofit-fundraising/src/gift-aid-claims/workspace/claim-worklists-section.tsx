@@ -1,3 +1,4 @@
+import { isClaimableInSterling } from 'src/gift-aid-claims/gift-aid-claim-batch-rollups';
 import { openGiftQueue } from 'src/front-components/gift-aid-claim-batch-ui';
 import {
   WorkspaceQueueRow,
@@ -10,7 +11,7 @@ export const ClaimWorklistsSection = ({
   workspace,
 }: GiftAidClaimWorkspaceSectionProps) => {
   const blockingCount = workspace.gifts.filter(
-    (gift) => gift.giftAidStatus !== 'CLAIMABLE',
+    (gift) => !isClaimableInSterling(gift),
   ).length;
 
   return (

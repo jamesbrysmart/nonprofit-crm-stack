@@ -1,10 +1,12 @@
+import { GIFT_AID_CURRENCY_CODE, isSterlingAmount } from 'src/gift-aid/gift-aid-currency';
 import type { GiftAidClaimGiftRecord } from './gift-aid-claim.types';
 
+export const isClaimableInSterling = (gift: GiftAidClaimGiftRecord) =>
+  gift.giftAidStatus === 'CLAIMABLE' && isSterlingAmount(gift.amount);
+
 export const computeClaimBatchRollups = (gifts: GiftAidClaimGiftRecord[]) => {
-  const claimableGifts = gifts.filter((gift) => gift.giftAidStatus === 'CLAIMABLE');
-  const blockingIssueCount = gifts.filter(
-    (gift) => gift.giftAidStatus !== 'CLAIMABLE',
-  ).length;
+  const claimableGifts = gifts.filter(isClaimableInSterling);
+  const blockingIssueCount = gifts.length - claimableGifts.length;
 
   return {
     giftCount: gifts.length,
@@ -13,9 +15,7 @@ export const computeClaimBatchRollups = (gifts: GiftAidClaimGiftRecord[]) => {
         (sum, gift) => sum + (gift.amount?.amountMicros ?? 0),
         0,
       ),
-      currencyCode:
-        claimableGifts.find((gift) => gift.amount?.currencyCode)?.amount
-          ?.currencyCode ?? 'GBP',
+      currencyCode: GIFT_AID_CURRENCY_CODE,
     },
     hasBlockingIssues: blockingIssueCount > 0,
     blockingIssueCount,

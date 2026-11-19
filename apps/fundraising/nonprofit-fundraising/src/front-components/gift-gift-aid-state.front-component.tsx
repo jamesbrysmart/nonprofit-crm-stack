@@ -118,6 +118,8 @@ const getReasonLabel = (reason: string | null | undefined) => {
       return 'Gift refunded or reversed';
     case 'not_requested':
       return 'Gift Aid not requested';
+    case 'non_sterling_currency':
+      return 'Not in sterling';
     default:
       return toTitleCase(normalized);
   }
@@ -129,6 +131,10 @@ const getNextAction = (record: GiftAidGiftRecord) => {
 
   if (status === 'CLAIMABLE') {
     return 'No Gift Aid follow-up is currently required for this gift.';
+  }
+
+  if (reason === 'non_sterling_currency') {
+    return 'Gift Aid is claimed in sterling. Foreign-currency gifts need a sterling value at the donation date before they can be claimed.';
   }
 
   if (reason === 'no_declaration_on_file') {

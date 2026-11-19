@@ -5,6 +5,11 @@ import {
   extractMutationRecord,
   extractQueryRecord,
 } from 'src/core-api/core-api-results';
+import { postTwentyRest } from 'src/app-api/twenty-rest-client';
+import {
+  isSterlingAmount,
+  NON_STERLING_GIFT_AID_REASON_CODE,
+} from 'src/gift-aid/gift-aid-currency';
 import { computeClaimBatchRollups } from './gift-aid-claim-batch-rollups';
 import type {
   GiftAidClaimBatchRecord,
@@ -191,11 +196,49 @@ export const listNeedsReviewGiftAidGifts = async (
     ],
   });
 
+// Gifts marked claimable before the sterling rule existed must not reach a
+// claim; move them to review so the blocking worklist shows them.
+const moveNonSterlingClaimableGiftsToReview = async (
+  gifts: GiftAidClaimGiftRecord[],
+): Promise<GiftAidClaimGiftRecord[]> => {
+  const nonSterlingGiftIds = gifts
+    .filter(
+      (gift) =>
+        gift.giftAidStatus === 'CLAIMABLE' && !isSterlingAmount(gift.amount),
+    )
+    .map((gift) => gift.id);
+
+  if (nonSterlingGiftIds.length === 0) {
+    return gifts;
+  }
+
+  const evaluatedAt = new Date().toISOString();
+  const review = {
+    giftAidStatus: 'NEEDS_REVIEW',
+    giftAidReasonCode: NON_STERLING_GIFT_AID_REASON_CODE,
+    giftAidDecisionSource: 'SYSTEM',
+    giftAidLastEvaluatedAt: evaluatedAt,
+  };
+
+  await postTwentyRest<unknown>({
+    path: '/rest/batch/gifts?upsert=true&depth=0',
+    body: nonSterlingGiftIds.map((id) => ({ id, ...review })),
+  });
+
+  const movedIds = new Set(nonSterlingGiftIds);
+
+  return gifts.map((gift) =>
+    movedIds.has(gift.id) ? { ...gift, ...review } : gift,
+  );
+};
+
 export const refreshClaimBatchSummary = async (
   client: CoreApiClient,
   batchId: string,
 ) => {
-  const gifts = await listGiftsForClaimBatch(client, batchId);
+  const gifts = await moveNonSterlingClaimableGiftsToReview(
+    await listGiftsForClaimBatch(client, batchId),
+  );
   const rollups = computeClaimBatchRollups(gifts);
 
   await client.mutation({

@@ -1,5 +1,9 @@
 import type { GiftAidDeclarationService } from './gift-aid.declarations';
 import type { GiftAidEvaluatedPayload } from './gift-aid.types';
+import {
+  isSterlingAmount,
+  NON_STERLING_GIFT_AID_REASON_CODE,
+} from './gift-aid-currency';
 
 const normalizeString = (value: unknown) =>
   typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined;
@@ -49,7 +53,7 @@ export const normalizeGiftAidCapture = (
   return clone;
 };
 
-export const applyGiftAidMetadata = async (
+const evaluateGiftAidMetadata = async (
   declarationService: GiftAidDeclarationService,
   payload: GiftAidEvaluatedPayload,
   enabled: boolean,
@@ -137,4 +141,29 @@ export const applyGiftAidMetadata = async (
     giftAidDecisionSource: 'SYSTEM',
     giftAidLastEvaluatedAt: new Date().toISOString(),
   });
+};
+
+export const applyGiftAidMetadata = async (
+  declarationService: GiftAidDeclarationService,
+  payload: GiftAidEvaluatedPayload,
+  enabled: boolean,
+): Promise<GiftAidEvaluatedPayload> => {
+  const evaluated = await evaluateGiftAidMetadata(
+    declarationService,
+    payload,
+    enabled,
+  );
+
+  if (
+    evaluated.giftAidStatus !== 'CLAIMABLE' ||
+    isSterlingAmount(evaluated.amount)
+  ) {
+    return evaluated;
+  }
+
+  return {
+    ...evaluated,
+    giftAidStatus: 'NEEDS_REVIEW',
+    giftAidReasonCode: NON_STERLING_GIFT_AID_REASON_CODE,
+  };
 };
