@@ -1,6 +1,10 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
 import {
+  getReportingCurrencyCode,
+  sumReportingValues,
+} from 'src/reporting-currency/reporting-currency';
+import {
   extractConnection,
   extractConnectionNodes,
 } from 'src/core-api/core-api-results';
@@ -52,9 +56,9 @@ type CompanyRollupRecord = {
 
 type CompanyRollupSummary = {
   companyId: string;
-  lifetimeGiftAmount: CurrencyAmount;
+  lifetimeGiftAmount?: CurrencyAmount;
   lastGiftDate: string | null;
-  awardedOpportunityAmount: CurrencyAmount;
+  awardedOpportunityAmount?: CurrencyAmount;
   awardedOpportunityCount: number;
   nextApplicationDeadline: string | null;
   nextFundingPeriodEnd: string | null;
@@ -62,9 +66,9 @@ type CompanyRollupSummary = {
 
 type CompanyRollupWriteback = {
   id: string;
-  lifetimeGiftAmount: CurrencyAmount;
+  lifetimeGiftAmount?: CurrencyAmount;
   lastGiftDate: string | null;
-  awardedOpportunityAmount: CurrencyAmount;
+  awardedOpportunityAmount?: CurrencyAmount;
   awardedOpportunityCount: number;
   nextApplicationDeadline: string | null;
   nextFundingPeriodEnd: string | null;
@@ -142,12 +146,14 @@ const areSummariesEqual = (
   current: CompanyRollupRecord,
   next: CompanyRollupSummary,
 ) =>
-  areAmountsEqual(current.lifetimeGiftAmount, next.lifetimeGiftAmount) &&
+  (next.lifetimeGiftAmount === undefined ||
+    areAmountsEqual(current.lifetimeGiftAmount, next.lifetimeGiftAmount)) &&
   normalizeString(current.lastGiftDate) === normalizeString(next.lastGiftDate) &&
-  areAmountsEqual(
-    current.awardedOpportunityAmount,
-    next.awardedOpportunityAmount,
-  ) &&
+  (next.awardedOpportunityAmount === undefined ||
+    areAmountsEqual(
+      current.awardedOpportunityAmount,
+      next.awardedOpportunityAmount,
+    )) &&
   Math.round(current.awardedOpportunityCount ?? 0) ===
     next.awardedOpportunityCount &&
   normalizeString(current.nextApplicationDeadline) ===
@@ -170,7 +176,8 @@ export const computeCompanyRollupSummary = (
   companyId: string,
   gifts: GiftRecord[],
   opportunities: OpportunityRecord[],
-  currentCompany?: CompanyRollupRecord,
+  _currentCompany?: CompanyRollupRecord,
+  reportingCurrencyCode: string | null = getReportingCurrencyCode(),
 ): CompanyRollupSummary => {
   const includedGifts = gifts.filter((gift) =>
     includeInCashRollups(gift.giftType),
@@ -178,38 +185,29 @@ export const computeCompanyRollupSummary = (
   const sortedByGiftDate = [...includedGifts].sort((left, right) =>
     normalizeString(right.giftDate).localeCompare(normalizeString(left.giftDate)),
   );
-  const cashCurrencyCode =
-    normalizeCurrencyCode(sortedByGiftDate[0]?.amount?.currencyCode) ||
-    normalizeCurrencyCode(currentCompany?.lifetimeGiftAmount?.currencyCode);
   const awardedOpportunities = opportunities.filter((opportunity) =>
     isPopulatedAmount(opportunity.awardedAmount),
   );
-  const awardedCurrencyCode =
-    normalizeCurrencyCode(
-      awardedOpportunities[0]?.awardedAmount?.currencyCode,
-    ) ||
-    normalizeCurrencyCode(
-      currentCompany?.awardedOpportunityAmount?.currencyCode,
-    );
 
+  // Awards keep their own currency; only those in the reporting currency are
+  // totalled, so commitments in other currencies are never added at face value.
   return {
     companyId,
-    lifetimeGiftAmount: {
-      amountMicros: includedGifts.reduce(
-        (sum, gift) => sum + Math.round(gift.amount?.amountMicros ?? 0),
-        0,
-      ),
-      currencyCode: cashCurrencyCode,
-    },
+    ...(reportingCurrencyCode
+      ? {
+          lifetimeGiftAmount: sumReportingValues(
+            includedGifts,
+            reportingCurrencyCode,
+          ).total,
+          awardedOpportunityAmount: sumReportingValues(
+            awardedOpportunities.map((opportunity) => ({
+              amount: opportunity.awardedAmount,
+            })),
+            reportingCurrencyCode,
+          ).total,
+        }
+      : {}),
     lastGiftDate: normalizeDate(sortedByGiftDate[0]?.giftDate),
-    awardedOpportunityAmount: {
-      amountMicros: awardedOpportunities.reduce(
-        (sum, opportunity) =>
-          sum + Math.round(opportunity.awardedAmount?.amountMicros ?? 0),
-        0,
-      ),
-      currencyCode: awardedCurrencyCode,
-    },
     awardedOpportunityCount: awardedOpportunities.length,
     nextApplicationDeadline: findNearestFutureDate(
       opportunities.map((opportunity) => opportunity.applicationDeadline),

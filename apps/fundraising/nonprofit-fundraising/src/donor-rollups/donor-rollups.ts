@@ -1,6 +1,12 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
 import {
+  findLargestByReportingValue,
+  getReportingCurrencyCode,
+  normalizeCurrencyCode,
+  sumReportingValues,
+} from 'src/reporting-currency/reporting-currency';
+import {
   extractConnection,
   extractConnectionNodes,
 } from 'src/core-api/core-api-results';
@@ -39,30 +45,26 @@ type PersonRollupRecord = {
   largestGiftAmount?: CurrencyAmount | null;
 };
 
+// Monetary totals are undefined while no reporting currency is configured, so
+// the write-back leaves the stored values untouched.
 type DonorRollupSummary = {
   donorId: string;
-  lifetimeGiftAmount: {
-    amountMicros: number;
-    currencyCode: string;
-  };
+  lifetimeGiftAmount?: CurrencyAmount;
   giftCount: number;
   firstGiftDate: string | null;
   lastGiftDate: string | null;
   lastGiftAmount: CurrencyAmount | null;
-  largestGiftAmount: CurrencyAmount | null;
+  largestGiftAmount?: CurrencyAmount | null;
 };
 
 type DonorRollupWriteback = {
   id: string;
-  lifetimeGiftAmount: {
-    amountMicros: number;
-    currencyCode: string;
-  };
+  lifetimeGiftAmount?: CurrencyAmount;
   giftCount: number;
   firstGiftDate: string | null;
   lastGiftDate: string | null;
   lastGiftAmount: CurrencyAmount | null;
-  largestGiftAmount: CurrencyAmount | null;
+  largestGiftAmount?: CurrencyAmount | null;
 };
 
 type GiftEventRecord = {
@@ -74,11 +76,8 @@ type GiftEventRecord = {
 const normalizeString = (value: string | null | undefined) =>
   typeof value === 'string' ? value.trim() : '';
 
-const normalizeCurrencyCode = (value: string | null | undefined) => {
-  const normalized = normalizeString(value).toUpperCase();
-
-  return normalized === '' ? 'GBP' : normalized;
-};
+const normalizeGiftCurrencyCode = (value: string | null | undefined) =>
+  normalizeCurrencyCode(value);
 
 const includeInCashRollups = (giftType: string | null | undefined) =>
   normalizeString(giftType).toUpperCase() !== 'GIFT_IN_KIND';
@@ -155,27 +154,23 @@ const areSummariesEqual = (
   current: PersonRollupRecord,
   next: DonorRollupSummary,
 ) =>
-  areAmountsEqual(current.lifetimeGiftAmount, next.lifetimeGiftAmount) &&
+  (next.lifetimeGiftAmount === undefined ||
+    areAmountsEqual(current.lifetimeGiftAmount, next.lifetimeGiftAmount)) &&
   Math.round(current.giftCount ?? 0) === next.giftCount &&
   normalizeString(current.firstGiftDate) ===
     normalizeString(next.firstGiftDate) &&
   normalizeString(current.lastGiftDate) === normalizeString(next.lastGiftDate) &&
   areAmountsEqual(current.lastGiftAmount, next.lastGiftAmount) &&
-  areAmountsEqual(current.largestGiftAmount, next.largestGiftAmount);
+  (next.largestGiftAmount === undefined ||
+    areAmountsEqual(current.largestGiftAmount, next.largestGiftAmount));
 
-const toRollupAmount = (
-  amount: CurrencyAmount | null | undefined,
-  fallbackCurrencyCode: string,
-): CurrencyAmount => ({
-  amountMicros: Math.round(amount?.amountMicros ?? 0),
-  currencyCode:
-    normalizeCurrencyCode(amount?.currencyCode) || fallbackCurrencyCode,
-});
-
+// The last gift is a fact about one gift, so it keeps its own currency; the
+// lifetime total and largest gift only use reporting-currency values.
 export const computeDonorRollupSummary = (
   donorId: string,
   gifts: GiftRecord[],
-  currentPerson?: PersonRollupRecord,
+  _currentPerson?: PersonRollupRecord,
+  reportingCurrencyCode: string | null = getReportingCurrencyCode(),
 ): DonorRollupSummary => {
   const includedGifts = gifts.filter((gift) =>
     includeInCashRollups(gift.giftType),
@@ -186,35 +181,34 @@ export const computeDonorRollupSummary = (
   const sortedByGiftDateAscending = [...includedGifts].sort((left, right) =>
     normalizeString(left.giftDate).localeCompare(normalizeString(right.giftDate)),
   );
-  const largestGift = [...includedGifts].sort(
-    (left, right) =>
-      Math.round(right.amount?.amountMicros ?? 0) -
-      Math.round(left.amount?.amountMicros ?? 0),
-  )[0];
-  const currencyCode =
-    normalizeCurrencyCode(sortedByGiftDate[0]?.amount?.currencyCode) ||
-    normalizeCurrencyCode(currentPerson?.lifetimeGiftAmount?.currencyCode);
   const lastGift = sortedByGiftDate[0];
+  const lastGiftCurrencyCode = normalizeGiftCurrencyCode(lastGift?.amount?.currencyCode);
 
   return {
     donorId,
-    lifetimeGiftAmount: {
-      amountMicros: includedGifts.reduce(
-        (sum, gift) => sum + Math.round(gift.amount?.amountMicros ?? 0),
-        0,
-      ),
-      currencyCode,
-    },
+    ...(reportingCurrencyCode
+      ? {
+          lifetimeGiftAmount: sumReportingValues(
+            includedGifts,
+            reportingCurrencyCode,
+          ).total,
+          largestGiftAmount: findLargestByReportingValue(
+            includedGifts,
+            reportingCurrencyCode,
+          ),
+        }
+      : {}),
     giftCount: includedGifts.length,
     firstGiftDate:
       normalizeString(sortedByGiftDateAscending[0]?.giftDate) || null,
     lastGiftDate: normalizeString(lastGift?.giftDate) || null,
-    lastGiftAmount: lastGift
-      ? toRollupAmount(lastGift.amount, currencyCode)
-      : null,
-    largestGiftAmount: largestGift
-      ? toRollupAmount(largestGift.amount, currencyCode)
-      : null,
+    lastGiftAmount:
+      lastGift && lastGiftCurrencyCode !== ''
+        ? {
+            amountMicros: Math.round(lastGift.amount?.amountMicros ?? 0),
+            currencyCode: lastGiftCurrencyCode,
+          }
+        : null,
   };
 };
 

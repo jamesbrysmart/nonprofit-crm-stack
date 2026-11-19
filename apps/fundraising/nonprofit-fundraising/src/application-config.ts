@@ -11,6 +11,14 @@ export default defineApplication({
   displayName: APP_DISPLAY_NAME,
   description: APP_DESCRIPTION,
   applicationVariables: {
+    REPORTING_CURRENCY: {
+      universalIdentifier: '9daa8949-55b1-43f7-acb4-fcf54123d267',
+      label: 'Reporting currency',
+      description:
+        "Three-letter currency code (for example GBP, EUR or USD) that the organisation reports its fundraising in. Donor, appeal and company totals only include gifts with a value in this currency. Choose it before recording gifts; changing it later leaves earlier totals incomplete.",
+      isRequired: true,
+      isSecret: false,
+    },
     GIFT_AID_ENABLED: {
       universalIdentifier: '66f57f86-c15a-4ce8-a71a-87eec88bcf1b',
       description:

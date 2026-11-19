@@ -8,6 +8,9 @@ import {
   getAffectedAppealSourceIdsFromGiftUpdate,
 } from 'src/appeal-source-rollups/appeal-source-rollups';
 
+// Rollup totals are computed in the configured reporting currency.
+process.env.REPORTING_CURRENCY = 'GBP';
+
 describe('collectAppealSourceIds', () => {
   it('dedupes and trims appeal source ids while removing empty values', () => {
     expect(

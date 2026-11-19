@@ -7,6 +7,9 @@ import {
   getAffectedCompanyIdsFromOpportunityUpdate,
 } from 'src/company-rollups/company-rollups';
 
+// Rollup totals are computed in the configured reporting currency.
+process.env.REPORTING_CURRENCY = 'GBP';
+
 describe('collectCompanyIds', () => {
   it('dedupes and trims company ids while removing empty values', () => {
     expect(

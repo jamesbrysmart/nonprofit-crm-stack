@@ -9,6 +9,9 @@ import {
   getAffectedDonorIdsFromGiftUpdate,
 } from 'src/donor-rollups/donor-rollups';
 
+// Rollup totals are computed in the configured reporting currency.
+process.env.REPORTING_CURRENCY = 'GBP';
+
 describe('collectDonorIds', () => {
   it('dedupes and trims donor ids while removing empty values', () => {
     expect(

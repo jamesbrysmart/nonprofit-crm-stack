@@ -16,6 +16,10 @@ import {
 import {
   FUND_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import {
+  getReportingCurrencyCode,
+  getReportingValueMicros,
+} from 'src/reporting-currency/reporting-currency';
 
 const GIFT_PAGE_SIZE = 100;
 
@@ -46,7 +50,9 @@ type FundGivingSummary = {
   lastYearMicros: number;
   giftCount: number;
   latestGiftDate: string | null;
-  currencyCode: string;
+  // Null when no reporting currency is configured; totals are then not shown.
+  currencyCode: string | null;
+  excludedFromTotalsCount: number;
 };
 
 const normalizeString = (value: string | null | undefined) =>
@@ -185,19 +191,25 @@ const loadFundGifts = async (fundId: string): Promise<FundGiftRecord[]> => {
   return gifts;
 };
 
-const summarizeGifts = (gifts: FundGiftRecord[]): FundGivingSummary => {
+const summarizeGifts = (
+  gifts: FundGiftRecord[],
+  reportingCurrencyCode: string | null = getReportingCurrencyCode(),
+): FundGivingSummary => {
   const currentYear = new Date().getFullYear();
   const includedGifts = gifts.filter(isCashGift);
   let latestGiftDate: string | null = null;
-  let currencyCode = 'GBP';
+  let excludedFromTotalsCount = 0;
 
   const summary = includedGifts.reduce(
     (accumulator, gift) => {
-      const amountMicros = Math.round(gift.amount?.amountMicros ?? 0);
+      const reportingMicros = reportingCurrencyCode
+        ? getReportingValueMicros(gift, reportingCurrencyCode)
+        : null;
+      const amountMicros = reportingMicros ?? 0;
       const giftYear = getGiftYear(gift.giftDate);
 
-      if (normalizeString(gift.amount?.currencyCode) !== '') {
-        currencyCode = normalizeString(gift.amount?.currencyCode);
+      if (reportingCurrencyCode && reportingMicros === null) {
+        excludedFromTotalsCount += 1;
       }
 
       accumulator.lifetimeMicros += amountMicros;
@@ -234,9 +246,18 @@ const summarizeGifts = (gifts: FundGiftRecord[]): FundGivingSummary => {
     ...summary,
     giftCount: includedGifts.length,
     latestGiftDate,
-    currencyCode,
+    currencyCode: reportingCurrencyCode,
+    excludedFromTotalsCount,
   };
 };
+
+const formatReportingTotal = (
+  summary: FundGivingSummary,
+  amountMicros: number,
+) =>
+  summary.currencyCode
+    ? formatAmount(amountMicros, summary.currencyCode)
+    : 'Set the reporting currency';
 
 const FundSummary = () => {
   const selectedRecordIds = useSelectedRecordIds();
@@ -330,24 +351,15 @@ const FundSummary = () => {
       <SummaryStrip>
         <SummaryStripItem
           label="This year"
-          value={formatAmount(
-            givingSummary.thisYearMicros,
-            givingSummary.currencyCode,
-          )}
+          value={formatReportingTotal(givingSummary, givingSummary.thisYearMicros)}
         />
         <SummaryStripItem
           label="Last year"
-          value={formatAmount(
-            givingSummary.lastYearMicros,
-            givingSummary.currencyCode,
-          )}
+          value={formatReportingTotal(givingSummary, givingSummary.lastYearMicros)}
         />
         <SummaryStripItem
           label="Lifetime"
-          value={formatAmount(
-            givingSummary.lifetimeMicros,
-            givingSummary.currencyCode,
-          )}
+          value={formatReportingTotal(givingSummary, givingSummary.lifetimeMicros)}
         />
         <SummaryStripItem label="Gift count" value={givingSummary.giftCount} />
         <SummaryStripItem
@@ -355,6 +367,15 @@ const FundSummary = () => {
           value={formatDate(givingSummary.latestGiftDate)}
         />
       </SummaryStrip>
+      {givingSummary.excludedFromTotalsCount > 0 ? (
+        <div style={secondaryTextStyle}>
+          {`${givingSummary.excludedFromTotalsCount} gift${
+            givingSummary.excludedFromTotalsCount === 1 ? '' : 's'
+          } without a ${givingSummary.currencyCode} value ${
+            givingSummary.excludedFromTotalsCount === 1 ? 'is' : 'are'
+          } not included in these totals.`}
+        </div>
+      ) : null}
     </div>
   );
 };

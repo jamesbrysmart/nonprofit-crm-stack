@@ -149,7 +149,12 @@ const buildGoalProgressLabel = (record: AppealSummaryRecord) => {
   const goalMicros = Math.round(record.goalAmount?.amountMicros ?? 0);
   const raisedMicros = Math.round(record.raisedAmount?.amountMicros ?? 0);
 
-  if (goalMicros <= 0) {
+  // A goal set in another currency cannot be compared with the raised total.
+  if (
+    goalMicros <= 0 ||
+    (record.goalAmount?.currencyCode ?? '').toUpperCase() !==
+      (record.raisedAmount?.currencyCode ?? '').toUpperCase()
+  ) {
     return null;
   }
 

@@ -1,6 +1,10 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
 import {
+  getReportingCurrencyCode,
+  sumReportingValues,
+} from 'src/reporting-currency/reporting-currency';
+import {
   extractConnection,
   extractConnectionNodes,
 } from 'src/core-api/core-api-results';
@@ -45,10 +49,7 @@ type AppealRollupRecord = {
 
 type AppealRollupSummary = {
   appealId: string;
-  raisedAmount: {
-    amountMicros: number;
-    currencyCode: string;
-  };
+  raisedAmount?: CurrencyAmount;
   giftCount: number;
   donorCount: number;
   lastGiftAt: string | null;
@@ -56,10 +57,7 @@ type AppealRollupSummary = {
 
 type AppealRollupWriteback = {
   id: string;
-  raisedAmount: {
-    amountMicros: number;
-    currencyCode: string;
-  };
+  raisedAmount?: CurrencyAmount;
   giftCount: number;
   donorCount: number;
   lastGiftAt: string | null;
@@ -123,7 +121,8 @@ const areSummariesEqual = (
   current: AppealRollupRecord,
   next: AppealRollupSummary,
 ) =>
-  areAmountsEqual(current.raisedAmount, next.raisedAmount) &&
+  (next.raisedAmount === undefined ||
+    areAmountsEqual(current.raisedAmount, next.raisedAmount)) &&
   Math.round(current.giftCount ?? 0) === next.giftCount &&
   Math.round(current.donorCount ?? 0) === next.donorCount &&
   normalizeString(current.lastGiftAt) === normalizeString(next.lastGiftAt);
@@ -140,15 +139,13 @@ export const collectAppealIds = (appealIds: Array<string | null | undefined>) =>
 export const computeAppealRollupSummary = (
   appealId: string,
   gifts: GiftRecord[],
-  currentAppeal?: AppealRollupRecord,
+  _currentAppeal?: AppealRollupRecord,
+  reportingCurrencyCode: string | null = getReportingCurrencyCode(),
 ): AppealRollupSummary => {
   const includedGifts = gifts.filter((gift) => includeInCashRollups(gift.giftType));
   const sortedByGiftDate = [...includedGifts].sort((left, right) =>
     normalizeString(right.giftDate).localeCompare(normalizeString(left.giftDate)),
   );
-  const currencyCode =
-    normalizeCurrencyCode(sortedByGiftDate[0]?.amount?.currencyCode) ||
-    normalizeCurrencyCode(currentAppeal?.raisedAmount?.currencyCode);
   const contributorIds = new Set<string>();
 
   for (const gift of includedGifts) {
@@ -166,13 +163,12 @@ export const computeAppealRollupSummary = (
 
   return {
     appealId,
-    raisedAmount: {
-      amountMicros: includedGifts.reduce(
-        (sum, gift) => sum + Math.round(gift.amount?.amountMicros ?? 0),
-        0,
-      ),
-      currencyCode,
-    },
+    ...(reportingCurrencyCode
+      ? {
+          raisedAmount: sumReportingValues(includedGifts, reportingCurrencyCode)
+            .total,
+        }
+      : {}),
     giftCount: includedGifts.length,
     donorCount: contributorIds.size,
     lastGiftAt: normalizeString(sortedByGiftDate[0]?.giftDate) || null,
