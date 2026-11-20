@@ -1,9 +1,3 @@
-export type RecurringAgreementStatus =
-  | 'ACTIVE'
-  | 'PAUSED'
-  | 'CANCELED'
-  | 'COMPLETED'
-  | 'DELINQUENT';
 
 export type RecurringAgreementCadence =
   | 'WEEKLY'

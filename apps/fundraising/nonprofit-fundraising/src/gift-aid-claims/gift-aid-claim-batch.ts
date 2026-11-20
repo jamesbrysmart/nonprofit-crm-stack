@@ -167,4 +167,3 @@ export const finalizeGiftAidClaimBatch = async (
   }
 };
 
-export const submitGiftAidClaimBatch = finalizeGiftAidClaimBatch;

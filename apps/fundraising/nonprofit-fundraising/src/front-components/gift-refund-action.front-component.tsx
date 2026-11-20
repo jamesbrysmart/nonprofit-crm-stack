@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useRecordId } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { recordGiftRefund } from 'src/gift-lifecycle/gift-refund.api';
 import { deriveRefundState } from 'src/gift-lifecycle/gift-refund';
 import { Callout } from 'twenty-ui/components/feedback';
@@ -124,7 +124,8 @@ const loadGift = async (recordId: string): Promise<RefundActionGiftRecord | null
 };
 
 const GiftRefundAction = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<RefundActionGiftRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

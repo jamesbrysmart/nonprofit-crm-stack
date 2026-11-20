@@ -196,14 +196,6 @@ const checkGiftReadyStatus = async (recordId: string): Promise<GiftReadyStatus> 
   });
 };
 
-export const saveGiftDate = async (recordId: string, giftDate: string) => {
-  return updateGiftStaging(recordId, {
-    giftDate: giftDate === '' ? null : giftDate,
-    giftReadyStatus: 'NEEDS_REVIEW',
-    processingStatus: 'NOT_PROCESSED',
-  });
-};
-
 export const saveDonorEvidence = async (
   recordId: string,
   donorEvidence: {

@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useRecordId } from 'twenty-sdk/front-component';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   CompactMetaGrid,
   CompactMetaItem,
@@ -219,7 +219,8 @@ const loadGift = async (recordId: string): Promise<GiftAidGiftRecord | null> => 
 };
 
 const GiftGiftAidState = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<GiftAidGiftRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

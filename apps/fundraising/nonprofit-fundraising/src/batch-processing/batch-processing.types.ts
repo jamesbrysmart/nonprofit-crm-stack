@@ -6,11 +6,6 @@ export type BatchStatus =
   | 'PROCESSED'
   | 'PROCESSED_WITH_ISSUES';
 
-export type GiftStagingProcessingStatus =
-  | 'NOT_PROCESSED'
-  | 'PROCESSED'
-  | 'PROCESS_FAILED';
-
 export type GiftStagingPaymentState =
   | 'AWAITING_PAYMENT'
   | 'PAYMENT_CONFIRMED'

@@ -4,7 +4,7 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import {
   AppPath,
   navigate,
-  useRecordId,
+  useSelectedRecordIds,
 } from 'twenty-sdk/front-component';
 import {
   ActionButton,
@@ -205,7 +205,8 @@ const loadGift = async (
 };
 
 const GiftGiftAidDonorContext = () => {
-  const recordId = useRecordId();
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
   const [record, setRecord] = useState<GiftGiftAidDonorContextRecord | null>(
     null,
   );

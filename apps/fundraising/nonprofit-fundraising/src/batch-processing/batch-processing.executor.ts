@@ -35,7 +35,6 @@ export {
   deriveRecurringCadenceFromProviderEvidence,
 } from './batch-processing.executor.support';
 
-const MAX_BATCH_SIZE = 60;
 const GIFT_CREATE_CHUNK_SIZE = 30;
 const WRITEBACK_CHUNK_SIZE = 60;
 const CHUNK_DELAY_MS = 700;
@@ -449,11 +448,3 @@ export const canProcessBatchRow = (row: BatchProcessingRow) => {
   );
 };
 
-export const getBatchProcessingLimits = () => {
-  return {
-    maxBatchSize: MAX_BATCH_SIZE,
-    giftCreateChunkSize: GIFT_CREATE_CHUNK_SIZE,
-    writebackChunkSize: WRITEBACK_CHUNK_SIZE,
-    chunkDelayMs: CHUNK_DELAY_MS,
-  };
-};

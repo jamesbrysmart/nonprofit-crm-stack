@@ -211,9 +211,6 @@ export const getInputEventValue = (event: unknown) => {
   return value === undefined || value === null ? '' : String(value);
 };
 
-export const getInputEventChecked = (event: unknown) =>
-  getEventTarget(event)?.checked === true;
-
 export const buildMailingAddressInput = (input: {
   addressStreet1: string;
   addressStreet2: string;

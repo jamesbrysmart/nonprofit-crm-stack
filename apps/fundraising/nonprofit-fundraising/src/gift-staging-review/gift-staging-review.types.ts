@@ -1,8 +1,5 @@
 import type {
-  DuplicateCheckResponse,
-  AppealSummary,
   CompanySummary,
-  FundSummary,
   PersonSummary,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import type { SoftCreditType } from 'src/soft-credits/soft-credit-integrity';
@@ -213,18 +210,3 @@ export type DerivedReviewIssue = {
   label: string;
 };
 
-export type GiftStagingReviewData = {
-  record: GiftStagingReviewRecord;
-  duplicateCheckResult: DuplicateCheckResponse | null;
-};
-
-export type GiftCodingSelectionState = {
-  appealId: string;
-  appealSourceId: string;
-  fundId: string;
-};
-
-export type GiftCodingOptions = {
-  appeals: AppealSummary[];
-  funds: FundSummary[];
-};

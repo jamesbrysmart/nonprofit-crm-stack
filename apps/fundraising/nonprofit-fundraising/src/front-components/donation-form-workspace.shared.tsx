@@ -619,12 +619,6 @@ export const previewIframeStyle = {
   overflow: 'hidden' as const,
 };
 
-export const previewControlGridStyle = {
-  display: 'grid',
-  gap: '12px',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-};
-
 export const previewSubtleCardStyle = {
   border: `1px solid ${theme.border.color.medium}`,
   borderRadius: '12px',
