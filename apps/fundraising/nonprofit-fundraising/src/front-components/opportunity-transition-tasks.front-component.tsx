@@ -23,6 +23,7 @@ import {
 import {
   OPPORTUNITY_TRANSITION_TASKS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type OpportunityTransitionRecord = {
   id: string;
@@ -52,9 +53,6 @@ type StageOption = {
   value: string;
   label: string;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const getInputEventValue = (event: unknown) => {
   if (

@@ -6,9 +6,7 @@ import {
 } from 'src/donation-forms/build-donation-form-embed-document';
 import { buildDonationFormStaticDocument } from 'src/donation-forms/donation-form-rendering';
 import { loadPublicDonationFormConfigWithClient } from 'src/logic-functions/get-public-donation-form-config';
-
-const normalizeString = (value: string | null | undefined): string =>
-  value?.trim() ?? '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 // Twenty serves a bare string route result as text/plain, so the page must declare HTML.
 const htmlResponse = (document: string) =>

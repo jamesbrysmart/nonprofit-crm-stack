@@ -5,13 +5,12 @@ import type {
   OpportunitySummary,
   SearchOpportunitiesResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type SearchOpportunitiesBody = {
   query?: string;
   companyId?: string;
 };
-
-const normalizeString = (value: string | undefined) => value?.trim() ?? '';
 
 const handler = async (
   event: RoutePayload<SearchOpportunitiesBody>,

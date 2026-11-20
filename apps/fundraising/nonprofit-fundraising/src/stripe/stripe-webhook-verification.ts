@@ -1,8 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { RoutePayload } from 'twenty-sdk/define';
-
-const normalizeString = (value: string | null | undefined): string =>
-  value?.trim() ?? '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
 

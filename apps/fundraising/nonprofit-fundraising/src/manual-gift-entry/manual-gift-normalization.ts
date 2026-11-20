@@ -7,9 +7,7 @@ import type {
   ManualGiftPaymentType,
   ManualGiftType,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
-
-export const normalizeString = (value: string | null | undefined) =>
-  value?.trim() ?? '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export const getManualGiftDonorType = (
   donorType: ManualGiftDonorType | undefined,

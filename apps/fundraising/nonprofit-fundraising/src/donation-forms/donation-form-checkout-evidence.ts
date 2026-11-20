@@ -1,11 +1,9 @@
 import type { GiftAidCaptureInput } from 'src/gift-aid/gift-aid.types';
-import { normalizeDonationFormString } from './donation-form-config';
 import type {
   CreateDonationFormCheckoutSessionRequest,
   DonationType,
 } from './donation-form-checkout.types';
-
-const normalizeString = normalizeDonationFormString;
+import { normalizeString } from 'src/utils/normalize-string';
 
 export const buildPrePaymentRawEvidence = ({
   sourceFingerprint,

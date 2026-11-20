@@ -19,6 +19,7 @@ import {
   type StripeRecurringFulfillmentResult,
   type StripeRecurringUnmatchedStagingResult,
 } from 'src/stripe/stripe-recurring-fulfillment';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type StripeObjectRef = string | { id?: string | null } | null | undefined;
 
@@ -55,9 +56,6 @@ export type StripeEventRoutingResult =
       action: 'CREATE_RECURRING_GIFT_STAGING';
       result: StripeRecurringUnmatchedStagingResult;
     };
-
-const normalizeString = (value: string | null | undefined): string =>
-  value?.trim() ?? '';
 
 const getStripeObjectId = (value: StripeObjectRef): string | null => {
   if (typeof value === 'string') {

@@ -22,11 +22,11 @@ import {
   formatUnixDate,
   getProviderPaymentId,
   getStripeObjectId,
-  normalizeString,
   splitDonorName,
   toAmountMicros,
   toCurrencyCode,
 } from 'src/stripe/stripe-intake-utils';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export {
   STRIPE_PROVIDER,
@@ -53,7 +53,6 @@ export {
   getInvoiceSubscriptionId,
   getProviderPaymentId,
   getStripeObjectId,
-  normalizeString,
 } from 'src/stripe/stripe-intake-utils';
 export {
   findGiftStagingById,

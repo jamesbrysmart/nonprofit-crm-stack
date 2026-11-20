@@ -15,6 +15,7 @@ import {
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type PersonRecordSummaryRecord = {
   id: string;
@@ -58,9 +59,6 @@ type PersonRecordSummaryRecord = {
     }>;
   } | null;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const formatCurrencyAmount = (
   amount: PersonRecordSummaryRecord['lifetimeGiftAmount'],

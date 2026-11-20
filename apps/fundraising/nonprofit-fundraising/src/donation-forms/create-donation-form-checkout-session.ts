@@ -3,7 +3,6 @@ import type { CoreApiClient } from 'twenty-client-sdk/core';
 import { normalizeOnlineGiftAidEvidence } from 'src/gift-aid/online-gift-aid-evidence';
 import {
   type DonationFormPublishedConfig,
-  normalizeDonationFormString,
   resolveDonationFormDonationTypes,
 } from 'src/donation-forms/donation-form-config';
 import type {
@@ -30,6 +29,7 @@ import {
   resolveStripeApiKey,
   resolveStripePublishableKey,
 } from './donation-form-checkout-stripe';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export type {
   CreateDonationFormCheckoutSessionRequest,
@@ -39,8 +39,6 @@ export type {
 
 const DONATION_FORM_INTAKE_SOURCE = 'donation_form';
 const DONATION_FORM_GIFT_AID_SOURCE = 'donation_form_embed';
-
-const normalizeString = normalizeDonationFormString;
 
 const normalizeAddress = (
   value: DonationFormMailingAddress | null | undefined,

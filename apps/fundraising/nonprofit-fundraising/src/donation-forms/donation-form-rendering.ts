@@ -1,11 +1,11 @@
 import {
   type DonationFormDonationType,
   normalizeDonationFormAmountOptions,
-  normalizeDonationFormString,
   resolveDonationFormDonationTypes,
 } from 'src/donation-forms/donation-form-config';
 import { DONATION_FORM_RENDER_STYLES } from 'src/donation-forms/donation-form-rendering-styles';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export type DonationFormRenderDonationType = DonationFormDonationType;
 
@@ -47,8 +47,6 @@ const STRIPE_COUNTRY_CODES = [
   'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VN',
   'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW', 'ZZ',
 ] as const;
-
-const normalizeString = normalizeDonationFormString;
 
 const normalizeHexColor = (value: string | null | undefined): string | null => {
   const normalized = normalizeString(value);

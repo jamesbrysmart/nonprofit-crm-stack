@@ -4,9 +4,7 @@ import {
   type PeopleByEmailMap,
 } from './donor-candidate-discovery';
 import type { PersonSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export const buildConflictMessage = (
   email: string,

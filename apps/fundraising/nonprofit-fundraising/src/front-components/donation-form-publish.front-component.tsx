@@ -19,7 +19,6 @@ import {
   formatPublishedAt,
   linkStyle,
   normalizeConfig,
-  normalizeString,
   panelStyle,
   stableStringify,
   type PublishedState,
@@ -28,6 +27,7 @@ import {
 import {
   DONATION_FORM_PUBLISH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const DonationFormPublish = () => {
   const selectedRecordIds = useSelectedRecordIds();

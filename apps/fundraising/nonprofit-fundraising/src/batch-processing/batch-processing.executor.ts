@@ -14,7 +14,6 @@ import {
   applyLinkedDonorSupporterEmailOptOutUpdates,
   buildGiftPayloadFromRow,
   createGiftViaRowFallback,
-  normalizeString,
   requiresRecurringRowFallback,
   type BatchGiftEntry,
   type FailedWriteback,
@@ -27,6 +26,7 @@ import {
   runBatchProcessingSideEffects,
 } from './batch-processing.executor.effects';
 import type { BatchProcessingRow } from './batch-processing.types';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export {
   buildNewPersonCreateData,

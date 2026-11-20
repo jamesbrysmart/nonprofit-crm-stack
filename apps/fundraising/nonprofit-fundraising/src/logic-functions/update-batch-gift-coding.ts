@@ -8,11 +8,9 @@ import type {
   UpdateBatchGiftCodingResponse,
 } from 'src/batch-processing/batch-processing.types';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const MAX_BATCH_CODING_WRITEBACKS = 100;
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const loadAppealDefaultFund = async (
   client: CoreApiClient,

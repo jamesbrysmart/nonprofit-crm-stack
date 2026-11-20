@@ -8,9 +8,9 @@ import {
   getManualGiftPaymentType,
   normalizeRequiredCurrencyCode,
   normalizeRequiredGiftDate,
-  normalizeString,
   parseRequiredManualGiftAmountMicros,
 } from 'src/manual-gift-entry/manual-gift-normalization';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export const buildManualGiftPayload = (args: {
   body: ManualGiftEntryRequest;

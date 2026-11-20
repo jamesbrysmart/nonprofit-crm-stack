@@ -7,9 +7,7 @@ import type {
 } from './batch-donor-match.types';
 import { normalizeDonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
 import { isPaymentConfirmedOrNotRequired } from 'src/gift-staging-review/gift-staging-processability';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const normalizeEmail = (value: string | null | undefined) =>
   normalizeString(value).toLowerCase();

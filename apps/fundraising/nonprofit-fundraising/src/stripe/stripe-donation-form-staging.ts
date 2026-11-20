@@ -21,8 +21,8 @@ import {
   getStripeObjectId,
   getStripePaymentEconomicsRetriever,
   getSubscriptionIntervalEvidence,
-  normalizeString,
 } from 'src/stripe/stripe-one-off-staging';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type DonationFormGiftStagingLocator = {
   giftStagingId?: string | null;

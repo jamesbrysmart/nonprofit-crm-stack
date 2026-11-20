@@ -1,7 +1,5 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type AppealSourceLookupRecord = {
   id?: string | null;

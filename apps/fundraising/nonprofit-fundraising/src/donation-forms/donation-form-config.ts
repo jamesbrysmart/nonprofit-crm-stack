@@ -1,3 +1,4 @@
+import { normalizeString } from 'src/utils/normalize-string';
 export type DonationFormDonationType = 'ONE_OFF' | 'RECURRING';
 
 export type DonationFormMode =
@@ -45,10 +46,6 @@ export type DonationFormConfiguredAppealSource = {
   appeal?: DonationFormConfiguredAppeal | null;
 };
 
-export const normalizeDonationFormString = (
-  value: string | null | undefined,
-): string => (typeof value === 'string' ? value.trim() : '');
-
 export const normalizeDonationFormConfigObject = (
   value: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> =>
@@ -69,7 +66,7 @@ const normalizeDonationFormConfiguredFund = (
     return undefined;
   }
 
-  const id = normalizeDonationFormString(
+  const id = normalizeString(
     (value as { id?: string | null }).id,
   );
 
@@ -77,7 +74,7 @@ const normalizeDonationFormConfiguredFund = (
     return undefined;
   }
 
-  const name = normalizeDonationFormString(
+  const name = normalizeString(
     (value as { name?: string | null }).name,
   );
 
@@ -94,7 +91,7 @@ const normalizeDonationFormConfiguredAppeal = (
     return undefined;
   }
 
-  const id = normalizeDonationFormString(
+  const id = normalizeString(
     (value as { id?: string | null }).id,
   );
 
@@ -102,7 +99,7 @@ const normalizeDonationFormConfiguredAppeal = (
     return undefined;
   }
 
-  const name = normalizeDonationFormString(
+  const name = normalizeString(
     (value as { name?: string | null }).name,
   );
   const defaultFund = normalizeDonationFormConfiguredFund(
@@ -123,7 +120,7 @@ const normalizeDonationFormConfiguredAppealSource = (
     return undefined;
   }
 
-  const id = normalizeDonationFormString(
+  const id = normalizeString(
     (value as { id?: string | null }).id,
   );
 
@@ -131,7 +128,7 @@ const normalizeDonationFormConfiguredAppealSource = (
     return undefined;
   }
 
-  const name = normalizeDonationFormString(
+  const name = normalizeString(
     (value as { name?: string | null }).name,
   );
   const appeal = normalizeDonationFormConfiguredAppeal(
@@ -146,7 +143,7 @@ const normalizeDonationFormConfiguredAppealSource = (
 };
 
 export const normalizeDonationFormMode = (value: unknown): DonationFormMode => {
-  const normalized = normalizeDonationFormString(
+  const normalized = normalizeString(
     typeof value === 'string' ? value : undefined,
   ).toUpperCase();
 
@@ -166,7 +163,7 @@ export const normalizeDonationFormMode = (value: unknown): DonationFormMode => {
 };
 
 export const isDonationFormModePublishable = (value: unknown): boolean => {
-  const normalized = normalizeDonationFormString(
+  const normalized = normalizeString(
     typeof value === 'string' ? value : undefined,
   ).toUpperCase();
 
@@ -215,25 +212,25 @@ export const normalizeDonationFormPublishedConfig = (
 
   return {
     title:
-      normalizeDonationFormString(config.title as string | null | undefined) ||
+      normalizeString(config.title as string | null | undefined) ||
       undefined,
     description:
-      normalizeDonationFormString(
+      normalizeString(
         config.description as string | null | undefined,
       ) || undefined,
     primaryColor:
-      normalizeDonationFormString(
+      normalizeString(
         config.primaryColor as string | null | undefined,
       ) || undefined,
     thankYouMessage:
-      normalizeDonationFormString(
+      normalizeString(
         config.thankYouMessage as string | null | undefined,
       ) || undefined,
     mode:
-      normalizeDonationFormString(config.mode as string | null | undefined) ||
+      normalizeString(config.mode as string | null | undefined) ||
       undefined,
     currencyCode:
-      normalizeDonationFormString(
+      normalizeString(
         config.currencyCode as string | null | undefined,
       ).toUpperCase() || undefined,
     amountOptions: amountOptions.length > 0 ? amountOptions : undefined,
@@ -245,27 +242,27 @@ export const normalizeDonationFormPublishedConfig = (
         ? config.minimumAmount
         : undefined,
     cancelUrl:
-      normalizeDonationFormString(
+      normalizeString(
         config.cancelUrl as string | null | undefined,
       ) || undefined,
     giftAidEnabled: config.giftAidEnabled === true,
     giftAidTextVersion:
-      normalizeDonationFormString(
+      normalizeString(
         config.giftAidTextVersion as string | null | undefined,
       ) || undefined,
     giftAidDeclarationSource:
-      normalizeDonationFormString(
+      normalizeString(
         config.giftAidDeclarationSource as string | null | undefined,
       ) || undefined,
     ...(defaultAppeal ? { defaultAppeal } : {}),
     ...(defaultFund ? { defaultFund } : {}),
     ...(defaultAppealSource ? { defaultAppealSource } : {}),
     sourceAppealName:
-      normalizeDonationFormString(
+      normalizeString(
         config.sourceAppealName as string | null | undefined,
       ) || undefined,
     sourceFundName:
-      normalizeDonationFormString(
+      normalizeString(
         config.sourceFundName as string | null | undefined,
       ) || undefined,
     requireAddress: config.requireAddress === true,
@@ -276,7 +273,7 @@ export const normalizeDonationFormPublishedConfig = (
 export const validatePublishableDonationFormConfig = (
   config: Record<string, unknown>,
 ): void => {
-  const currencyCode = normalizeDonationFormString(
+  const currencyCode = normalizeString(
     typeof config.currencyCode === 'string' ? config.currencyCode : undefined,
   );
   const amountOptions = normalizeDonationFormAmountOptions(config.amountOptions);

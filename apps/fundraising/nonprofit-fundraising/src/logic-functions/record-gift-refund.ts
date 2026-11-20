@@ -7,6 +7,7 @@ import type {
   RecordGiftRefundResponse,
 } from 'src/gift-lifecycle/gift-refund.types';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type GiftRefundRecord = {
   id: string;
@@ -24,9 +25,6 @@ type GiftRefundRecord = {
     name?: string | null;
   } | null;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const normalizeAmountMicros = (value: number | null | undefined) => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {

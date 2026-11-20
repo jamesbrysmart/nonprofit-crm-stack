@@ -10,9 +10,9 @@ import {
 import {
   getProviderPaymentId,
   getStripeObjectId,
-  normalizeString,
   toCurrencyCode,
 } from 'src/stripe/stripe-intake-utils';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const resolveStripeApiKey = (): string => {
   const apiKey = normalizeString(

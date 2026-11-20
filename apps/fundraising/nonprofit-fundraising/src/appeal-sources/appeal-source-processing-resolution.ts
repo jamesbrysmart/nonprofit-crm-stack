@@ -1,9 +1,7 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type AppealSourceParentRecord = {
   id?: string | null;

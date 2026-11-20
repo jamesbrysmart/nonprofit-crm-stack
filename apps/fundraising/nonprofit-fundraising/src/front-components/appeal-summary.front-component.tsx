@@ -17,6 +17,7 @@ import {
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type AppealSummaryRecord = {
   id: string;
@@ -41,9 +42,6 @@ type AppealSummaryRecord = {
     name?: string | null;
   } | null;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const formatAmount = (
   amount:

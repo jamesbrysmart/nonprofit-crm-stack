@@ -18,6 +18,7 @@ import {
   getDefaultCurrencyCode,
   getReportingCurrencyCode,
 } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const STRIPE_PROVIDER = 'STRIPE';
 
@@ -99,9 +100,6 @@ export type StripeRecurringUnmatchedStagingResult =
       externalId: string;
       providerAgreementId: string;
     };
-
-const normalizeString = (value: string | null | undefined): string =>
-  value?.trim() ?? '';
 
 const formatUnixDate = (timestampSeconds: number): string =>
   new Date(timestampSeconds * 1000).toISOString().slice(0, 10);

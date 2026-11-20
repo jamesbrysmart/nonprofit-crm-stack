@@ -21,6 +21,7 @@ import {
   GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type RefundActionGiftRecord = {
   id: string;
@@ -40,9 +41,6 @@ type RefundActionGiftRecord = {
     status?: string | null;
   } | null;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const formatAmount = (amount: RefundActionGiftRecord['amount']) => {
   const micros = amount?.amountMicros;

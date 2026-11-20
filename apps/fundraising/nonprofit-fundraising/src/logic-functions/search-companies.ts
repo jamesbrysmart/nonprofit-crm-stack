@@ -5,12 +5,11 @@ import type {
   CompanySummary,
   SearchCompaniesResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type SearchCompaniesBody = {
   query?: string;
 };
-
-const normalizeString = (value: string | undefined) => value?.trim() ?? '';
 
 const handler = async (
   event: RoutePayload<SearchCompaniesBody>,

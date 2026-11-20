@@ -15,6 +15,7 @@ import type {
   HmrcCharitiesSoftwareIdentity,
 } from 'src/hmrc-charities/types';
 import { isSterlingAmount } from 'src/gift-aid/gift-aid-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type SubmissionMode =
   | 'mock_success'
@@ -61,8 +62,6 @@ type SubmissionResult =
       failureMessage: string;
       responseBody: Record<string, unknown>;
     };
-
-const normalizeString = (value: string | undefined) => value?.trim() ?? '';
 
 const POLL_MAX_ATTEMPTS = 5;
 const POLL_INTERVAL_MS = 1_000;

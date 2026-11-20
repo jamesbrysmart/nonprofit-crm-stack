@@ -1,6 +1,4 @@
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
-
+import { normalizeString } from 'src/utils/normalize-string';
 export const SOFT_CREDIT_TYPE_VALUES = [
   'FUNDRAISER',
   'INTRODUCER',

@@ -3,9 +3,7 @@ import {
   type StripeInvoiceObject,
 } from 'src/stripe/stripe-intake.types';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
-
-export const normalizeString = (value: string | null | undefined): string =>
-  value?.trim() ?? '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const hasCorrelationMetadata = (
   metadata: Record<string, string | null | undefined> | null | undefined,

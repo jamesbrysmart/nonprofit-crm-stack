@@ -4,7 +4,7 @@ import {
   extractQueryRecord,
 } from 'src/core-api/core-api-results';
 import type { GiftStagingLookupRecord } from 'src/stripe/stripe-intake.types';
-import { normalizeString } from 'src/stripe/stripe-intake-utils';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const normalizeGiftStagingLookupRecord = (
   record: unknown,

@@ -15,6 +15,7 @@ import type {
   ObjectRecordRestoreEvent,
   ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const DONOR_QUERY_CHUNK_SIZE = 25;
 const GIFT_QUERY_PAGE_SIZE = 200;
@@ -73,9 +74,6 @@ type GiftEventRecord = {
   giftDate?: string | null;
   amount?: CurrencyAmount | null;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const normalizeGiftCurrencyCode = (value: string | null | undefined) =>
   normalizeCurrencyCode(value);

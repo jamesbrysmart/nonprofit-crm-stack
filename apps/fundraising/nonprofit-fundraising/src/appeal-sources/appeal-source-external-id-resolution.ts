@@ -1,9 +1,7 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type AppealSourceExternalMatchRow = {
   id: string;

@@ -4,15 +4,13 @@ import {
   extractConnectionNodes,
 } from 'src/core-api/core-api-results';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const GIFT_STAGING_QUERY_PAGE_SIZE = 200;
 
 type GiftStagingAwaitingPaymentRow = {
   id: string;
 };
-
-const normalizeString = (value: unknown) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const buildAwaitingDonationFormPaymentFilter = () => ({
   and: [

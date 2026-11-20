@@ -29,6 +29,7 @@ import {
   OPPORTUNITY_RECORD_PAYMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type CurrencyAmount = {
   amountMicros?: number | null;
@@ -65,9 +66,6 @@ const GIFT_TYPE_LABELS = {
   SPONSORSHIP: 'Sponsorship',
   GIFT_IN_KIND: 'Gift in kind',
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const todayDate = () => new Date().toISOString().slice(0, 10);
 

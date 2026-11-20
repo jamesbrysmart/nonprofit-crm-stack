@@ -1,8 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { extractMutationRecord } from 'src/core-api/core-api-results';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const buildPlainTextBlocknote = (text: string) =>
   JSON.stringify([

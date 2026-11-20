@@ -1,4 +1,5 @@
 import { normalizeDonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type ProcessabilityInput = {
   processingStatus: string | null | undefined;
@@ -9,9 +10,6 @@ type ProcessabilityInput = {
   donorLastName?: string | null | undefined;
   linkedDonorId?: string | null | undefined;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 export const hasSufficientDonorEvidenceForNewDonor = (
   input: Pick<ProcessabilityInput, 'donorFirstName' | 'donorLastName'>,

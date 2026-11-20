@@ -4,9 +4,7 @@ import type {
   StoredRecurringAgreementRecord,
 } from './recurring.types';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const parseDateOnly = (value: string | null | undefined) => {
   const normalized = normalizeString(value);

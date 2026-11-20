@@ -10,9 +10,9 @@ import {
   getManualGiftDonorType,
   normalizeCurrencyCode,
   normalizeGiftDate,
-  normalizeString,
   parseManualGiftAmountMicros,
 } from 'src/manual-gift-entry/manual-gift-normalization';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const buildCommittedGiftMatches = (
   gifts:

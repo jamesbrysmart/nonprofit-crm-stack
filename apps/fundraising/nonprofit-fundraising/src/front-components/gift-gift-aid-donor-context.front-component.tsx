@@ -20,6 +20,7 @@ import {
   GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type MailingAddress = {
   addressStreet1?: string | null;
@@ -59,9 +60,6 @@ const statusPillBaseStyle: CSSProperties = {
   fontWeight: 600,
   width: 'fit-content',
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const buildDisplayName = (
   firstName: string | null | undefined,

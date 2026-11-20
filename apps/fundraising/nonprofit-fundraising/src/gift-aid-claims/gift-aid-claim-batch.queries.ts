@@ -67,9 +67,6 @@ const giftAidClaimGiftSelection = {
   },
 } as const;
 
-export const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
-
 export const getCurrentDraftClaimBatch = async (
   client: CoreApiClient,
 ): Promise<GiftAidClaimBatchRecord | undefined> => {

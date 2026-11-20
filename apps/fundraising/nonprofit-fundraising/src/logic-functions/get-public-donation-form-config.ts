@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export type PublicDonationFormConfigResponse =
   | {
@@ -28,9 +29,6 @@ type DonationFormPublicRecord = {
   paymentProvider?: string | null;
   publishedConfig?: Record<string, unknown> | null;
 };
-
-const normalizeString = (value: string | null | undefined): string =>
-  value?.trim() ?? '';
 
 export const loadPublicDonationFormConfigWithClient = async (
   client: CoreApiClient,

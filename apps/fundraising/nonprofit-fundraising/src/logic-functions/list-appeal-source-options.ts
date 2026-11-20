@@ -6,9 +6,7 @@ import type {
   ListAppealSourceOptionsRequest,
   ListAppealSourceOptionsResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const handler = async (
   event: RoutePayload<ListAppealSourceOptionsRequest>,

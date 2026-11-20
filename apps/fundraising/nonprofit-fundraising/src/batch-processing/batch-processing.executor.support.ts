@@ -21,6 +21,7 @@ import {
   withGiftReportingValue,
 } from 'src/reporting-currency/gift-reporting-value';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export type SuccessfulWriteback = {
   id: string;
@@ -77,9 +78,6 @@ export type DonorSupporterEmailOptOutUpdate = {
 
 type GiftCreatePayload = ReturnType<typeof buildGiftPayloadFromRow> &
   GiftAidEvaluatedPayload;
-
-export const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const buildOptionalCurrencyValue = (
   value:

@@ -8,8 +8,8 @@ import {
 } from 'src/stripe/stripe-intake.types';
 import {
   formatUnixDate,
-  normalizeString,
 } from 'src/stripe/stripe-intake-utils';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export const buildDonorMailingAddress = (
   address:

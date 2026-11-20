@@ -1,3 +1,4 @@
+import { normalizeString } from 'src/utils/normalize-string';
 export type GiftNameGiftType =
   | 'DONATION'
   | 'GRANT'
@@ -6,9 +7,6 @@ export type GiftNameGiftType =
   | string
   | null
   | undefined;
-
-const normalizeString = (value: string | null | undefined): string =>
-  typeof value === 'string' ? value.trim() : '';
 
 const buildGiftTypeLabel = (giftType: GiftNameGiftType): string => {
   switch (normalizeString(giftType).toUpperCase()) {

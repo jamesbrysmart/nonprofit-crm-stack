@@ -19,9 +19,9 @@ import {
   type DonationFormConfiguredFund,
   normalizeDonationFormConfigObject,
   normalizeDonationFormMode,
-  normalizeDonationFormString,
 } from 'src/donation-forms/donation-form-config';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export type DonationFormWorkspaceRecord = {
   id?: string | null;
@@ -85,8 +85,6 @@ export const DEFAULT_DONATION_FORM_WORKSPACE_STATE: DonationFormWorkspaceState =
   selectedFundId: '',
   selectedAppealSourceId: '',
 };
-
-export const normalizeString = normalizeDonationFormString;
 
 export const normalizeConfig = (
   value: Record<string, unknown> | null | undefined,

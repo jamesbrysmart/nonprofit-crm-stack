@@ -15,6 +15,7 @@ import {
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type CompanyRecordSummaryRecord = {
   id: string;
@@ -30,9 +31,6 @@ type CurrencyAmount = {
   amountMicros?: number | null;
   currencyCode?: string | null;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const formatDate = (value: string | null | undefined) => {
   const normalized = normalizeString(value);

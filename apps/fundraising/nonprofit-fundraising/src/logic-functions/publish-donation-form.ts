@@ -7,10 +7,10 @@ import {
 import { buildDonationFormEmbedSnippet } from 'src/donation-forms/build-donation-form-embed-document';
 import {
   normalizeDonationFormConfigObject,
-  normalizeDonationFormString,
   validatePublishableDonationFormConfig,
 } from 'src/donation-forms/donation-form-config';
 import { resolveStripeProviderConfigKey } from 'src/donation-forms/donation-form-checkout-stripe';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export type PublishDonationFormRequest = {
   donationFormId?: string;
@@ -33,8 +33,6 @@ type DonationFormRecord = {
   providerConfigKey?: string | null;
   config?: Record<string, unknown> | null;
 };
-
-const normalizeString = normalizeDonationFormString;
 
 const buildPublicId = (): string => `df_${randomUUID().replace(/-/g, '').slice(0, 16)}`;
 

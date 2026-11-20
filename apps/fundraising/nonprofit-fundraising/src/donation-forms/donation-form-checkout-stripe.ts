@@ -1,13 +1,11 @@
 import Stripe from 'stripe';
-import { normalizeDonationFormString } from './donation-form-config';
 import type {
   DonationType,
   PublishedDonationFormForCheckout,
   StripeCheckoutSessionCreator,
   StripeCheckoutSessionInput,
 } from './donation-form-checkout.types';
-
-const normalizeString = normalizeDonationFormString;
+import { normalizeString } from 'src/utils/normalize-string';
 
 export const DEFAULT_STRIPE_PROVIDER_CONFIG_KEY = 'stripe-default';
 

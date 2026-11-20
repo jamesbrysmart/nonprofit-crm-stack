@@ -28,7 +28,6 @@ import {
   getManualGiftDonorType,
   normalizeManualGiftMailingAddress,
   normalizeRequiredGiftDate,
-  normalizeString,
 } from 'src/manual-gift-entry/manual-gift-normalization';
 import { buildManualGiftPayload } from 'src/manual-gift-entry/manual-gift-payload';
 import {
@@ -36,6 +35,7 @@ import {
 } from 'src/reporting-currency/gift-reporting-value';
 import { parseManualGiftAmountMicros } from 'src/manual-gift-entry/manual-gift-normalization';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const resolveAppealAndFundSelection = async (
   client: CoreApiClient,

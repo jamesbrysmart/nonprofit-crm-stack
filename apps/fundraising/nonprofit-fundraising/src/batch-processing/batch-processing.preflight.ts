@@ -6,6 +6,7 @@ import {
   hasSufficientDonorEvidenceForNewDonor,
   isExplicitAnonymousDonor,
 } from 'src/gift-staging-review/gift-staging-processability';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type BatchProcessingLikeRow = Pick<
   BatchProcessingRow,
@@ -56,9 +57,6 @@ export type BatchPreflightResult = {
   category: BatchPreflightCategory;
   issueCodes: BatchPreflightIssueCode[];
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const isProviderBackedRecurringRow = (row: BatchProcessingLikeRow) =>
   normalizeString(row.recurringAgreement?.id) === '' &&

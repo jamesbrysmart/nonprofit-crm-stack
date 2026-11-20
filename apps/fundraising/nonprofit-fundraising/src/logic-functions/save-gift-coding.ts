@@ -10,9 +10,7 @@ import type {
   SaveGiftCodingRequest,
   SaveGiftCodingResponse,
 } from 'src/gift-record/gift-coding.types';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const loadGiftCodingContext = async (
   client: CoreApiClient,

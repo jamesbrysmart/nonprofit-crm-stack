@@ -4,10 +4,10 @@ import {
   getOrCreateCurrentDraftClaimBatch,
   loadClaimBatch,
   loadGiftAidClaimWorkspace,
-  normalizeString,
   refreshClaimBatchSummary,
 } from './gift-aid-claim-batch.queries';
 import type { FinalizeGiftAidClaimBatchResponse } from './gift-aid-claim.types';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export { computeClaimBatchRollups } from './gift-aid-claim-batch-rollups';
 export {

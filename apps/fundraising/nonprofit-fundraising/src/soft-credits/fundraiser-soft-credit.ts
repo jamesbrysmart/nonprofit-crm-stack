@@ -4,9 +4,7 @@ import type {
   ResolvedSoftCreditSelection,
   SoftCreditType,
 } from 'src/soft-credits/soft-credit-integrity';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export type AppealSourceFundraiser = {
   fundraiserPersonId: string;

@@ -10,6 +10,7 @@ import {
   type PeopleByEmailMap,
 } from 'src/donor-resolution/donor-creation-viability';
 import { isPaymentConfirmedOrNotRequired } from './gift-staging-processability';
+import { normalizeString } from 'src/utils/normalize-string';
 
 export type GiftReadyStatus = 'NEEDS_REVIEW' | 'READY_TO_PROCESS';
 
@@ -45,9 +46,6 @@ export type GiftReadyEvaluation = {
   preflight: BatchPreflightResult;
   hasPrimaryEmailConflict: boolean;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 export const normalizeGiftReadyStatus = (
   value: string | null | undefined,

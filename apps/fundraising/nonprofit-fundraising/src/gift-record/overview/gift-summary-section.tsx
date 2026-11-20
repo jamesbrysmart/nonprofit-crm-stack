@@ -12,6 +12,7 @@ import {
 } from 'src/front-components/front-component-ui';
 import { theme } from 'src/front-components/theme-tokens';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type GiftRecordSummaryRecord = {
   id: string;
@@ -103,9 +104,6 @@ type SummaryItem = {
   label: string;
   value: string;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const buildPersonName = (
   firstName: string | null | undefined,

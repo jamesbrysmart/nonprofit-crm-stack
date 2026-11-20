@@ -8,9 +8,7 @@ import type {
   RecurringAgreementSummary,
   StoredRecurringAgreementRecord,
 } from './recurring.types';
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const normalizeIntervalCount = (value: number | null | undefined) => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {

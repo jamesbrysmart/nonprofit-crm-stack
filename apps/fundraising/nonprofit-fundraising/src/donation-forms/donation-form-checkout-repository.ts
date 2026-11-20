@@ -5,10 +5,10 @@ import {
 } from 'src/core-api/core-api-results';
 import {
   normalizeDonationFormPublishedConfig,
-  normalizeDonationFormString,
 } from './donation-form-config';
 import { resolveStripeProviderConfigKey } from './donation-form-checkout-stripe';
 import type { PublishedDonationFormForCheckout } from './donation-form-checkout.types';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type DonationFormPublicRecord = {
   id?: string | null;
@@ -19,8 +19,6 @@ type DonationFormPublicRecord = {
   providerConfigKey?: string | null;
   publishedConfig?: Record<string, unknown> | null;
 };
-
-const normalizeString = normalizeDonationFormString;
 
 export const loadPublishedDonationFormForCheckout = async (
   client: CoreApiClient,

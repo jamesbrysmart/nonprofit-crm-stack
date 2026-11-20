@@ -21,6 +21,7 @@ import {
   getReportingValueMicros,
   getDefaultCurrencyCode,
 } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const GIFT_PAGE_SIZE = 100;
 
@@ -56,9 +57,6 @@ type FundGivingSummary = {
   currencyCode: string | null;
   excludedFromTotalsCount: number;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const formatEnumLabel = (value: string | null | undefined) => {
   const normalized = normalizeString(value);

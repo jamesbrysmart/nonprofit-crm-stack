@@ -25,7 +25,6 @@ import {
   compactSectionStyle,
   deriveWorkspaceState,
   normalizeConfig,
-  normalizeString,
   panelStyle,
   saveDonationFormDraft,
   stableStringify,
@@ -39,6 +38,7 @@ import {
 } from 'src/constants/universal-identifiers';
 import { getCurrencyOptions } from 'src/manual-gift-entry/new-gift-support';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { normalizeString } from 'src/utils/normalize-string';
 
 const COLOUR_FIELD_STYLE: CSSProperties = {
   display: 'grid',

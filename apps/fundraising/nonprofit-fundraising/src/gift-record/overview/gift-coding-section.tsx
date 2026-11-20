@@ -17,6 +17,7 @@ import {
 } from 'src/gift-coding/gift-coding';
 import { saveGiftCoding } from 'src/gift-record/gift-coding.api';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type GiftCodingRecord = {
   id: string;
@@ -37,9 +38,6 @@ type GiftCodingRecord = {
     name?: string | null;
   } | null;
 };
-
-const normalizeString = (value: string | null | undefined) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const loadGiftCodingRecord = async (
   recordId: string,

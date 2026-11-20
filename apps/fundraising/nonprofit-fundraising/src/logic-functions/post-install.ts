@@ -13,6 +13,7 @@ import type {
   OpportunitySummary,
   PersonSummary,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
+import { normalizeString } from 'src/utils/normalize-string';
 
 type SeedPerson = {
   firstName: string;
@@ -2424,9 +2425,6 @@ const SEED_GIFTS: SeedGift[] = [
 
 const normalizeEmail = (value: string | undefined | null) =>
   value?.trim().toLowerCase() ?? '';
-
-const normalizeString = (value: string | undefined | null) =>
-  typeof value === 'string' ? value.trim() : '';
 
 const isUniqueViolationError = (error: unknown): boolean => {
   const text =
