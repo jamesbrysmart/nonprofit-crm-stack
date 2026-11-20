@@ -22,6 +22,7 @@ import {
 } from 'src/constants/universal-identifiers';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 type RefundActionGiftRecord = {
   id: string;
@@ -42,19 +43,9 @@ type RefundActionGiftRecord = {
   } | null;
 };
 
-const formatAmount = (amount: RefundActionGiftRecord['amount']) => {
-  const micros = amount?.amountMicros;
-  const currency = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
-
-  if (typeof micros !== 'number') {
-    return 'Amount not recorded';
-  }
-
-  return `${currency} ${(micros / 1_000_000).toFixed(2)}`;
-};
-
-const formatAmountFromMicros = (amountMicros: number, currencyCode: string) =>
-  `${currencyCode} ${(amountMicros / 1_000_000).toFixed(2)}`;
+const formatAmount = (
+  amount: { amountMicros?: number | null; currencyCode?: string | null } | null | undefined,
+) => formatCurrencyAmount(amount, 'Amount not recorded');
 
 const microsToDecimalInput = (amountMicros?: number | null) => {
   if (typeof amountMicros !== 'number' || !Number.isFinite(amountMicros)) {
@@ -310,7 +301,10 @@ const GiftRefundAction = () => {
         </div>
         <div style={compactMetaItemStyle}>
           <div style={labelStyle}>Remaining active value</div>
-          <div>{formatAmountFromMicros(remainingAmountMicros, currencyCode)}</div>
+          <div>{formatCurrencyAmount({
+            amountMicros: remainingAmountMicros,
+            currencyCode,
+          })}</div>
         </div>
       </div>
 

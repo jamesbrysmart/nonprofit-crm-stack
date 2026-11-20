@@ -14,8 +14,8 @@ import {
   COMPANY_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
-import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 type CompanyRecordSummaryRecord = {
   id: string;
@@ -55,26 +55,11 @@ const formatDate = (value: string | null | undefined) => {
 const hasAmount = (amount: CurrencyAmount | null | undefined) =>
   Math.round(amount?.amountMicros ?? 0) !== 0;
 
+// A zero total reads as "not recorded" here, not as a formatted 0.
 const formatAmount = (
   amount: CurrencyAmount | null | undefined,
   emptyLabel = 'Not recorded',
-) => {
-  if (!hasAmount(amount)) {
-    return emptyLabel;
-  }
-
-  const currencyCode = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
-  const amountMicros = Math.round(amount?.amountMicros ?? 0);
-
-  try {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: currencyCode,
-    }).format(amountMicros / 1_000_000);
-  } catch {
-    return `${currencyCode} ${(amountMicros / 1_000_000).toFixed(2)}`;
-  }
-};
+) => (hasAmount(amount) ? formatCurrencyAmount(amount, emptyLabel) : emptyLabel);
 
 const loadCompany = async (
   recordId: string,

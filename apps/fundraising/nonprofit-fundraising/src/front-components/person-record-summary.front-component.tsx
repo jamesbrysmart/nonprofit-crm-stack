@@ -14,8 +14,8 @@ import {
   PERSON_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
-import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 type PersonRecordSummaryRecord = {
   id: string;
@@ -60,26 +60,6 @@ type PersonRecordSummaryRecord = {
   } | null;
 };
 
-const formatCurrencyAmount = (
-  amount: PersonRecordSummaryRecord['lifetimeGiftAmount'],
-  emptyLabel = 'Not recorded',
-) => {
-  const micros = amount?.amountMicros;
-  const currency = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
-
-  if (typeof micros !== 'number') {
-    return emptyLabel;
-  }
-
-  try {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency,
-    }).format(micros / 1_000_000);
-  } catch {
-    return `${currency} ${(micros / 1_000_000).toFixed(2)}`;
-  }
-};
 
 const formatGiftAmountAndDate = (
   amount: PersonRecordSummaryRecord['lastGiftAmount'],

@@ -11,8 +11,8 @@ import {
   secondaryTextStyle,
 } from 'src/front-components/front-component-ui';
 import { theme } from 'src/front-components/theme-tokens';
-import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 type GiftRecordSummaryRecord = {
   id: string;
@@ -110,26 +110,9 @@ const buildPersonName = (
   lastName: string | null | undefined,
 ) => `${normalizeString(firstName)} ${normalizeString(lastName)}`.trim();
 
-const formatAmount = (amount: GiftRecordSummaryRecord['amount']) => {
-  const micros = amount?.amountMicros;
-  const currency = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
-
-  if (typeof micros !== 'number') {
-    return 'Amount not recorded';
-  }
-
-  const value = micros / 1_000_000;
-
-  try {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'narrowSymbol',
-    }).format(value);
-  } catch {
-    return `${currency} ${value.toFixed(2)}`;
-  }
-};
+const formatAmount = (
+  amount: { amountMicros?: number | null; currencyCode?: string | null } | null | undefined,
+) => formatCurrencyAmount(amount, 'Amount not recorded');
 
 const hasAmount = (amount: GiftRecordSummaryRecord['amount']) =>
   typeof amount?.amountMicros === 'number';

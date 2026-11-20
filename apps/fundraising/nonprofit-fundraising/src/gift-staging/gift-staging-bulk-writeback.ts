@@ -1,4 +1,5 @@
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
+import { chunkArray } from 'src/utils/chunk-array';
 
 const DEFAULT_CHUNK_SIZE = 60;
 const DEFAULT_CHUNK_DELAY_MS = 700;
@@ -6,20 +7,6 @@ const DEFAULT_CHUNK_DELAY_MS = 700;
 export type GiftStagingUpsertRecord = {
   id: string;
   [key: string]: unknown;
-};
-
-const chunkArray = <T,>(items: T[], size: number): T[][] => {
-  if (size <= 0) {
-    throw new Error('Chunk size must be greater than zero');
-  }
-
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-
-  return chunks;
 };
 
 const sleep = async (delayMs: number) => {

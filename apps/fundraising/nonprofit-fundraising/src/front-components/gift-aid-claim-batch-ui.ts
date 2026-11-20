@@ -1,4 +1,5 @@
 import { AppPath, navigate } from 'twenty-sdk/front-component';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 export type GiftQueueScope =
   | 'claim'
@@ -7,23 +8,8 @@ export type GiftQueueScope =
   | 'needs-review-outside-claim';
 
 export const formatAmount = (
-  amount:
-    | {
-        amountMicros?: number | null;
-        currencyCode?: string | null;
-      }
-    | null
-    | undefined,
-) => {
-  if (!amount || typeof amount.amountMicros !== 'number') {
-    return 'Unknown amount';
-  }
-
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: amount.currencyCode ?? 'GBP',
-  }).format(amount.amountMicros / 1_000_000);
-};
+  amount: { amountMicros?: number | null; currencyCode?: string | null } | null | undefined,
+) => formatCurrencyAmount(amount, 'Unknown amount');
 
 export const buildGiftQueryParams = (
   batchId: string,

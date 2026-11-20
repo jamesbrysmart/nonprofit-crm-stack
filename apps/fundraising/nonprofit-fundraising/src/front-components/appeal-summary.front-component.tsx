@@ -16,8 +16,8 @@ import {
   APPEAL_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
-import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 type AppealSummaryRecord = {
   id: string;
@@ -44,23 +44,8 @@ type AppealSummaryRecord = {
 };
 
 const formatAmount = (
-  amount:
-    | {
-        amountMicros?: number | null;
-        currencyCode?: string | null;
-      }
-    | null
-    | undefined,
-) => {
-  if (!amount || typeof amount.amountMicros !== 'number') {
-    return 'Not set';
-  }
-
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: amount.currencyCode || getDefaultCurrencyCode(),
-  }).format(amount.amountMicros / 1_000_000);
-};
+  amount: { amountMicros?: number | null; currencyCode?: string | null } | null | undefined,
+) => formatCurrencyAmount(amount, 'Not set');
 
 const formatDate = (value: string | null | undefined) => {
   const normalized = normalizeString(value);

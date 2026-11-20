@@ -8,6 +8,7 @@ import type {
 } from './manual-gift-entry.types';
 import type { RecurringAgreementSummary } from 'src/recurring/recurring.types';
 import type { MailingAddressEvidence } from 'src/gift-aid/gift-aid.types';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 export const panelStyle: CSSProperties = {
   padding: '12px 12px 8px',
@@ -156,7 +157,7 @@ export const buildOpportunityDisplayName = (opportunity: OpportunitySummary) => 
 };
 
 export const formatAmountMicros = (amountMicros: number, currencyCode: string) =>
-  `${currencyCode} ${(amountMicros / 1_000_000).toFixed(2)}`;
+  formatCurrencyAmount({ amountMicros, currencyCode });
 
 export const buildRecurringAgreementDisplayName = (
   agreement: RecurringAgreementSummary,

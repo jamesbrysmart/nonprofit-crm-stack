@@ -5,6 +5,7 @@ import type {
 } from './recurring.types';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
 
 const parseDateOnly = (value: string | null | undefined) => {
   const normalized = normalizeString(value);
@@ -23,26 +24,8 @@ const dayDiff = (left: Date, right: Date) => {
 };
 
 const formatAmount = (
-  amount:
-    | {
-        amountMicros?: number | null;
-        currencyCode?: string | null;
-      }
-    | null
-    | undefined,
-) => {
-  const amountMicros = amount?.amountMicros;
-  const currencyCode = normalizeString(amount?.currencyCode) || getDefaultCurrencyCode();
-
-  if (typeof amountMicros !== 'number' || !Number.isFinite(amountMicros)) {
-    return 'Unknown amount';
-  }
-
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: currencyCode,
-  }).format(amountMicros / 1_000_000);
-};
+  amount: { amountMicros?: number | null; currencyCode?: string | null } | null | undefined,
+) => formatCurrencyAmount(amount, 'Unknown amount');
 
 const formatFundName = (
   fund: StoredRecurringAgreementRecord['fund'],

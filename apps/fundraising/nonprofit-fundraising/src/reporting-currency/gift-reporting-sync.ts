@@ -7,6 +7,7 @@ import {
   type GiftReportingInput,
 } from 'src/reporting-currency/gift-reporting-value';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import { chunkArray } from 'src/utils/chunk-array';
 
 type GiftReportingRecord = GiftReportingInput & { id: string };
 
@@ -22,11 +23,6 @@ const GIFT_REPORTING_SELECTION = {
   reportingAmountStatus: true,
   grossPaymentAmount: MONEY_SELECTION,
 };
-
-const chunk = <TItem,>(items: TItem[], size: number) =>
-  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
-    items.slice(index * size, index * size + size),
-  );
 
 const loadGiftPage = async (
   client: CoreApiClient,
@@ -77,7 +73,7 @@ const writeChangedReportingValues = async (
         ];
   });
 
-  for (const changeChunk of chunk(changes, WRITE_CHUNK_SIZE)) {
+  for (const changeChunk of chunkArray(changes, WRITE_CHUNK_SIZE)) {
     await postTwentyRest<unknown>({
       path: '/rest/batch/gifts?upsert=true&depth=0',
       body: changeChunk,
@@ -100,7 +96,7 @@ export const syncGiftReportingValues = async (giftIds: string[]) => {
   const client = new CoreApiClient();
   let updatedCount = 0;
 
-  for (const idChunk of chunk(uniqueIds, PAGE_SIZE)) {
+  for (const idChunk of chunkArray(uniqueIds, PAGE_SIZE)) {
     const { gifts } = await loadGiftPage(
       client,
       { or: idChunk.map((id) => ({ id: { eq: id } })) },

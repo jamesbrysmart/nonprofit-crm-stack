@@ -16,6 +16,7 @@ import type {
   ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import { normalizeString } from 'src/utils/normalize-string';
+import { chunkArray } from 'src/utils/chunk-array';
 
 const COMPANY_QUERY_CHUNK_SIZE = 25;
 const RECORD_QUERY_PAGE_SIZE = 200;
@@ -107,16 +108,6 @@ const isPopulatedAmount = (amount: CurrencyAmount | null | undefined) =>
   Math.round(amount?.amountMicros ?? 0) !== 0;
 
 const todayIsoDate = () => new Date().toISOString().split('T')[0];
-
-const chunkArray = <T,>(items: T[], size: number): T[][] => {
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-
-  return chunks;
-};
 
 const buildOrIdFilter = (ids: string[]) => ({
   or: ids.map((id) => ({

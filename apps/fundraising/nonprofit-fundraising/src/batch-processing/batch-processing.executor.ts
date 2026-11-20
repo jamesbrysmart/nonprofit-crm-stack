@@ -27,6 +27,7 @@ import {
 } from './batch-processing.executor.effects';
 import type { BatchProcessingRow } from './batch-processing.types';
 import { normalizeString } from 'src/utils/normalize-string';
+import { chunkArray } from 'src/utils/chunk-array';
 
 export {
   buildNewPersonCreateData,
@@ -151,16 +152,6 @@ const createBatchGiftChunk = async (
         ? (entry.payload.giftAidStatus as string)
         : null,
   }));
-};
-
-const chunkArray = <T>(items: T[], size: number): T[][] => {
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-
-  return chunks;
 };
 
 const buildFailedWriteback = ({

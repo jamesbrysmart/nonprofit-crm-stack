@@ -16,6 +16,7 @@ import type {
   ObjectRecordUpdateEvent,
 } from 'twenty-sdk/define';
 import { normalizeString } from 'src/utils/normalize-string';
+import { chunkArray } from 'src/utils/chunk-array';
 
 const DONOR_QUERY_CHUNK_SIZE = 25;
 const GIFT_QUERY_PAGE_SIZE = 200;
@@ -80,16 +81,6 @@ const normalizeGiftCurrencyCode = (value: string | null | undefined) =>
 
 const includeInCashRollups = (giftType: string | null | undefined) =>
   normalizeString(giftType).toUpperCase() !== 'GIFT_IN_KIND';
-
-const chunkArray = <T,>(items: T[], size: number): T[][] => {
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-
-  return chunks;
-};
 
 const buildOrIdFilter = (ids: string[]) => ({
   or: ids.map((id) => ({
