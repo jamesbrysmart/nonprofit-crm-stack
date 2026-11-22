@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
   type DatabaseEventBatchPayload,
@@ -11,6 +10,7 @@ import {
 import {
   GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type GiftRollupEventRecord = {
   appealSourceId?: string | null;
@@ -29,7 +29,7 @@ const handler = async (
     };
   }
 
-  return recomputeAppealSourceRollups(new CoreApiClient(), appealSourceIds);
+  return recomputeAppealSourceRollups(createCoreApiClient(), appealSourceIds);
 };
 
 export default defineLogicFunction({

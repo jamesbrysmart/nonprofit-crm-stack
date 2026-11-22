@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import type {
   DuplicateCheckResponse,
@@ -9,6 +8,7 @@ import {
   normalizeDonorCandidateEmail,
   normalizeDonorCandidateNamePart,
 } from 'src/donor-resolution/donor-candidate-discovery';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type CheckDonorDuplicatesBody = {
   donorFirstName?: string;
@@ -66,7 +66,7 @@ const handler = async (
     return buildResult(checkedFirstName, checkedLastName, []);
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const candidates = await loadPeopleByDonorReviewEvidence<PersonSummary>({
     client,
     firstName: checkedFirstName,

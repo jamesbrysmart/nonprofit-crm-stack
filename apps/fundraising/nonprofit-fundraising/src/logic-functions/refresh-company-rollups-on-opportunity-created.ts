@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
   STANDARD_OBJECT_UNIVERSAL_IDENTIFIERS,
@@ -9,6 +8,7 @@ import {
   getAffectedCompanyIdsFromOpportunityCreate,
   recomputeCompanyRollups,
 } from 'src/company-rollups/company-rollups';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type OpportunityRollupEventRecord = {
   companyId?: string | null;
@@ -29,7 +29,7 @@ const handler = async (
     };
   }
 
-  return recomputeCompanyRollups(new CoreApiClient(), companyIds);
+  return recomputeCompanyRollups(createCoreApiClient(), companyIds);
 };
 
 export default defineLogicFunction({

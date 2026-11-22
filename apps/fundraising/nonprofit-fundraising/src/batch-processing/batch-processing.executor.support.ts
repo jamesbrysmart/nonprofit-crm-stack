@@ -22,6 +22,7 @@ import {
 } from 'src/reporting-currency/gift-reporting-value';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 export type SuccessfulWriteback = {
   id: string;
@@ -694,7 +695,7 @@ const createProviderBackedRecurringAgreement = async ({
 export const createGiftViaRowFallback = async (
   row: BatchProcessingRow,
 ): Promise<SuccessfulWriteback> => {
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const giftAidDeclarationService = createGiftAidDeclarationService(client);
   let payload: GiftCreatePayload = buildGiftPayloadFromRow(row);
   let donorId = normalizeString(payload.donorId as string | undefined);

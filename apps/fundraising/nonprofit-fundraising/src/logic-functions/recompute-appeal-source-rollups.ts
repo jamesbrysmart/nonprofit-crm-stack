@@ -1,10 +1,10 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import {
   collectAppealSourceIds,
   recomputeAllAppealSourceRollups,
   recomputeAppealSourceRollups,
 } from 'src/appeal-source-rollups/appeal-source-rollups';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type RecomputeAppealSourceRollupsRequest = {
   appealSourceIds?: string[];
@@ -22,7 +22,7 @@ const handler = async (
   const appealSourceIds = collectAppealSourceIds(
     event.body?.appealSourceIds ?? [],
   );
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
 
   if (appealSourceIds.length === 0) {
     const result = await recomputeAllAppealSourceRollups(client);

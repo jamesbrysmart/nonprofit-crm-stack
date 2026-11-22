@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
 import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
@@ -28,6 +27,8 @@ import {
 import type { BatchProcessingRow } from './batch-processing.types';
 import { normalizeString } from 'src/utils/normalize-string';
 import { chunkArray } from 'src/utils/chunk-array';
+import { isRateLimitError } from 'src/core-api/rate-limit-retry';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 export {
   buildNewPersonCreateData,
@@ -98,16 +99,34 @@ const parseCreatedGiftIds = (
   return ids;
 };
 
+class GiftCreateRateLimitedError extends Error {
+  constructor(readonly rateLimitError: unknown) {
+    super('Gift creation was rate limited before it ran');
+  }
+}
+
 const createBatchGiftChunk = async (
   entries: BatchGiftEntry[],
 ): Promise<SuccessfulWriteback[]> => {
-  const response = await postTwentyRest<unknown>({
-    path: '/rest/batch/gifts?depth=0',
-    body: entries.map((entry) => entry.payload),
-  });
+  let response: unknown;
+
+  try {
+    response = await postTwentyRest<unknown>({
+      path: '/rest/batch/gifts?depth=0',
+      body: entries.map((entry) => entry.payload),
+    });
+  } catch (error) {
+    // Twenty rejects a rate-limited request before running it.
+    if (isRateLimitError(error)) {
+      throw new GiftCreateRateLimitedError(error);
+    }
+
+    throw error;
+  }
+
   const giftIds = parseCreatedGiftIds(response, entries.length);
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   await applyLinkedDonorEmailUpdates(
     client,
     entries.map((entry) => entry.row),
@@ -202,6 +221,27 @@ const executeBatchGiftChunk = async (
       },
     };
   } catch (error) {
+    if (error instanceof GiftCreateRateLimitedError) {
+      return {
+        successfulWritebacks: [],
+        failedWritebacks: entries.map((entry) =>
+          buildFailedWriteback({
+            rowId: entry.row.id,
+            errorDetail:
+              'Twenty is rate limiting requests, so no gift was created for this row. It is safe to process it again shortly.',
+            executionPath: 'BATCH',
+          }),
+        ),
+        metrics: {
+          chunkCount: 1,
+          batchPathProcessed: 0,
+          batchPathFailed: 0,
+          rowFallbackProcessed: 0,
+          rowFallbackFailed: 0,
+        },
+      };
+    }
+
     // A failed response does not prove the server rolled back its write.
     // Splitting or switching to row creation can duplicate committed gifts.
     const reason =
@@ -236,7 +276,7 @@ const prepareBatchGiftEntries = async (
   const entries: BatchGiftEntry[] = [];
   const preflightFailures: FailedWriteback[] = [];
   const directRowFallbackSuccesses: SuccessfulWriteback[] = [];
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const giftAidDeclarationService = createGiftAidDeclarationService(client);
 
   for (const row of rows) {

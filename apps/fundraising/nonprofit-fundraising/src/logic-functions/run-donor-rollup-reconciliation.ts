@@ -1,9 +1,9 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction } from 'twenty-sdk/define';
 import { RUN_DONOR_ROLLUP_RECONCILIATION_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 import { recomputeAllDonorRollups } from 'src/donor-rollups/donor-rollups';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
-const handler = async () => recomputeAllDonorRollups(new CoreApiClient());
+const handler = async () => recomputeAllDonorRollups(createCoreApiClient());
 
 export default defineLogicFunction({
   universalIdentifier:

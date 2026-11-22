@@ -1,10 +1,10 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import {
   createDonationFormCheckoutSession,
   type CreateDonationFormCheckoutSessionRequest,
   type CreateDonationFormPaymentSessionResponse,
 } from 'src/donation-forms/create-donation-form-checkout-session';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (
   event: RoutePayload<CreateDonationFormCheckoutSessionRequest>,
@@ -16,7 +16,7 @@ const handler = async (
   }
 
   return createDonationFormCheckoutSession({
-    client: new CoreApiClient(),
+    client: createCoreApiClient(),
     request: body,
   });
 };

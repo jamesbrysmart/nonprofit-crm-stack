@@ -1,10 +1,10 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import {
   createStripeRecurringGiftForConfidentMatch,
   type StripeRecurringCheckoutSessionCompletedEvent,
   type StripeRecurringFulfillmentResult,
 } from 'src/stripe/stripe-recurring-fulfillment';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (
   event: RoutePayload<StripeRecurringCheckoutSessionCompletedEvent>,
@@ -15,7 +15,7 @@ const handler = async (
     throw new Error('Stripe event body is required');
   }
 
-  return createStripeRecurringGiftForConfidentMatch(new CoreApiClient(), body);
+  return createStripeRecurringGiftForConfidentMatch(createCoreApiClient(), body);
 };
 
 export default defineLogicFunction({

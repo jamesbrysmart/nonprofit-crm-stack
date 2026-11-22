@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import {
   getGiftBatchWorkflowLimitMessage,
@@ -11,6 +10,7 @@ import type {
   BatchDonorMatchRequest,
   BatchDonorMatchResponse,
 } from 'src/batch-donor-match/batch-donor-match.types';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (
   event: RoutePayload<BatchDonorMatchRequest>,
@@ -28,7 +28,7 @@ const handler = async (
   });
   logger.info('started');
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   try {
     const { batch, rows } = await loadBatchDonorMatchContext(client, giftBatchId);
 

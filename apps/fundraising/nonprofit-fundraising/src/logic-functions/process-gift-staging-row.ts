@@ -1,10 +1,10 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
   type RoutePayload,
 } from 'twenty-sdk/define';
 import { loadGiftStagingRowsForProcessing } from 'src/batch-processing/batch-loaders';
 import { processSingleGiftStagingRow } from 'src/gift-staging-review/gift-ready-check.service';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type ProcessGiftStagingRowRequest = {
   giftStagingId: string;
@@ -30,7 +30,7 @@ const handler = async (
     throw new Error('giftStagingId is required');
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const rows = await loadGiftStagingRowsForProcessing(client, [giftStagingId]);
   const row = rows[0] ?? null;
 

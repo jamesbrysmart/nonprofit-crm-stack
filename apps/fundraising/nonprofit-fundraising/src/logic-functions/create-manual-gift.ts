@@ -36,6 +36,7 @@ import {
 import { parseManualGiftAmountMicros } from 'src/manual-gift-entry/manual-gift-normalization';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const resolveAppealAndFundSelection = async (
   client: CoreApiClient,
@@ -256,7 +257,7 @@ const handler = async (
   const donorType = getManualGiftDonorType(body.donorType);
   const isAnonymousManualGift =
     donorType === 'INDIVIDUAL' && body.isAnonymousDonor === true;
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const donorChoice =
     donorType === 'INDIVIDUAL' && !isAnonymousManualGift
       ? getManualGiftDonorChoice(body.donorChoice)

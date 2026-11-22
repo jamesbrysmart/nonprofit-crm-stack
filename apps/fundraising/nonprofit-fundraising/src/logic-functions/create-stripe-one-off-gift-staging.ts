@@ -1,10 +1,10 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import {
   createStripeOneOffGiftStaging,
   type StripeCheckoutSessionCompletedEvent,
   type StripeOneOffGiftStagingResult,
 } from 'src/stripe/stripe-one-off-staging';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (
   event: RoutePayload<StripeCheckoutSessionCompletedEvent>,
@@ -15,7 +15,7 @@ const handler = async (
     throw new Error('Stripe event body is required');
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
 
   return createStripeOneOffGiftStaging(client, body);
 };

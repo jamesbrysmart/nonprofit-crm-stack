@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { Response } from 'twenty-sdk/logic-function';
 import {
@@ -7,6 +6,7 @@ import {
 import { buildDonationFormStaticDocument } from 'src/donation-forms/donation-form-rendering';
 import { loadPublicDonationFormConfigWithClient } from 'src/logic-functions/get-public-donation-form-config';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 // Twenty serves a bare string route result as text/plain, so the page must declare HTML.
 const htmlResponse = (document: string) =>
@@ -24,7 +24,7 @@ export const donationFormEmbedFrameHandler = async (
   }
 
   const payload = await loadPublicDonationFormConfigWithClient(
-    new CoreApiClient(),
+    createCoreApiClient(),
     publicId,
   );
 

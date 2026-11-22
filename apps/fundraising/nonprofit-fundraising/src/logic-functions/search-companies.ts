@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
@@ -6,6 +5,7 @@ import type {
   SearchCompaniesResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type SearchCompaniesBody = {
   query?: string;
@@ -20,7 +20,7 @@ const handler = async (
     return { companies: [] };
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const result = await client.query({
     companies: {
       __args: {

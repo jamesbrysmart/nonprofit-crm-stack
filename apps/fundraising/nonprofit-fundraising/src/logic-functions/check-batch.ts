@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   defineLogicFunction,
   type RoutePayload,
@@ -16,6 +15,7 @@ import type {
   CheckBatchResponse,
 } from 'src/batch-processing/batch-processing.types';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const formatCurrencyDisplay = ({
   amountMicros,
@@ -139,7 +139,7 @@ const handler = async (
   });
   logger.info('started');
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   try {
     const { batch, rows } = await loadBatchProcessingContext(client, giftBatchId);
 

@@ -9,6 +9,7 @@ import type {
 } from 'src/batch-processing/batch-processing.types';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const MAX_BATCH_CODING_WRITEBACKS = 100;
 
@@ -214,7 +215,7 @@ const handler = async (
   });
   logger.info('started');
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   try {
     const defaultAppealSourceAppealId =
       defaultAppealSourceId === ''

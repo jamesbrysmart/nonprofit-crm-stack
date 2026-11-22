@@ -1,15 +1,15 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
   FundSummary,
   ListFundOptionsResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (
   _event: RoutePayload<Record<string, never>>,
 ): Promise<ListFundOptionsResponse> => {
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const result = await client.query({
     funds: {
       __args: {

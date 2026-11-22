@@ -8,6 +8,7 @@ import type {
 } from 'src/gift-lifecycle/gift-refund.types';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type GiftRefundRecord = {
   id: string;
@@ -99,7 +100,7 @@ const handler = async (
     throw new Error('Refunded amount must be greater than zero');
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const gift = await loadGiftForRefund(client, giftId);
 
   if (!gift?.id) {

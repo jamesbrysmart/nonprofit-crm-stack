@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import {
   routeTrustedStripeEvent,
@@ -6,6 +5,7 @@ import {
   type TrustedStripeEvent,
 } from 'src/stripe/stripe-event-router';
 import { verifyStripeWebhookEvent } from 'src/stripe/stripe-webhook-verification';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 export type PublicStripeWebhookResponse =
   | { received: false }
@@ -73,7 +73,7 @@ export const publicStripeWebhookHandler = async (
     return { received: false };
   }
 
-  const result = await routeTrustedStripeEvent(new CoreApiClient(), body);
+  const result = await routeTrustedStripeEvent(createCoreApiClient(), body);
 
   if (result.action === 'DONATION_FORM_GIFT_STAGING_MISSING') {
     const providerEventId =

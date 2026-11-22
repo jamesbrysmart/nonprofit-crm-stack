@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
@@ -13,6 +12,7 @@ import {
   parseManualGiftAmountMicros,
 } from 'src/manual-gift-entry/manual-gift-normalization';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const buildCommittedGiftMatches = (
   gifts:
@@ -107,7 +107,7 @@ const handler = async (
     return { matches: [] };
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
 
   if (donorType === 'COMPANY') {
     const result = await client.query({

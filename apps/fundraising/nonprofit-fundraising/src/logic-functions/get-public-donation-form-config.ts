@@ -1,6 +1,7 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 export type PublicDonationFormConfigResponse =
   | {
@@ -97,7 +98,7 @@ const handler = async (
 ): Promise<PublicDonationFormConfigResponse> => {
   const publicId = normalizeString(event.queryStringParameters?.publicId);
 
-  return loadPublicDonationFormConfigWithClient(new CoreApiClient(), publicId);
+  return loadPublicDonationFormConfigWithClient(createCoreApiClient(), publicId);
 };
 
 export default defineLogicFunction({

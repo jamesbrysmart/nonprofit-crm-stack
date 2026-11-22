@@ -1,10 +1,10 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction } from 'twenty-sdk/define';
 import { RUN_DONATION_FORM_PAYMENT_EXPIRY_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 import { expireAwaitingDonationFormPayments } from 'src/donation-forms/donation-form-payment-expiry';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async () =>
-  expireAwaitingDonationFormPayments(new CoreApiClient());
+  expireAwaitingDonationFormPayments(createCoreApiClient());
 
 export default defineLogicFunction({
   universalIdentifier:

@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { runDonorMatchOnRows } from 'src/batch-donor-match/batch-donor-match.service';
 import { loadGiftStagingRowsForDonorMatch } from 'src/batch-processing/batch-loaders';
@@ -6,6 +5,7 @@ import type {
   RunSelectedGiftStagingDonorMatchRequest,
   RunSelectedGiftStagingDonorMatchResponse,
 } from 'src/batch-processing/batch-processing.types';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const normalizeSelectedIds = (ids: string[] | null | undefined) =>
   [...new Set((ids ?? []).map((id) => id.trim()).filter((id) => id !== ''))];
@@ -19,7 +19,7 @@ const handler = async (
     throw new Error('At least one giftStagingId is required');
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const rows = await loadGiftStagingRowsForDonorMatch(client, giftStagingIds);
 
   if (rows.length !== giftStagingIds.length) {

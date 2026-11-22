@@ -1,10 +1,10 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import {
   routeTrustedStripeEvent,
   type StripeEventRoutingResult,
   type TrustedStripeEvent,
 } from 'src/stripe/stripe-event-router';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (
   event: RoutePayload<TrustedStripeEvent>,
@@ -15,7 +15,7 @@ const handler = async (
     throw new Error('Stripe event body is required');
   }
 
-  return routeTrustedStripeEvent(new CoreApiClient(), body);
+  return routeTrustedStripeEvent(createCoreApiClient(), body);
 };
 
 export default defineLogicFunction({

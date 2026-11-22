@@ -171,6 +171,23 @@ describe('gift execution commit boundary', () => {
     ).toBe(true);
   });
 
+  it('reports a rate-limited create as safe to retry, not as needing reconciliation', async () => {
+    mocks.post.mockRejectedValue(
+      Object.assign(new Error('Rate limit exceeded'), {
+        errors: [{ extensions: { code: 'RATE_LIMITED', retryAfterMs: 100 } }],
+      }),
+    );
+
+    const result = await executeBatchGiftProcessing([row(), row('staging_2')]);
+
+    expect(result.successfulWritebacks).toEqual([]);
+    expect(result.failedWritebacks).toHaveLength(2);
+    for (const failed of result.failedWritebacks) {
+      expect(failed.errorDetail).toContain('no gift was created');
+      expect(failed.errorDetail).not.toContain('Reconcile');
+    }
+  });
+
   it('does not try another creation path after a rejected request', async () => {
     mocks.post.mockRejectedValue(new Error('Invalid gift data'));
 

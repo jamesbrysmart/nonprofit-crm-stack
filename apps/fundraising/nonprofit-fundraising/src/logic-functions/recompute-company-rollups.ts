@@ -1,10 +1,10 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import {
   collectCompanyIds,
   recomputeAllCompanyRollups,
   recomputeCompanyRollups,
 } from 'src/company-rollups/company-rollups';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type RecomputeCompanyRollupsRequest = {
   companyIds?: string[];
@@ -20,7 +20,7 @@ const handler = async (
   event: RoutePayload<RecomputeCompanyRollupsRequest>,
 ): Promise<RecomputeCompanyRollupsResponse> => {
   const companyIds = collectCompanyIds(event.body?.companyIds ?? []);
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
 
   if (companyIds.length === 0) {
     const result = await recomputeAllCompanyRollups(client);

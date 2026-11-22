@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   collectAppealIds,
   recomputeAppealRollups,
@@ -18,6 +17,7 @@ import {
   recomputeDonorRollups,
 } from 'src/donor-rollups/donor-rollups';
 import type { FailedWriteback, SuccessfulWriteback } from './batch-processing.executor.support';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 export const runBatchProcessingSideEffects = async (
   successfulWritebacks: SuccessfulWriteback[],
@@ -29,7 +29,7 @@ export const runBatchProcessingSideEffects = async (
 
     if (claimableGiftIds.length > 0) {
       try {
-        const client = new CoreApiClient();
+        const client = createCoreApiClient();
         await attachGiftsToCurrentDraftClaimBatch(client, claimableGiftIds);
       } catch (error) {
         console.warn(
@@ -47,7 +47,7 @@ export const runBatchProcessingSideEffects = async (
 
   if (donorIdsToRecompute.length > 0) {
     try {
-      const client = new CoreApiClient();
+      const client = createCoreApiClient();
       await recomputeDonorRollups(client, donorIdsToRecompute);
     } catch (error) {
       console.warn(
@@ -64,7 +64,7 @@ export const runBatchProcessingSideEffects = async (
 
   if (companyIdsToRecompute.length > 0) {
     try {
-      const client = new CoreApiClient();
+      const client = createCoreApiClient();
       await recomputeCompanyRollups(client, companyIdsToRecompute);
     } catch (error) {
       console.warn(
@@ -81,7 +81,7 @@ export const runBatchProcessingSideEffects = async (
 
   if (appealIdsToRecompute.length > 0) {
     try {
-      const client = new CoreApiClient();
+      const client = createCoreApiClient();
       await recomputeAppealRollups(client, appealIdsToRecompute);
     } catch (error) {
       console.warn(
@@ -98,7 +98,7 @@ export const runBatchProcessingSideEffects = async (
 
   if (appealSourceIdsToRecompute.length > 0) {
     try {
-      const client = new CoreApiClient();
+      const client = createCoreApiClient();
       await recomputeAppealSourceRollups(client, appealSourceIdsToRecompute);
     } catch (error) {
       console.warn(

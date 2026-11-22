@@ -14,6 +14,7 @@ import type {
   PersonSummary,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type SeedPerson = {
   firstName: string;
@@ -3751,7 +3752,7 @@ const seedRecurringAgreements = async (
 };
 
 const handler = async (): Promise<void> => {
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
 
   // This seed set is intentionally idempotent because it is a development
   // harness we expect to rerun as slices are added and refined.

@@ -8,6 +8,7 @@ import {
 } from 'src/reporting-currency/gift-reporting-value';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { chunkArray } from 'src/utils/chunk-array';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 type GiftReportingRecord = GiftReportingInput & { id: string };
 
@@ -93,7 +94,7 @@ export const syncGiftReportingValues = async (giftIds: string[]) => {
     return { checkedCount: 0, updatedCount: 0, reportingCurrencyCode };
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   let updatedCount = 0;
 
   for (const idChunk of chunkArray(uniqueIds, PAGE_SIZE)) {
@@ -125,7 +126,7 @@ export const backfillAllGiftReportingValues = async () => {
     );
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   let checkedCount = 0;
   let updatedCount = 0;
   let cursor: string | undefined;

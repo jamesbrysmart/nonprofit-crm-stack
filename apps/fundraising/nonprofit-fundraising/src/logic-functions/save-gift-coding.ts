@@ -11,6 +11,7 @@ import type {
   SaveGiftCodingResponse,
 } from 'src/gift-record/gift-coding.types';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const loadGiftCodingContext = async (
   client: CoreApiClient,
@@ -81,7 +82,7 @@ const handler = async (
     throw new Error('Gift id is required');
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const existing = await loadGiftCodingContext(client, giftId);
 
   if (!existing?.id) {

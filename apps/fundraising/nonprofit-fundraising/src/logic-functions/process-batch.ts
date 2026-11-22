@@ -14,6 +14,7 @@ import type {
   ProcessBatchRequest,
   ProcessBatchResponse,
 } from 'src/batch-processing/batch-processing.types';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const updateBatch = async (
   client: CoreApiClient,
@@ -72,7 +73,7 @@ const handler = async (
   });
   logger.info('started');
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   let loaded: Awaited<ReturnType<typeof loadBatchProcessingContext>>;
 
   try {

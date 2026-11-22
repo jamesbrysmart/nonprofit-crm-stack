@@ -1,15 +1,15 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { searchRecurringAgreements } from 'src/recurring/recurring.service';
 import type {
   SearchRecurringAgreementsRequest,
   SearchRecurringAgreementsResponse,
 } from 'src/recurring/recurring.types';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (
   event: RoutePayload<SearchRecurringAgreementsRequest>,
 ): Promise<SearchRecurringAgreementsResponse> => {
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const agreements = await searchRecurringAgreements(
     client,
     event.body?.query ?? '',

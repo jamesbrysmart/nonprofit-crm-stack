@@ -1,4 +1,3 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import type {
@@ -7,11 +6,12 @@ import type {
   ListAppealSourceOptionsResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (
   event: RoutePayload<ListAppealSourceOptionsRequest>,
 ): Promise<ListAppealSourceOptionsResponse> => {
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   const appealId = normalizeString(event.body?.appealId);
   const result = await client.query({
     appealSources: {

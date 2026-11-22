@@ -11,6 +11,7 @@ import {
 } from 'src/donation-forms/donation-form-config';
 import { resolveStripeProviderConfigKey } from 'src/donation-forms/donation-form-checkout-stripe';
 import { normalizeString } from 'src/utils/normalize-string';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 export type PublishDonationFormRequest = {
   donationFormId?: string;
@@ -141,7 +142,7 @@ const handler = async (
     throw new Error('Donation form id is required');
   }
 
-  return publishDonationFormWithClient(new CoreApiClient(), donationFormId);
+  return publishDonationFormWithClient(createCoreApiClient(), donationFormId);
 };
 
 export default defineLogicFunction({

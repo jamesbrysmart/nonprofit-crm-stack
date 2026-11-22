@@ -1,6 +1,6 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { queueGiftAidClaimSubmission } from 'src/gift-aid-claims/gift-aid-claim-submission';
+import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 const handler = async (event: RoutePayload<{ batchId?: string }>) => {
   const batchId = event.body?.batchId?.trim();
@@ -9,7 +9,7 @@ const handler = async (event: RoutePayload<{ batchId?: string }>) => {
     throw new Error('batchId is required');
   }
 
-  const client = new CoreApiClient();
+  const client = createCoreApiClient();
   return await queueGiftAidClaimSubmission(client, batchId);
 };
 
