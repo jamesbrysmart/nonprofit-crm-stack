@@ -9,8 +9,7 @@ import {
   isPaymentConfirmedOrNotRequired,
 } from 'src/gift-staging-review/gift-staging-processability';
 import {
-  applyLinkedDonorEmailUpdates,
-  applyLinkedDonorSupporterEmailOptOutUpdates,
+  applyLinkedDonorUpdates,
   buildGiftPayloadFromRow,
   createGiftViaRowFallback,
   requiresRecurringRowFallback,
@@ -126,15 +125,7 @@ const createBatchGiftChunk = async (
 
   const giftIds = parseCreatedGiftIds(response, entries.length);
 
-  const client = createCoreApiClient();
-  await applyLinkedDonorEmailUpdates(
-    client,
-    entries.map((entry) => entry.row),
-  );
-  await applyLinkedDonorSupporterEmailOptOutUpdates(
-    client,
-    entries.map((entry) => entry.row),
-  );
+  await applyLinkedDonorUpdates(entries.map((entry) => entry.row));
 
   return entries.map((entry, index) => ({
     id: entry.row.id,

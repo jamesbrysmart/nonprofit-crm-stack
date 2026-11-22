@@ -92,6 +92,11 @@ const row = (id = 'staging_1'): BatchProcessingRow => ({
   committedGift: null,
 });
 
+const giftCreateCalls = () =>
+  mocks.post.mock.calls.filter(([request]) =>
+    String(request?.path).startsWith('/rest/batch/gifts'),
+  );
+
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.post.mockResolvedValue({ data: { createGifts: [{ id: 'gift_1' }] } });
@@ -103,7 +108,9 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('gift execution commit boundary', () => {
   it('preserves a confirmed gift when actual donor enrichment requests fail', async () => {
-    mocks.mutation.mockRejectedValue(new Error('Donor update rejected'));
+    mocks.post
+      .mockResolvedValueOnce({ data: { createGifts: [{ id: 'gift_1' }] } })
+      .mockRejectedValueOnce(new Error('Donor update rejected'));
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const result = await executeSingleGiftProcessing(row());
@@ -114,9 +121,11 @@ describe('gift execution commit boundary', () => {
       executionPath: 'BATCH',
     });
     expect(result.stagingWritebackSucceeded).toBe(true);
-    expect(mocks.post).toHaveBeenCalledOnce();
-    expect(mocks.mutation).toHaveBeenCalledTimes(2);
-    expect(warn).toHaveBeenCalledTimes(2);
+    // One gift create, then one bulk donor update for both enrichments.
+    expect(mocks.post).toHaveBeenCalledTimes(2);
+    expect(mocks.post.mock.calls[1][0].path).toContain('/rest/batch/people');
+    expect(mocks.mutation).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledOnce();
     expect(mocks.persist.mock.calls[0][0][0].committedGiftId).toBe('gift_1');
   });
 
@@ -169,6 +178,32 @@ describe('gift execution commit boundary', () => {
     expect(
       result.failedWritebacks.every((item) => item.executionPath === 'BATCH'),
     ).toBe(true);
+  });
+
+  it('sends donor enrichment for a chunk as one bulk request, one entry per donor', async () => {
+    mocks.post.mockImplementation(async ({ path, body }) =>
+      String(path).startsWith('/rest/batch/gifts')
+        ? {
+            data: {
+              createGifts: body.map((_: unknown, index: number) => ({
+                id: `gift_${index + 1}`,
+              })),
+            },
+          }
+        : {},
+    );
+
+    await executeBatchGiftProcessing([row(), row('staging_2')]);
+
+    const personCalls = mocks.post.mock.calls.filter(([request]) =>
+      String(request?.path).startsWith('/rest/batch/people'),
+    );
+
+    expect(giftCreateCalls()).toHaveLength(1);
+    expect(personCalls).toHaveLength(1);
+    expect(personCalls[0][0].body).toHaveLength(1);
+    expect(personCalls[0][0].body[0].id).toBe('person_1');
+    expect(mocks.mutation).not.toHaveBeenCalled();
   });
 
   it('reports a rate-limited create as safe to retry, not as needing reconciliation', async () => {
@@ -239,7 +274,7 @@ describe('gift execution commit boundary', () => {
     });
     expect(result.stagingWritebackSucceeded).toBe(false);
     expect(result.reconciliationError).toBe('Staging unavailable');
-    expect(mocks.post).toHaveBeenCalledOnce();
+    expect(giftCreateCalls()).toHaveLength(1);
   });
 
   it('includes known gift IDs in a batch staging reconciliation error', async () => {
@@ -248,6 +283,6 @@ describe('gift execution commit boundary', () => {
     await expect(executeBatchGiftProcessing([row()])).rejects.toThrow(
       'staging_1:gift_1',
     );
-    expect(mocks.post).toHaveBeenCalledOnce();
+    expect(giftCreateCalls()).toHaveLength(1);
   });
 });

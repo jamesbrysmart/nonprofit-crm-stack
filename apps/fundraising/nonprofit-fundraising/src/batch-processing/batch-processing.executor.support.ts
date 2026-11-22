@@ -23,6 +23,8 @@ import {
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
 import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
+import { postTwentyRest } from 'src/app-api/twenty-rest-client';
+import { chunkArray } from 'src/utils/chunk-array';
 
 export type SuccessfulWriteback = {
   id: string;
@@ -461,66 +463,49 @@ export const buildNewPersonCreateData = (row: BatchProcessingRow) => {
   };
 };
 
-export const applyLinkedDonorEmailUpdates = async (
-  client: CoreApiClient,
-  rows: BatchProcessingRow[],
-) => {
-  for (const row of rows) {
-    const update = deriveLinkedDonorEmailUpdate(row);
+const PERSON_UPDATE_CHUNK_SIZE = 60;
 
-    if (!update) {
-      continue;
+// Email and supporter opt-out enrichment for already-linked donors, sent as one
+// bulk write per chunk instead of a request per row. Non-blocking: the gifts
+// are already committed, so a failure is logged rather than failing the row.
+export const applyLinkedDonorUpdates = async (rows: BatchProcessingRow[]) => {
+  const updatesByDonorId = new Map<
+    string,
+    { id: string; emails?: DonorEmailsUpdate['emails']; supporterEmailOptOut?: true }
+  >();
+
+  for (const row of rows) {
+    const emailUpdate = deriveLinkedDonorEmailUpdate(row);
+    const optOutUpdate = deriveLinkedDonorSupporterEmailOptOutUpdate(row);
+
+    for (const donorId of [emailUpdate?.donorId, optOutUpdate?.donorId]) {
+      if (donorId && !updatesByDonorId.has(donorId)) {
+        updatesByDonorId.set(donorId, { id: donorId });
+      }
     }
 
-    try {
-      await client.mutation({
-        updatePerson: {
-          __args: {
-            id: update.donorId,
-            data: {
-              emails: update.emails,
-            },
-          },
-          id: true,
-        },
-      } as any);
-    } catch (error) {
-      console.warn(
-        'Non-blocking donor email enrichment failed',
-        row.id,
-        error instanceof Error ? error.message : String(error),
-      );
+    if (emailUpdate) {
+      updatesByDonorId.get(emailUpdate.donorId)!.emails = emailUpdate.emails;
+    }
+
+    if (optOutUpdate) {
+      updatesByDonorId.get(optOutUpdate.donorId)!.supporterEmailOptOut = true;
     }
   }
-};
 
-export const applyLinkedDonorSupporterEmailOptOutUpdates = async (
-  client: CoreApiClient,
-  rows: BatchProcessingRow[],
-) => {
-  for (const row of rows) {
-    const update = deriveLinkedDonorSupporterEmailOptOutUpdate(row);
-
-    if (!update) {
-      continue;
-    }
-
+  for (const chunk of chunkArray(
+    [...updatesByDonorId.values()],
+    PERSON_UPDATE_CHUNK_SIZE,
+  )) {
     try {
-      await client.mutation({
-        updatePerson: {
-          __args: {
-            id: update.donorId,
-            data: {
-              supporterEmailOptOut: true,
-            },
-          },
-          id: true,
-        },
-      } as any);
+      await postTwentyRest<unknown>({
+        path: '/rest/batch/people?upsert=true&depth=0',
+        body: chunk,
+      });
     } catch (error) {
       console.warn(
-        'Non-blocking donor supporter email opt-out enrichment failed',
-        row.id,
+        'Non-blocking donor enrichment failed',
+        chunk.map((update) => update.id).join(', '),
         error instanceof Error ? error.message : String(error),
       );
     }
@@ -885,8 +870,7 @@ export const createGiftViaRowFallback = async (
     );
   }
 
-  await applyLinkedDonorEmailUpdates(client, [row]);
-  await applyLinkedDonorSupporterEmailOptOutUpdates(client, [row]);
+  await applyLinkedDonorUpdates([row]);
 
   return {
     id: row.id,
