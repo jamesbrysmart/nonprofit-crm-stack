@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, } from 'twenty-sdk/front-component';
 import { extractQueryRecord } from 'src/core-api/core-api-results';
 import {
   ActionButton,
@@ -30,6 +30,7 @@ import {
 } from 'src/constants/universal-identifiers';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 type CurrencyAmount = {
   amountMicros?: number | null;
@@ -181,8 +182,7 @@ const loadOpportunity = async (
 };
 
 const OpportunityRecordPayment = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<OpportunityPaymentRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

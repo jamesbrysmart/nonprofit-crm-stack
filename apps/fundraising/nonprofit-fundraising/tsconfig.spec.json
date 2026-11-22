@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "noUncheckedIndexedAccess": false,
     "composite": false,
     "declaration": false,
     "types": ["vitest/globals", "node"]

@@ -225,11 +225,10 @@ export const buildDonationFormCardMarkup = ({
   const selectedGiftAidRequested =
     config.giftAidEnabled === true && giftAidRequested === true;
   const firstAmount =
-    amountOptions.length > 0
-      ? amountOptions[0]
-      : typeof config.minimumAmount === 'number' && config.minimumAmount > 0
-        ? config.minimumAmount
-        : 500;
+    amountOptions[0] ??
+    (typeof config.minimumAmount === 'number' && config.minimumAmount > 0
+      ? config.minimumAmount
+      : 500);
   const amountLabel =
     selectedDonationType === 'RECURRING'
       ? 'Choose your monthly amount'

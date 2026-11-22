@@ -143,8 +143,12 @@ const evaluateGiftReadyStatus = async ({
   const [resolvedRow] = await resolveAppealSourceExternalIdsForRows(client, [
     row,
   ]);
+
+  if (!resolvedRow) {
+    throw new Error(`Gift staging row ${row.id} could not be prepared`);
+  }
   const peopleByEmail = await loadPeopleByPrimaryEmails(client, [
-    resolvedRow?.donorEmail ?? '',
+    resolvedRow.donorEmail ?? '',
   ]);
   const evaluation = evaluateGiftReadyRow({
     row: {

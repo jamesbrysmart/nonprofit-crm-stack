@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { GIFT_BATCH_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 import { useGiftBatchReview } from 'src/gift-batch-review/use-gift-batch-review';
 import { BatchActionsSection } from 'src/gift-batch-review/workspace/batch-actions-section';
@@ -8,6 +7,7 @@ import { BatchCodingSection } from 'src/gift-batch-review/workspace/batch-coding
 import { BatchSummarySection } from 'src/gift-batch-review/workspace/batch-summary-section';
 import { BatchWorklistsSection } from 'src/gift-batch-review/workspace/batch-worklists-section';
 import { WorkspaceText } from 'src/front-components/workspace-layout';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const ROOT_STYLE: CSSProperties = {
   display: 'grid',
@@ -17,8 +17,7 @@ const ROOT_STYLE: CSSProperties = {
 // One component owns the batch data so every section updates together after an
 // action; sibling widgets cannot signal each other in the front-component sandbox.
 const GiftBatchWorkspace = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const { record, loading, error, refresh } = useGiftBatchReview(recordId);
 
   if (loading && !record) {

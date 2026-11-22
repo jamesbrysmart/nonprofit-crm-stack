@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { Status } from 'twenty-ui/primitives/data-display';
 import type { ThemeColor } from 'twenty-ui/theme';
 import {
@@ -15,6 +14,7 @@ import type { RecurringAgreementHealth } from 'src/recurring/recurring.types';
 import {
   RECURRING_AGREEMENT_PAYMENT_HEALTH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const getHealthColor = (state: RecurringAgreementHealth['state']): ThemeColor => {
   switch (state) {
@@ -41,8 +41,7 @@ const loadHealth = async (recordId: string) => {
 };
 
 const RecurringAgreementPaymentHealth = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [health, setHealth] = useState<RecurringAgreementHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

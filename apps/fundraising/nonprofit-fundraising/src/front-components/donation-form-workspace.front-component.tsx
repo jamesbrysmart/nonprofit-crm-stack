@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, } from 'twenty-sdk/front-component';
 import {
   getAppealIdForAppealSourceSelection,
   getAppealSourceIdsForAppeal,
@@ -39,6 +39,7 @@ import {
 import { getCurrencyOptions } from 'src/manual-gift-entry/new-gift-support';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const COLOUR_FIELD_STYLE: CSSProperties = {
   display: 'grid',
@@ -58,8 +59,7 @@ const COLOUR_SWATCH_STYLE: CSSProperties = {
 };
 
 const DonationFormConfigure = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const { record, setRecord, loading, error } = useDonationFormRecord(recordId);
   const [state, setState] = useState<DonationFormWorkspaceState | null>(null);
   const [savedState, setSavedState] = useState<DonationFormWorkspaceState | null>(

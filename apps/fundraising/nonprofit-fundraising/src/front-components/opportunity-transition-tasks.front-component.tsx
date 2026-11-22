@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CoreApiClient, type CoreSchema } from 'twenty-client-sdk/core';
 import { MetadataApiClient } from 'twenty-client-sdk/metadata';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, } from 'twenty-sdk/front-component';
 import {
   extractConnectionNodes,
   extractMutationRecord,
@@ -24,6 +24,7 @@ import {
   OPPORTUNITY_TRANSITION_TASKS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { normalizeString } from 'src/utils/normalize-string';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 type OpportunityTransitionRecord = {
   id: string;
@@ -196,8 +197,7 @@ const toDueAtIsoString = (value: string) => {
 };
 
 const OpportunityTransitionTasks = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<OpportunityTransitionRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

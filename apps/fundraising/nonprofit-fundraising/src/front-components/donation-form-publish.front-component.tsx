@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, } from 'twenty-sdk/front-component';
 import { publishDonationForm } from 'src/donation-forms/donation-form-publish.api';
 import { DEFAULT_STRIPE_PROVIDER_CONFIG_KEY } from 'src/donation-forms/donation-form-checkout-stripe';
 import {
@@ -28,10 +28,10 @@ import {
   DONATION_FORM_PUBLISH_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
 import { normalizeString } from 'src/utils/normalize-string';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const DonationFormPublish = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const { record, setRecord, loading, error } = useDonationFormRecord(recordId);
   const [publishing, setPublishing] = useState(false);
   const [publishedState, setPublishedState] = useState<PublishedState | null>(null);

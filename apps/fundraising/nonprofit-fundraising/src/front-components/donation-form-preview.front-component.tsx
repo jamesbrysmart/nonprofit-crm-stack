@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { Tag } from 'twenty-ui/primitives/data-display';
 import { Button } from 'twenty-ui/primitives/input';
 import { FormCheckbox } from 'src/front-components/form-controls';
@@ -29,6 +28,7 @@ import {
 import {
   DONATION_FORM_PREVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 type PreviewViewportMode = 'DESKTOP' | 'MOBILE';
 
@@ -57,8 +57,7 @@ const previewNotesRowStyle = {
 };
 
 const DonationFormPreview = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const { record, loading, error } = useDonationFormRecord(recordId);
   const [previewDonationType, setPreviewDonationType] =
     useState<PreviewDonationType>('ONE_OFF');
@@ -75,7 +74,7 @@ const DonationFormPreview = () => {
 
     const allowedTypes = getPreviewDonationTypeOptions(savedDraftState.mode);
     setPreviewDonationType((current) =>
-      allowedTypes.includes(current) ? current : allowedTypes[0],
+      allowedTypes.includes(current) ? current : (allowedTypes[0] ?? current),
     );
 
     if (!savedDraftState.giftAidEnabled) {

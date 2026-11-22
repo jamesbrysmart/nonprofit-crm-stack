@@ -4,8 +4,7 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import {
   AppPath,
   navigate,
-  useSelectedRecordIds,
-} from 'twenty-sdk/front-component';
+  } from 'twenty-sdk/front-component';
 import {
   ActionButton,
   compactDividerSectionStyle,
@@ -21,6 +20,7 @@ import {
 } from 'src/constants/universal-identifiers';
 import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 import { normalizeString } from 'src/utils/normalize-string';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 type MailingAddress = {
   addressStreet1?: string | null;
@@ -203,8 +203,7 @@ const loadGift = async (
 };
 
 const GiftGiftAidDonorContext = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<GiftGiftAidDonorContextRecord | null>(
     null,
   );

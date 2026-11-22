@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   SummaryStrip,
   SummaryStripItem,
@@ -16,6 +15,7 @@ import {
 import { ReportingExclusionNotice } from 'src/reporting-currency/reporting-exclusion-notice';
 import { normalizeString } from 'src/utils/normalize-string';
 import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 type CompanyRecordSummaryRecord = {
   id: string;
@@ -92,8 +92,7 @@ const loadCompany = async (
 };
 
 const CompanyRecordSummary = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<CompanyRecordSummaryRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

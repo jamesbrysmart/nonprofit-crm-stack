@@ -1,7 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   CompactMetaGrid,
   CompactMetaItem,
@@ -15,6 +14,7 @@ import {
 } from 'src/constants/universal-identifiers';
 import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 import { normalizeString } from 'src/utils/normalize-string';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 type GiftAidGiftRecord = {
   id: string;
@@ -217,8 +217,7 @@ const loadGift = async (recordId: string): Promise<GiftAidGiftRecord | null> => 
 };
 
 const GiftGiftAidState = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<GiftAidGiftRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

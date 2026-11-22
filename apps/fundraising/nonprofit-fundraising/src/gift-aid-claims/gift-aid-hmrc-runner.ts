@@ -168,14 +168,14 @@ const buildClaimPeriod = (
     .map((value) => value.slice(0, 10))
     .sort();
 
-  if (giftDates.length === 0) {
+  const startDate = giftDates[0];
+  const endDate = giftDates[giftDates.length - 1];
+
+  if (startDate === undefined || endDate === undefined) {
     throw new Error('Submission snapshot has no gift dates for claim-period derivation');
   }
 
-  return {
-    startDate: giftDates[0],
-    endDate: giftDates[giftDates.length - 1],
-  };
+  return { startDate, endDate };
 };
 
 const buildClaimInput = (

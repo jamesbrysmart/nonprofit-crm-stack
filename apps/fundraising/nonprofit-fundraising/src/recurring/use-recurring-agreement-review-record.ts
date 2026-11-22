@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   buildRecurringAgreementReviewRecord,
 } from 'src/recurring/recurring.model';
 import { loadRecurringAgreementById } from 'src/recurring/recurring.service';
 import type { RecurringAgreementReviewRecord } from 'src/recurring/recurring.types';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const loadRecurringAgreementReview = async (recordId: string) => {
   const client = new CoreApiClient();
@@ -15,8 +15,7 @@ const loadRecurringAgreementReview = async (recordId: string) => {
 };
 
 export const useRecurringAgreementReviewRecord = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<RecurringAgreementReviewRecord | null>(
     null,
   );

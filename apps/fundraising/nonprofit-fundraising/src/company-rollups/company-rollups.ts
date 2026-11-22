@@ -107,7 +107,7 @@ const includeInCashRollups = (giftType: string | null | undefined) =>
 const isPopulatedAmount = (amount: CurrencyAmount | null | undefined) =>
   Math.round(amount?.amountMicros ?? 0) !== 0;
 
-const todayIsoDate = () => new Date().toISOString().split('T')[0];
+const todayIsoDate = () => new Date().toISOString().slice(0, 10);
 
 const buildOrIdFilter = (ids: string[]) => ({
   or: ids.map((id) => ({

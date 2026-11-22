@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { GIFT_AID_CLAIM_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 import { WorkspaceText } from 'src/front-components/workspace-layout';
@@ -8,6 +7,7 @@ import { ClaimSubmissionSection } from 'src/gift-aid-claims/workspace/claim-subm
 import { ClaimSummarySection } from 'src/gift-aid-claims/workspace/claim-summary-section';
 import { ClaimWorklistsSection } from 'src/gift-aid-claims/workspace/claim-worklists-section';
 import { useClaimWorkspace } from 'src/gift-aid-claims/workspace/use-claim-workspace';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const ROOT_STYLE: CSSProperties = {
   display: 'grid',
@@ -17,8 +17,7 @@ const ROOT_STYLE: CSSProperties = {
 // One component owns the claim data so every section updates together after an
 // action; sibling widgets cannot signal each other in the front-component sandbox.
 const GiftAidClaimWorkspace = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const { workspace, loading, error, refresh } = useClaimWorkspace(recordId);
 
   useReloadOnTabChange(() => {

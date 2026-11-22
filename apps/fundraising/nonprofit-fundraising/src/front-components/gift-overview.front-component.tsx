@@ -1,6 +1,5 @@
 import { useState, type CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { GIFT_OVERVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
 import {
@@ -9,6 +8,7 @@ import {
 } from 'src/front-components/workspace-layout';
 import { GiftCodingSection } from 'src/gift-record/overview/gift-coding-section';
 import { GiftSummarySection } from 'src/gift-record/overview/gift-summary-section';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const ROOT_STYLE: CSSProperties = {
   display: 'grid',
@@ -18,8 +18,7 @@ const ROOT_STYLE: CSSProperties = {
 // The sections keep their own queries; a shared token reloads both after a
 // coding correction or when the tab is shown again (e.g. after a refund).
 const GiftOverview = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [reloadToken, setReloadToken] = useState(0);
   const reload = () => setReloadToken((current) => current + 1);
 

@@ -110,8 +110,8 @@ export const persistGiftStagingBatchUpserts = async (
   const delayMs = options?.delayMs ?? DEFAULT_CHUNK_DELAY_MS;
   const chunks = chunkArray(records, chunkSize);
 
-  for (let index = 0; index < chunks.length; index += 1) {
-    await upsertGiftStagingBatch(chunks[index], options?.allowedIds);
+  for (const [index, chunk] of chunks.entries()) {
+    await upsertGiftStagingBatch(chunk, options?.allowedIds);
 
     if (index < chunks.length - 1) {
       await sleep(delayMs);

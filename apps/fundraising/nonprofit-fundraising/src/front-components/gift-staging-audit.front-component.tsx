@@ -1,6 +1,5 @@
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { theme } from 'src/front-components/theme-tokens';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import {
   compactConfirmationCardStyle,
   compactDividerSectionStyle,
@@ -16,6 +15,7 @@ import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-cha
 import {
   GIFT_STAGING_AUDIT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const renderValue = (value: string) => {
   return value === '' ? 'Not recorded' : value;
@@ -49,8 +49,7 @@ const humanizeEnum = (value: string) => {
 };
 
 const GiftStagingAudit = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const { record, loading, error, refresh } = useGiftStagingReviewRecord(recordId);
 
   useReloadOnTabChange(() => {

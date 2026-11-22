@@ -104,6 +104,17 @@ class GiftCreateRateLimitedError extends Error {
   }
 }
 
+// parseCreatedGiftIds guarantees one ID per entry; this keeps that explicit.
+const giftIdAt = (giftIds: string[], index: number) => {
+  const giftId = giftIds[index];
+
+  if (giftId === undefined) {
+    throw new Error(`Created gift response has no ID for entry ${index}`);
+  }
+
+  return giftId;
+};
+
 const createBatchGiftChunk = async (
   entries: BatchGiftEntry[],
 ): Promise<SuccessfulWriteback[]> => {
@@ -129,7 +140,7 @@ const createBatchGiftChunk = async (
 
   return entries.map((entry, index) => ({
     id: entry.row.id,
-    committedGiftId: giftIds[index],
+    committedGiftId: giftIdAt(giftIds, index),
     donorId: normalizeString(entry.row.donor?.id),
     ...(normalizeString(entry.payload.companyId as string | undefined) !== ''
       ? {
@@ -404,8 +415,8 @@ export const executeBatchGiftProcessing = async (
     },
   };
 
-  for (let index = 0; index < chunks.length; index += 1) {
-    const chunkResult = await executeBatchGiftChunk(chunks[index]);
+  for (const [index, chunk] of chunks.entries()) {
+    const chunkResult = await executeBatchGiftChunk(chunk);
     result.successfulWritebacks.push(...chunkResult.successfulWritebacks);
     result.failedWritebacks.push(...chunkResult.failedWritebacks);
     result.metrics.chunkCount += chunkResult.metrics.chunkCount;

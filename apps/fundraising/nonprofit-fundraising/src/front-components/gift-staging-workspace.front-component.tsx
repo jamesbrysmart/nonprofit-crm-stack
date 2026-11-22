@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { GIFT_STAGING_WORKSPACE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 import { WorkspaceText } from 'src/front-components/workspace-layout';
 import { useGiftStagingReviewRecord } from 'src/gift-staging-review/use-gift-staging-review-record';
@@ -8,6 +7,7 @@ import { StagingCodingSection } from 'src/gift-staging-review/workspace/staging-
 import { StagingDonorReviewSection } from 'src/gift-staging-review/workspace/staging-donor-review-section';
 import { StagingProcessingSection } from 'src/gift-staging-review/workspace/staging-processing-section';
 import { StagingSummarySection } from 'src/gift-staging-review/workspace/staging-summary-section';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const ROOT_STYLE: CSSProperties = {
   display: 'grid',
@@ -17,8 +17,7 @@ const ROOT_STYLE: CSSProperties = {
 // One component owns the staging record so every section updates together after
 // an action; sibling widgets cannot signal each other in the front-component sandbox.
 const GiftStagingWorkspace = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const { record, loading, error, refresh } = useGiftStagingReviewRecord(recordId);
 
   if (loading && !record) {

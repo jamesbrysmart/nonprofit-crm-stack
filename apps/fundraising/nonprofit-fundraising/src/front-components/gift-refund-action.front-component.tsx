@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { enqueueSnackbar, } from 'twenty-sdk/front-component';
 import { recordGiftRefund } from 'src/gift-lifecycle/gift-refund.api';
 import { deriveRefundState } from 'src/gift-lifecycle/gift-refund';
 import { Callout } from 'twenty-ui/components/feedback';
@@ -23,6 +23,7 @@ import {
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
 import { formatCurrencyAmount } from 'src/utils/format-currency-amount';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 type RefundActionGiftRecord = {
   id: string;
@@ -113,8 +114,7 @@ const loadGift = async (recordId: string): Promise<RefundActionGiftRecord | null
 };
 
 const GiftRefundAction = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<RefundActionGiftRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

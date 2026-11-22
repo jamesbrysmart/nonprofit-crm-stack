@@ -11,8 +11,7 @@ import { extractQueryRecord } from 'src/core-api/core-api-results';
 import {
   AppPath,
   navigate,
-  useSelectedRecordIds,
-} from 'twenty-sdk/front-component';
+  } from 'twenty-sdk/front-component';
 import {
   ActionButton,
   actionRowStyle,
@@ -26,6 +25,7 @@ import {
 import {
   GIFT_AID_CLAIM_SUBMISSION_RECORD_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/universal-identifiers';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 type GiftAidClaimSubmissionRecordView = {
   id: string;
@@ -122,8 +122,7 @@ const loadSubmissionRecord = async (
 };
 
 const GiftAidClaimSubmissionRecord = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<GiftAidClaimSubmissionRecordView | null>(
     null,
   );

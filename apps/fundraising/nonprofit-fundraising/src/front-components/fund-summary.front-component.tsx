@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { theme } from 'src/front-components/theme-tokens';
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { useSelectedRecordIds } from 'twenty-sdk/front-component';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
 import {
   SummaryStrip,
@@ -22,6 +21,7 @@ import {
   getDefaultCurrencyCode,
 } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
 
 const GIFT_PAGE_SIZE = 100;
 
@@ -267,8 +267,7 @@ const formatReportingTotal = (
     : 'Set the reporting currency';
 
 const FundSummary = () => {
-  const selectedRecordIds = useSelectedRecordIds();
-  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : null;
+  const recordId = useSingleSelectedRecordId();
   const [record, setRecord] = useState<FundSummaryRecord | null>(null);
   const [givingSummary, setGivingSummary] =
     useState<FundGivingSummary | null>(null);

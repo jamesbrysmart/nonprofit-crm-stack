@@ -202,6 +202,10 @@ export const processSingleGiftStagingRow = async (
   const [resolvedRow] = await resolveAppealSourceParentsForProcessing(client, [
     row,
   ]);
+
+  if (!resolvedRow) {
+    throw new Error(`Gift staging row ${row.id} could not be prepared`);
+  }
   const result = await executeSingleGiftProcessing(resolvedRow);
 
   if ('committedGiftId' in result.writeback) {

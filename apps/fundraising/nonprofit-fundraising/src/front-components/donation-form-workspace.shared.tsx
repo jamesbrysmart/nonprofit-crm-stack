@@ -303,11 +303,9 @@ const relativeLuminance = (hexColor: string): number => {
       : ((channel + 0.055) / 1.055) ** 2.4,
   );
 
-  return (
-    0.2126 * linearized[0] +
-    0.7152 * linearized[1] +
-    0.0722 * linearized[2]
-  );
+  const [red = 0, green = 0, blue = 0] = linearized;
+
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 };
 
 const contrastRatioWithWhite = (hexColor: string): number => {

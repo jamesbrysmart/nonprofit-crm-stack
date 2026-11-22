@@ -35,7 +35,10 @@ import {
   getFundIdForAppealSelection,
 } from 'src/gift-coding/gift-coding';
 import { useGiftCodingOptions } from 'src/front-components/use-gift-coding-options';
-import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
+import {
+  getDefaultCurrencyCode,
+  getReportingCurrencyCode,
+} from 'src/reporting-currency/reporting-currency';
 
 export const useNewGiftController = () => {
   const [donorType, setDonorType] =
@@ -50,7 +53,7 @@ export const useNewGiftController = () => {
   const [amountValue, setAmountValue] = useState('');
   const reportingCurrencyCode = getReportingCurrencyCode();
   const [currencyCode, setCurrencyCode] = useState(
-    () => getCurrencyOptions(reportingCurrencyCode)[0],
+    () => getCurrencyOptions(reportingCurrencyCode)[0] ?? getDefaultCurrencyCode(),
   );
   const [reportingAmountValue, setReportingAmountValue] = useState('');
   const needsReportingAmount =

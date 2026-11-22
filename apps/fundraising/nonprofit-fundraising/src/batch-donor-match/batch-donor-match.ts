@@ -84,10 +84,12 @@ export const determineBatchDonorMatchOutcome = ({
     donorHasExactEmail(candidate, email),
   );
 
-  if (exactEmailCandidatesFromName.length === 1) {
+  const [onlyExactEmailCandidate] = exactEmailCandidatesFromName;
+
+  if (exactEmailCandidatesFromName.length === 1 && onlyExactEmailCandidate) {
     return {
       kind: 'CONFIRMED',
-      donorId: exactEmailCandidatesFromName[0].id,
+      donorId: onlyExactEmailCandidate.id,
     };
   }
 

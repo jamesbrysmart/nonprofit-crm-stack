@@ -2,7 +2,7 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript"],
   "categories": {
-    "correctness": "off"
+    "correctness": "error"
   },
   "ignorePatterns": ["node_modules", "dist"],
   "rules": {
@@ -14,9 +14,15 @@
         "argsIgnorePattern": "^_"
       }
     ],
-    "typescript/no-explicit-any": "off"
+    "typescript/no-explicit-any": "error"
   },
   "overrides": [
+    {
+      "files": ["src/__tests__/**"],
+      "rules": {
+        "typescript/no-explicit-any": "off"
+      }
+    },
     {
       "files": ["**/*.logic-function.ts", "**/logic-functions/**/*.ts"],
       "rules": {
