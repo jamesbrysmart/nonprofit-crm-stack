@@ -1,6 +1,6 @@
 # Apps Migration API Pressure
 
-Updated: 2026-05-07
+Updated: 2026-11-22
 Status: Working guide
 Purpose: Keep API pressure visible as a migration-wide architectural constraint for Twenty apps, logic functions, imports, and any companion services we may add.
 
@@ -30,51 +30,27 @@ It is also:
 
 ### Core API
 
-Current Twenty docs and server defaults align on these limits:
+Reviewed 2026-11-22 against Twenty 2.61 source (`usage-limit` definitions, `config-variables.ts`, `common-base-query-runner.service.ts`).
 
-- `100` requests per minute
-- `60` records per batch call
+Request-rate limits apply per caller type:
 
-Relevant references:
+| Caller | Limit | Scope |
+| --- | --- | --- |
+| API key | 100 requests per second and 100 per minute (`API_RATE_LIMITING_*`) | per workspace |
+| Application | 500 requests per minute (`APPLICATION_API_RATE_LIMITING_*`) | shared across every workspace that installs the app |
+| User session | no request-rate limit | — |
 
-- `services/twenty-core/packages/twenty-docs/user-guide/data-migration/how-tos/import-data-via-api.mdx`
-- `services/twenty-core/packages/twenty-docs/developers/extend/api.mdx`
-- `services/twenty-core/packages/twenty-server/src/engine/core-modules/twenty-config/config-variables.ts`
-- `services/twenty-core/packages/twenty-server/src/engine/api/common/common-query-runners/common-base-query-runner.service.ts`
-
-Current implementation detail:
-
-- Twenty applies token-bucket throttling for API-key-authenticated requests at the workspace level.
-- Server defaults currently include:
-  - short window: `100` requests per `1000ms`
-  - long window: `100` requests per `60_000ms`
+- A request an app makes on behalf of a person (the default for logic functions triggered from the UI) is charged to both the user and the application. The user has no rate limit, so in practice it draws on the application's shared budget. The apps good-practices page says such requests count against the person instead; the source disagrees, and the question has been raised with Twenty.
+- The limit is checked before a request runs. A rate-limited request (REST 429 with `retryAfterSeconds`, or GraphQL `RATE_LIMITED` with `retryAfterMs`) had no effect, so retrying it is safe even for writes.
+- Batch writes accept up to 100 records per call (`MUTATION_MAXIMUM_AFFECTED_RECORDS`); find-many pages are capped at 200 (`QUERY_MAX_RECORDS`).
 
 Migration implication:
 
-- The minute-level budget is the stable operating constraint we should design around.
-- The shorter token bucket still matters for bursts, especially when multiple app or service paths fire at once.
+- Design against the application's shared per-minute budget, which grows more contended as installs increase. Prefer bulk requests and retry rate-limited requests with backoff.
 
 ### Workflow Runs
 
-Twenty has a separate workflow pressure domain:
-
-- soft limit: `100` runs per minute
-- hard limit: `5,000` runs per hour
-
-Behavior:
-
-- soft-limit overflow queues runs in `Not Started`
-- hard-limit overflow fails additional runs immediately
-
-Relevant references:
-
-- `services/twenty-core/packages/twenty-docs/user-guide/workflows/how-tos/need-more-help/workflows-faq.mdx`
-- `services/twenty-core/packages/twenty-server/src/modules/workflow/workflow-runner/workflow-run-queue/workspace-services/workflow-throttling.workspace-service.ts`
-- `services/twenty-core/packages/twenty-server/src/engine/core-modules/twenty-config/config-variables.ts`
-
-Migration implication:
-
-- A design that looks cheap in API calls can still be unsafe if it creates many workflow runs.
+Twenty 2.61 enqueues every workflow run immediately and no longer throttles runs (the earlier 100-per-minute soft and 5,000-per-hour hard limits were removed). Workflow steps that call the API still consume request budgets.
 
 ### Logic Function Execution
 
@@ -164,6 +140,13 @@ Current app signal:
 
 - the executor already bakes in chunking and `700ms` pauses,
 - which is strong evidence that this path should remain explicitly pressure-aware.
+
+Changes from the November 2026 review:
+
+- Rate-limited requests are retried with the server's suggested wait (`src/core-api/rate-limit-retry.ts`, up to four attempts and 10 seconds). A gift create that stays rate limited is reported as safe to process again rather than needing reconciliation.
+- Donor email and opt-out enrichment is one bulk people write per chunk, not one request per row.
+- Batch donor matching looks up names 25 per query instead of one query per name.
+- Remaining per-row requests: Gift Aid declaration lookups during preparation (deferred with the Gift Aid app split) and the deliberate one-by-one fallback for recurring-linked rows.
 
 ### Single-row processing that reuses the batch executor
 
