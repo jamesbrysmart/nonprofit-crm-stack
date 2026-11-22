@@ -96,7 +96,7 @@ export const searchRecurringAgreements = async (
         },
       },
     },
-  } as any);
+  });
 
   const agreements = extractConnectionNodes<
     RecurringAgreementSummary & {
@@ -198,7 +198,7 @@ export const loadRecurringAgreementById = async (
           id: true,
           name: true,
           giftDate: true,
-          amount: true,
+          amount: { amountMicros: true, currencyCode: true },
           donorFirstName: true,
           donorLastName: true,
         },
@@ -224,7 +224,7 @@ export const loadRecurringAgreementById = async (
         },
       },
     },
-  } as any);
+  });
 
   const agreement = extractQueryRecord<
     Omit<StoredRecurringAgreementRecord, 'gifts' | 'giftStagings'>
@@ -262,7 +262,7 @@ export const loadRecurringAgreementPaymentHealthInput = async (
       status: true,
       nextExpectedAt: true,
     },
-  } as any);
+  });
 
   return (
     extractQueryRecord<
@@ -313,7 +313,7 @@ export const advanceRecurringAgreementExpectation = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   return nextExpectedAt;
 };

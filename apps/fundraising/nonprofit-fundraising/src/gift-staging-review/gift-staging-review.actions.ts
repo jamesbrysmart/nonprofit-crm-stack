@@ -56,7 +56,7 @@ const updateGiftStaging = async (
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 const loadGiftStagingForReadinessCheck = async (recordId: string) => {
@@ -109,7 +109,7 @@ const loadGiftStagingForReadinessCheck = async (recordId: string) => {
         id: true,
       },
     },
-  } as any);
+  });
 
   const loadedRow = result?.giftStaging as
     | (Partial<GiftStagingReadinessRow> & { id?: string | null })
@@ -338,7 +338,7 @@ export const saveGiftCoding = async (
       },
       softCreditType: true,
     },
-  } as any);
+  });
   const currentGiftStaging = existing?.giftStaging as
     | {
         id?: string | null;

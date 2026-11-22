@@ -175,7 +175,7 @@ const loadOpportunity = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractQueryRecord<OpportunityPaymentRecord>(result, 'opportunity') ?? null;
 };

@@ -111,7 +111,7 @@ const loadSubmissionRecord = async (
         status: true,
       },
     },
-  } as any);
+  });
 
   return (
     extractQueryRecord<GiftAidClaimSubmissionRecordView>(

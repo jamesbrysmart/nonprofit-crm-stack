@@ -29,7 +29,7 @@ const updateBatch = async (
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 const summarizeBatchOutcome = async (

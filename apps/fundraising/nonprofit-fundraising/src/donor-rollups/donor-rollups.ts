@@ -17,6 +17,7 @@ import type {
 } from 'twenty-sdk/define';
 import { normalizeString } from 'src/utils/normalize-string';
 import { chunkArray } from 'src/utils/chunk-array';
+import type { CoreSchema } from 'twenty-client-sdk/core';
 
 const DONOR_QUERY_CHUNK_SIZE = 25;
 const GIFT_QUERY_PAGE_SIZE = 200;
@@ -98,7 +99,8 @@ const buildOrDonorFilter = (donorIds: string[]) => ({
   })),
 });
 
-export const buildDonorExistingRollupsFilter = () => ({
+export const buildDonorExistingRollupsFilter =
+  (): CoreSchema.PersonFilterInput => ({
   or: [
     {
       giftCount: {
@@ -236,7 +238,7 @@ const loadPeopleByIds = async (
           },
         },
       },
-    } as any);
+    });
 
     const people = extractConnectionNodes<PersonRollupRecord>(result, 'people');
 
@@ -293,7 +295,7 @@ const loadCommittedGiftsForDonors = async (
             endCursor: true,
           },
         },
-      } as any);
+      });
 
       const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
       const gifts = giftConnection.edges.map((edge) => edge.node);
@@ -361,7 +363,7 @@ const loadAllCommittedGifts = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
     const gifts = giftConnection.edges.map((edge) => edge.node);
@@ -413,7 +415,7 @@ const loadDonorIdsWithExistingRollups = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     const peopleConnection = extractConnection<{ id: string }>(result, 'people');
     const people = peopleConnection.edges.map((edge) => edge.node);

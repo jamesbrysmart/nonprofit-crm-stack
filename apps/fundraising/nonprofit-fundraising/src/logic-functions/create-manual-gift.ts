@@ -71,7 +71,7 @@ const resolveAppealAndFundSelection = async (
           id: true,
         },
       },
-    } as any);
+    });
 
     const resolvedAppeal = extractQueryRecord<{
       id?: string | null;
@@ -127,7 +127,7 @@ const ensurePersonForManualGift = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   const personId = extractMutationRecord<{ id?: string | null }>(
     result,
@@ -156,7 +156,7 @@ const ensureCompanyForManualGift = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   const companyId = extractMutationRecord<{ id?: string | null }>(
     result,
@@ -229,7 +229,7 @@ const validateOpportunityCompany = async (
         id: true,
       },
     },
-  } as any);
+  });
 
   const opportunity = extractQueryRecord<{
     id?: string | null;
@@ -495,7 +495,7 @@ const handler = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   const giftId = extractMutationRecord<{ id?: string | null }>(
     result,

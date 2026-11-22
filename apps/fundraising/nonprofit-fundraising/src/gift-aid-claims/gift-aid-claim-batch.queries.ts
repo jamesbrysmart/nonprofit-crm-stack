@@ -32,7 +32,7 @@ const giftAidClaimBatchSelection = {
   submittedAt: true,
   latestSubmissionStatus: true,
   giftCount: true,
-  totalAmount: true,
+  totalAmount: { amountMicros: true, currencyCode: true },
   hasBlockingIssues: true,
   blockingIssueCount: true,
 } as const;
@@ -84,7 +84,7 @@ export const getCurrentDraftClaimBatch = async (
         node: giftAidClaimBatchSelection,
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<GiftAidClaimBatchRecord>(
     result,
@@ -117,7 +117,7 @@ export const getOrCreateCurrentDraftClaimBatch = async (
       },
       ...giftAidClaimBatchSelection,
     },
-  } as any);
+  });
 
   return extractMutationRecord<GiftAidClaimBatchRecord>(
     created,
@@ -144,7 +144,7 @@ const listClaimGifts = async (
         edges: { node: giftAidClaimGiftSelection },
         pageInfo: { hasNextPage: true, endCursor: true },
       },
-    } as any);
+    });
 
     const connection = extractQueryRecord<Connection<GiftAidClaimGiftRecord>>(
       result,
@@ -251,7 +251,7 @@ export const refreshClaimBatchSummary = async (
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 export const loadGiftAidClaimWorkspace = async (
@@ -297,7 +297,7 @@ export const loadGiftAidClaimWorkspace = async (
         },
       },
     },
-  } as any);
+  });
 
   const gifts = await listGiftsForClaimBatch(client, batchId);
   const needsReviewGifts = await listNeedsReviewGiftAidGifts(client);
@@ -352,7 +352,7 @@ export const loadClaimBatch = async (
       },
       ...giftAidClaimBatchSelection,
     },
-  } as any);
+  });
 
   return (
     extractQueryRecord<GiftAidClaimBatchRecord>(

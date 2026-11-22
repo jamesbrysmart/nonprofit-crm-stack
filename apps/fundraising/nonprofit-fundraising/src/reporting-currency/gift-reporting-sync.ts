@@ -40,7 +40,7 @@ const loadGiftPage = async (
       edges: { node: GIFT_REPORTING_SELECTION },
       pageInfo: { hasNextPage: true, endCursor: true },
     },
-  } as any);
+  });
   const connection = extractConnection<GiftReportingRecord>(result, 'gifts');
 
   return {

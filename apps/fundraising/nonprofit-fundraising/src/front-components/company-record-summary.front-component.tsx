@@ -86,7 +86,7 @@ const loadCompany = async (
       nextApplicationDeadline: true,
       nextFundingPeriodEnd: true,
     },
-  } as any);
+  });
 
   return (result?.company as CompanyRecordSummaryRecord | null) ?? null;
 };

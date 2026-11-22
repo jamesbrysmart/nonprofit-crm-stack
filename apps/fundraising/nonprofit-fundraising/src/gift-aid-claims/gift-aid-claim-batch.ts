@@ -50,7 +50,7 @@ export const attachGiftToCurrentDraftIfClaimable = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   await refreshClaimBatchSummary(client, batch.id);
 };
@@ -143,7 +143,7 @@ export const finalizeGiftAidClaimBatch = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   try {
     const nextDraft = await getOrCreateCurrentDraftClaimBatch(client);

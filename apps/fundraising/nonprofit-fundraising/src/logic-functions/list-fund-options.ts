@@ -19,9 +19,9 @@ const handler = async (
             eq: true,
           },
         },
-        orderBy: {
-          name: 'AscNullsLast',
-        },
+        orderBy: [
+          { name: 'AscNullsLast' },
+        ],
       },
       edges: {
         node: {
@@ -32,7 +32,7 @@ const handler = async (
         },
       },
     },
-  } as any);
+  });
 
   return {
     funds: extractConnectionNodes<FundSummary>(result, 'funds'),

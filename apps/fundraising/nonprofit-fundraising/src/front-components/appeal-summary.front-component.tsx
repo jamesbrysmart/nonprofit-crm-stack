@@ -125,7 +125,7 @@ const loadAppealSummary = async (
         name: true,
       },
     },
-  } as any);
+  });
 
   return (result?.appeal as AppealSummaryRecord | null) ?? null;
 };

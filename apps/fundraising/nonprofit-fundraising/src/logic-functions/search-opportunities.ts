@@ -57,7 +57,7 @@ const handler = async (
         },
       },
     },
-  } as any);
+  });
 
   return {
     opportunities: extractConnectionNodes<OpportunitySummary>(

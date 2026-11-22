@@ -2466,7 +2466,7 @@ const loadPeople = async (client: CoreApiClient): Promise<PersonSummary[]> => {
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<PersonSummary>(result, 'people');
 };
@@ -2486,7 +2486,7 @@ const loadCompanies = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<CompanySummary>(result, 'companies');
 };
@@ -2510,7 +2510,7 @@ const loadOpportunities = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<OpportunitySummary>(result, 'opportunities');
 };
@@ -2530,7 +2530,7 @@ const loadGiftBatches = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<BatchSummaryRecord>(result, 'giftBatches');
 };
@@ -2550,7 +2550,7 @@ const loadGiftStagings = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<ExistingGiftStagingRecord>(
     result,
@@ -2573,7 +2573,7 @@ const loadRecurringAgreements = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<ExistingRecurringAgreementRecord>(
     result,
@@ -2596,7 +2596,7 @@ const loadGiftAidDeclarations = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<ExistingGiftAidDeclarationRecord>(
     result,
@@ -2619,7 +2619,7 @@ const loadGiftAidClaimBatches = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<ExistingGiftAidClaimBatchRecord>(
     result,
@@ -2640,7 +2640,7 @@ const loadGifts = async (client: CoreApiClient): Promise<ExistingGiftRecord[]> =
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<ExistingGiftRecord>(result, 'gifts');
 };
@@ -2660,7 +2660,7 @@ const loadFunds = async (client: CoreApiClient): Promise<ExistingFundRecord[]> =
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<ExistingFundRecord>(result, 'funds');
 };
@@ -2685,7 +2685,7 @@ const loadAppeals = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<ExistingAppealRecord>(result, 'appeals');
 };
@@ -2729,7 +2729,7 @@ const loadAppealSources = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<ExistingAppealSourceRecord>(
     result,
@@ -2766,7 +2766,7 @@ const loadPersonByEmail = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<PersonSummary>(result, 'people')[0];
 };
@@ -2803,7 +2803,7 @@ const seedPeople = async (client: CoreApiClient) => {
           },
           id: true,
         },
-      } as any);
+      });
       peopleByEmail.set(seed.email, existing);
       continue;
     }
@@ -2832,7 +2832,7 @@ const seedPeople = async (client: CoreApiClient) => {
             primaryEmail: true,
           },
         },
-      } as any);
+      });
 
       const created = result?.createPerson as PersonSummary | undefined;
 
@@ -2888,7 +2888,7 @@ const seedBatches = async (client: CoreApiClient) => {
           id: true,
           name: true,
         },
-      } as any);
+      });
       batchesByName.set(seed.name, existing);
       continue;
     }
@@ -2915,7 +2915,7 @@ const seedBatches = async (client: CoreApiClient) => {
         id: true,
         name: true,
       },
-    } as any);
+    });
 
     const created = result?.createGiftBatch as BatchSummaryRecord | undefined;
 
@@ -2951,7 +2951,7 @@ const seedFunds = async (client: CoreApiClient) => {
           code: true,
           isActive: true,
         },
-      } as any);
+      });
 
       fundsByName.set(seed.name, {
         ...existing,
@@ -2977,7 +2977,7 @@ const seedFunds = async (client: CoreApiClient) => {
         code: true,
         isActive: true,
       },
-    } as any);
+    });
 
     const created = result?.createFund as ExistingFundRecord | undefined;
 
@@ -3039,7 +3039,7 @@ const seedAppeals = async (
             name: true,
           },
         },
-      } as any);
+      });
 
       appealsByName.set(seed.name, {
         ...existing,
@@ -3070,7 +3070,7 @@ const seedAppeals = async (
           name: true,
         },
       },
-    } as any);
+    });
 
     const created = result?.createAppeal as ExistingAppealRecord | undefined;
 
@@ -3167,7 +3167,7 @@ const seedAppealSources = async (
             },
           },
         },
-      } as any);
+      });
       appealSourcesByName.set(seed.name, existing);
       continue;
     }
@@ -3207,7 +3207,7 @@ const seedAppealSources = async (
           },
         },
       },
-    } as any);
+    });
 
     const created = result?.createAppealSource as
       | ExistingAppealSourceRecord
@@ -3251,7 +3251,7 @@ const seedCompanies = async (client: CoreApiClient) => {
             id: true,
             name: true,
           },
-        } as any);
+        });
       }
 
       companiesByName.set(seed.name, existing);
@@ -3270,7 +3270,7 @@ const seedCompanies = async (client: CoreApiClient) => {
         id: true,
         name: true,
       },
-    } as any);
+    });
 
     const created = result?.createCompany as CompanySummary | undefined;
 
@@ -3351,7 +3351,7 @@ const seedOpportunities = async (
           id: true,
           name: true,
         },
-      } as any);
+      });
       continue;
     }
 
@@ -3366,7 +3366,7 @@ const seedOpportunities = async (
         },
         id: true,
       },
-    } as any);
+    });
   }
 };
 
@@ -3483,7 +3483,7 @@ const seedGiftStagings = async (
         },
         id: true,
       },
-    } as any);
+    });
   }
 };
 
@@ -3526,7 +3526,7 @@ const seedGiftAidDeclarations = async (
         },
         id: true,
       },
-    } as any);
+    });
   }
 };
 
@@ -3561,7 +3561,7 @@ const seedGiftAidClaimBatches = async (client: CoreApiClient) => {
         id: true,
         name: true,
       },
-    } as any);
+    });
 
     const created = result?.createGiftAidClaimBatch as
       | ExistingGiftAidClaimBatchRecord
@@ -3684,7 +3684,7 @@ const seedGifts = async (
         },
         id: true,
       },
-    } as any);
+    });
   }
 };
 
@@ -3747,7 +3747,7 @@ const seedRecurringAgreements = async (
         },
         id: true,
       },
-    } as any);
+    });
   }
 };
 

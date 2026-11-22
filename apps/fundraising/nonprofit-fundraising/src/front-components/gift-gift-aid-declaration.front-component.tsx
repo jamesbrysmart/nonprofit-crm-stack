@@ -191,7 +191,7 @@ const loadGift = async (
         revokedAt: true,
       },
     },
-  } as any);
+  });
 
   return (result?.gift as GiftGiftAidDeclarationRecord | null) ?? null;
 };

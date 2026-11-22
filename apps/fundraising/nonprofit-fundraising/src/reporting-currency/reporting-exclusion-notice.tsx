@@ -29,7 +29,7 @@ const countGiftsNeedingReportingValue = async (
       },
       totalCount: true,
     },
-  } as any);
+  });
 
   return (result as { gifts?: { totalCount?: number } })?.gifts?.totalCount ?? 0;
 };

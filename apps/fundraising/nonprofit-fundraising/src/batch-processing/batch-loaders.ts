@@ -184,7 +184,7 @@ export const loadBatchProcessingContext = async (
         },
       },
     },
-  } as any);
+  });
 
   return {
     batch: extractQueryRecord<BatchSummaryRecord>(result, 'giftBatch') ?? null,
@@ -252,7 +252,7 @@ export const loadBatchGiftCodingContext = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     batch =
       batch ??
@@ -324,7 +324,7 @@ export const loadBatchDonorMatchContext = async (
         },
       },
     },
-  } as any);
+  });
 
   return {
     batch:
@@ -360,7 +360,7 @@ export const loadGiftStagingRowsForDonorMatch = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<BatchDonorMatchRow>(result, 'giftStagings');
 };
@@ -474,7 +474,7 @@ export const loadGiftStagingRowsForProcessing = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<BatchProcessingRow>(result, 'giftStagings');
 };

@@ -107,7 +107,7 @@ const loadGift = async (recordId: string): Promise<RefundActionGiftRecord | null
         status: true,
       },
     },
-  } as any);
+  });
 
   return (result?.gift as RefundActionGiftRecord | null) ?? null;
 };

@@ -512,7 +512,7 @@ export const loadDonationForm = async (
       config: true,
       publishedConfig: true,
     },
-  } as any);
+  });
 
   return (result?.donationForm as DonationFormWorkspaceRecord | null) ?? null;
 };
@@ -539,7 +539,7 @@ export const saveDonationFormDraft = async ({
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 export const formatPublishedAt = (

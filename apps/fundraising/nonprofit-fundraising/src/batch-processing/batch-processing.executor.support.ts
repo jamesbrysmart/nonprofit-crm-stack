@@ -14,7 +14,11 @@ import {
 import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
 import type { RecurringAgreementCadence } from 'src/recurring/recurring.types';
 import type { GiftReadyStatus } from 'src/gift-staging-review/gift-ready-status';
-import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
+import {
+  resolveSoftCreditSelection,
+  SOFT_CREDIT_TYPE_VALUES,
+  type SoftCreditType,
+} from 'src/soft-credits/soft-credit-integrity';
 import { buildGiftName } from 'src/gifts/gift-name';
 import type { BatchProcessingRow } from './batch-processing.types';
 import {
@@ -25,6 +29,7 @@ import { normalizeString } from 'src/utils/normalize-string';
 import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
 import { chunkArray } from 'src/utils/chunk-array';
+import type { CoreSchema } from 'twenty-client-sdk/core';
 
 export type SuccessfulWriteback = {
   id: string;
@@ -114,6 +119,38 @@ const normalizeEmail = (value: string | null | undefined) =>
 const normalizeProviderForRecurringAgreement = (
   value: string | null | undefined,
 ) => normalizeString(value).toUpperCase();
+
+// The recurring agreement's provider options.
+const RECURRING_AGREEMENT_PROVIDERS: readonly CoreSchema.RecurringAgreementProviderEnum[] =
+  ['STRIPE', 'GOCARDLESS', 'MANUAL', 'IMPORTED'];
+
+// A staged soft-credit type must be one of the gift field's options.
+const toGiftSoftCreditType = (
+  value: string | null | undefined,
+): SoftCreditType | null => {
+  const normalized = normalizeString(value).toUpperCase();
+
+  if (normalized === '') {
+    return null;
+  }
+
+  const softCreditType = SOFT_CREDIT_TYPE_VALUES.find(
+    (candidate) => candidate === normalized,
+  );
+
+  if (!softCreditType) {
+    throw new Error(
+      `Soft credit type "${normalized}" is not supported. Supported types: ${SOFT_CREDIT_TYPE_VALUES.join(', ')}.`,
+    );
+  }
+
+  return softCreditType;
+};
+
+const toRecurringAgreementProvider = (
+  value: string,
+): CoreSchema.RecurringAgreementProviderEnum | null =>
+  RECURRING_AGREEMENT_PROVIDERS.find((provider) => provider === value) ?? null;
 
 const normalizeGiftPaymentType = (value: string | null | undefined) => {
   const normalized = normalizeString(value).toUpperCase();
@@ -523,7 +560,7 @@ const ensurePersonForRowFallback = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   const personId = normalizeString(
     extractMutationRecord<{ id?: string | null }>(result, 'createPerson')?.id,
@@ -546,7 +583,7 @@ const findRecurringAgreementByProviderAgreementId = async ({
   providerAgreementId,
 }: {
   client: CoreApiClient;
-  provider: string;
+  provider: CoreSchema.RecurringAgreementProviderEnum;
   providerAgreementId: string;
 }): Promise<string | null> => {
   const result = await client.query({
@@ -568,7 +605,7 @@ const findRecurringAgreementByProviderAgreementId = async ({
         },
       },
     },
-  } as any);
+  });
 
   const agreement = extractConnectionNodes<ProviderRecurringAgreementRecord>(
     result,
@@ -604,15 +641,23 @@ const createProviderBackedRecurringAgreement = async ({
 }: {
   client: CoreApiClient;
   row: BatchProcessingRow;
-  payload: Record<string, unknown>;
+  payload: GiftCreatePayload;
 }): Promise<string> => {
-  const provider = normalizeProviderForRecurringAgreement(row.provider);
+  const providerValue = normalizeProviderForRecurringAgreement(row.provider);
   const providerAgreementId = normalizeString(row.providerAgreementId);
   const donorId = normalizeString(payload.donorId as string | undefined);
 
-  if (provider === '') {
+  if (providerValue === '') {
     throw new Error(
       'Provider is required before creating a provider-backed recurring agreement',
+    );
+  }
+
+  const provider = toRecurringAgreementProvider(providerValue);
+
+  if (!provider) {
+    throw new Error(
+      `Recurring agreements cannot use provider "${providerValue}". Supported providers: ${RECURRING_AGREEMENT_PROVIDERS.join(', ')}.`,
     );
   }
 
@@ -661,7 +706,7 @@ const createProviderBackedRecurringAgreement = async ({
       },
       id: true,
     },
-  } as any);
+  });
 
   const createdAgreementId = normalizeString(
     extractMutationRecord<{ id?: string | null }>(
@@ -732,7 +777,7 @@ export const createGiftViaRowFallback = async (
   const softCreditCompanyId = normalizeString(
     payload.softCreditCompanyId as string | undefined,
   );
-  const softCreditType = normalizeString(
+  const softCreditType = toGiftSoftCreditType(
     payload.softCreditType as string | undefined,
   );
   delete createData.appealId;
@@ -832,7 +877,7 @@ export const createGiftViaRowFallback = async (
                     },
                   },
                 },
-                softCreditType: softCreditType === '' ? null : softCreditType,
+                softCreditType,
               }
             : {}),
           ...(softCreditCompanyId !== ''
@@ -844,14 +889,14 @@ export const createGiftViaRowFallback = async (
                     },
                   },
                 },
-                softCreditType: softCreditType === '' ? null : softCreditType,
+                softCreditType,
               }
             : {}),
         },
       },
       id: true,
     },
-  } as any);
+  });
 
   const giftId = extractMutationRecord<{ id?: string | null }>(
     result,

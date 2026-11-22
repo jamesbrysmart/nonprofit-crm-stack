@@ -73,7 +73,7 @@ export const loadDonationFormForPublish = async (
       providerConfigKey: true,
       config: true,
     },
-  } as any);
+  });
 
   return (result?.donationForm as DonationFormRecord | null) ?? null;
 };
@@ -120,7 +120,7 @@ export const publishDonationFormWithClient = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   const iframeUrl = buildIframeUrl(publicId);
   return {

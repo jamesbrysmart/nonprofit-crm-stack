@@ -244,7 +244,7 @@ export const loadPeopleByExactNames = async <
           edges: { node: buildPersonSelection(options) },
           pageInfo: { hasNextPage: true, endCursor: true },
         },
-      } as any);
+      });
       const connection = extractConnection<TPerson>(result, 'people');
 
       for (const { node: person } of connection.edges) {
@@ -324,7 +324,7 @@ export const loadPeopleByDonorReviewEvidence = async <
         node: buildPersonSelection(options),
       },
     },
-  } as any);
+  });
 
   const candidates = extractConnectionNodes<TPerson>(result, 'people');
   const candidatesById = new Map<string, TPerson>();
@@ -365,7 +365,7 @@ export const loadPeopleByPrimaryEmails = async <
         node: buildPersonSelection(options),
       },
     },
-  } as any);
+  });
 
   const people = extractConnectionNodes<TPerson>(result, 'people');
   const peopleByEmail = new Map<string, TPerson>();

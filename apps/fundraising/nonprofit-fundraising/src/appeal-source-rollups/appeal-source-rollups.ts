@@ -194,7 +194,7 @@ const loadAppealSourcesByIds = async (
           },
         },
       },
-    } as any);
+    });
 
     const appealSources = extractConnectionNodes<AppealSourceRollupRecord>(
       result,
@@ -260,7 +260,7 @@ const loadCommittedGiftsForAppealSources = async (
             endCursor: true,
           },
         },
-      } as any);
+      });
 
       const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
       const gifts = giftConnection.edges.map((edge) => edge.node);
@@ -337,7 +337,7 @@ const loadAllCommittedGifts = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
     const gifts = giftConnection.edges.map((edge) => edge.node);
@@ -407,7 +407,7 @@ const loadAppealSourceIdsWithExistingRollups = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     const appealSourceConnection = extractConnection<{ id: string }>(
       result,

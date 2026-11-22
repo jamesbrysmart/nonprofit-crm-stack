@@ -76,7 +76,7 @@ const updateDonationFormGiftStagingRecord = async ({
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 const mergeDonationFormRawProviderEvidence = ({

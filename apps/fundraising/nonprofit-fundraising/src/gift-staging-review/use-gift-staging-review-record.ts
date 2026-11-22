@@ -133,7 +133,7 @@ const loadStoredRecord = async (
         name: true,
       },
     },
-  } as any);
+  });
 
   return (result?.giftStaging as StoredGiftStagingRecord | null) ?? null;
 };

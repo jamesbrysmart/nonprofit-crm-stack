@@ -56,7 +56,7 @@ export const createRecordNote = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   const noteId = normalizeString(
     extractMutationRecord<{ id?: string | null }>(noteResult, 'createNote')?.id,
@@ -76,7 +76,7 @@ export const createRecordNote = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   return noteId;
 };

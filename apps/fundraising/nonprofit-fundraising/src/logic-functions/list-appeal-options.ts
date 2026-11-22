@@ -19,9 +19,9 @@ const handler = async (
             in: ['ACTIVE'],
           },
         },
-        orderBy: {
-          name: 'AscNullsLast',
-        },
+        orderBy: [
+          { name: 'AscNullsLast' },
+        ],
       },
       edges: {
         node: {
@@ -35,7 +35,7 @@ const handler = async (
         },
       },
     },
-  } as any);
+  });
 
   return {
     appeals: extractConnectionNodes<AppealSummary>(result, 'appeals'),

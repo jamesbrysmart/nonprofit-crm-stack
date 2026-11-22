@@ -204,7 +204,7 @@ const findGiftBySourceFingerprint = async (
         },
       },
     },
-  } as any);
+  });
 
   const giftId = extractConnectionNodes<{ id?: string | null }>(result, 'gifts')[0]
     ?.id;
@@ -253,7 +253,7 @@ const findRecurringAgreementByStripeSubscription = async (
         },
       },
     },
-  } as any);
+  });
 
   return (
     extractConnectionNodes<MatchedRecurringAgreement>(
@@ -365,7 +365,7 @@ export const createStripeRecurringGiftForConfidentMatch = async (
           },
           id: true,
         },
-      } as any);
+      });
 
       const giftId = extractMutationRecord<{ id?: string | null }>(
         result,

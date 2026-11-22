@@ -87,7 +87,7 @@ const updateGiftBatchSetup = async (
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 const getOperationalState = (

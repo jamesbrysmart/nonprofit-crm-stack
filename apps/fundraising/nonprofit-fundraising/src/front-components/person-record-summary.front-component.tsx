@@ -156,7 +156,7 @@ const loadPerson = async (
         },
       },
     },
-  } as any);
+  });
 
   return (result?.person as PersonRecordSummaryRecord | null) ?? null;
 };

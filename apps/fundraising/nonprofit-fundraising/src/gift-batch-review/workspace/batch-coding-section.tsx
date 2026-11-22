@@ -86,7 +86,7 @@ const saveBatchCodingDefaults = async ({
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 export const BatchCodingSection = ({

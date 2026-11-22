@@ -138,7 +138,7 @@ const loadFundSummary = async (
       isActive: true,
       externalAccountingCode: true,
     },
-  } as any);
+  });
 
   return (result?.fund as FundSummaryRecord | null) ?? null;
 };
@@ -179,7 +179,7 @@ const loadFundGifts = async (fundId: string): Promise<FundGiftRecord[]> => {
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     gifts.push(...extractConnectionNodes<FundGiftRecord>(result, 'gifts'));
 

@@ -44,7 +44,7 @@ const loadGiftCodingContext = async (
       },
       softCreditType: true,
     },
-  } as any);
+  });
 
   return result?.gift as
     | {
@@ -198,7 +198,7 @@ const handler = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   return {
     giftId,

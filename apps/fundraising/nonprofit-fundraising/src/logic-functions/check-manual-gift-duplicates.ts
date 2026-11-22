@@ -141,7 +141,7 @@ const handler = async (
           },
         },
       },
-    } as any);
+    });
 
     const matches = buildCommittedGiftMatches(
       extractConnectionNodes(result, 'gifts'),
@@ -217,7 +217,7 @@ const handler = async (
         },
       },
     },
-  } as any);
+  });
 
   const matches = [
     ...buildCommittedGiftMatches(

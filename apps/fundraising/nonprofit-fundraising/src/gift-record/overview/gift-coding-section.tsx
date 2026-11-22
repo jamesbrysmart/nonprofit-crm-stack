@@ -68,7 +68,7 @@ const loadGiftCodingRecord = async (
         name: true,
       },
     },
-  } as any);
+  });
 
   return (result?.gift as GiftCodingRecord | null) ?? null;
 };

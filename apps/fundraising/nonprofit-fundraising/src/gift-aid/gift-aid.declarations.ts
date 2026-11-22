@@ -95,7 +95,7 @@ export const createGiftAidDeclarationService = (client: CoreApiClient) => {
           id: true,
         },
       },
-    } as any);
+    });
 
     const declaration = extractQueryRecord<GiftAidDeclarationRecord>(
       result,
@@ -142,7 +142,7 @@ export const createGiftAidDeclarationService = (client: CoreApiClient) => {
           },
         },
       },
-    } as any);
+    });
 
     const declarations = extractConnectionNodes<GiftAidDeclarationRecord>(
       result,
@@ -209,7 +209,7 @@ export const createGiftAidDeclarationService = (client: CoreApiClient) => {
           id: true,
         },
       },
-    } as any);
+    });
 
     const declaration = extractMutationRecord<GiftAidDeclarationRecord>(
       result,

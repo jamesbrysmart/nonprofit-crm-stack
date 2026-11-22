@@ -34,7 +34,7 @@ const loadAppealSourceById = async (
         },
       },
     },
-  } as any);
+  });
 
   return (result?.appealSource as AppealSourceLookupRecord | null) ?? null;
 };

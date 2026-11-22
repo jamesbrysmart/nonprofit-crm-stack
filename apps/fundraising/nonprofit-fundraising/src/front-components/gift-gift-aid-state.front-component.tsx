@@ -211,7 +211,7 @@ const loadGift = async (recordId: string): Promise<GiftAidGiftRecord | null> => 
         source: true,
       },
     },
-  } as any);
+  });
 
   return (result?.gift as GiftAidGiftRecord | null) ?? null;
 };

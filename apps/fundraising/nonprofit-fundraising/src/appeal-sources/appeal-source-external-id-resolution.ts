@@ -49,7 +49,7 @@ const loadAppealSourcesByExternalIds = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<AppealSourceLookupRecord>(result, 'appealSources');
 };

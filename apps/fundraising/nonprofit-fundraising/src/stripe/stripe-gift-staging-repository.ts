@@ -55,7 +55,7 @@ export const findGiftStagingById = async (
       id: true,
       rawProviderEvidence: true,
     },
-  } as any);
+  });
 
   return normalizeGiftStagingLookupRecord(
     extractQueryRecord(result, 'giftStaging'),
@@ -89,7 +89,7 @@ export const findGiftStagingRecordBySourceFingerprint = async (
         },
       },
     },
-  } as any);
+  });
 
   return normalizeGiftStagingLookupRecord(
     extractConnectionNodes(result, 'giftStagings')[0],
@@ -123,7 +123,7 @@ export const findGiftStagingRecordByProviderAgreementId = async (
         },
       },
     },
-  } as any);
+  });
 
   return normalizeGiftStagingLookupRecord(
     extractConnectionNodes(result, 'giftStagings')[0],

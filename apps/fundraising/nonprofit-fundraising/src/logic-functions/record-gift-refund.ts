@@ -77,7 +77,7 @@ const loadGiftForRefund = async (
         name: true,
       },
     },
-  } as any);
+  });
 
   return (result?.gift as GiftRefundRecord | null) ?? null;
 };
@@ -157,7 +157,7 @@ const handler = async (
       },
       id: true,
     },
-  } as any);
+  });
 
   if (linkedClaimBatchId !== '' && linkedClaimBatchStatus === 'DRAFT') {
     await refreshClaimBatchSummary(client, linkedClaimBatchId);

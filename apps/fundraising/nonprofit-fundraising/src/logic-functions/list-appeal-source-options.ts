@@ -29,9 +29,9 @@ const handler = async (
               }
             : {}),
         },
-        orderBy: {
-          name: 'AscNullsLast',
-        },
+        orderBy: [
+          { name: 'AscNullsLast' },
+        ],
       },
       edges: {
         node: {
@@ -64,7 +64,7 @@ const handler = async (
         },
       },
     },
-  } as any);
+  });
 
   return {
     appealSources: extractConnectionNodes<AppealSourceSummary>(

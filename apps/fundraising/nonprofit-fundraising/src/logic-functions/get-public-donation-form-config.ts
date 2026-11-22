@@ -56,7 +56,7 @@ export const loadPublicDonationFormConfigWithClient = async (
       paymentProvider: true,
       publishedConfig: true,
     },
-  } as any);
+  });
 
   const record = (result?.donationForm as DonationFormPublicRecord | null) ?? null;
   if (!record?.id) {

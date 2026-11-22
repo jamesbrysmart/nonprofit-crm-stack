@@ -49,7 +49,7 @@ const loadAppealSourceParentsById = async (
         },
       },
     },
-  } as any);
+  });
 
   return new Map(
     extractConnectionNodes<AppealSourceParentRecord>(result, 'appealSources')

@@ -94,7 +94,7 @@ const createSubmissionRecord = async (
       id: true,
       submittedAt: true,
     },
-  } as any);
+  });
 
   return extractMutationRecord<{
     id: string;
@@ -116,11 +116,11 @@ const loadClaimBatch = async (client: CoreApiClient, batchId: string) => {
       status: true,
       submittedAt: true,
       giftCount: true,
-      totalAmount: true,
+      totalAmount: { amountMicros: true, currencyCode: true },
       hasBlockingIssues: true,
       blockingIssueCount: true,
     },
-  } as any);
+  });
 
   return (
     extractQueryRecord<GiftAidClaimBatchRecord>(refreshed, 'giftAidClaimBatch') ??
@@ -153,7 +153,7 @@ const loadClaimSubmissions = async (
         },
       },
     },
-  } as any);
+  });
 
   return extractConnectionNodes<GiftAidClaimSubmissionRecord>(
     result,
@@ -181,7 +181,7 @@ const syncLatestSubmissionStatus = async (
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 const markSubmissionFailed = async ({
@@ -216,7 +216,7 @@ const markSubmissionFailed = async ({
       },
       id: true,
     },
-  } as any);
+  });
   await syncLatestSubmissionStatus(client, batchId, 'FAILED');
 };
 
@@ -309,7 +309,7 @@ export const queueGiftAidClaimSubmission = async (
         },
         id: true,
       },
-    } as any);
+    });
     await syncLatestSubmissionStatus(client, claimBatch.id, adapterResult.status);
 
     return {
@@ -341,7 +341,7 @@ export const queueGiftAidClaimSubmission = async (
       },
       id: true,
     },
-  } as any);
+  });
   await syncLatestSubmissionStatus(client, claimBatch.id, adapterResult.status);
 
   return {

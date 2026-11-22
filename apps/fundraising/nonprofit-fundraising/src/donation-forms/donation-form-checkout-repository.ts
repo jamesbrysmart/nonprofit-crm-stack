@@ -41,7 +41,7 @@ export const loadPublishedDonationFormForCheckout = async (
       providerConfigKey: true,
       publishedConfig: true,
     },
-  } as any);
+  });
 
   const record =
     extractQueryRecord<DonationFormPublicRecord>(result, 'donationForm') ?? null;
@@ -100,7 +100,7 @@ export const createGiftStagingRow = async ({
       },
       id: true,
     },
-  } as any);
+  });
 
   const giftStagingId = extractMutationRecord<{ id?: string | null }>(
     result,
@@ -130,5 +130,5 @@ export const updateGiftStagingRow = async ({
       },
       id: true,
     },
-  } as any);
+  });
 };

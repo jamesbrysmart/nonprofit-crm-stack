@@ -56,7 +56,7 @@ export const loadAppealSourceFundraisersById = async (
         },
       },
     },
-  } as any);
+  });
 
   const records = extractConnectionNodes<{
     id?: string | null;

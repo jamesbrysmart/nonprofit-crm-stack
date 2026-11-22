@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CoreApiClient } from 'twenty-client-sdk/core';
+import { CoreApiClient, type CoreSchema } from 'twenty-client-sdk/core';
 import { MetadataApiClient } from 'twenty-client-sdk/metadata';
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
@@ -126,7 +126,7 @@ const loadOpportunity = async (
       },
       stage: true,
     },
-  } as any);
+  });
 
   return extractQueryRecord<OpportunityTransitionRecord>(result, 'opportunity') ?? null;
 };
@@ -136,6 +136,7 @@ const loadOpportunityStageOptions = async (): Promise<StageOption[]> => {
   const result = await client.query({
     objects: {
       __args: {
+        filter: {},
         paging: {
           first: 200,
         },
@@ -151,7 +152,7 @@ const loadOpportunityStageOptions = async (): Promise<StageOption[]> => {
         },
       },
     },
-  } as any);
+  });
 
   const opportunityObject =
     extractConnectionNodes<{
@@ -329,13 +330,15 @@ const OpportunityTransitionTasks = () => {
           __args: {
             id: recordId,
             data: {
-              stage: selectedStage,
+              // Stages come from the workspace's live options, which can
+              // include ones added after the client was generated.
+              stage: selectedStage as CoreSchema.OpportunityStageEnum,
             },
           },
           id: true,
           stage: true,
         },
-      } as any);
+      });
 
       for (const task of tasksToCreate) {
         const createTaskResult = await client.mutation({
@@ -358,7 +361,7 @@ const OpportunityTransitionTasks = () => {
             },
             id: true,
           },
-        } as any);
+        });
 
         const taskId = normalizeString(
           extractMutationRecord<{ id?: string | null }>(
@@ -381,7 +384,7 @@ const OpportunityTransitionTasks = () => {
             },
             id: true,
           },
-        } as any);
+        });
 
         if (companyId !== '') {
           await client.mutation({
@@ -394,7 +397,7 @@ const OpportunityTransitionTasks = () => {
               },
               id: true,
             },
-          } as any);
+          });
         }
 
         createdTaskCount += 1;

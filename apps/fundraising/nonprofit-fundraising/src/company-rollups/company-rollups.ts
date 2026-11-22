@@ -240,7 +240,7 @@ const loadCompaniesByIds = async (
           },
         },
       },
-    } as any);
+    });
 
     const companies = extractConnectionNodes<CompanyRollupRecord>(
       result,
@@ -300,7 +300,7 @@ const loadCommittedGiftsForCompanies = async (
             endCursor: true,
           },
         },
-      } as any);
+      });
 
       const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
       const gifts = giftConnection.edges.map((edge) => edge.node);
@@ -367,7 +367,7 @@ const loadOpportunitiesForCompanies = async (
             endCursor: true,
           },
         },
-      } as any);
+      });
 
       const opportunityConnection = extractConnection<OpportunityRecord>(
         result,
@@ -438,7 +438,7 @@ const loadAllCommittedGifts = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     const giftConnection = extractConnection<GiftRecord>(result, 'gifts');
     const gifts = giftConnection.edges.map((edge) => edge.node);
@@ -503,7 +503,7 @@ const loadAllOpportunities = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     const opportunityConnection = extractConnection<OpportunityRecord>(
       result,
@@ -582,7 +582,7 @@ const loadCompanyIdsWithExistingRollups = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     const companyConnection = extractConnection<{ id: string }>(
       result,

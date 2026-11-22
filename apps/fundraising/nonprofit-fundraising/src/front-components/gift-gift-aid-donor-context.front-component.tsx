@@ -197,7 +197,7 @@ const loadGift = async (
         },
       },
     },
-  } as any);
+  });
 
   return (result?.gift as GiftGiftAidDonorContextRecord | null) ?? null;
 };

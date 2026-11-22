@@ -38,7 +38,7 @@ const handler = async (
         },
       },
     },
-  } as any);
+  });
 
   return {
     companies: extractConnectionNodes<CompanySummary>(result, 'companies'),

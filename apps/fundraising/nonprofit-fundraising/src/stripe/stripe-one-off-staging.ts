@@ -203,7 +203,7 @@ export const createStripeOneOffGiftStaging = async (
           __args: { data: { ...input, id } },
           id: true,
         },
-      } as any);
+      });
       const recordId = extractMutationRecord<{ id?: string | null }>(result, 'createGiftStaging')?.id;
       if (typeof recordId !== 'string' || recordId === '') {
         throw new Error('Create gift staging response missing id');

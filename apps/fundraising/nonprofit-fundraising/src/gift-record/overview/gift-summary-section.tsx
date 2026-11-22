@@ -353,7 +353,7 @@ const loadGift = async (
         name: true,
       },
     },
-  } as any);
+  });
 
   return (result?.gift as GiftRecordSummaryRecord | null) ?? null;
 };

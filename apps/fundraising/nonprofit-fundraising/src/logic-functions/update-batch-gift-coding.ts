@@ -31,7 +31,7 @@ const loadAppealDefaultFund = async (
         id: true,
       },
     },
-  } as any);
+  });
 
   return normalizeString(
     (result?.appeal as { defaultFund?: { id?: string | null } | null } | null)
@@ -57,7 +57,7 @@ const loadAppealSourceAppealId = async (
         id: true,
       },
     },
-  } as any);
+  });
 
   return normalizeString(
     (result?.appealSource as { appeal?: { id?: string | null } | null } | null)
@@ -126,7 +126,7 @@ const saveBatchCodingDefaults = async ({
       },
       id: true,
     },
-  } as any);
+  });
 };
 
 const buildWritebackForRow = ({

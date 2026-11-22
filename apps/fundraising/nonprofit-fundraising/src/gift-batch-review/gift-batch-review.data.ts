@@ -147,7 +147,7 @@ export const loadGiftBatchReview = async (
       },
       totalCount: true,
     },
-  } as any);
+  });
 
   const batch = extractQueryRecord<BatchSummaryRecord>(result, 'giftBatch') ?? null;
 

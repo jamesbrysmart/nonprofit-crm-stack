@@ -5,6 +5,7 @@ import {
 } from 'src/core-api/core-api-results';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import { normalizeString } from 'src/utils/normalize-string';
+import type { CoreSchema } from 'twenty-client-sdk/core';
 
 const GIFT_STAGING_QUERY_PAGE_SIZE = 200;
 
@@ -12,7 +13,8 @@ type GiftStagingAwaitingPaymentRow = {
   id: string;
 };
 
-const buildAwaitingDonationFormPaymentFilter = () => ({
+const buildAwaitingDonationFormPaymentFilter =
+  (): CoreSchema.GiftStagingFilterInput => ({
   and: [
     {
       intakeSource: {
@@ -52,7 +54,7 @@ export const loadAwaitingDonationFormPaymentIds = async (
           endCursor: true,
         },
       },
-    } as any);
+    });
 
     const stagingConnection = extractConnection<GiftStagingAwaitingPaymentRow>(
       result,
