@@ -1,5 +1,9 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
-import { extractConnectionNodes } from 'src/core-api/core-api-results';
+import {
+  extractConnection,
+  extractConnectionNodes,
+} from 'src/core-api/core-api-results';
+import { chunkArray } from 'src/utils/chunk-array';
 import type { PersonSummary } from 'src/manual-gift-entry/manual-gift-entry.types';
 
 export type DonorCandidatePerson = PersonSummary & {
@@ -187,42 +191,84 @@ const buildPrimaryEmailFilter = (email: string) => ({
   },
 });
 
-export const loadPeopleByExactNameEvidence = async <
+const NAMES_PER_QUERY = 25;
+const PEOPLE_PAGE_SIZE = 200;
+const MAX_CANDIDATES_PER_NAME = 50;
+
+export const buildExactNameKey = (firstName: string, lastName: string) =>
+  `${normalizeDonorCandidateNamePart(firstName).toLowerCase()}\u0000${normalizeDonorCandidateNamePart(lastName).toLowerCase()}`;
+
+// Exact (case-insensitive) name matches for many names at once: one paged
+// query per group of names instead of one query per name. Keeps the same
+// cap of 50 candidates per name as the previous per-name lookup.
+export const loadPeopleByExactNames = async <
   TPerson extends DonorCandidatePerson = DonorCandidatePerson,
 >({
   client,
-  firstName,
-  lastName,
+  names,
   options,
 }: {
   client: CoreApiClient;
-  firstName: string;
-  lastName: string;
+  names: Array<{ firstName: string; lastName: string }>;
   options?: DonorCandidateSelectionOptions;
-}): Promise<TPerson[]> => {
-  const checkedFirstName = normalizeDonorCandidateNamePart(firstName);
-  const checkedLastName = normalizeDonorCandidateNamePart(lastName);
+}): Promise<Map<string, TPerson[]>> => {
+  const uniqueNames = new Map<string, { firstName: string; lastName: string }>();
 
-  if (checkedFirstName === '' || checkedLastName === '') {
-    return [];
+  for (const name of names) {
+    const firstName = normalizeDonorCandidateNamePart(name.firstName);
+    const lastName = normalizeDonorCandidateNamePart(name.lastName);
+
+    if (firstName !== '' && lastName !== '') {
+      uniqueNames.set(buildExactNameKey(firstName, lastName), {
+        firstName,
+        lastName,
+      });
+    }
   }
 
-  const result = await client.query({
-    people: {
-      __args: {
-        first: options?.first ?? 50,
-        filter: buildExactNameFilter({
-          firstName: checkedFirstName,
-          lastName: checkedLastName,
-        }),
-      },
-      edges: {
-        node: buildPersonSelection(options),
-      },
-    },
-  } as any);
+  const peopleByName = new Map<string, TPerson[]>(
+    [...uniqueNames.keys()].map((key) => [key, []]),
+  );
 
-  return extractConnectionNodes<TPerson>(result, 'people');
+  for (const nameGroup of chunkArray([...uniqueNames.values()], NAMES_PER_QUERY)) {
+    let after: string | undefined;
+
+    do {
+      const result = await client.query({
+        people: {
+          __args: {
+            first: PEOPLE_PAGE_SIZE,
+            filter: { or: nameGroup.map(buildExactNameFilter) },
+            ...(after ? { after } : {}),
+          },
+          edges: { node: buildPersonSelection(options) },
+          pageInfo: { hasNextPage: true, endCursor: true },
+        },
+      } as any);
+      const connection = extractConnection<TPerson>(result, 'people');
+
+      for (const { node: person } of connection.edges) {
+        const candidates = peopleByName.get(
+          buildExactNameKey(
+            person.name?.firstName ?? '',
+            person.name?.lastName ?? '',
+          ),
+        );
+
+        if (candidates && candidates.length < MAX_CANDIDATES_PER_NAME) {
+          candidates.push(person);
+        }
+      }
+
+      after =
+        connection.pageInfo?.hasNextPage === true &&
+        typeof connection.pageInfo.endCursor === 'string'
+          ? connection.pageInfo.endCursor
+          : undefined;
+    } while (after);
+  }
+
+  return peopleByName;
 };
 
 export const loadPeopleByDonorReviewEvidence = async <

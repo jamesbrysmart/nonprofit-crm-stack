@@ -5,7 +5,10 @@ import {
   loadPeopleByPrimaryEmails,
 } from 'src/donor-resolution/donor-creation-viability';
 import { normalizeDonorResolutionState } from 'src/donor-resolution/donor-resolution-state';
-import { loadPeopleByExactNameEvidence } from 'src/donor-resolution/donor-candidate-discovery';
+import {
+  buildExactNameKey,
+  loadPeopleByExactNames,
+} from 'src/donor-resolution/donor-candidate-discovery';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import { isPaymentConfirmedOrNotRequired } from 'src/gift-staging-review/gift-staging-processability';
 import {
@@ -56,16 +59,15 @@ export const runDonorMatchOnRows = async (
     groupedRows.map((group) => group.email),
   );
 
+  const peopleByName = await loadPeopleByExactNames<ExactDonorCandidate>({
+    client,
+    names: groupedRows,
+    options: { includeAdditionalEmails: true },
+  });
+
   for (const group of groupedRows) {
-    const nameCandidates = await loadPeopleByExactNameEvidence<ExactDonorCandidate>({
-      client,
-      firstName: group.firstName,
-      lastName: group.lastName,
-      options: {
-        first: 50,
-        includeAdditionalEmails: true,
-      },
-    });
+    const nameCandidates =
+      peopleByName.get(buildExactNameKey(group.firstName, group.lastName)) ?? [];
     const emailCandidate = group.email === '' ? null : peopleByEmail.get(group.email) ?? null;
     const emailCandidates =
       emailCandidate === null
