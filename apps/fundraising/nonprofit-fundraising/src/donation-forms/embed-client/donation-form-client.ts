@@ -294,7 +294,7 @@ export const startDonationForm = ({
     if (validity.valueMissing && dataset.errorRequired) {
       return dataset.errorRequired;
     }
-    if (validity.typeMismatch && dataset.errorType) {
+    if ((validity.typeMismatch || validity.patternMismatch) && dataset.errorType) {
       return dataset.errorType;
     }
 

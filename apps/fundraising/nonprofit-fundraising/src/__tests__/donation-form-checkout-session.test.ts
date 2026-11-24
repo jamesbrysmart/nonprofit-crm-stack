@@ -624,7 +624,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
       },
     });
 
-  it.each(['ada.example.org', 'ada@', 'ada @example.org'])(
+  it.each(['ada.example.org', 'ada@', 'ada @example.org', 'ada@gmailcom'])(
     'rejects the email address %s, as the form does',
     async (donorEmail) => {
       await expect(

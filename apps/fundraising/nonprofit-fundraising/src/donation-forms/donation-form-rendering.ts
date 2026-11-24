@@ -195,7 +195,11 @@ const fieldMarkup = ({
   '" aria-describedby="' +
   escapeHtml(id) +
   '-error"' +
-  (type === 'email' ? ' spellcheck="false" autocapitalize="off"' : '') +
+  // type="email" alone accepts addresses without a dot in the domain, which
+  // Stripe rejects.
+  (type === 'email'
+    ? ' spellcheck="false" autocapitalize="off" pattern="[^@\\s]+@[^@\\s]+\\.[^@\\s]+"'
+    : '') +
   (requiredMessage
     ? ' data-error-required="' + escapeHtml(requiredMessage) + '"'
     : '') +

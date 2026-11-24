@@ -211,17 +211,20 @@ describe('donation form client', () => {
       expect(byId('donorFirstName').hasAttribute('aria-invalid')).toBe(false);
     });
 
-    it('checks the email format', () => {
-      renderDonationForm();
-      fillDonor();
-      type('donorEmail', 'ada.example.org');
+    it.each(['ada.example.org', 'ada@gmailcom'])(
+      'checks the email format of %s',
+      (email) => {
+        renderDonationForm();
+        fillDonor();
+        type('donorEmail', email);
 
-      submit();
+        submit();
 
-      expect(byId('donorEmail-error').textContent).toBe(
-        'Enter an email address like name@example.com',
-      );
-    });
+        expect(byId('donorEmail-error').textContent).toBe(
+          'Enter an email address like name@example.com',
+        );
+      },
+    );
 
     it('shows and requires the home address when Gift Aid is ticked', () => {
       renderDonationForm();

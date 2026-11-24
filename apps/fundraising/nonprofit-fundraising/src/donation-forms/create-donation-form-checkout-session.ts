@@ -76,10 +76,10 @@ const normalizeAddress = (
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 };
 
-// The HTML specification's valid e-mail address rule, which browsers apply to
-// type="email" inputs, so the form and the server accept the same addresses.
+// The browser's type="email" rule plus a dot in the domain, which Stripe
+// requires; the form applies the same rule through its pattern attribute.
 const EMAIL_PATTERN =
-  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
 // Matches the fields the form requires, and the Gift Aid home address evidence.
 const hasCompleteAddress = (address: DonationFormMailingAddress | undefined) =>

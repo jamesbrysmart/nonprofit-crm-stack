@@ -199,7 +199,7 @@ export const DONATION_FORM_CLIENT_SCRIPT = [
   "      if (validity.valueMissing && dataset.errorRequired) {",
   "        return dataset.errorRequired;",
   "      }",
-  "      if (validity.typeMismatch && dataset.errorType) {",
+  "      if ((validity.typeMismatch || validity.patternMismatch) && dataset.errorType) {",
   "        return dataset.errorType;",
   "      }",
   "      return field.validationMessage;",
