@@ -50,7 +50,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
     };
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -86,7 +86,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
               },
             },
           },
-        },
+        } }] },
       }),
       mutation: async (input) => {
         mutationCalls.push(input);
@@ -190,7 +190,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
   it('rejects amounts that are not allowed by the published form config', async () => {
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -202,7 +202,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             amountOptions: [1000, 2500, 5000],
             thankYouMessage: 'Thanks for your donation.',
           },
-        },
+        } }] },
       }),
       mutation: async (input) => {
         const createArgs = (input as any)?.createGiftStaging?.__args?.data;
@@ -242,7 +242,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
   it('requires a publishable key for the Payment Element baseline', async () => {
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -253,7 +253,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
           },
-        },
+        } }] },
       }),
       mutation: async (input) => {
         const createArgs = (input as any)?.createGiftStaging?.__args?.data;
@@ -295,7 +295,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
     };
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -308,7 +308,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             thankYouMessage: 'Thanks for your donation.',
             giftAidEnabled: true,
           },
-        },
+        } }] },
       }),
       mutation: async (input) => {
         const createArgs = (input as any)?.createGiftStaging?.__args?.data;
@@ -357,7 +357,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
     };
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -370,7 +370,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             thankYouMessage: 'Thanks for your donation.',
             giftAidEnabled: true,
           },
-        },
+        } }] },
       }),
       mutation: async (input) => {
         const createArgs = (input as any)?.createGiftStaging?.__args?.data;
@@ -413,7 +413,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
     };
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_recurring_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -429,7 +429,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             thankYouMessage: 'Thanks for your donation.',
             giftAidEnabled: false,
           },
-        },
+        } }] },
       }),
       mutation: async (input) => {
         const createArgs = (input as any)?.createGiftStaging?.__args?.data;
@@ -503,7 +503,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
     };
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_mixed_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -517,7 +517,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             amountOptions: [1000, 2500, 5000],
             thankYouMessage: 'Thanks for your donation.',
           },
-        },
+        } }] },
       }),
       mutation: async (input) => {
         const createArgs = (input as any)?.createGiftStaging?.__args?.data;
@@ -555,7 +555,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
   it('rejects disallowed donation types for the published form config', async () => {
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -568,7 +568,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             amountOptions: [1000, 2500, 5000],
             thankYouMessage: 'Thanks for your donation.',
           },
-        },
+        } }] },
       }),
     });
 
@@ -594,7 +594,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
   const publishedFormClient = (publishedConfig: Record<string, unknown>) =>
     buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -607,7 +607,7 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
             amountOptions: [1000, 2500, 5000],
             ...publishedConfig,
           },
-        },
+        } }] },
       }),
     });
 

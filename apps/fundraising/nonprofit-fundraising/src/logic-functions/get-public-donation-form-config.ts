@@ -2,6 +2,7 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { normalizeString } from 'src/utils/normalize-string';
 import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
+import { extractConnectionNodes } from 'src/core-api/core-api-results';
 
 export type PublicDonationFormConfigResponse =
   | {
@@ -40,25 +41,30 @@ export const loadPublicDonationFormConfigWithClient = async (
     return { ok: false, reason: 'missing_public_id' };
   }
 
+  // The list query returns no rows for an unknown form; the single-record
+  // query throws "Record not found" instead.
   const result = await client.query({
-    donationForm: {
+    donationForms: {
       __args: {
-        filter: {
-          publicId: {
-            eq: normalizedPublicId,
-          },
+        first: 1,
+        filter: { publicId: { eq: normalizedPublicId } },
+      },
+      edges: {
+        node: {
+          id: true,
+          publicId: true,
+          status: true,
+          publishedVersion: true,
+          paymentProvider: true,
+          publishedConfig: true,
         },
       },
-      id: true,
-      publicId: true,
-      status: true,
-      publishedVersion: true,
-      paymentProvider: true,
-      publishedConfig: true,
     },
   });
 
-  const record = (result?.donationForm as DonationFormPublicRecord | null) ?? null;
+  const record =
+    extractConnectionNodes<DonationFormPublicRecord>(result, 'donationForms')[0] ??
+    null;
   if (!record?.id) {
     return { ok: false, reason: 'not_found' };
   }

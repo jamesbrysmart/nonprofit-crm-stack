@@ -1,7 +1,7 @@
 import type { CoreApiClient } from 'twenty-client-sdk/core';
 import {
+  extractConnectionNodes,
   extractMutationRecord,
-  extractQueryRecord,
 } from 'src/core-api/core-api-results';
 import {
   normalizeDonationFormPublishedConfig,
@@ -25,27 +25,31 @@ export const loadPublishedDonationFormForCheckout = async (
   client: CoreApiClient,
   publicId: string,
 ): Promise<PublishedDonationFormForCheckout> => {
+  // The list query returns no rows for an unknown form; the single-record
+  // query throws "Record not found" instead.
   const result = await client.query({
-    donationForm: {
+    donationForms: {
       __args: {
-        filter: {
-          publicId: {
-            eq: publicId,
-          },
+        first: 1,
+        filter: { publicId: { eq: publicId } },
+      },
+      edges: {
+        node: {
+          id: true,
+          publicId: true,
+          status: true,
+          publishedVersion: true,
+          paymentProvider: true,
+          providerConfigKey: true,
+          publishedConfig: true,
         },
       },
-      id: true,
-      publicId: true,
-      status: true,
-      publishedVersion: true,
-      paymentProvider: true,
-      providerConfigKey: true,
-      publishedConfig: true,
     },
   });
 
   const record =
-    extractQueryRecord<DonationFormPublicRecord>(result, 'donationForm') ?? null;
+    extractConnectionNodes<DonationFormPublicRecord>(result, 'donationForms')[0] ??
+    null;
 
   if (!record?.id) {
     throw new DonationFormSubmissionError('FORM_UNAVAILABLE', 'Published donation form not found');

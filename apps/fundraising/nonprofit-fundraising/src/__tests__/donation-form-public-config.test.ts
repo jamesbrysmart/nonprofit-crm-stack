@@ -200,10 +200,20 @@ describe('publishDonationFormWithClient', () => {
 });
 
 describe('loadPublicDonationFormConfigWithClient', () => {
+  it('reports an unknown form as not found rather than failing', async () => {
+    const client = buildClient({
+      query: async () => ({ donationForms: { edges: [] } }),
+    });
+
+    await expect(
+      loadPublicDonationFormConfigWithClient(client, 'df_missing'),
+    ).resolves.toEqual({ ok: false, reason: 'not_found' });
+  });
+
   it('returns published config for a live donation form', async () => {
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -214,7 +224,7 @@ describe('loadPublicDonationFormConfigWithClient', () => {
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
           },
-        },
+        } }] },
       }),
     });
 
@@ -240,7 +250,7 @@ describe('loadPublicDonationFormConfigWithClient', () => {
   it('rejects non-live forms', async () => {
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'DRAFT',
@@ -249,7 +259,7 @@ describe('loadPublicDonationFormConfigWithClient', () => {
           publishedConfig: {
             mode: 'ONE_OFF',
           },
-        },
+        } }] },
       }),
     });
 
@@ -263,10 +273,20 @@ describe('loadPublicDonationFormConfigWithClient', () => {
 });
 
 describe('loadPublishedDonationFormForCheckout', () => {
+  it('refuses an unknown form as unavailable to the donor', async () => {
+    const client = buildClient({
+      query: async () => ({ donationForms: { edges: [] } }),
+    });
+
+    await expect(
+      loadPublishedDonationFormForCheckout(client, 'df_missing'),
+    ).rejects.toThrow(expect.objectContaining({ code: 'FORM_UNAVAILABLE' }));
+  });
+
   it('falls back to the default Stripe provider config key when the field is blank', async () => {
     const client = buildClient({
       query: async () => ({
-        donationForm: {
+        donationForms: { edges: [{ node: {
           id: 'df_123',
           publicId: 'df_public_123',
           status: 'LIVE',
@@ -278,7 +298,7 @@ describe('loadPublishedDonationFormForCheckout', () => {
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
           },
-        },
+        } }] },
       }),
     });
 
