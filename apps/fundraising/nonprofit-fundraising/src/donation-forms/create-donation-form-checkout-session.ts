@@ -76,6 +76,17 @@ const normalizeAddress = (
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 };
 
+// The HTML specification's valid e-mail address rule, which browsers apply to
+// type="email" inputs, so the form and the server accept the same addresses.
+const EMAIL_PATTERN =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+// Matches the fields the form requires, and the Gift Aid home address evidence.
+const hasCompleteAddress = (address: DonationFormMailingAddress | undefined) =>
+  Boolean(
+    address?.addressStreet1 && address.addressCity && address.addressPostcode,
+  );
+
 const resolveAllowedDonationTypes = (
   value: string | undefined,
 ): DonationType[] => resolveDonationFormDonationTypes(value);
@@ -209,6 +220,13 @@ const createDonationFormPaymentSessionBase = async ({
     );
   }
 
+  if (!EMAIL_PATTERN.test(donorEmail)) {
+    throw new DonationFormSubmissionError(
+      'INVALID_SUBMISSION',
+      'Donor email is not a valid address',
+    );
+  }
+
   const published =
     publishedForm ?? (await loadPublishedDonationFormForCheckout(client, publicId));
   const config = published.config;
@@ -269,7 +287,7 @@ const createDonationFormPaymentSessionBase = async ({
     ...(giftAidTextVersion ? { textVersion: giftAidTextVersion } : {}),
   });
 
-  if (config.requireAddress === true && !donorMailingAddress) {
+  if (config.requireAddress === true && !hasCompleteAddress(donorMailingAddress)) {
     throw new DonationFormSubmissionError(
       'INVALID_SUBMISSION',
       'This donation form requires the donor address before payment.',

@@ -165,12 +165,17 @@ const fieldMarkup = ({
   type,
   required,
   autocomplete,
+  requiredMessage,
+  typeMessage,
 }: {
   label: string;
   id: string;
   type: 'text' | 'email' | 'tel';
   required: boolean;
   autocomplete: FieldAutocomplete;
+  // Donor wording shown in place of the browser's generic validation message.
+  requiredMessage?: string;
+  typeMessage?: string;
 }): string =>
   '<div class="field">' +
   '<label for="' +
@@ -191,6 +196,10 @@ const fieldMarkup = ({
   escapeHtml(id) +
   '-error"' +
   (type === 'email' ? ' spellcheck="false" autocapitalize="off"' : '') +
+  (requiredMessage
+    ? ' data-error-required="' + escapeHtml(requiredMessage) + '"'
+    : '') +
+  (typeMessage ? ' data-error-type="' + escapeHtml(typeMessage) + '"' : '') +
   (required ? ' required' : '') +
   ' />' +
   '</div>';
@@ -326,7 +335,7 @@ export const buildDonationFormCardMarkup = ({
           }).replace(/[0-9.,\s-]/g, '') || currencyCode,
         ) +
         '</span>' +
-        '<input id="customAmountMajor" name="customAmountMajor" type="text" inputmode="decimal" autocomplete="off" aria-describedby="' +
+        '<input id="customAmountMajor" name="customAmountMajor" type="text" inputmode="decimal" autocomplete="off" data-error-slot="amount" aria-describedby="' +
         (hasMinimumAmount ? 'customAmountHint ' : '') +
         'amount-error" placeholder="' +
         escapeHtml(
@@ -408,6 +417,7 @@ export const buildDonationFormCardMarkup = ({
       '<div class="grid">' +
       fieldMarkup({
         label: 'Building and street',
+        requiredMessage: 'Enter the first line of your address',
         id: 'addressStreet1',
         type: 'text',
         required: requiresAddress,
@@ -422,6 +432,7 @@ export const buildDonationFormCardMarkup = ({
       }) +
       fieldMarkup({
         label: 'Town or city',
+        requiredMessage: 'Enter your town or city',
         id: 'addressCity',
         type: 'text',
         required: requiresAddress,
@@ -436,6 +447,7 @@ export const buildDonationFormCardMarkup = ({
       }) +
       fieldMarkup({
         label: 'Postcode',
+        requiredMessage: 'Enter your postcode',
         id: 'addressPostcode',
         type: 'text',
         required: requiresAddress,
@@ -488,6 +500,7 @@ export const buildDonationFormCardMarkup = ({
     '<div class="grid">' +
     fieldMarkup({
       label: 'First name',
+      requiredMessage: 'Enter your first name',
       id: 'donorFirstName',
       type: 'text',
       required: true,
@@ -495,6 +508,7 @@ export const buildDonationFormCardMarkup = ({
     }) +
     fieldMarkup({
       label: 'Last name',
+      requiredMessage: 'Enter your last name',
       id: 'donorLastName',
       type: 'text',
       required: true,
@@ -502,6 +516,8 @@ export const buildDonationFormCardMarkup = ({
     }) +
     fieldMarkup({
       label: 'Email address',
+      requiredMessage: 'Enter your email address',
+      typeMessage: 'Enter an email address like name@example.com',
       id: 'donorEmail',
       type: 'email',
       required: true,

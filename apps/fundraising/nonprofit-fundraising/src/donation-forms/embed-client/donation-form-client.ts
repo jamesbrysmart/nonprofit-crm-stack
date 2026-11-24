@@ -15,8 +15,6 @@ import {
 const CHECKOUT_SESSION_PATH =
   '/s/donation-forms/create-elements-checkout-session';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 type DonationFormWindow = Window & {
   Stripe?: StripeFactory;
   fetch: typeof fetch;
@@ -35,6 +33,8 @@ type FieldError = {
   errorId: string;
   message: string;
 };
+
+type ValidatedField = HTMLInputElement | HTMLSelectElement;
 
 type DonationPayload = {
   publicId: string;
@@ -258,76 +258,65 @@ export const startDonationForm = ({
     moveFocusTo(errorSummary);
   };
 
-  const validate = (): FieldError[] => {
-    const errors: FieldError[] = [];
+  // The only rule HTML cannot express: a preset or a valid custom amount,
+  // at least the form's minimum. Everything else is native constraints.
+  const syncAmountValidity = () => {
+    if (!customAmountInput) {
+      return;
+    }
+
     const amountMinorUnits = Number(amountInput.value || '0');
-    const customText = customAmountInput?.value.trim() ?? '';
-    const amountTarget =
-      customText !== '' && customAmountInput
-        ? customAmountInput
-        : (amountRadios.find((radio) => radio.checked) ??
-          amountRadios[0] ??
-          customAmountInput);
+    const customText = customAmountInput.value.trim();
+    let message = '';
 
-    if (amountTarget) {
-      if (customText !== '' && amountMinorUnits <= 0) {
-        errors.push({
-          target: amountTarget,
-          errorId: 'amount',
-          message: 'Enter an amount, like 12.50',
-        });
-      } else if (amountMinorUnits <= 0) {
-        errors.push({
-          target: amountTarget,
-          errorId: 'amount',
-          message: 'Choose or enter an amount',
-        });
-      } else if (
-        customText !== '' &&
-        minimumAmount !== null &&
-        amountMinorUnits < minimumAmount
-      ) {
-        errors.push({
-          target: amountTarget,
-          errorId: 'amount',
-          message: `Enter an amount of at least ${formatCurrencyAmount(minimumAmount)}`,
-        });
-      }
+    if (customText !== '' && amountMinorUnits <= 0) {
+      message = 'Enter an amount, like 12.50';
+    } else if (amountMinorUnits <= 0) {
+      message = 'Choose or enter an amount';
+    } else if (
+      customText !== '' &&
+      minimumAmount !== null &&
+      amountMinorUnits < minimumAmount
+    ) {
+      message = `Enter an amount of at least ${formatCurrencyAmount(minimumAmount)}`;
     }
 
-    const requireText = (id: string, message: string) => {
-      const input = fieldInput(id);
-      if (input && valueOf(id) === '') {
-        errors.push({ target: input, errorId: id, message });
-      }
-    };
+    customAmountInput.setCustomValidity(message);
+  };
 
-    requireText('donorFirstName', 'Enter your first name');
-    requireText('donorLastName', 'Enter your last name');
+  // Donor wording for native constraint failures lives in the markup.
+  const messageFor = (field: ValidatedField): string => {
+    const { validity, dataset } = field;
 
-    const emailInput = fieldInput('donorEmail');
-    const email = valueOf('donorEmail');
-    if (emailInput && email === '') {
-      errors.push({
-        target: emailInput,
-        errorId: 'donorEmail',
-        message: 'Enter your email address',
-      });
-    } else if (emailInput && !EMAIL_PATTERN.test(email)) {
-      errors.push({
-        target: emailInput,
-        errorId: 'donorEmail',
-        message: 'Enter an email address like name@example.com',
-      });
+    if (validity.customError) {
+      return field.validationMessage;
+    }
+    if (validity.valueMissing && dataset.errorRequired) {
+      return dataset.errorRequired;
+    }
+    if (validity.typeMismatch && dataset.errorType) {
+      return dataset.errorType;
     }
 
-    if (requiresAddress()) {
-      requireText('addressStreet1', 'Enter the first line of your address');
-      requireText('addressCity', 'Enter your town or city');
-      requireText('addressPostcode', 'Enter your postcode');
-    }
+    return field.validationMessage;
+  };
 
-    return errors;
+  const validate = (): FieldError[] => {
+    syncAmountValidity();
+
+    return Array.from(form.elements)
+      .filter(
+        (element): element is ValidatedField =>
+          (element instanceof HTMLInputElement ||
+            element instanceof HTMLSelectElement) &&
+          element.willValidate &&
+          !element.validity.valid,
+      )
+      .map((field) => ({
+        target: field,
+        errorId: field.dataset.errorSlot ?? field.id,
+        message: messageFor(field),
+      }));
   };
 
   const clearAllFieldErrors = () => {

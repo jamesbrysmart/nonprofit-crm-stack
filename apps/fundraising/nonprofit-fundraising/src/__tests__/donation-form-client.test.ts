@@ -214,7 +214,7 @@ describe('donation form client', () => {
     it('checks the email format', () => {
       renderDonationForm();
       fillDonor();
-      type('donorEmail', 'ada@example');
+      type('donorEmail', 'ada.example.org');
 
       submit();
 

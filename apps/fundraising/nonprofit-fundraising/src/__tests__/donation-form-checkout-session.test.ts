@@ -590,4 +590,54 @@ describe('createDonationFormCheckoutSessionWithDependencies', () => {
       'Donation type is not allowed by the published donation form config',
     );
   });
+
+  const publishedFormClient = (publishedConfig: Record<string, unknown>) =>
+    buildClient({
+      query: async () => ({
+        donationForm: {
+          id: 'df_123',
+          publicId: 'df_public_123',
+          status: 'LIVE',
+          paymentProvider: 'STRIPE',
+          providerConfigKey: 'stripe-default',
+          publishedVersion: 'pub_2026-05-20_test',
+          publishedConfig: {
+            mode: 'ONE_OFF',
+            currencyCode: 'GBP',
+            amountOptions: [1000, 2500, 5000],
+            ...publishedConfig,
+          },
+        },
+      }),
+    });
+
+  const submitWith = (
+    client: ReturnType<typeof buildClient>,
+    request: Partial<typeof baseRequest>,
+  ) =>
+    createDonationFormCheckoutSessionWithDependencies({
+      client,
+      request: { ...baseRequest, ...request },
+      dependencies: {
+        stripeSessionCreator: { createCheckoutSession: vi.fn() },
+        publishableKey: 'pk_test_elements_123',
+      },
+    });
+
+  it.each(['ada.example.org', 'ada@', 'ada @example.org'])(
+    'rejects the email address %s, as the form does',
+    async (donorEmail) => {
+      await expect(
+        submitWith(publishedFormClient({}), { donorEmail }),
+      ).rejects.toThrow(expect.objectContaining({ code: 'INVALID_SUBMISSION' }));
+    },
+  );
+
+  it('requires the same address fields as the form when an address is required', async () => {
+    await expect(
+      submitWith(publishedFormClient({ requireAddress: true }), {
+        donorMailingAddress: { addressPostcode: 'SW1A 1AA' },
+      }),
+    ).rejects.toThrow('This donation form requires the donor address before payment.');
+  });
 });
