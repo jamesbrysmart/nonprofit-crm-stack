@@ -60,7 +60,7 @@ export const loadPublishedDonationFormForCheckout = async (
   }
 
   if (normalizeString(record.paymentProvider) !== 'STRIPE') {
-    throw new Error('Only Stripe donation forms are supported in this spike');
+    throw new Error('Only Stripe donation forms are supported');
   }
 
   const publishedVersion = normalizeString(record.publishedVersion);

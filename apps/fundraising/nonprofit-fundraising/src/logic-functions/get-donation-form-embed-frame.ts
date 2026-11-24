@@ -32,7 +32,6 @@ export const donationFormEmbedFrameHandler = async (
     return htmlResponse(
       buildDonationFormStaticDocument({
         cardMarkup:
-          '<div class="eyebrow">Donation form spike</div>' +
           '<h1>Form unavailable</h1>' +
           '<p>This donation form is not currently available.</p>',
       }),

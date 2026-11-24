@@ -429,16 +429,12 @@ export const buildDonationFormCardMarkup = ({
     : '';
 
   return (
-    '<div class="eyebrow">Donation form spike</div>' +
     '<h1>' +
     escapeHtml(normalizeString(config.title) || 'Donation form') +
     '</h1>' +
-    '<p>' +
-    escapeHtml(
-      normalizeString(config.description) ||
-        'Published configuration loaded successfully. Checkout submission is the next spike step.',
-    ) +
-    '</p>' +
+    (normalizeString(config.description)
+      ? '<p>' + escapeHtml(normalizeString(config.description)) + '</p>'
+      : '') +
     '<div class="section">' +
     '<div class="label">Step 1</div>' +
     '<p class="hint">Your donation details</p>' +

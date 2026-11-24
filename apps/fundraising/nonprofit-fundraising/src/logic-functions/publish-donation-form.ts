@@ -90,7 +90,7 @@ export const publishDonationFormWithClient = async (
 
   const paymentProvider = normalizeString(existing.paymentProvider);
   if (paymentProvider !== 'STRIPE') {
-    throw new Error('Only Stripe donation forms can be published in this spike');
+    throw new Error('Only Stripe donation forms can be published');
   }
 
   const providerConfigKey = resolveStripeProviderConfigKey(existing.providerConfigKey);

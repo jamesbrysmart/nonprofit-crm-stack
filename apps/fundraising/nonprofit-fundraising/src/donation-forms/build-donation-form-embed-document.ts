@@ -5,6 +5,17 @@ import {
 } from 'src/donation-forms/donation-form-rendering';
 import { resolveDonationFormDonationTypes } from 'src/donation-forms/donation-form-config';
 
+// JSON is valid JavaScript, but a string containing "</script>" or "<!--" would
+// end or alter the surrounding script element. Escaping <, > and & (and the two
+// line separators older engines reject in literals) keeps the value inert.
+export const serializeForInlineScript = (value: unknown): string =>
+  JSON.stringify(value)
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026')
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
+
 export const buildDonationFormEmbedDocument = ({
   publicId,
   publishedVersion,
@@ -23,10 +34,10 @@ export const buildDonationFormEmbedDocument = ({
 
   const scriptMarkup = `<script src="https://js.stripe.com/clover/stripe.js"></script>
     <script>
-      const PUBLIC_ID = ${JSON.stringify(publicId)};
-      const PUBLISHED_VERSION = ${JSON.stringify(publishedVersion)};
-      const CONFIG = ${JSON.stringify(config)};
-      const DONATION_TYPE_OPTIONS = ${JSON.stringify(donationTypeOptions)};
+      const PUBLIC_ID = ${serializeForInlineScript(publicId)};
+      const PUBLISHED_VERSION = ${serializeForInlineScript(publishedVersion)};
+      const CONFIG = ${serializeForInlineScript(config)};
+      const DONATION_TYPE_OPTIONS = ${serializeForInlineScript(donationTypeOptions)};
       const CURRENCY_CODE =
         typeof CONFIG.currencyCode === 'string' ? CONFIG.currencyCode : 'GBP';
       const donationTypeOptions = DONATION_TYPE_OPTIONS;

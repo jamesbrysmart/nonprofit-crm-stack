@@ -35,7 +35,7 @@ export const resolveStripeApiKey = async (
 ): Promise<string> => {
   if (providerConfigKey !== DEFAULT_STRIPE_PROVIDER_CONFIG_KEY) {
     throw new Error(
-      `Unsupported Stripe provider config key "${providerConfigKey}" in this spike`,
+      `Unsupported Stripe provider config key "${providerConfigKey}"`,
     );
   }
 
@@ -53,7 +53,7 @@ export const resolveStripeApiKey = async (
 export const resolveStripePublishableKey = (providerConfigKey: string): string => {
   if (providerConfigKey !== DEFAULT_STRIPE_PROVIDER_CONFIG_KEY) {
     throw new Error(
-      `Unsupported Stripe provider config key "${providerConfigKey}" in this spike`,
+      `Unsupported Stripe provider config key "${providerConfigKey}"`,
     );
   }
 

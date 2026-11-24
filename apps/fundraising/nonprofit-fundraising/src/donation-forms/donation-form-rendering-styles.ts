@@ -31,18 +31,6 @@ export const DONATION_FORM_RENDER_STYLES = `
     box-shadow: 0 18px 40px rgba(19, 40, 62, 0.08);
   }
 
-  .eyebrow {
-    display: inline-flex;
-    margin-bottom: 12px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
 
   h1 {
     margin: 0 0 8px;
