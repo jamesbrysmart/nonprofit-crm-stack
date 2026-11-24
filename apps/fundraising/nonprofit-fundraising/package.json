@@ -18,6 +18,7 @@
     "lint:fix": "oxlint --fix -c .oxlintrc.json .",
     "stripe:fixtures": "node scripts/stripe-intake-fixtures.mjs",
     "typecheck": "tsgo --noEmit -p tsconfig.json && tsgo --noEmit -p tsconfig.spec.json",
+    "build:donation-form-client": "node scripts/build-donation-form-client.mjs",
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -30,6 +31,8 @@
     "@types/node": "^24.7.2",
     "@types/react": "^19.0.0",
     "@typescript/native-preview": "^7.0.0-dev.20260116.1",
+    "esbuild": "0.28.1",
+    "jsdom": "29.1.1",
     "oxlint": "^0.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -23,71 +23,6 @@ describe('donation form embed runtime', () => {
     expect(markup).toContain('Minimum £7.00');
   });
 
-  it('keeps Stripe confirmation focused on payment details only', () => {
-    const document = buildDonationFormEmbedDocument({
-      publicId: 'df_public_123',
-      publishedVersion: 'pub_test_123',
-      config: {
-        mode: 'ONE_OFF_AND_MONTHLY',
-        currencyCode: 'GBP',
-        amountOptions: [1000, 2500, 5000],
-        allowCustomAmount: true,
-        requireAddress: true,
-        collectPhone: true,
-      },
-    });
-
-    expect(document).toContain("redirect: 'if_required'");
-    expect(document).not.toContain('updateBillingAddress');
-    expect(document).not.toContain('confirmPayload.billingAddress');
-    expect(document).not.toContain('updatePhoneNumber');
-    expect(document).not.toContain('confirmPayload.phoneNumber');
-    expect(document).toContain('customAmountMajor');
-  });
-
-  it('uses an explicit two-step flow for donation details and secure payment', () => {
-    const document = buildDonationFormEmbedDocument({
-      publicId: 'df_public_123',
-      publishedVersion: 'pub_test_123',
-      config: {
-        mode: 'ONE_OFF_AND_MONTHLY',
-        currencyCode: 'GBP',
-        amountOptions: [1000, 2500, 5000],
-        allowCustomAmount: true,
-        giftAidEnabled: true,
-      },
-    });
-
-    expect(document).toContain('Step 1');
-    expect(document).toContain('Your donation details');
-    expect(document).toContain('Step 2');
-    expect(document).toContain('Secure payment');
-    expect(document).toContain('id="changeDonationDetailsButton"');
-    expect(document).toContain('function showPaymentStep(payload)');
-    expect(document).toContain('function showDonationStep()');
-    expect(document).toContain('form.hidden = true;');
-    expect(document).toContain('form.hidden = false;');
-    expect(document).toContain("changeDonationDetailsButton.addEventListener('click'");
-  });
-
-  it('clears the hidden amount when a custom amount becomes invalid or empty', () => {
-    const document = buildDonationFormEmbedDocument({
-      publicId: 'df_public_123',
-      publishedVersion: 'pub_test_123',
-      config: {
-        mode: 'ONE_OFF',
-        currencyCode: 'GBP',
-        amountOptions: [1000, 2500, 5000],
-        allowCustomAmount: true,
-      },
-    });
-
-    expect(document).toContain('function clearSelectedAmount()');
-    expect(document).toContain("amountInput.value = '';");
-    expect(document).toContain('if (customMinorUnits === null) {');
-    expect(document).toContain('clearSelectedAmount();');
-  });
-
   it('keeps admin-entered text from breaking out of the inline script', () => {
     const hostile = '</script><script>alert(1)</script><!--';
     const document = buildDonationFormEmbedDocument({
@@ -106,18 +41,18 @@ describe('donation form embed runtime', () => {
 
     expect(document).not.toContain('<script>alert(1)');
     expect(document).not.toContain('<!--');
-    // Only the Stripe loader and the runtime script open and close.
-    expect(document.match(/<script\b/g)).toHaveLength(2);
-    expect(document.match(/<\/script>/g)).toHaveLength(2);
+    // Only the Stripe loader, the data block and the client script.
+    expect(document.match(/<script\b/g)).toHaveLength(3);
+    expect(document.match(/<\/script>/g)).toHaveLength(3);
 
-    const configLine = document
-      .split('\n')
-      .find((line) => line.trim().startsWith('const CONFIG = '));
-    expect(configLine).toBeDefined();
-    const parsed = JSON.parse(
-      (configLine ?? '').trim().slice('const CONFIG = '.length, -1),
-    ) as Record<string, unknown>;
-    expect(parsed.thankYouMessage).toBe(hostile);
+    const bootstrapBlock = /<script type="application\/json" id="donation-form-bootstrap">([^<]*)<\/script>/.exec(
+      document,
+    );
+    expect(bootstrapBlock).not.toBeNull();
+    const bootstrap = JSON.parse(bootstrapBlock?.[1] ?? '') as {
+      config: Record<string, unknown>;
+    };
+    expect(bootstrap.config.thankYouMessage).toBe(hostile);
   });
 
   it('serializes values for inline scripts without changing their meaning', () => {
