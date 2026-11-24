@@ -19,7 +19,8 @@ Never run it against port 2020 or a client workspace.
 4. Open the form two ways:
    - directly: `http://localhost:2021/s/donation-forms/embed-frame?publicId=<publicId>`
    - embedded: a copy of `docs/spikes/fixtures/embedded-donation-form-host-page.html`
-     with the iframe `src` pointed at the URL above
+     with its iframe replaced by the embed code from the form's Publish panel
+     (the code includes the resize script)
 5. Keep the browser developer tools console open and note any errors.
 
 Stripe test cards (any future expiry, any CVC, any postcode):
@@ -49,19 +50,21 @@ compatibility issue, not a form bug.
 | 1 | One-off, preset amount, card 4242 | Thank-you shown; staging row moves from awaiting payment to payment confirmed after the webhook |
 | 2 | Monthly, preset amount, card 4242 | Thank-you shown; staging row confirmed with recurring evidence |
 | 3 | Custom amount above the minimum | Charged amount matches the custom amount |
-| 4 | Custom amount below the minimum | Clear error; no payment fields; can correct and continue |
+| 4 | Custom amount below the minimum | Error summary takes focus and links to the amount; no payment fields; can correct and continue |
 | 5 | Gift Aid ticked | Address fields appear and are required; declaration evidence on the staging row |
 | 6 | Card 4000…0002 (declined) | Clear decline message; can retry with another card |
 | 7 | Card 4000…3155 (3D Secure) | Authentication modal appears; completing it shows thank-you |
 | 8 | Change donation details from step 2 | Returns to step 1 with entries kept; continuing creates a working payment step |
-| 9 | Missing required field | Browser or form validation stops submit and identifies the field |
+| 9 | Missing required fields | Error summary lists each problem, takes focus, and its links move to the fields; inline errors clear as fields are edited |
+| 10 | Reload the page after a successful journey and submit again | A new payment step loads (a fresh form token is issued per page) |
 
 ## Donor experience
 
 - [ ] Phone width (375px and 320px): no horizontal scrolling, fields and
       buttons usable, payment fields fit
-- [ ] Embedded in the host page: whole form visible without scrolling inside the
-      iframe (note the height needed)
+- [ ] Embedded in the host page: the iframe resizes to the form at each step,
+      with no scrollbar inside it; moving between steps scrolls the form into
+      view if it is off screen
 - [ ] Keyboard only: every control reachable in order, selection visible, form
       can be completed and submitted
 - [ ] Screen reader (VoiceOver or NVDA), optional: amount choice, errors and the

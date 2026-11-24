@@ -3,11 +3,21 @@ import type { DonationFormRenderConfig } from 'src/donation-forms/donation-form-
 
 export const DONATION_FORM_BOOTSTRAP_ELEMENT_ID = 'donation-form-bootstrap';
 
+export const DONATION_FORM_RESIZE_MESSAGE_TYPE =
+  'nonprofit-fundraising:donation-form-resize';
+
+export type DonationFormResizeMessage = {
+  type: typeof DONATION_FORM_RESIZE_MESSAGE_TYPE;
+  height: number;
+  scrollIntoView: boolean;
+};
+
 export type DonationFormClientBootstrap = {
   publicId: string;
   publishedVersion: string;
   config: DonationFormRenderConfig;
   donationTypeOptions: DonationFormDonationType[];
+  formToken?: string;
 };
 
 // The subset of Stripe.js (Checkout Sessions with Elements) that the form uses.

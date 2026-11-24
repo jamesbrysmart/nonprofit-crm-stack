@@ -3,6 +3,7 @@ import {
   normalizeDonationFormAmountOptions,
   resolveDonationFormDonationTypes,
 } from 'src/donation-forms/donation-form-config';
+import { resolveDonationTypeCopy } from 'src/donation-forms/donation-form-copy';
 import { DONATION_FORM_RENDER_STYLES } from 'src/donation-forms/donation-form-rendering-styles';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
@@ -144,30 +145,55 @@ const formatAmountWithoutCurrencySymbol = ({
     .replace(/[^\d.,-]/g, '')
     .trim();
 
+type FieldAutocomplete =
+  | 'given-name'
+  | 'family-name'
+  | 'email'
+  | 'tel'
+  | 'address-line1'
+  | 'address-line2'
+  | 'address-level2'
+  | 'address-level1'
+  | 'postal-code';
+
+const fieldErrorMarkup = (id: string): string =>
+  '<p class="field-error" id="' + escapeHtml(id) + '-error" hidden></p>';
+
 const fieldMarkup = ({
   label,
   id,
   type,
   required,
+  autocomplete,
 }: {
   label: string;
   id: string;
   type: 'text' | 'email' | 'tel';
   required: boolean;
+  autocomplete: FieldAutocomplete;
 }): string =>
-  '<label class="field">' +
-  '<span>' +
+  '<div class="field">' +
+  '<label for="' +
+  escapeHtml(id) +
+  '">' +
   escapeHtml(label) +
-  (required ? ' *' : '') +
-  '</span>' +
+  '</label>' +
+  fieldErrorMarkup(id) +
   '<input id="' +
+  escapeHtml(id) +
+  '" name="' +
   escapeHtml(id) +
   '" type="' +
   escapeHtml(type) +
-  '" ' +
-  (required ? 'required ' : '') +
-  '/>' +
-  '</label>';
+  '" autocomplete="' +
+  autocomplete +
+  '" aria-describedby="' +
+  escapeHtml(id) +
+  '-error"' +
+  (type === 'email' ? ' spellcheck="false" autocapitalize="off"' : '') +
+  (required ? ' required' : '') +
+  ' />' +
+  '</div>';
 
 const countryFieldMarkup = (required: boolean): string => {
   const labels =
@@ -189,23 +215,50 @@ const countryFieldMarkup = (required: boolean): string => {
   }).join('');
 
   return (
-    '<label class="field">' +
-    '<span>Country' +
-    (required ? ' *' : '') +
-    '</span>' +
-    '<select id="addressCountry" ' +
-    (required ? 'required ' : '') +
+    '<div class="field">' +
+    '<label for="addressCountry">Country</label>' +
+    '<select id="addressCountry" name="addressCountry" autocomplete="country"' +
+    (required ? ' required' : '') +
     '>' +
     options +
     '</select>' +
-    '</label>'
+    '</div>'
   );
 };
+
+const choiceMarkup = ({
+  id,
+  name,
+  value,
+  label,
+  checked,
+}: {
+  id: string;
+  name: string;
+  value: string;
+  label: string;
+  checked: boolean;
+}): string =>
+  '<label class="choice" for="' +
+  escapeHtml(id) +
+  '">' +
+  '<input type="radio" id="' +
+  escapeHtml(id) +
+  '" name="' +
+  escapeHtml(name) +
+  '" value="' +
+  escapeHtml(value) +
+  '"' +
+  (checked ? ' checked' : '') +
+  ' />' +
+  '<span>' +
+  escapeHtml(label) +
+  '</span>' +
+  '</label>';
 
 export const buildDonationFormCardMarkup = ({
   config,
   publicId,
-  publishedVersion,
   donationType,
   giftAidRequested,
 }: {
@@ -229,70 +282,43 @@ export const buildDonationFormCardMarkup = ({
     (typeof config.minimumAmount === 'number' && config.minimumAmount > 0
       ? config.minimumAmount
       : 500);
-  const amountLabel =
-    selectedDonationType === 'RECURRING'
-      ? 'Choose your monthly amount'
-      : 'Choose an amount';
-  const securePaymentButtonLabel =
-    selectedDonationType === 'RECURRING'
-      ? 'Continue to secure monthly payment'
-      : 'Continue to secure payment';
-  const confirmPaymentButtonLabel =
-    selectedDonationType === 'RECURRING'
-      ? 'Confirm monthly donation'
-      : 'Confirm donation';
-  const paymentHint =
-    selectedDonationType === 'RECURRING'
-      ? 'Card details stay inside the donation form. Stripe only owns the secure monthly payment fields.'
-      : 'Card payment stays inside the donation form. Stripe only owns the secure payment fields.';
+  const copy = resolveDonationTypeCopy(selectedDonationType);
   const thankYouMessage =
     normalizeString(config.thankYouMessage) ||
     'Thank you for your donation. Your support helps fund our work.';
+  const hasMinimumAmount =
+    typeof config.minimumAmount === 'number' && config.minimumAmount > 0;
 
-  const amountMarkup =
-    amountOptions.length > 0
-      ? amountOptions
-          .map((amount, index) => {
-            const display = formatAmount({
-              amountMinorUnits: amount,
-              currencyCode,
-            });
+  const presetAmounts = amountOptions.length > 0 ? amountOptions : [firstAmount];
+  const amountChoicesMarkup = presetAmounts
+    .map((amount, index) =>
+      choiceMarkup({
+        id: `amountOption${index}`,
+        name: 'amountOption',
+        value: String(amount),
+        label: formatAmount({ amountMinorUnits: amount, currencyCode }),
+        checked: index === 0,
+      }),
+    )
+    .join('');
 
-            return (
-              '<button class="amount' +
-              (index === 0 ? ' is-selected' : '') +
-              '" type="button" data-amount="' +
-              escapeHtml(String(amount)) +
-              '">' +
-              escapeHtml(display) +
-              '</button>'
-            );
-          })
-          .join('')
-      : '<button class="amount is-selected" type="button" data-amount="' +
-        escapeHtml(String(firstAmount)) +
-        '">' +
-        escapeHtml(
-          formatAmount({ amountMinorUnits: firstAmount, currencyCode }),
-        ) +
-        '</button>';
   const customAmountMarkup =
     config.allowCustomAmount === true
-      ? '<label class="field custom-amount">' +
-        '<span>Custom amount' +
-        (typeof config.minimumAmount === 'number' && config.minimumAmount > 0
-          ? ' <span class="hint">Minimum ' +
+      ? '<div class="field custom-amount">' +
+        '<label for="customAmountMajor">Other amount' +
+        (hasMinimumAmount
+          ? ' <span class="hint" id="customAmountHint">(minimum ' +
             escapeHtml(
               formatAmount({
-                amountMinorUnits: config.minimumAmount,
+                amountMinorUnits: config.minimumAmount ?? 0,
                 currencyCode,
               }),
             ) +
-            '</span>'
+            ')</span>'
           : '') +
-        '</span>' +
+        '</label>' +
         '<div class="custom-amount-input">' +
-        '<span class="currency-symbol">' +
+        '<span class="currency-symbol" aria-hidden="true">' +
         escapeHtml(
           formatAmount({
             amountMinorUnits: 100,
@@ -300,16 +326,9 @@ export const buildDonationFormCardMarkup = ({
           }).replace(/[0-9.,\s-]/g, '') || currencyCode,
         ) +
         '</span>' +
-        '<input id="customAmountMajor" type="number" min="' +
-        escapeHtml(
-          typeof config.minimumAmount === 'number' && config.minimumAmount > 0
-            ? formatAmountWithoutCurrencySymbol({
-                amountMinorUnits: config.minimumAmount,
-                currencyCode,
-              })
-            : '1',
-        ) +
-        '" step="0.01" inputmode="decimal" placeholder="' +
+        '<input id="customAmountMajor" name="customAmountMajor" type="text" inputmode="decimal" autocomplete="off" aria-describedby="' +
+        (hasMinimumAmount ? 'customAmountHint ' : '') +
+        'amount-error" placeholder="' +
         escapeHtml(
           formatAmountWithoutCurrencySymbol({
             amountMinorUnits: firstAmount,
@@ -318,78 +337,72 @@ export const buildDonationFormCardMarkup = ({
         ) +
         '" />' +
         '</div>' +
-        '</label>'
+        '</div>'
       : '';
 
   const donationTypeMarkup =
     donationTypeOptions.length > 1
-      ? '<div class="section">' +
-        '<div class="label">Donation type</div>' +
-        '<div class="amounts" id="donationTypeOptions">' +
+      ? '<fieldset class="section choice-group" id="donationTypeOptions">' +
+        '<legend class="label">How often would you like to give?</legend>' +
+        '<div class="choices">' +
         donationTypeOptions
-          .map((option) => {
-            const label = option === 'RECURRING' ? 'Monthly' : 'One-off';
-
-            return (
-              '<button class="amount' +
-              (selectedDonationType === option ? ' is-selected' : '') +
-              '" type="button" data-donation-type="' +
-              escapeHtml(option) +
-              '">' +
-              escapeHtml(label) +
-              '</button>'
-            );
-          })
+          .map((option) =>
+            choiceMarkup({
+              id: `donationType${option}`,
+              name: 'donationType',
+              value: option,
+              label: option === 'RECURRING' ? 'Monthly' : 'One-off',
+              checked: selectedDonationType === option,
+            }),
+          )
           .join('') +
         '</div>' +
-        '</div>'
+        '</fieldset>'
       : '';
 
   const giftAidMarkup =
     config.giftAidEnabled === true
-      ? '<label class="checkbox">' +
-        '<input id="giftAidRequested" type="checkbox"' +
+      ? '<div class="checkbox">' +
+        '<input id="giftAidRequested" name="giftAidRequested" type="checkbox"' +
         (selectedGiftAidRequested ? ' checked' : '') +
         ' />' +
-        '<span>I am a UK taxpayer and want to add Gift Aid to this donation.' +
+        '<label for="giftAidRequested">I am a UK taxpayer and want to add Gift Aid to this donation.' +
         ' We will ask for your home address so the declaration can be recorded.' +
         (normalizeString(config.giftAidTextVersion) !== ''
           ? ' <span class="hint">Text version: ' +
             escapeHtml(normalizeString(config.giftAidTextVersion)) +
             '</span>'
           : '') +
-        '</span>' +
-        '</label>'
+        '</label>' +
+        '</div>'
       : '';
 
   const supporterEmailOptOutMarkup =
-    '<label class="checkbox">' +
-    '<input id="supporterEmailOptOut" type="checkbox" />' +
-    '<span>Do not send me supporter emails' +
-    '<span class="hint"> This only affects supporter emails such as appeals, newsletters, volunteering asks, campaign updates, and general charity updates. It does not stop receipts or other transactional/admin emails.</span>' +
-    '</span>' +
-    '</label>';
+    '<div class="checkbox">' +
+    '<input id="supporterEmailOptOut" name="supporterEmailOptOut" type="checkbox" aria-describedby="supporterEmailOptOutHint" />' +
+    '<label for="supporterEmailOptOut">Do not send me supporter emails' +
+    '<span class="hint" id="supporterEmailOptOutHint"> This only affects supporter emails such as appeals, newsletters, volunteering asks, campaign updates, and general charity updates. It does not stop receipts or other transactional/admin emails.</span>' +
+    '</label>' +
+    '</div>';
 
   const showAddressFields =
     config.requireAddress === true || config.giftAidEnabled === true;
   const requiresAddress =
     config.requireAddress === true || selectedGiftAidRequested;
   const addressMarkup = showAddressFields
-    ? '<div class="section" id="addressSection"' +
+    ? '<fieldset class="section" id="addressSection"' +
       (requiresAddress ? '' : ' hidden') +
       '>' +
-      '<div class="label">' +
+      '<legend class="label">' +
       escapeHtml(
         config.giftAidEnabled === true ? 'Home address for Gift Aid' : 'Address',
       ) +
-      '</div>' +
+      '</legend>' +
       '<p class="hint" id="addressHint">' +
       escapeHtml(
         config.requireAddress === true
-          ? 'This donation form requires the donor home address.'
-          : selectedGiftAidRequested
-            ? 'Gift Aid needs your home address so the declaration can be recorded credibly for HMRC.'
-            : 'If you add Gift Aid, we need your home address so the declaration can be recorded credibly for HMRC.',
+          ? 'We need your home address for this donation.'
+          : 'Gift Aid requires your home address so we can claim it from HMRC.',
       ) +
       '</p>' +
       '<div class="grid">' +
@@ -398,137 +411,148 @@ export const buildDonationFormCardMarkup = ({
         id: 'addressStreet1',
         type: 'text',
         required: requiresAddress,
+        autocomplete: 'address-line1',
       }) +
       fieldMarkup({
         label: 'Address line 2 (optional)',
         id: 'addressStreet2',
         type: 'text',
         required: false,
+        autocomplete: 'address-line2',
       }) +
       fieldMarkup({
         label: 'Town or city',
         id: 'addressCity',
         type: 'text',
         required: requiresAddress,
+        autocomplete: 'address-level2',
       }) +
       fieldMarkup({
         label: 'County (optional)',
         id: 'addressState',
         type: 'text',
         required: false,
+        autocomplete: 'address-level1',
       }) +
       fieldMarkup({
         label: 'Postcode',
         id: 'addressPostcode',
         type: 'text',
         required: requiresAddress,
+        autocomplete: 'postal-code',
       }) +
       countryFieldMarkup(requiresAddress) +
       '</div>' +
-      '</div>'
+      '</fieldset>'
     : '';
 
+  // Off-screen rather than display:none so simple bots still fill it; hidden
+  // from assistive technology and the tab order, with a name autofill ignores.
+  const honeypotMarkup =
+    '<div class="nf-hp" aria-hidden="true">' +
+    '<label for="nfContactReference">Leave this field empty</label>' +
+    '<input id="nfContactReference" name="nf_contact_reference" type="text" tabindex="-1" autocomplete="off" />' +
+    '</div>';
+
   return (
+    '<header class="form-header">' +
     '<h1>' +
     escapeHtml(normalizeString(config.title) || 'Donation form') +
     '</h1>' +
     (normalizeString(config.description)
-      ? '<p>' + escapeHtml(normalizeString(config.description)) + '</p>'
+      ? '<p class="intro">' + escapeHtml(normalizeString(config.description)) + '</p>'
       : '') +
-    '<div class="section">' +
-    '<div class="label">Step 1</div>' +
-    '<p class="hint">Your donation details</p>' +
+    '</header>' +
+    '<form id="donationForm" novalidate aria-labelledby="detailsHeading">' +
+    '<h2 id="detailsHeading" tabindex="-1"><span class="step">Step 1 of 2</span> Your donation</h2>' +
+    '<div class="error-summary" id="errorSummary" tabindex="-1" aria-labelledby="errorSummaryTitle" hidden>' +
+    '<h3 id="errorSummaryTitle">Please check the following</h3>' +
+    '<ul id="errorSummaryList"></ul>' +
     '</div>' +
-    '<form id="donationForm">' +
     donationTypeMarkup +
-    '<div class="section">' +
-    '<div class="label" id="amountLabel">' +
-    escapeHtml(amountLabel) +
-    '</div>' +
-    '<div class="amounts" id="amounts">' +
-    amountMarkup +
+    '<fieldset class="section choice-group" id="amountGroup">' +
+    '<legend class="label" id="amountLabel">' +
+    escapeHtml(copy.amountLegend) +
+    '</legend>' +
+    fieldErrorMarkup('amount') +
+    '<div class="choices" id="amounts">' +
+    amountChoicesMarkup +
     '</div>' +
     customAmountMarkup +
-    '</div>' +
+    '</fieldset>' +
     '<input type="hidden" id="amountMinorUnits" value="' +
     escapeHtml(String(firstAmount)) +
     '" />' +
-    '<div class="section stack">' +
+    '<fieldset class="section">' +
+    '<legend class="label">Your details</legend>' +
     '<div class="grid">' +
     fieldMarkup({
       label: 'First name',
       id: 'donorFirstName',
       type: 'text',
       required: true,
+      autocomplete: 'given-name',
     }) +
     fieldMarkup({
       label: 'Last name',
       id: 'donorLastName',
       type: 'text',
       required: true,
+      autocomplete: 'family-name',
     }) +
     fieldMarkup({
       label: 'Email address',
       id: 'donorEmail',
       type: 'email',
       required: true,
+      autocomplete: 'email',
     }) +
     (config.collectPhone === true
       ? fieldMarkup({
-          label: 'Phone',
+          label: 'Phone (optional)',
           id: 'donorPhone',
           type: 'tel',
           required: false,
+          autocomplete: 'tel',
         })
       : '') +
     '</div>' +
+    '</fieldset>' +
     addressMarkup +
+    '<div class="section stack">' +
     giftAidMarkup +
     supporterEmailOptOutMarkup +
     '</div>' +
+    honeypotMarkup +
+    '<div class="error-panel" id="errorPanel" tabindex="-1" hidden></div>' +
     '<div class="actions">' +
-    '<button class="button" id="submitButton" type="submit">' +
-    escapeHtml(securePaymentButtonLabel) +
-    '</button>' +
-    '<div class="status" id="status">Validated by Twenty before secure payment fields load.</div>' +
+    '<button class="button" id="submitButton" type="submit">Continue to payment</button>' +
+    '<p class="status" id="status" role="status"></p>' +
     '</div>' +
-    '<div id="errorPanel"></div>' +
     '</form>' +
-    '<section id="paymentPanel" class="payment-panel" hidden>' +
-    '<div class="label">Step 2</div>' +
-    '<p class="hint">Secure payment</p>' +
-    '<div class="summary" id="donationSummary"></div>' +
-    '<div class="actions">' +
-    '<button class="button button-secondary" id="changeDonationDetailsButton" type="button">' +
-    'Change donation details' +
-    '</button>' +
-    '</div>' +
-    '<div class="label">Secure payment details</div>' +
+    '<section id="paymentPanel" class="payment-panel" aria-labelledby="paymentHeading" hidden>' +
+    '<h2 id="paymentHeading" tabindex="-1"><span class="step">Step 2 of 2</span> Payment</h2>' +
+    '<dl class="summary" id="donationSummary"></dl>' +
+    '<button class="link-button" id="changeDonationDetailsButton" type="button">Change donation details</button>' +
     '<p class="hint" id="paymentHint">' +
-    escapeHtml(paymentHint) +
+    escapeHtml(copy.paymentHint) +
     '</p>' +
-    '<div class="summary" id="paymentSummary"></div>' +
     '<div id="payment-element"></div>' +
-    '<div id="paymentErrorPanel"></div>' +
+    '<div class="error-panel" id="paymentErrorPanel" tabindex="-1" hidden></div>' +
     '<div class="actions">' +
-    '<button class="button" id="confirmPaymentButton" type="button">' +
-    escapeHtml(confirmPaymentButtonLabel) +
-    '</button>' +
-    '<div class="status" id="paymentStatus">Waiting for secure payment details.</div>' +
+    '<button class="button" id="confirmPaymentButton" type="button">Donate</button>' +
+    '<p class="status" id="paymentStatus" role="status"></p>' +
     '</div>' +
     '</section>' +
-    '<section id="successPanel" class="success-panel" hidden>' +
-    '<h2>Thank you</h2>' +
+    '<section id="successPanel" class="success-panel" aria-labelledby="thankYouHeading" hidden>' +
+    '<h2 id="thankYouHeading" tabindex="-1">Thank you</h2>' +
     '<p id="thankYouMessage">' +
     escapeHtml(thankYouMessage) +
     '</p>' +
     '<p class="summary" id="thankYouStatus"></p>' +
     '</section>' +
-    '<div class="meta">' +
-    (publicId
-      ? 'Form: ' + escapeHtml(publicId) + ' · Version: ' + escapeHtml(publishedVersion ?? '')
-      : 'Draft visual preview') +
-    '</div>'
+    '<p class="secure-note">Payments are processed securely by Stripe.</p>' +
+    (publicId ? '' : '<div class="meta">Draft visual preview</div>')
   );
 };
 
@@ -545,7 +569,7 @@ export const buildDonationFormStaticDocument = ({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Donation form</title>
+    <title>${escapeHtml(normalizeString(config?.title) || 'Donation form')}</title>
     <style>
 ${DONATION_FORM_RENDER_STYLES}
     </style>

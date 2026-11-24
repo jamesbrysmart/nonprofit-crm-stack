@@ -4,7 +4,7 @@ import {
   defineLogicFunction,
   type RoutePayload,
 } from 'twenty-sdk/define';
-import { buildDonationFormEmbedSnippet } from 'src/donation-forms/build-donation-form-embed-document';
+import { buildDonationFormEmbedSnippet } from 'src/donation-forms/donation-form-embed-snippet';
 import {
   normalizeDonationFormConfigObject,
   validatePublishableDonationFormConfig,
@@ -129,7 +129,7 @@ export const publishDonationFormWithClient = async (
     publishedVersion,
     status: 'LIVE',
     iframeUrl,
-    embedSnippet: buildDonationFormEmbedSnippet({ iframeUrl }),
+    embedSnippet: buildDonationFormEmbedSnippet(iframeUrl),
   };
 };
 

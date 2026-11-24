@@ -20,7 +20,7 @@ describe('donation form embed runtime', () => {
     });
 
     expect(markup).toContain('id="customAmountMajor"');
-    expect(markup).toContain('Minimum £7.00');
+    expect(markup).toContain('(minimum £7.00)');
   });
 
   it('keeps admin-entered text from breaking out of the inline script', () => {

@@ -9,6 +9,7 @@ import {
 import { resolveStripeProviderConfigKey } from './donation-form-checkout-stripe';
 import type { PublishedDonationFormForCheckout } from './donation-form-checkout.types';
 import { normalizeString } from 'src/utils/normalize-string';
+import { DonationFormSubmissionError } from 'src/donation-forms/donation-form-submission-error';
 
 type DonationFormPublicRecord = {
   id?: string | null;
@@ -47,11 +48,11 @@ export const loadPublishedDonationFormForCheckout = async (
     extractQueryRecord<DonationFormPublicRecord>(result, 'donationForm') ?? null;
 
   if (!record?.id) {
-    throw new Error('Published donation form not found');
+    throw new DonationFormSubmissionError('FORM_UNAVAILABLE', 'Published donation form not found');
   }
 
   if (normalizeString(record.status) !== 'LIVE') {
-    throw new Error('Donation form is not live');
+    throw new DonationFormSubmissionError('FORM_UNAVAILABLE', 'Donation form is not live');
   }
 
   const persistedPublicId = normalizeString(record.publicId);

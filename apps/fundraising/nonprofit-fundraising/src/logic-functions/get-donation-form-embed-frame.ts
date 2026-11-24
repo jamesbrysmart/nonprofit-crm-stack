@@ -5,14 +5,30 @@ import {
 } from 'src/donation-forms/build-donation-form-embed-document';
 import { buildDonationFormStaticDocument } from 'src/donation-forms/donation-form-rendering';
 import { loadPublicDonationFormConfigWithClient } from 'src/logic-functions/get-public-donation-form-config';
+import {
+  createDonationFormToken,
+  readDonationFormTokenSecret,
+} from 'src/donation-forms/donation-form-submission-guard';
 import { normalizeString } from 'src/utils/normalize-string';
 import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 // Twenty serves a bare string route result as text/plain, so the page must declare HTML.
+// no-store: each page carries a freshly signed submission token.
 const htmlResponse = (document: string) =>
   new Response(document, {
-    headers: { 'content-type': 'text/html; charset=utf-8' },
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'no-store',
+    },
   });
+
+const issueFormToken = (publicId: string): string | undefined => {
+  const secret = readDonationFormTokenSecret();
+
+  return secret === ''
+    ? undefined
+    : createDonationFormToken({ secret, publicId, now: new Date() });
+};
 
 export const donationFormEmbedFrameHandler = async (
   event: RoutePayload<Record<string, never>>,
@@ -43,6 +59,7 @@ export const donationFormEmbedFrameHandler = async (
       publicId: payload.publicId,
       publishedVersion: payload.publishedVersion,
       config: payload.config,
+      formToken: issueFormToken(payload.publicId),
     }),
   );
 };

@@ -22,6 +22,7 @@ import {
 } from 'src/donation-forms/donation-form-config';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
+import { buildDonationFormEmbedSnippet } from 'src/donation-forms/donation-form-embed-snippet';
 
 export type DonationFormWorkspaceRecord = {
   id?: string | null;
@@ -222,11 +223,6 @@ export const buildIframeUrlFromPublicId = (publicId: string): string => {
 
   return `${origin}/s/donation-forms/embed-frame?publicId=${encodeURIComponent(publicId)}`;
 };
-
-export const buildIframeEmbedSnippet = (iframeUrl: string): string =>
-  iframeUrl === ''
-    ? ''
-    : `<iframe src="${iframeUrl}" title="Donation form" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="payment *" style="width:100%;min-height:880px;border:0;background:transparent;"></iframe>`;
 
 export const parseAmountOptionsText = (value: string): number[] => {
   const entries = value
@@ -579,7 +575,7 @@ export const derivePublishedState = (
     publicId: persistedPublicId,
     publishedVersion: normalizeString(record?.publishedVersion),
     iframeUrl,
-    embedSnippet: buildIframeEmbedSnippet(iframeUrl),
+    embedSnippet: buildDonationFormEmbedSnippet(iframeUrl),
   };
 };
 

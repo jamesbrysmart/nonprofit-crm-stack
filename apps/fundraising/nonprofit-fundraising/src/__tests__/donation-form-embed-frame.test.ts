@@ -49,6 +49,7 @@ describe('donation form embed frame', () => {
 
     expect(response.headers).toEqual({
       'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'no-store',
     });
     expect(response.body).toBe('<!doctype html><title>Donate</title>');
   });
@@ -60,6 +61,7 @@ describe('donation form embed frame', () => {
 
     expect(response.headers).toEqual({
       'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'no-store',
     });
     expect(response.body).toBe('<!doctype html><title>Unavailable</title>');
   });

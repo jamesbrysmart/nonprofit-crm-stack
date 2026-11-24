@@ -1,6 +1,13 @@
 import {
+  DONATION_FORM_GENERIC_ERROR_COPY,
+  DONATION_FORM_SUBMISSION_ERROR_COPY,
+  resolveDonationTypeCopy,
+} from 'src/donation-forms/donation-form-copy';
+import {
   DONATION_FORM_BOOTSTRAP_ELEMENT_ID,
+  DONATION_FORM_RESIZE_MESSAGE_TYPE,
   type DonationFormClientBootstrap,
+  type DonationFormResizeMessage,
   type StripeCheckoutActions,
   type StripeFactory,
 } from 'src/donation-forms/embed-client/donation-form-client.types';
@@ -8,23 +15,31 @@ import {
 const CHECKOUT_SESSION_PATH =
   '/s/donation-forms/create-elements-checkout-session';
 
-const ADDRESS_FIELD_IDS = [
-  'addressStreet1',
-  'addressCity',
-  'addressPostcode',
-  'addressCountry',
-] as const;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type DonationFormWindow = Window & {
+  Stripe?: StripeFactory;
+  fetch: typeof fetch;
+};
 
 type CheckoutSessionResponse = {
   checkoutSessionClientSecret?: string;
   publishableKey?: string;
-  giftStagingId?: string;
-  message?: string;
-  error?: string;
+  code?: string;
+};
+
+type FieldError = {
+  // The element the error summary link moves focus to.
+  target: HTMLElement;
+  // The inline error slot, `<id>-error`.
+  errorId: string;
+  message: string;
 };
 
 type DonationPayload = {
   publicId: string;
+  formToken: string | undefined;
+  contactReference: string;
   donationType: string;
   amountMinorUnits: number;
   donorFirstName: string;
@@ -40,19 +55,8 @@ type DonationPayload = {
   };
 };
 
-const escapeHtml = (value: string): string =>
-  value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-
-const getErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : 'An unexpected error occurred.';
-
 export const parseMajorUnitsToMinorUnits = (value: string): number | null => {
-  const normalized = value.trim();
+  const normalized = value.trim().replace(/^[^\d.]+/, '').replaceAll(',', '');
   if (normalized === '') {
     return null;
   }
@@ -69,6 +73,10 @@ export const parseMajorUnitsToMinorUnits = (value: string): number | null => {
 
   return minorUnits;
 };
+
+export const resolveSubmissionErrorMessage = (code: string | undefined) =>
+  (code ? DONATION_FORM_SUBMISSION_ERROR_COPY[code] : undefined) ??
+  DONATION_FORM_GENERIC_ERROR_COPY;
 
 const requireElement = <TElement extends HTMLElement>(
   doc: Document,
@@ -89,52 +97,65 @@ export const startDonationForm = ({
 }: {
   bootstrap: DonationFormClientBootstrap;
   doc: Document;
-  win: Window & { Stripe?: StripeFactory; fetch: typeof fetch };
+  win: DonationFormWindow;
 }): void => {
   const { config } = bootstrap;
   const currencyCode =
     typeof config.currencyCode === 'string' ? config.currencyCode : 'GBP';
-  let donationType: string = bootstrap.donationTypeOptions[0] ?? 'ONE_OFF';
+  const minimumAmount =
+    typeof config.minimumAmount === 'number' && config.minimumAmount > 0
+      ? config.minimumAmount
+      : null;
 
   const form = requireElement<HTMLFormElement>(doc, 'donationForm');
+  const detailsHeading = requireElement(doc, 'detailsHeading');
+  const errorSummary = requireElement(doc, 'errorSummary');
+  const errorSummaryList = requireElement(doc, 'errorSummaryList');
   const amountInput = requireElement<HTMLInputElement>(doc, 'amountMinorUnits');
+  const amountLabel = requireElement(doc, 'amountLabel');
   const status = requireElement(doc, 'status');
   const errorPanel = requireElement(doc, 'errorPanel');
   const submitButton = requireElement<HTMLButtonElement>(doc, 'submitButton');
   const paymentPanel = requireElement(doc, 'paymentPanel');
-  const paymentSummary = requireElement(doc, 'paymentSummary');
+  const paymentHeading = requireElement(doc, 'paymentHeading');
+  const donationSummary = requireElement(doc, 'donationSummary');
+  const paymentHint = requireElement(doc, 'paymentHint');
+  const paymentElementHost = requireElement(doc, 'payment-element');
   const paymentErrorPanel = requireElement(doc, 'paymentErrorPanel');
   const confirmPaymentButton = requireElement<HTMLButtonElement>(
     doc,
     'confirmPaymentButton',
   );
   const paymentStatus = requireElement(doc, 'paymentStatus');
-
-  const donationTypeButtons = Array.from(
-    doc.querySelectorAll<HTMLElement>('[data-donation-type]'),
-  );
-  const amountButtons = Array.from(
-    doc.querySelectorAll<HTMLElement>('[data-amount]'),
+  const successPanel = requireElement(doc, 'successPanel');
+  const thankYouHeading = requireElement(doc, 'thankYouHeading');
+  const thankYouStatus = requireElement(doc, 'thankYouStatus');
+  const changeDonationDetailsButton = requireElement(
+    doc,
+    'changeDonationDetailsButton',
   );
   const customAmountInput = doc.getElementById(
     'customAmountMajor',
   ) as HTMLInputElement | null;
-  const amountLabelElement = doc.getElementById('amountLabel');
-  const successPanel = doc.getElementById('successPanel');
-  const thankYouStatus = doc.getElementById('thankYouStatus');
-  const paymentHintElement = doc.getElementById('paymentHint');
-  const donationSummary = doc.getElementById('donationSummary');
-  const changeDonationDetailsButton = doc.getElementById(
-    'changeDonationDetailsButton',
-  );
   const giftAidRequestedInput = doc.getElementById(
     'giftAidRequested',
   ) as HTMLInputElement | null;
   const addressSection = doc.getElementById('addressSection');
-  const addressHint = doc.getElementById('addressHint');
+  const amountRadios = Array.from(
+    doc.querySelectorAll<HTMLInputElement>('input[name="amountOption"]'),
+  );
+  const donationTypeRadios = Array.from(
+    doc.querySelectorAll<HTMLInputElement>('input[name="donationType"]'),
+  );
+  const shell = doc.querySelector<HTMLElement>('.shell') ?? doc.body;
 
+  let donationType: string =
+    donationTypeRadios.find((radio) => radio.checked)?.value ??
+    bootstrap.donationTypeOptions[0] ??
+    'ONE_OFF';
   let activePaymentActions: StripeCheckoutActions | null = null;
-  let lastGiftStagingId: string | null = null;
+  let isSubmitting = false;
+  let isConfirming = false;
 
   const isRecurring = () => donationType === 'RECURRING';
 
@@ -144,133 +165,208 @@ export const startDonationForm = ({
       currency: currencyCode,
     }).format(amountMinorUnits / 100);
 
-  const valueOf = (id: string): string => {
-    const element = doc.getElementById(id) as HTMLInputElement | null;
+  const fieldInput = (id: string) =>
+    doc.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
 
-    return element && typeof element.value === 'string'
-      ? element.value.trim()
-      : '';
-  };
+  const valueOf = (id: string): string => fieldInput(id)?.value.trim() ?? '';
 
   const isChecked = (id: string): boolean =>
     (doc.getElementById(id) as HTMLInputElement | null)?.checked === true;
 
-  const refreshDonationTypeLabels = () => {
-    if (amountLabelElement) {
-      amountLabelElement.textContent = isRecurring()
-        ? 'Choose your monthly amount'
-        : 'Choose an amount';
+  const requiresAddress = () =>
+    config.requireAddress === true || giftAidRequestedInput?.checked === true;
+
+  // The host page sizes the iframe from these messages. The page runs in a
+  // sandbox with an opaque origin, so hosts match on event.source instead.
+  const postResize = (scrollIntoView = false) => {
+    if (win.parent === win) {
+      return;
     }
 
-    if (paymentHintElement) {
-      paymentHintElement.textContent = isRecurring()
-        ? 'Card details stay inside the donation form. Stripe only owns the secure monthly payment fields.'
-        : 'Card payment stays inside the donation form. Stripe only owns the secure payment fields.';
+    const message: DonationFormResizeMessage = {
+      type: DONATION_FORM_RESIZE_MESSAGE_TYPE,
+      height: Math.ceil(shell.getBoundingClientRect().height),
+      scrollIntoView,
+    };
+    win.parent.postMessage(message, '*');
+  };
+
+  const moveFocusTo = (element: HTMLElement) => {
+    element.focus();
+    postResize(true);
+  };
+
+  const setStatus = (element: HTMLElement, message: string) => {
+    element.textContent = message;
+  };
+
+  const showPanelError = (panel: HTMLElement, message: string) => {
+    panel.textContent = message;
+    panel.hidden = false;
+    moveFocusTo(panel);
+  };
+
+  const clearPanelError = (panel: HTMLElement) => {
+    panel.textContent = '';
+    panel.hidden = true;
+  };
+
+  const setFieldError = (errorId: string, message: string | null) => {
+    const slot = doc.getElementById(`${errorId}-error`);
+    if (slot) {
+      slot.textContent = message ?? '';
+      slot.hidden = message === null;
     }
 
-    submitButton.textContent = isRecurring()
-      ? 'Continue to secure monthly payment'
-      : 'Continue to secure payment';
+    const input = errorId === 'amount' ? customAmountInput : fieldInput(errorId);
+    if (!input) {
+      return;
+    }
 
-    confirmPaymentButton.textContent = isRecurring()
-      ? 'Confirm monthly donation'
-      : 'Confirm donation';
+    if (message === null) {
+      input.removeAttribute('aria-invalid');
+    } else {
+      input.setAttribute('aria-invalid', 'true');
+    }
+  };
+
+  const clearErrorSummary = () => {
+    errorSummary.hidden = true;
+    errorSummaryList.replaceChildren();
+  };
+
+  const showErrors = (errors: FieldError[]) => {
+    const items = errors.map((error) => {
+      setFieldError(error.errorId, error.message);
+
+      const link = doc.createElement('a');
+      link.href = `#${error.target.id}`;
+      link.textContent = error.message;
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        error.target.focus();
+      });
+
+      const item = doc.createElement('li');
+      item.append(link);
+
+      return item;
+    });
+
+    errorSummaryList.replaceChildren(...items);
+    errorSummary.hidden = false;
+    moveFocusTo(errorSummary);
+  };
+
+  const validate = (): FieldError[] => {
+    const errors: FieldError[] = [];
+    const amountMinorUnits = Number(amountInput.value || '0');
+    const customText = customAmountInput?.value.trim() ?? '';
+    const amountTarget =
+      customText !== '' && customAmountInput
+        ? customAmountInput
+        : (amountRadios.find((radio) => radio.checked) ??
+          amountRadios[0] ??
+          customAmountInput);
+
+    if (amountTarget) {
+      if (customText !== '' && amountMinorUnits <= 0) {
+        errors.push({
+          target: amountTarget,
+          errorId: 'amount',
+          message: 'Enter an amount, like 12.50',
+        });
+      } else if (amountMinorUnits <= 0) {
+        errors.push({
+          target: amountTarget,
+          errorId: 'amount',
+          message: 'Choose or enter an amount',
+        });
+      } else if (
+        customText !== '' &&
+        minimumAmount !== null &&
+        amountMinorUnits < minimumAmount
+      ) {
+        errors.push({
+          target: amountTarget,
+          errorId: 'amount',
+          message: `Enter an amount of at least ${formatCurrencyAmount(minimumAmount)}`,
+        });
+      }
+    }
+
+    const requireText = (id: string, message: string) => {
+      const input = fieldInput(id);
+      if (input && valueOf(id) === '') {
+        errors.push({ target: input, errorId: id, message });
+      }
+    };
+
+    requireText('donorFirstName', 'Enter your first name');
+    requireText('donorLastName', 'Enter your last name');
+
+    const emailInput = fieldInput('donorEmail');
+    const email = valueOf('donorEmail');
+    if (emailInput && email === '') {
+      errors.push({
+        target: emailInput,
+        errorId: 'donorEmail',
+        message: 'Enter your email address',
+      });
+    } else if (emailInput && !EMAIL_PATTERN.test(email)) {
+      errors.push({
+        target: emailInput,
+        errorId: 'donorEmail',
+        message: 'Enter an email address like name@example.com',
+      });
+    }
+
+    if (requiresAddress()) {
+      requireText('addressStreet1', 'Enter the first line of your address');
+      requireText('addressCity', 'Enter your town or city');
+      requireText('addressPostcode', 'Enter your postcode');
+    }
+
+    return errors;
+  };
+
+  const clearAllFieldErrors = () => {
+    for (const slot of Array.from(
+      doc.querySelectorAll<HTMLElement>('.field-error'),
+    )) {
+      slot.textContent = '';
+      slot.hidden = true;
+    }
+    for (const input of Array.from(doc.querySelectorAll('[aria-invalid]'))) {
+      input.removeAttribute('aria-invalid');
+    }
+  };
+
+  const refreshDonationTypeCopy = () => {
+    const copy = resolveDonationTypeCopy(donationType);
+    amountLabel.textContent = copy.amountLegend;
+    paymentHint.textContent = copy.paymentHint;
   };
 
   const syncAddressRequirements = () => {
-    const giftAidRequested = giftAidRequestedInput?.checked === true;
-    const requiresAddress = config.requireAddress === true || giftAidRequested;
+    const required = requiresAddress();
 
     if (addressSection && config.requireAddress !== true) {
-      addressSection.hidden = !requiresAddress;
+      addressSection.hidden = !required;
+      postResize();
     }
 
-    for (const fieldId of ADDRESS_FIELD_IDS) {
-      const field = doc.getElementById(fieldId);
+    for (const fieldId of ['addressStreet1', 'addressCity', 'addressPostcode']) {
+      const field = fieldInput(fieldId);
       if (!field) {
         continue;
       }
 
-      if (requiresAddress) {
-        field.setAttribute('required', 'required');
-      } else {
-        field.removeAttribute('required');
+      field.required = required;
+      if (!required) {
+        setFieldError(fieldId, null);
       }
     }
-
-    if (addressHint) {
-      addressHint.textContent =
-        config.requireAddress === true
-          ? 'This donation form requires the donor home address.'
-          : giftAidRequested
-            ? 'Gift Aid needs your home address so the declaration can be recorded credibly for HMRC.'
-            : 'If you add Gift Aid, we need your home address so the declaration can be recorded credibly for HMRC.';
-    }
-  };
-
-  const setSelectedAmountButton = (selectedButton: HTMLElement | null) => {
-    for (const candidate of amountButtons) {
-      candidate.classList.toggle('is-selected', candidate === selectedButton);
-    }
-  };
-
-  const clearSelectedAmount = () => {
-    setSelectedAmountButton(null);
-    amountInput.value = '';
-  };
-
-  const teardownPaymentStep = () => {
-    activePaymentActions = null;
-    lastGiftStagingId = null;
-    paymentSummary.textContent = '';
-    paymentErrorPanel.innerHTML = '';
-    paymentStatus.textContent = 'Waiting for secure payment details.';
-    confirmPaymentButton.disabled = false;
-    const paymentElementHost = doc.getElementById('payment-element');
-    if (paymentElementHost) {
-      paymentElementHost.innerHTML = '';
-    }
-  };
-
-  const renderDonationSummary = (payload: DonationPayload) => {
-    if (!donationSummary) {
-      return;
-    }
-
-    donationSummary.innerHTML =
-      '<div><strong>Donation</strong>: ' +
-      escapeHtml(formatCurrencyAmount(payload.amountMinorUnits)) +
-      (payload.donationType === 'RECURRING' ? ' monthly' : ' one-off') +
-      '</div>' +
-      '<div><strong>Donor</strong>: ' +
-      escapeHtml(
-        [payload.donorFirstName, payload.donorLastName]
-          .filter(Boolean)
-          .join(' ') || 'Not provided',
-      ) +
-      '</div>' +
-      '<div><strong>Email</strong>: ' +
-      escapeHtml(payload.donorEmail || 'Not provided') +
-      '</div>' +
-      (config.giftAidEnabled === true
-        ? '<div><strong>Gift Aid</strong>: ' +
-          escapeHtml(payload.giftAidRequested ? 'Requested' : 'Not requested') +
-          '</div>'
-        : '');
-  };
-
-  const showPaymentStep = (payload: DonationPayload) => {
-    renderDonationSummary(payload);
-    form.hidden = true;
-    paymentPanel.hidden = false;
-  };
-
-  const showDonationStep = () => {
-    teardownPaymentStep();
-    paymentPanel.hidden = true;
-    form.hidden = false;
-    submitButton.disabled = false;
-    status.textContent = 'Validated by Twenty before secure payment fields load.';
   };
 
   const extractAddress = (): Record<string, string> | undefined => {
@@ -286,62 +382,161 @@ export const startDonationForm = ({
     return Object.values(fields).some(Boolean) ? fields : undefined;
   };
 
-  const showErrorPanel = (panel: HTMLElement, message: string) => {
-    panel.innerHTML =
-      '<div class="error-panel">' + escapeHtml(message) + '</div>';
+  const renderDonationSummary = (payload: DonationPayload) => {
+    const rows: [string, string][] = [
+      [
+        'Donation',
+        formatCurrencyAmount(payload.amountMinorUnits) +
+          (isRecurring() ? ' monthly' : ' one-off'),
+      ],
+      [
+        'Name',
+        [payload.donorFirstName, payload.donorLastName].join(' ').trim(),
+      ],
+      ['Email', payload.donorEmail],
+    ];
+
+    if (config.giftAidEnabled === true) {
+      rows.push(['Gift Aid', payload.giftAidRequested ? 'Yes' : 'No']);
+    }
+
+    donationSummary.replaceChildren(
+      ...rows.map(([term, detail]) => {
+        const row = doc.createElement('div');
+        const termElement = doc.createElement('dt');
+        const detailElement = doc.createElement('dd');
+        termElement.textContent = term;
+        detailElement.textContent = detail;
+        row.append(termElement, detailElement);
+
+        return row;
+      }),
+    );
   };
 
-  for (const button of donationTypeButtons) {
-    button.addEventListener('click', () => {
-      for (const candidate of donationTypeButtons) {
-        candidate.classList.remove('is-selected');
+  const teardownPaymentStep = () => {
+    activePaymentActions = null;
+    clearPanelError(paymentErrorPanel);
+    setStatus(paymentStatus, '');
+    confirmPaymentButton.disabled = false;
+    confirmPaymentButton.textContent = 'Donate';
+    paymentElementHost.replaceChildren();
+  };
+
+  const showDonationStep = () => {
+    teardownPaymentStep();
+    paymentPanel.hidden = true;
+    form.hidden = false;
+    submitButton.disabled = false;
+    setStatus(status, '');
+    moveFocusTo(detailsHeading);
+  };
+
+  const showPaymentStep = (payload: DonationPayload) => {
+    renderDonationSummary(payload);
+    form.hidden = true;
+    paymentPanel.hidden = false;
+    moveFocusTo(paymentHeading);
+  };
+
+  const showSuccess = () => {
+    paymentPanel.hidden = true;
+    form.hidden = true;
+    successPanel.hidden = false;
+    thankYouStatus.textContent = isRecurring()
+      ? 'Your monthly donation has been set up.'
+      : 'We have received your donation.';
+    moveFocusTo(thankYouHeading);
+  };
+
+  const showSubmissionError = (code: string | undefined) => {
+    showPanelError(errorPanel, resolveSubmissionErrorMessage(code));
+
+    if (code === 'FORM_EXPIRED') {
+      const reloadButton = doc.createElement('button');
+      reloadButton.type = 'button';
+      reloadButton.className = 'button button-secondary';
+      reloadButton.textContent = 'Reload the form';
+      reloadButton.addEventListener('click', () => win.location.reload());
+      errorPanel.append(' ', reloadButton);
+    }
+  };
+
+  for (const radio of donationTypeRadios) {
+    radio.addEventListener('change', () => {
+      if (radio.checked) {
+        donationType = radio.value;
+        refreshDonationTypeCopy();
       }
-      button.classList.add('is-selected');
-      donationType = button.getAttribute('data-donation-type') || 'ONE_OFF';
-      refreshDonationTypeLabels();
     });
   }
 
-  giftAidRequestedInput?.addEventListener('change', syncAddressRequirements);
+  for (const radio of amountRadios) {
+    radio.addEventListener('change', () => {
+      if (!radio.checked) {
+        return;
+      }
 
-  for (const button of amountButtons) {
-    button.addEventListener('click', () => {
-      setSelectedAmountButton(button);
+      amountInput.value = radio.value;
       if (customAmountInput) {
         customAmountInput.value = '';
       }
-      amountInput.value = button.getAttribute('data-amount') || '';
+      setFieldError('amount', null);
     });
   }
 
   customAmountInput?.addEventListener('input', () => {
-    const customMinorUnits = parseMajorUnitsToMinorUnits(
-      customAmountInput.value,
-    );
+    setFieldError('amount', null);
 
-    if (customMinorUnits === null) {
-      clearSelectedAmount();
+    if (customAmountInput.value.trim() === '') {
+      const checkedRadio = amountRadios.find((radio) => radio.checked);
+      amountInput.value = checkedRadio?.value ?? '';
       return;
     }
 
-    setSelectedAmountButton(null);
-    amountInput.value = String(customMinorUnits);
+    for (const radio of amountRadios) {
+      radio.checked = false;
+    }
+
+    const customMinorUnits = parseMajorUnitsToMinorUnits(
+      customAmountInput.value,
+    );
+    amountInput.value = customMinorUnits === null ? '' : String(customMinorUnits);
   });
 
-  refreshDonationTypeLabels();
-  syncAddressRequirements();
+  for (const input of Array.from(
+    form.querySelectorAll<HTMLInputElement>('.field input, .field select'),
+  )) {
+    if (input.id !== 'customAmountMajor') {
+      input.addEventListener('input', () => setFieldError(input.id, null));
+    }
+  }
 
-  changeDonationDetailsButton?.addEventListener('click', showDonationStep);
+  giftAidRequestedInput?.addEventListener('change', syncAddressRequirements);
+  changeDonationDetailsButton.addEventListener('click', showDonationStep);
 
   form.addEventListener('submit', async (submitEvent) => {
     submitEvent.preventDefault();
-    errorPanel.innerHTML = '';
-    paymentErrorPanel.innerHTML = '';
+    if (isSubmitting) {
+      return;
+    }
+
+    clearPanelError(errorPanel);
+    clearErrorSummary();
+    clearAllFieldErrors();
+
+    const errors = validate();
+    if (errors.length > 0) {
+      showErrors(errors);
+      return;
+    }
 
     const payload: DonationPayload = {
       publicId: bootstrap.publicId,
+      formToken: bootstrap.formToken,
+      contactReference: valueOf('nfContactReference'),
       donationType,
-      amountMinorUnits: Number(amountInput.value || '0'),
+      amountMinorUnits: Number(amountInput.value),
       donorFirstName: valueOf('donorFirstName'),
       donorLastName: valueOf('donorLastName'),
       donorEmail: valueOf('donorEmail'),
@@ -355,8 +550,9 @@ export const startDonationForm = ({
       },
     };
 
+    isSubmitting = true;
     submitButton.disabled = true;
-    status.textContent = 'Creating secure payment session…';
+    setStatus(status, 'Preparing secure payment…');
 
     try {
       const response = await win.fetch(CHECKOUT_SESSION_PATH, {
@@ -364,78 +560,80 @@ export const startDonationForm = ({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      const result = (await response.json()) as CheckoutSessionResponse | null;
+      const result = (await response
+        .json()
+        .catch(() => null)) as CheckoutSessionResponse | null;
 
       if (
         !response.ok ||
         !result?.checkoutSessionClientSecret ||
         !result.publishableKey
       ) {
-        throw new Error(
-          result?.message ||
-            result?.error ||
-            'Unable to create the secure payment session.',
-        );
+        submitButton.disabled = false;
+        setStatus(status, '');
+        showSubmissionError(result?.code);
+        return;
       }
 
       if (!win.Stripe) {
         throw new Error('Stripe.js did not load');
       }
 
-      const stripe = win.Stripe(result.publishableKey);
-      const checkout = stripe.initCheckoutElementsSdk({
+      const checkout = win.Stripe(result.publishableKey).initCheckoutElementsSdk({
         clientSecret: Promise.resolve(result.checkoutSessionClientSecret),
       });
       const paymentElement = checkout.createPaymentElement({
         fields: { billingDetails: { name: 'never' } },
       });
-
-      requireElement(doc, 'payment-element').innerHTML = '';
+      paymentElementHost.replaceChildren();
       paymentElement.mount('#payment-element');
 
       const loadActionsResult = await checkout.loadActions();
       if (loadActionsResult.type !== 'success') {
         throw new Error(
-          loadActionsResult.error?.message ||
-            'Stripe secure payment fields failed to initialize.',
+          loadActionsResult.error?.message ??
+            'Stripe payment fields failed to load',
         );
       }
 
       activePaymentActions = loadActionsResult.actions;
-      lastGiftStagingId = result.giftStagingId || null;
       const totalAmount =
-        loadActionsResult.actions.getSession()?.total?.total?.amount;
-      paymentSummary.textContent =
-        typeof totalAmount === 'number'
-          ? (isRecurring() ? 'Monthly total: ' : 'Total: ') +
-            formatCurrencyAmount(totalAmount) +
-            '. Secure payment fields loaded.'
-          : 'Secure payment fields loaded.';
+        loadActionsResult.actions.getSession()?.total?.total?.amount ??
+        payload.amountMinorUnits;
+      confirmPaymentButton.textContent =
+        `Donate ${formatCurrencyAmount(totalAmount)}` +
+        (isRecurring() ? ' monthly' : '');
 
+      setStatus(status, '');
       showPaymentStep(payload);
-      paymentStatus.textContent = isRecurring()
-        ? 'Enter card details to confirm your monthly donation.'
-        : 'Enter card details to confirm your donation.';
-      status.textContent = 'Secure payment fields loaded inside the donation form.';
-    } catch (error) {
+    } catch {
       submitButton.disabled = false;
       paymentPanel.hidden = true;
-      status.textContent = 'The secure payment fields could not be loaded yet.';
-      showErrorPanel(errorPanel, getErrorMessage(error));
+      setStatus(status, '');
+      showSubmissionError(undefined);
+    } finally {
+      isSubmitting = false;
     }
   });
 
   confirmPaymentButton.addEventListener('click', async () => {
-    paymentErrorPanel.innerHTML = '';
-
-    if (!activePaymentActions) {
-      showErrorPanel(paymentErrorPanel, 'Payment details are not ready yet.');
+    if (isConfirming) {
       return;
     }
 
+    clearPanelError(paymentErrorPanel);
+
+    if (!activePaymentActions) {
+      showPanelError(
+        paymentErrorPanel,
+        'The payment details are still loading. Please wait a moment.',
+      );
+      return;
+    }
+
+    isConfirming = true;
     confirmPaymentButton.disabled = true;
-    paymentStatus.textContent = 'Confirming secure payment…';
+    setStatus(paymentStatus, 'Processing your payment…');
 
     try {
       const result = await activePaymentActions.confirm({
@@ -443,39 +641,38 @@ export const startDonationForm = ({
       });
 
       if (result.type === 'error') {
-        throw new Error(result.error?.message || 'Payment confirmation failed.');
+        throw new Error(
+          result.error?.message ??
+            'Your payment could not be completed. Please try again.',
+        );
       }
 
-      const donationLabel = isRecurring() ? 'monthly donation' : 'donation';
-      paymentStatus.textContent =
-        'Stripe accepted the payment confirmation. Twenty will confirm the ' +
-        donationLabel +
-        ' when the webhook arrives.' +
-        (lastGiftStagingId
-          ? ' GiftStaging ' + lastGiftStagingId + ' is awaiting confirmation.'
-          : '');
-      form.hidden = true;
-      paymentPanel.hidden = true;
-      if (successPanel) {
-        successPanel.hidden = false;
-      }
-      if (thankYouStatus) {
-        thankYouStatus.textContent =
-          'Payment confirmation was accepted. Twenty will finalise the ' +
-          donationLabel +
-          ' when the webhook arrives.';
-      }
+      setStatus(paymentStatus, '');
+      showSuccess();
     } catch (error) {
       confirmPaymentButton.disabled = false;
-      paymentStatus.textContent = 'Payment confirmation failed.';
-      showErrorPanel(paymentErrorPanel, getErrorMessage(error));
+      setStatus(paymentStatus, '');
+      showPanelError(
+        paymentErrorPanel,
+        error instanceof Error
+          ? error.message
+          : 'Your payment could not be completed. Please try again.',
+      );
+    } finally {
+      isConfirming = false;
     }
   });
+
+  refreshDonationTypeCopy();
+  syncAddressRequirements();
+
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(() => postResize()).observe(shell);
+  }
+  postResize();
 };
 
-export const startDonationFormFromDocument = (
-  win: Window & { Stripe?: StripeFactory; fetch: typeof fetch },
-): void => {
+export const startDonationFormFromDocument = (win: DonationFormWindow): void => {
   const doc = win.document;
   const bootstrapElement = doc.getElementById(DONATION_FORM_BOOTSTRAP_ELEMENT_ID);
   const bootstrap = JSON.parse(

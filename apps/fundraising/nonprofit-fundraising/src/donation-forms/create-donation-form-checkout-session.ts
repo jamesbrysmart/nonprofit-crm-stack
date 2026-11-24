@@ -29,6 +29,11 @@ import {
   resolveStripeApiKey,
   resolveStripePublishableKey,
 } from './donation-form-checkout-stripe';
+import { DonationFormSubmissionError } from 'src/donation-forms/donation-form-submission-error';
+import {
+  assertDonationFormSubmissionAllowed,
+  readDonationFormTokenSecret,
+} from 'src/donation-forms/donation-form-submission-guard';
 import { normalizeString } from 'src/utils/normalize-string';
 
 export type {
@@ -96,7 +101,8 @@ const resolveRequestedDonationType = ({
     return normalizedRequested as DonationType;
   }
 
-  throw new Error(
+  throw new DonationFormSubmissionError(
+    'INVALID_SUBMISSION',
     'Donation type is not allowed by the published donation form config',
   );
 };
@@ -135,7 +141,10 @@ const validateAmountMinorUnits = ({
   config: DonationFormPublishedConfig;
 }): number => {
   if (!Number.isInteger(amountMinorUnits) || amountMinorUnits <= 0) {
-    throw new Error('Donation amount must be a positive integer in minor units');
+    throw new DonationFormSubmissionError(
+      'INVALID_AMOUNT',
+      'Donation amount must be a positive integer in minor units',
+    );
   }
 
   const amountOptions = config.amountOptions ?? [];
@@ -150,7 +159,10 @@ const validateAmountMinorUnits = ({
     }
   }
 
-  throw new Error('Donation amount is not allowed by the published donation form config');
+  throw new DonationFormSubmissionError(
+    'INVALID_AMOUNT',
+    'Donation amount is not allowed by the published donation form config',
+  );
 };
 
 const createDonationFormPaymentSessionBase = async ({
@@ -173,7 +185,10 @@ const createDonationFormPaymentSessionBase = async ({
 }> => {
   const publicId = normalizeString(request.publicId);
   if (publicId === '') {
-    throw new Error('Donation form public id is required');
+    throw new DonationFormSubmissionError(
+      'FORM_UNAVAILABLE',
+      'Donation form public id is required',
+    );
   }
 
   const donorFirstName = normalizeString(request.donorFirstName);
@@ -181,11 +196,17 @@ const createDonationFormPaymentSessionBase = async ({
   const donorEmail = normalizeString(request.donorEmail);
 
   if (donorFirstName === '' || donorLastName === '') {
-    throw new Error('Donor first name and last name are required');
+    throw new DonationFormSubmissionError(
+      'INVALID_SUBMISSION',
+      'Donor first name and last name are required',
+    );
   }
 
   if (donorEmail === '') {
-    throw new Error('Donor email is required');
+    throw new DonationFormSubmissionError(
+      'INVALID_SUBMISSION',
+      'Donor email is required',
+    );
   }
 
   const published =
@@ -249,7 +270,8 @@ const createDonationFormPaymentSessionBase = async ({
   });
 
   if (config.requireAddress === true && !donorMailingAddress) {
-    throw new Error(
+    throw new DonationFormSubmissionError(
+      'INVALID_SUBMISSION',
       'This donation form requires the donor address before payment.',
     );
   }
@@ -501,8 +523,19 @@ export const createDonationFormCheckoutSession = async ({
 }): Promise<CreateDonationFormPaymentSessionResponse> => {
   const publicId = normalizeString(request.publicId);
   if (publicId === '') {
-    throw new Error('Donation form public id is required');
+    throw new DonationFormSubmissionError(
+      'FORM_UNAVAILABLE',
+      'Donation form public id is required',
+    );
   }
+
+  assertDonationFormSubmissionAllowed({
+    publicId,
+    formToken: request.formToken,
+    contactReference: request.contactReference,
+    secret: readDonationFormTokenSecret(),
+    now: new Date(),
+  });
 
   const published = await loadPublishedDonationFormForCheckout(client, publicId);
   const stripeApiKey = await resolveStripeApiKey(published.providerConfigKey);

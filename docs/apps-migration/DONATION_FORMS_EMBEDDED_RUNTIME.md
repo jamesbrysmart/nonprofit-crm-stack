@@ -419,6 +419,23 @@ Repeated webhooks must no-op or update existing staging records, not create dupl
 - **Form config changes between load, submit, and payment completion**
   - checkout creation and webhook intake must bind to the published version captured at submit time, not whatever happens to be current later
 
+## 8a. Donor page implementation (2026-11-24)
+
+- **Client code.** The browser script is TypeScript in `src/donation-forms/embed-client/`, type-checked and linted with the app. `yarn build:donation-form-client` bundles it with esbuild into the committed module `donation-form-client-script.generated.ts`, which the embed route inlines. The step runs only during development: `twenty app build` and published bundles need nothing extra. A unit test fails if the generated module is out of date. Form data travels in a separate `application/json` block and is never interpolated into code.
+- **Donor experience.**
+  - Native radio groups for amount and frequency, and fieldsets with legends.
+  - `autocomplete` on every donor field.
+  - Inline errors plus a focused error summary.
+  - Focus moves to each step's heading and to the thank-you.
+  - The checkout route returns error codes that the page maps to donor wording; technical messages stay in the logs.
+  - Layout works down to 320 px, and reduced motion is respected.
+- **Embedding.** The page reports its height with `postMessage`. The embed snippet includes a small host script that resizes the matching iframe; it matches frames on `event.source`, because the sandboxed page's origin is `null`. Without the script, the iframe keeps a fixed 880 px height.
+- **Lightweight protections.** These are invisible to donors and need no charity setup:
+  - **Signed token.** The embed page carries a token signed with a key derived from `STRIPE_SECRET_KEY`. It is bound to the form and valid for two hours; an expired token asks the donor to reload.
+  - **Honeypot.** An off-screen field, hidden from assistive technology and the tab order.
+
+  Both are checked before any database or Stripe call. **Limits:** they stop blind scripted requests and naive bots, but not a bot driving a real browser, and a token can be reused until it expires. Turnstile remains deferred.
+
 ## 9. Explicitly deferred
 
 Not part of v1:

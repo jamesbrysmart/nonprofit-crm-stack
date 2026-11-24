@@ -24,10 +24,12 @@ export const buildDonationFormEmbedDocument = ({
   publicId,
   publishedVersion,
   config,
+  formToken,
 }: {
   publicId: string;
   publishedVersion: string;
   config: DonationFormRenderConfig;
+  formToken?: string;
 }): string => {
   const cardMarkup = buildDonationFormCardMarkup({
     config,
@@ -41,6 +43,7 @@ export const buildDonationFormEmbedDocument = ({
     publishedVersion,
     config,
     donationTypeOptions,
+    ...(formToken ? { formToken } : {}),
   };
 
   // Data and code stay separate: the data block is never executed.
@@ -56,12 +59,3 @@ ${DONATION_FORM_CLIENT_SCRIPT}
     scriptMarkup,
   });
 };
-
-export const buildDonationFormEmbedSnippet = ({
-  iframeUrl,
-}: {
-  iframeUrl: string;
-}): string =>
-  `<iframe src="${iframeUrl
-    .replaceAll('&', '&amp;')
-    .replaceAll('"', '&quot;')}" title="Donation form" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="payment *" style="width:100%;min-height:880px;border:0;background:transparent;"></iframe>`;

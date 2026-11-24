@@ -34,15 +34,18 @@ const renderDonationForm = ({
   config = DEFAULT_CONFIG,
   checkout = SUCCESSFUL_CHECKOUT,
   confirm = { type: 'success' },
+  formToken,
 }: {
   config?: DonationFormRenderConfig;
   checkout?: CheckoutReply;
   confirm?: ConfirmReply;
+  formToken?: string;
 } = {}) => {
   const html = buildDonationFormEmbedDocument({
     publicId: 'df_public_123',
     publishedVersion: 'pub_1',
     config,
+    formToken,
   });
 
   document.open();
@@ -89,6 +92,12 @@ const type = (id: string, value: string) => {
   input.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
+const choose = (id: string) => {
+  const radio = byId<HTMLInputElement>(id);
+  radio.checked = true;
+  radio.dispatchEvent(new Event('change', { bubbles: true }));
+};
+
 const fillDonor = () => {
   type('donorFirstName', 'Ada');
   type('donorLastName', 'Lovelace');
@@ -96,6 +105,12 @@ const fillDonor = () => {
 };
 
 const submit = () => byId<HTMLFormElement>('donationForm').requestSubmit();
+
+const submitAndWaitForPayment = async () => {
+  fillDonor();
+  submit();
+  await vi.waitFor(() => expect(byId('paymentPanel').hidden).toBe(false));
+};
 
 const sentPayload = (fetchMock: ReturnType<typeof vi.fn>) => {
   const init = fetchMock.mock.calls[0]?.[1] as { body?: string } | undefined;
@@ -108,145 +123,292 @@ describe('donation form client', () => {
     vi.restoreAllMocks();
   });
 
-  it('starts with the first preset amount and switches on selection', () => {
-    renderDonationForm();
-    const amountButtons = Array.from(
-      document.querySelectorAll<HTMLButtonElement>('[data-amount]'),
-    );
+  describe('choosing an amount', () => {
+    it('starts on the first preset amount and follows the selected radio', () => {
+      renderDonationForm();
 
-    expect(byId<HTMLInputElement>('amountMinorUnits').value).toBe('1000');
+      expect(byId<HTMLInputElement>('amountOption0').checked).toBe(true);
+      expect(byId<HTMLInputElement>('amountMinorUnits').value).toBe('1000');
 
-    amountButtons[1]?.click();
+      choose('amountOption1');
 
-    expect(byId<HTMLInputElement>('amountMinorUnits').value).toBe('2500');
-    expect(amountButtons[1]?.classList.contains('is-selected')).toBe(true);
-    expect(amountButtons[0]?.classList.contains('is-selected')).toBe(false);
-  });
-
-  it('uses a valid custom amount and clears the amount when it becomes invalid', () => {
-    renderDonationForm();
-
-    type('customAmountMajor', '12.34');
-    expect(byId<HTMLInputElement>('amountMinorUnits').value).toBe('1234');
-    expect(document.querySelectorAll('[data-amount].is-selected')).toHaveLength(0);
-
-    type('customAmountMajor', '1.234');
-    expect(byId<HTMLInputElement>('amountMinorUnits').value).toBe('');
-  });
-
-  it('relabels the form for monthly giving', () => {
-    renderDonationForm();
-
-    byId('donationTypeOptions')
-      .querySelector<HTMLButtonElement>('[data-donation-type="RECURRING"]')
-      ?.click();
-
-    expect(byId('amountLabel').textContent).toBe('Choose your monthly amount');
-    expect(byId('submitButton').textContent).toBe(
-      'Continue to secure monthly payment',
-    );
-  });
-
-  it('shows and requires the home address when Gift Aid is ticked', () => {
-    renderDonationForm();
-    const giftAid = byId<HTMLInputElement>('giftAidRequested');
-
-    expect(byId('addressSection').hidden).toBe(true);
-
-    giftAid.checked = true;
-    giftAid.dispatchEvent(new Event('change'));
-
-    expect(byId('addressSection').hidden).toBe(false);
-    expect(byId<HTMLInputElement>('addressStreet1').required).toBe(true);
-    expect(byId<HTMLInputElement>('addressPostcode').required).toBe(true);
-  });
-
-  it('creates the checkout session and moves to the payment step', async () => {
-    const { fetchMock, mountMock, stripeMock } = renderDonationForm();
-    fillDonor();
-    submit();
-
-    await vi.waitFor(() => expect(byId('paymentPanel').hidden).toBe(false));
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/s/donation-forms/create-elements-checkout-session',
-      expect.objectContaining({ method: 'POST' }),
-    );
-    expect(sentPayload(fetchMock)).toMatchObject({
-      publicId: 'df_public_123',
-      donationType: 'ONE_OFF',
-      amountMinorUnits: 1000,
-      donorFirstName: 'Ada',
-      donorLastName: 'Lovelace',
-      donorEmail: 'ada@example.org',
-      giftAidRequested: false,
+      expect(byId<HTMLInputElement>('amountMinorUnits').value).toBe('2500');
     });
-    expect(stripeMock).toHaveBeenCalledWith('pk_test');
-    expect(mountMock).toHaveBeenCalledWith('#payment-element');
-    expect(byId('donationForm').hidden).toBe(true);
-    expect(byId('paymentSummary').textContent).toContain('£25.00');
-  });
 
-  it('shows the server error and lets the donor try again', async () => {
-    renderDonationForm({
-      checkout: {
-        ok: false,
-        body: { message: 'Donation amount is not allowed' },
-      },
+    it('uses a custom amount instead of the presets', () => {
+      renderDonationForm();
+
+      type('customAmountMajor', '£12.50');
+
+      expect(byId<HTMLInputElement>('amountMinorUnits').value).toBe('1250');
+      expect(
+        document.querySelectorAll('input[name="amountOption"]:checked'),
+      ).toHaveLength(0);
     });
-    fillDonor();
-    submit();
 
-    await vi.waitFor(() =>
-      expect(byId('errorPanel').textContent).toContain(
-        'Donation amount is not allowed',
-      ),
-    );
-    expect(byId<HTMLButtonElement>('submitButton').disabled).toBe(false);
-    expect(byId('paymentPanel').hidden).toBe(true);
-  });
+    it('asks for at least the minimum custom amount', () => {
+      const { fetchMock } = renderDonationForm();
+      fillDonor();
+      type('customAmountMajor', '2');
 
-  it('confirms payment without redirecting and shows the thank-you', async () => {
-    const { confirmMock } = renderDonationForm();
-    fillDonor();
-    submit();
-    await vi.waitFor(() => expect(byId('paymentPanel').hidden).toBe(false));
+      submit();
 
-    byId('confirmPaymentButton').click();
-
-    await vi.waitFor(() => expect(byId('successPanel').hidden).toBe(false));
-    expect(confirmMock).toHaveBeenCalledWith({ redirect: 'if_required' });
-  });
-
-  it('shows a declined payment and keeps the payment step open', async () => {
-    renderDonationForm({
-      confirm: { type: 'error', error: { message: 'Your card was declined.' } },
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(byId('amount-error').textContent).toBe(
+        'Enter an amount of at least £5.00',
+      );
+      expect(byId('customAmountMajor').getAttribute('aria-invalid')).toBe('true');
     });
-    fillDonor();
-    submit();
-    await vi.waitFor(() => expect(byId('paymentPanel').hidden).toBe(false));
 
-    byId('confirmPaymentButton').click();
+    it('relabels the amount for monthly giving', () => {
+      renderDonationForm();
 
-    await vi.waitFor(() =>
-      expect(byId('paymentErrorPanel').textContent).toContain(
-        'Your card was declined.',
-      ),
-    );
-    expect(byId<HTMLButtonElement>('confirmPaymentButton').disabled).toBe(false);
-    expect(byId('successPanel').hidden).toBe(true);
+      choose('donationTypeRECURRING');
+
+      expect(byId('amountLabel').textContent).toBe('Choose your monthly amount');
+    });
   });
 
-  it('returns to the donation details with entries kept', async () => {
-    renderDonationForm();
-    fillDonor();
-    submit();
-    await vi.waitFor(() => expect(byId('paymentPanel').hidden).toBe(false));
+  describe('checking the details', () => {
+    it('lists every problem in a summary that takes focus', () => {
+      const { fetchMock } = renderDonationForm();
 
-    byId('changeDonationDetailsButton').click();
+      submit();
 
-    expect(byId('donationForm').hidden).toBe(false);
-    expect(byId('paymentPanel').hidden).toBe(true);
-    expect(byId<HTMLInputElement>('donorEmail').value).toBe('ada@example.org');
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(byId('errorSummary').hidden).toBe(false);
+      expect(document.activeElement).toBe(byId('errorSummary'));
+      const messages = Array.from(
+        byId('errorSummaryList').querySelectorAll('a'),
+      ).map((link) => link.textContent);
+      expect(messages).toEqual([
+        'Enter your first name',
+        'Enter your last name',
+        'Enter your email address',
+      ]);
+      expect(byId('donorFirstName-error').textContent).toBe(
+        'Enter your first name',
+      );
+      expect(byId('donorFirstName').getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('moves focus to the field from the summary link', () => {
+      renderDonationForm();
+      submit();
+
+      byId('errorSummaryList').querySelector('a')?.click();
+
+      expect(document.activeElement).toBe(byId('donorFirstName'));
+    });
+
+    it('clears a field error once the donor edits the field', () => {
+      renderDonationForm();
+      submit();
+
+      type('donorFirstName', 'Ada');
+
+      expect(byId('donorFirstName-error').hidden).toBe(true);
+      expect(byId('donorFirstName').hasAttribute('aria-invalid')).toBe(false);
+    });
+
+    it('checks the email format', () => {
+      renderDonationForm();
+      fillDonor();
+      type('donorEmail', 'ada@example');
+
+      submit();
+
+      expect(byId('donorEmail-error').textContent).toBe(
+        'Enter an email address like name@example.com',
+      );
+    });
+
+    it('shows and requires the home address when Gift Aid is ticked', () => {
+      renderDonationForm();
+      const giftAid = byId<HTMLInputElement>('giftAidRequested');
+      expect(byId('addressSection').hidden).toBe(true);
+
+      giftAid.checked = true;
+      giftAid.dispatchEvent(new Event('change'));
+      fillDonor();
+      submit();
+
+      expect(byId('addressSection').hidden).toBe(false);
+      expect(byId<HTMLInputElement>('addressStreet1').required).toBe(true);
+      expect(byId('addressPostcode-error').textContent).toBe(
+        'Enter your postcode',
+      );
+    });
+  });
+
+  describe('starting the payment', () => {
+    it('creates the checkout session and moves focus to the payment step', async () => {
+      const { fetchMock, mountMock, stripeMock } = renderDonationForm({
+        formToken: 'token-1',
+      });
+
+      await submitAndWaitForPayment();
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/s/donation-forms/create-elements-checkout-session',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(sentPayload(fetchMock)).toMatchObject({
+        publicId: 'df_public_123',
+        formToken: 'token-1',
+        contactReference: '',
+        donationType: 'ONE_OFF',
+        amountMinorUnits: 1000,
+        donorFirstName: 'Ada',
+        donorLastName: 'Lovelace',
+        donorEmail: 'ada@example.org',
+        giftAidRequested: false,
+      });
+      expect(stripeMock).toHaveBeenCalledWith('pk_test');
+      expect(mountMock).toHaveBeenCalledWith('#payment-element');
+      expect(byId('donationForm').hidden).toBe(true);
+      expect(document.activeElement).toBe(byId('paymentHeading'));
+      expect(byId('confirmPaymentButton').textContent).toBe('Donate £25.00');
+      expect(byId('donationSummary').textContent).toContain('Ada Lovelace');
+    });
+
+    it('labels a monthly payment', async () => {
+      renderDonationForm();
+      choose('donationTypeRECURRING');
+
+      await submitAndWaitForPayment();
+
+      expect(byId('confirmPaymentButton').textContent).toBe(
+        'Donate £25.00 monthly',
+      );
+    });
+
+    it('shows donor wording for a refused submission and allows a retry', async () => {
+      renderDonationForm({
+        checkout: { ok: false, body: { code: 'INVALID_AMOUNT' } },
+      });
+      fillDonor();
+      submit();
+
+      await vi.waitFor(() => expect(byId('errorPanel').hidden).toBe(false));
+      expect(byId('errorPanel').textContent).toBe(
+        'Please choose a different amount and try again.',
+      );
+      expect(document.activeElement).toBe(byId('errorPanel'));
+      expect(byId<HTMLButtonElement>('submitButton').disabled).toBe(false);
+    });
+
+    it('offers a reload when the form has expired', async () => {
+      renderDonationForm({
+        checkout: { ok: false, body: { code: 'FORM_EXPIRED' } },
+      });
+      fillDonor();
+      submit();
+
+      await vi.waitFor(() => expect(byId('errorPanel').hidden).toBe(false));
+      expect(byId('errorPanel').querySelector('button')?.textContent).toBe(
+        'Reload the form',
+      );
+    });
+
+    it('shows a general message when the server fails without a code', async () => {
+      renderDonationForm({ checkout: { ok: false, body: null } });
+      fillDonor();
+      submit();
+
+      await vi.waitFor(() =>
+        expect(byId('errorPanel').textContent).toContain(
+          'You have not been charged',
+        ),
+      );
+    });
+
+    it('ignores a second submit while the first is in flight', async () => {
+      const { fetchMock } = renderDonationForm();
+      fillDonor();
+
+      submit();
+      submit();
+
+      await vi.waitFor(() => expect(byId('paymentPanel').hidden).toBe(false));
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('confirming the payment', () => {
+    it('confirms without redirecting and focuses the thank-you', async () => {
+      const { confirmMock } = renderDonationForm();
+      await submitAndWaitForPayment();
+
+      byId('confirmPaymentButton').click();
+
+      await vi.waitFor(() => expect(byId('successPanel').hidden).toBe(false));
+      expect(confirmMock).toHaveBeenCalledWith({ redirect: 'if_required' });
+      expect(document.activeElement).toBe(byId('thankYouHeading'));
+      expect(byId('thankYouStatus').textContent).toBe(
+        'We have received your donation.',
+      );
+    });
+
+    it("shows Stripe's decline message and keeps the payment step open", async () => {
+      renderDonationForm({
+        confirm: { type: 'error', error: { message: 'Your card was declined.' } },
+      });
+      await submitAndWaitForPayment();
+
+      byId('confirmPaymentButton').click();
+
+      await vi.waitFor(() =>
+        expect(byId('paymentErrorPanel').textContent).toBe(
+          'Your card was declined.',
+        ),
+      );
+      expect(document.activeElement).toBe(byId('paymentErrorPanel'));
+      expect(byId<HTMLButtonElement>('confirmPaymentButton').disabled).toBe(false);
+      expect(byId('successPanel').hidden).toBe(true);
+    });
+
+    it('returns to the details with entries kept and focus on the heading', async () => {
+      renderDonationForm();
+      await submitAndWaitForPayment();
+
+      byId('changeDonationDetailsButton').click();
+
+      expect(byId('donationForm').hidden).toBe(false);
+      expect(byId('paymentPanel').hidden).toBe(true);
+      expect(byId<HTMLInputElement>('donorEmail').value).toBe('ada@example.org');
+      expect(document.activeElement).toBe(byId('detailsHeading'));
+    });
+  });
+
+  describe('embedding', () => {
+    it('tells the host page its height and when to scroll it into view', async () => {
+      const postMessage = vi.fn();
+      vi.spyOn(window, 'parent', 'get').mockReturnValue({
+        postMessage,
+      } as unknown as Window);
+
+      renderDonationForm();
+      await submitAndWaitForPayment();
+
+      expect(postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'nonprofit-fundraising:donation-form-resize',
+          scrollIntoView: true,
+        }),
+        '*',
+      );
+      expect(postMessage.mock.calls[0]?.[0]).toEqual(
+        expect.objectContaining({ height: expect.any(Number) }),
+      );
+    });
+
+    it('leaves the hidden anti-spam field out of the tab order and accessibility tree', () => {
+      renderDonationForm();
+      const field = byId<HTMLInputElement>('nfContactReference');
+
+      expect(field.tabIndex).toBe(-1);
+      expect(field.closest('[aria-hidden="true"]')).not.toBeNull();
+    });
   });
 });

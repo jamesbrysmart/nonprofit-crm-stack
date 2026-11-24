@@ -16,6 +16,9 @@ export type DonationFormMailingAddress = {
 
 export type CreateDonationFormCheckoutSessionRequest = {
   publicId?: string;
+  formToken?: string;
+  // Honeypot: real donors never see or fill this field.
+  contactReference?: string;
   donationType?: string;
   amountMinorUnits?: number;
   donorFirstName?: string;

@@ -271,6 +271,17 @@ Upstream request (draft):
 
 > **Workspace-specific currency defaults for app-owned fields.** Apps cannot give a currency field a per-workspace default. A field's `defaultValue` is fixed in the manifest, and app sync resets any change an administrator makes, because `defaultValue` is not workspace-overridable. International apps therefore cannot preselect an organisation's currency, and native inputs fall back to USD. Either of these would solve it, without the broad `DATA_MODEL` permission: (1) a workspace default currency that currency fields without an explicit default use; or (2) `defaultValue` as a workspace-overridable property for app fields, preserved across sync like labels and select options.
 
+### 2.10 Public Donation Form Routes (Platform Constraints)
+
+Added 2026-11-24. Constraints on the public donation form routes that the app cannot change. Raise them upstream alongside the rate-limit questions.
+
+- **Sandboxed route pages.** Since SDK 2.59, Twenty sends every route response with `Content-Security-Policy: sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads`. The embed page therefore has an opaque origin: no cookies or storage, requests back to the server are cross-origin, and `postMessage` arrives with origin `null`. The checkout request still works through the server's CORS fallback. Stripe.js inside the sandbox still needs confirming on 2021 (see `DONATION_FORM_DONOR_JOURNEY_CHECKLIST.md`).
+- **Limited response headers.** Routes may only set `content-type`, `content-language`, `content-disposition`, `cache-control` and `retry-after`. The app cannot send its own `Content-Security-Policy` or `frame-ancestors`, so it cannot restrict which sites embed a form.
+- **No per-caller limits.** Unauthenticated routes share the workspace's logic-function budget (1,000 runs a minute), and their API calls count against the application's limit across every workspace. Public traffic at one charity can slow processing elsewhere.
+- **No visitor IP.** Not yet confirmed whether a reliable client IP can be forwarded to a route; it would allow a simple per-visitor limit.
+
+The app's own mitigations are the signed form token and honeypot (see `DONATION_FORMS_EMBEDDED_RUNTIME.md` §8a), plus Stripe's own card-testing controls. Turnstile is deferred.
+
 ## 3. Document And Watch, Not Refactor Now
 
 These areas should stay visible but do not currently justify hardening refactor by themselves:
