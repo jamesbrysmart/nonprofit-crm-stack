@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildDonationFormEmbedDocument } from 'src/donation-forms/build-donation-form-embed-document';
 import type { DonationFormRenderConfig } from 'src/donation-forms/donation-form-rendering';
 import { DONATION_FORM_CLIENT_SCRIPT } from 'src/donation-forms/embed-client/donation-form-client-script.generated';
@@ -119,8 +119,14 @@ const sentPayload = (fetchMock: ReturnType<typeof vi.fn>) => {
 };
 
 describe('donation form client', () => {
+  beforeEach(() => {
+    vi.stubEnv('TWENTY_API_URL', 'https://crm.example.test');
+    vi.stubEnv('TWENTY_FUNCTIONS_URL', 'https://charity.withtwenty.example');
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   describe('choosing an amount', () => {
@@ -253,7 +259,7 @@ describe('donation form client', () => {
       await submitAndWaitForPayment();
 
       expect(fetchMock).toHaveBeenCalledWith(
-        '/s/donation-forms/create-elements-checkout-session',
+        'https://charity.withtwenty.example/donation-forms/create-elements-checkout-session',
         expect.objectContaining({ method: 'POST' }),
       );
       expect(sentPayload(fetchMock)).toMatchObject({

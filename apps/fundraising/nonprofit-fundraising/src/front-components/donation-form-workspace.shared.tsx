@@ -23,6 +23,7 @@ import {
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
 import { buildDonationFormEmbedSnippet } from 'src/donation-forms/donation-form-embed-snippet';
+import { buildDonationFormEmbedFrameUrl } from 'src/donation-forms/donation-form-urls';
 
 export type DonationFormWorkspaceRecord = {
   id?: string | null;
@@ -212,16 +213,11 @@ export const stableStringify = (value: unknown): string =>
   JSON.stringify(normalizeComparable(value));
 
 export const buildIframeUrlFromPublicId = (publicId: string): string => {
-  const origin =
-    typeof globalThis.location?.origin === 'string'
-      ? globalThis.location.origin.trim()
-      : '';
-
-  if (origin === '') {
+  try {
+    return buildDonationFormEmbedFrameUrl(publicId);
+  } catch {
     return '';
   }
-
-  return `${origin}/s/donation-forms/embed-frame?publicId=${encodeURIComponent(publicId)}`;
 };
 
 export const parseAmountOptionsText = (value: string): number[] => {

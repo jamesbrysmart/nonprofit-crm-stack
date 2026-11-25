@@ -12,9 +12,6 @@ import {
   type StripeFactory,
 } from 'src/donation-forms/embed-client/donation-form-client.types';
 
-const CHECKOUT_SESSION_PATH =
-  '/s/donation-forms/create-elements-checkout-session';
-
 type DonationFormWindow = Window & {
   Stripe?: StripeFactory;
   fetch: typeof fetch;
@@ -544,7 +541,7 @@ export const startDonationForm = ({
     setStatus(status, 'Preparing secure payment…');
 
     try {
-      const response = await win.fetch(CHECKOUT_SESSION_PATH, {
+      const response = await win.fetch(bootstrap.checkoutUrl, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),

@@ -6,6 +6,7 @@ import type {
   StripeCheckoutSessionInput,
 } from './donation-form-checkout.types';
 import { normalizeString } from 'src/utils/normalize-string';
+import { buildDonationFormEmbedFrameUrl } from 'src/donation-forms/donation-form-urls';
 
 export const DEFAULT_STRIPE_PROVIDER_CONFIG_KEY = 'stripe-default';
 
@@ -17,18 +18,8 @@ export const resolveStripeProviderConfigKey = (
   return normalized === '' ? DEFAULT_STRIPE_PROVIDER_CONFIG_KEY : normalized;
 };
 
-export const buildCheckoutReturnUrl = (publicId: string): string => {
-  const baseUrl = process.env.TWENTY_API_URL?.trim();
-
-  if (!baseUrl) {
-    throw new Error('TWENTY_API_URL is required to create donation form payment sessions');
-  }
-
-  const returnUrl = new URL('/s/donation-forms/embed-frame', baseUrl);
-  returnUrl.searchParams.set('publicId', publicId);
-
-  return returnUrl.toString();
-};
+export const buildCheckoutReturnUrl = (publicId: string): string =>
+  buildDonationFormEmbedFrameUrl(publicId);
 
 export const resolveStripeApiKey = async (
   providerConfigKey: string,

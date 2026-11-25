@@ -13,7 +13,7 @@ Never run it against port 2020 or a client workspace.
    `STRIPE_SECRET_KEY` (test mode) and `STRIPE_WEBHOOK_SECRET` set.
 2. Forward webhooks and copy the signing secret it prints into
    `STRIPE_WEBHOOK_SECRET`:
-   `stripe listen --forward-to http://localhost:2021/s/stripe/webhook`
+   `stripe listen --events checkout.session.completed,invoice_payment.paid --forward-to <app functions URL>/stripe/webhook` (locally without a public domain: `http://localhost:2021/s/stripe/webhook`)
 3. A Live donation form with: one-off and monthly, three preset amounts, custom
    amount with a minimum, Gift Aid enabled, phone collected.
 4. Open the form two ways:

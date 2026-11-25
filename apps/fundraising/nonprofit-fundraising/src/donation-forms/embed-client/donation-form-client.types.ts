@@ -17,6 +17,8 @@ export type DonationFormClientBootstrap = {
   publishedVersion: string;
   config: DonationFormRenderConfig;
   donationTypeOptions: DonationFormDonationType[];
+  // Absolute, so the form works on an isolated public domain or under /s.
+  checkoutUrl: string;
   formToken?: string;
 };
 

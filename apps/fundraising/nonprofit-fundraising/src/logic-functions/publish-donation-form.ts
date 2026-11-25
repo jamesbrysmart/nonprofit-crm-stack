@@ -12,6 +12,7 @@ import {
 import { resolveStripeProviderConfigKey } from 'src/donation-forms/donation-form-checkout-stripe';
 import { normalizeString } from 'src/utils/normalize-string';
 import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
+import { buildDonationFormEmbedFrameUrl } from 'src/donation-forms/donation-form-urls';
 
 export type PublishDonationFormRequest = {
   donationFormId?: string;
@@ -40,18 +41,6 @@ const buildPublicId = (): string => `df_${randomUUID().replace(/-/g, '').slice(0
 const buildPublishedVersion = (): string =>
   `pub_${new Date().toISOString()}_${randomUUID().slice(0, 8)}`;
 
-const buildIframeUrl = (publicId: string): string => {
-  const baseUrl = process.env.TWENTY_API_URL?.trim();
-
-  if (!baseUrl) {
-    throw new Error('TWENTY_API_URL is required to publish donation form embeds');
-  }
-
-  const iframeUrl = new URL('/s/donation-forms/embed-frame', baseUrl);
-  iframeUrl.searchParams.set('publicId', publicId);
-
-  return iframeUrl.toString();
-};
 
 export const loadDonationFormForPublish = async (
   client: CoreApiClient,
@@ -122,7 +111,7 @@ export const publishDonationFormWithClient = async (
     },
   });
 
-  const iframeUrl = buildIframeUrl(publicId);
+  const iframeUrl = buildDonationFormEmbedFrameUrl(publicId);
   return {
     donationFormId,
     publicId,

@@ -4,6 +4,7 @@ import {
   type DonationFormRenderConfig,
 } from 'src/donation-forms/donation-form-rendering';
 import { resolveDonationFormDonationTypes } from 'src/donation-forms/donation-form-config';
+import { buildDonationFormCheckoutSessionUrl } from 'src/donation-forms/donation-form-urls';
 import { DONATION_FORM_CLIENT_SCRIPT } from 'src/donation-forms/embed-client/donation-form-client-script.generated';
 import {
   DONATION_FORM_BOOTSTRAP_ELEMENT_ID,
@@ -43,6 +44,7 @@ export const buildDonationFormEmbedDocument = ({
     publishedVersion,
     config,
     donationTypeOptions,
+    checkoutUrl: buildDonationFormCheckoutSessionUrl(),
     ...(formToken ? { formToken } : {}),
   };
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildDonationFormEmbedDocument,
   serializeForInlineScript,
@@ -6,6 +6,14 @@ import {
 import { buildDonationFormCardMarkup } from 'src/donation-forms/donation-form-rendering';
 
 describe('donation form embed runtime', () => {
+  beforeEach(() => {
+    vi.stubEnv('TWENTY_API_URL', 'https://crm.example.test');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('renders a custom amount input when enabled in the published config', () => {
     const markup = buildDonationFormCardMarkup({
       publicId: 'df_public_123',

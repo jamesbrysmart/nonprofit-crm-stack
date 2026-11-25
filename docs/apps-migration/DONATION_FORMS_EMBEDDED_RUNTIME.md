@@ -291,7 +291,7 @@ Simplest safe v1 setup:
   - a Stripe restricted or secret API key for server-side calls
   - a Stripe webhook signing secret
 - the webhook URL stays workspace-specific:
-  - `https://<workspace-domain>/s/stripe/webhook`
+  - `<app functions URL>/stripe/webhook`. The functions URL is the app's public domain where one applies (Twenty Cloud: `https://<workspace>.withtwenty.com`, or a custom domain bound to the app), otherwise `<server>/s`; the app's Settings page shows it
 - this remains the lowest-complexity model until we decide that self-serve "Connect Stripe" onboarding is important enough to justify extra integration work
 
 Near-v1 Stripe connection direction:
@@ -304,7 +304,7 @@ Near-v1 Stripe connection direction:
 - prefer one workspace-shared Stripe connection per workspace
 - prefer one Stripe account per workspace for v1
 - keep workspace-specific webhook URLs for v1, for example:
-  - `https://<workspace-domain>/s/stripe/webhook`
+  - `<app functions URL>/stripe/webhook`. The functions URL is the app's public domain where one applies (Twenty Cloud: `https://<workspace>.withtwenty.com`, or a custom domain bound to the app), otherwise `<server>/s`; the app's Settings page shows it
 - keep the webhook signing secret as a workspace-scoped `applicationVariable` for now:
   - `STRIPE_WEBHOOK_SECRET`
 - if the app remains in a direct-integration model, a restricted API key may still be the better near-term credential than OAuth
