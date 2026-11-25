@@ -1,6 +1,6 @@
 # Rollup consolidation design
 
-Status: proposal, 2026-11-25. Covers the nonprofit-fundraising giving rollups on Person, Company, Appeal and Appeal source. The backend, field model and reporting-currency rules are unchanged; this is a structural refactor that also fixes the inconsistencies found below.
+Status: agreed 2026-11-25 (decisions in §8); implementation in progress. Covers the nonprofit-fundraising giving rollups on Person, Company, Appeal and Appeal source. The backend, field model and reporting-currency rules are unchanged; this is a structural refactor that also fixes the inconsistencies found below.
 
 ## 1. Recommendation
 
@@ -86,7 +86,7 @@ Compute functions keep today's exact outputs (Appeal's `lastGiftAt` stays a full
 
 ### Direct callers
 
-Batch processing, New gift, Stripe recurring and post-install call `recomputeRollups` once with all affected IDs. This fixes F1. If D2 adds the created trigger, these calls become redundant, but they give the user immediate totals; see D3.
+Removed (D3). With the gift `created` trigger, every creation path, including Stripe recurring (F1), reaches the rollups the same way. Post-install seeding relies on the same triggers, and on the manual recompute if needed.
 
 ### Reconciliation
 
@@ -143,12 +143,16 @@ Differences must be explained by F1 to F3 and nothing else. The snapshot and dif
 
 Wait for the testing session's rollup integration test before step 5, which changes when recomputes fire.
 
-## 8. Decisions needed
+## 8. Decisions (agreed 2026-11-25)
 
-- **D1. Refunds:** should totals stay gross (current behaviour) or become net of `refundedAmount`? I recommend keeping gross in this refactor and deciding separately, because net changes reported numbers and affects reconciliation with finance.
-- **D2. Gift created trigger:** add it now, covering API, workflow and import gifts (backlog §2.8, enhancement 1), or later? I recommend adding it now: it falls naturally out of the consolidated trigger, and its cost is one batched recompute per creation batch.
-- **D3. Direct recompute calls after D2:** keep them for immediate totals in New gift and batch processing (some duplicate work), or rely on the trigger alone (totals settle a few seconds later)? I recommend keeping them in New gift, where the user sees totals immediately, and dropping them elsewhere.
-- **D4. Manual recompute:** one function with a `rollups` option, or keep four names for continuity? I recommend one function, and updating the upgrade notes, since Imara's upgrade hasn't happened yet.
+- **D1. Refunds:** keep today's gross totals during the refactor. Resolve before v1; the user's inclination is donations less refunds, before processing fees. To research: comparable CRMs, and the interaction with reporting amounts.
+- **D2. Gift created trigger:** add it. Gifts count the same way whether created by the app, native Twenty, the API, workflows or imports.
+- **D3. One mechanism:** drop every direct recompute call, New gift included.
+  - New gift shows no totals after saving.
+  - Batch-mode triggers run straight away on the worker queue, one job per write, with no batching window.
+  - Twenty throttles app trigger jobs (`APPLICATION_JOB_ENQUEUE_RATE_LIMITING_LIMIT`, 500 per minute per app per workspace) and drops jobs over the limit, so the nightly reconciliation is the repair path. Consolidation cuts rollup trigger jobs per gift update from up to four to one.
+- **D4. Manual recompute:** one function with an optional `rollups` list.
+- **Scope guard:** the engine stays a small, specific helper for these four rollups, not a general calculation framework. Changes to the meaning of any figure are listed explicitly (F1 to F3, F6), and everything else must match the snapshot.
 
 ## 9. Risks
 
