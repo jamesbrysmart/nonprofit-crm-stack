@@ -436,6 +436,57 @@ Repeated webhooks must no-op or update existing staging records, not create dupl
 
   Both are checked before any database or Stripe call. **Limits:** they stop blind scripted requests and naive bots, but not a bot driving a real browser, and a token can be reused until it expires. Turnstile remains deferred.
 
+## 8b. Status (2026-11-25): parked on a Twenty platform issue
+
+**Blocker.** Since SDK/server 2.59 (#30413), every route response carries `Content-Security-Policy: sandbox …` without `allow-same-origin`, and apps cannot override it. Stripe.js refuses to run in that sandbox ("Stripe.js requires 'allow-same-origin' if sandboxed"), and its fraud-signal requests fail with origin `null`. The embedded Payment Element therefore cannot load. Confirmed on 2021 both under `/s/` and on an emulated Cloud public domain (`PUBLIC_DOMAIN_URL` set, legacy-route cutoff, HTTPS edge), so it is not caused by our configuration.
+
+**Twenty architecture (from source and PRs).**
+- #20360 (May 2026): public domains can be bound to an app.
+- #22045 (June 2026): HTTP functions are served on an isolated `*.withtwenty.com` "user content domain" so they can return any header, `Set-Cookie` included. `/s/` is phased out for new functions on Cloud (`LOGIC_FUNCTION_LEGACY_ROUTE_CUTOFF`, which returns 410).
+- #30413 (Nov 2026): the sandbox applies everywhere, public domains included. It gives pages an opaque origin, which conflicts with June's stated goals.
+- Isolated domains are effectively Cloud-only (Cloudflare). Self-hosters serve app routes under `/s/`.
+- Minor: the front end builds `https://<workspace>.<domain>` and ignores any scheme or port in `PUBLIC_DOMAIN_URL`; logic functions use the full URL.
+- Serving JavaScript from a route is anticipated in #30413's description but neither tested nor documented.
+
+**Done regardless of the outcome.** Public form URLs come from `TWENTY_FUNCTIONS_URL` via `RestApiClient.resolveUrl` (`21756f78`).
+
+**Options considered** (see the 2026-11-25 assessment):
+1. Twenty-hosted form, inline payment. One document for standalone (app public domain) and embedded (iframe) use. Needs a Twenty opt-in for `allow-same-origin` on isolated domains. Preferred target.
+2. The same form with a Stripe-hosted payment step. Works today everywhere, but embedded donors leave the site to pay.
+3. A script widget rendered in the charity's page. Works today and is best for wallets, but weaker isolation of donor data, higher maintenance, and relies on undocumented script serving.
+
+Backend decisions (pre-payment staging, webhook, evidence, versions) are unaffected. `payment_method_types: ['card']` should give way to Stripe-configured methods (wallets, Bacs Direct Debit) whichever option is chosen.
+
+**Next.** Send the questions to Twenty (draft below), then decide between options 1+2 and 3 on their answer.
+
+**Draft message to Twenty:**
+
+> **Route sandbox prevents payment SDKs on isolated public domains: intended?**
+>
+> We're building Fundraising for Twenty, a Marketplace app whose public donation forms are served from HTTP routes and embedded on charity websites. Card payments use Stripe's Payment Element (Stripe.js).
+>
+> **Our understanding of the intended architecture:**
+> - #20360 (May): public domains can be bound to an app, for public-facing apps such as partner portals and lead collection.
+> - #22045 (June): HTTP functions are served from an isolated, cookieless `*.withtwenty.com` "user content domain", so they can safely return arbitrary headers, including `Set-Cookie`. `/s/` remains the strict same-site path and is phased out for new functions.
+> - #30413 (November): every route response carries `Content-Security-Policy: sandbox …` without `allow-same-origin`. Functions can't override it, including on public domains (both policies are sent).
+>
+> We've moved our app to `TWENTY_FUNCTIONS_URL` and `RestApiClient.resolveUrl` accordingly.
+>
+> **What we observe** (v2.59.2, with `PUBLIC_DOMAIN_URL` and the legacy-route cutoff set to emulate Cloud): the form is served from the workspace's public domain with the sandbox header, and our route calls work. But Stripe.js refuses to run ("Stripe.js requires 'allow-same-origin' if sandboxed"), and Stripe's fraud-signal requests fail because the origin is `null`. The same happens on `/s/`.
+>
+> **The apparent inconsistency:** June's change gives function pages their own origin so they can safely do more. November's change gives every page an opaque origin, so cookies, storage and any SDK that needs a real origin (Stripe.js; probably PayPal and bot-protection widgets too) can't work there. We couldn't tell whether that effect on isolated domains was intended.
+>
+> **Questions:**
+> 1. Is an opaque origin intended for pages on isolated or app-bound public domains? If the main risk is the Twenty app session, could apps opt in to `allow-same-origin` there, perhaps per route? Without it, an app can't host a payment page on Twenty.
+> 2. If the sandbox must stay, what's your recommended way for an app to offer embedded payments?
+> 3. Is serving JavaScript from a route (`application/javascript`, loaded by a third-party site) a supported use?
+> 4. Isolated domains seem to be Cloud-only (they depend on Cloudflare). What do you recommend for self-hosters' public pages? A minor related point: the front end builds the functions URL as `https://<workspace>.<domain>` and ignores any scheme or port in `PUBLIC_DOMAIN_URL`, while logic functions use the full URL.
+> 5. Will embed URLs already pasted into websites keep working, both `/s/` URLs from before the cutoff and `*.withtwenty.com` URLs long term?
+>
+> It would also help to mention the sandbox in the HTTP route documentation.
+
+Optional extra evidence before sending: a static page served with Twenty's exact policy (Stripe fails) and with `allow-same-origin` added (Stripe works). The repro used 2026-11-25 was a scratch script; it is quick to recreate.
+
 ## 9. Explicitly deferred
 
 Not part of v1:
