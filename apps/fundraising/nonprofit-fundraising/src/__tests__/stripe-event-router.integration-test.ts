@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findGiftStagingBySourceFingerprint } from 'src/stripe/stripe-one-off-staging';
+import type { StripeRecurringFulfillmentResult } from 'src/stripe/stripe-recurring-fulfillment';
 import type {
   StripeEventRoutingResult,
   TrustedStripeEvent,
@@ -17,10 +17,12 @@ import {
 const buildCheckoutSessionEvent = ({
   suffix,
   subscriptionId,
+  metadata,
 }: {
   suffix: string;
   subscriptionId?: string;
-}): TrustedStripeEvent => ({
+  metadata?: Record<string, string>;
+}) => ({
   id: `evt_router_${suffix}`,
   type: 'checkout.session.completed',
   data: {
@@ -43,67 +45,90 @@ const buildCheckoutSessionEvent = ({
       },
       payment_intent: `pi_router_${suffix}`,
       ...(subscriptionId ? { subscription: subscriptionId } : {}),
+      ...(metadata ? { metadata } : {}),
     },
   },
-});
+} satisfies TrustedStripeEvent);
 
 const callRouter = (event: TrustedStripeEvent) =>
   callAppRoute<StripeEventRoutingResult>('/s/stripe/intake/handle-event', event);
 
-describe('Stripe event router intake', () => {
-  it('should stage checkout.session.completed events without a subscription', async () => {
-    const suffix = `${Date.now()}-one-off`;
-    const response = await callRouter(buildCheckoutSessionEvent({ suffix }));
+const loadIntakeRecordIds = async (sourceFingerprint: string) => {
+  const client = getCoreClient();
+  const args = {
+    first: 2,
+    filter: { sourceFingerprint: { eq: sourceFingerprint } },
+  };
+  const { gifts, giftStagings } = await client.query({
+    gifts: { __args: args, edges: { node: { id: true } } },
+    giftStagings: { __args: args, edges: { node: { id: true } } },
+  });
+  return {
+    giftIds: gifts?.edges.map(({ node }) => node.id),
+    stagingIds: giftStagings?.edges.map(({ node }) => node.id),
+  };
+};
 
-    expect(response.action).toBe('CREATE_ONE_OFF_GIFT_STAGING');
+describe('Stripe event router intake', () => {
+  it('stages a one-off payment once and preserves its attribution evidence on replay', async () => {
+    const suffix = `${Date.now()}-one-off`;
+    const metadata = {
+      campaign_name: 'Spring Appeal',
+      designation: 'Emergency Relief',
+      campaign_id: 'provider-campaign',
+    };
+    const event = buildCheckoutSessionEvent({ suffix, metadata });
+    const response = await callRouter(event);
     if (response.action !== 'CREATE_ONE_OFF_GIFT_STAGING') {
       throw new Error(`Expected one-off staging, got ${response.action}`);
     }
 
     expect(response.result.created).toBe(true);
+    const stagingId = response.result.giftStagingId;
 
-    const createdRecord = await loadGiftStagingById(response.result.giftStagingId);
-    expect(createdRecord?.donationType).toBe('ONE_OFF');
-    expect(createdRecord?.donorPhone).toBe('+44 20 7000 1234');
-    expect(createdRecord?.externalId).toBe(`cs_router_${suffix}`);
-    expect(createdRecord?.sourceFingerprint).toBe(`evt_router_${suffix}`);
-    expect(createdRecord?.providerEventId).toBe(`evt_router_${suffix}`);
-    expect(createdRecord?.provider).toBe('STRIPE');
-    expect(createdRecord?.providerPaymentId).toBe(`pi_router_${suffix}`);
-    expect(createdRecord?.paymentProviderCustomerId).toBe(
-      `cus_router_${suffix}`,
-    );
-    expect(createdRecord?.donorMailingAddress).toEqual({
-      addressStreet1: '44 Compiler Street',
-      addressStreet2: '',
-      addressCity: 'London',
-      addressState: '',
-      addressPostcode: 'EC1A 1BB',
-      addressCountry: 'GB',
+    expect(await callRouter(event)).toMatchObject({
+      action: 'CREATE_ONE_OFF_GIFT_STAGING',
+      result: { created: false, giftStagingId: stagingId },
     });
-    expect(createdRecord?.rawProviderEvidence).toEqual({
-      provider: 'STRIPE',
-      eventType: 'checkout.session.completed',
-      checkoutSessionId: `cs_router_${suffix}`,
-      customerId: `cus_router_${suffix}`,
-      paymentIntentId: `pi_router_${suffix}`,
-      customerDetails: {
-        name: 'Grace Hopper',
-        email: `router.${suffix}@example.org`,
-        phone: '+44 20 7000 1234',
-        address: {
-          addressStreet1: '44 Compiler Street',
-          addressCity: 'London',
-          addressPostcode: 'EC1A 1BB',
-          addressCountry: 'GB',
-        },
+    expect(await loadIntakeRecordIds(event.id)).toEqual({
+      giftIds: [],
+      stagingIds: [stagingId],
+    });
+    expect(await loadGiftStagingById(stagingId)).toMatchObject({
+      intakeSource: 'stripe_webhook',
+      giftDate: '2026-04-26',
+      donationType: 'ONE_OFF',
+      amount: { amountMicros: 42_000_000, currencyCode: 'GBP' },
+      donorFirstName: 'Grace',
+      donorLastName: 'Hopper',
+      donorEmail: `router.${suffix}@example.org`,
+      donorPhone: '+44 20 7000 1234',
+      donorMailingAddress: {
+        addressStreet1: '44 Compiler Street',
+        addressCity: 'London',
+        addressPostcode: 'EC1A 1BB',
+        addressCountry: 'GB',
       },
+      externalId: `cs_router_${suffix}`,
+      sourceFingerprint: event.id,
+      providerEventId: event.id,
+      provider: 'STRIPE',
+      providerPaymentId: `pi_router_${suffix}`,
+      paymentProviderCustomerId: `cus_router_${suffix}`,
+      rawProviderEvidence: {
+        eventType: event.type,
+        checkoutSessionId: `cs_router_${suffix}`,
+        metadata,
+      },
+      sourceAppealName: 'Spring Appeal',
+      sourceFundName: 'Emergency Relief',
+      donorResolutionState: 'UNREVIEWED',
+      giftReadyStatus: 'NEEDS_REVIEW',
+      processingStatus: 'NOT_PROCESSED',
     });
-    expect(createdRecord?.providerAgreementId).toBe('');
-    expect(createdRecord?.processingStatus).toBe('NOT_PROCESSED');
   });
 
-  it('should create a committed gift for a confident recurring agreement match', async () => {
+  it('records a matched recurring payment and advances its schedule once across replays', async () => {
     const suffix = `${Date.now()}-recurring`;
     const subscriptionId = `sub_router_${suffix}`;
     const person = await createPerson({
@@ -118,9 +143,8 @@ describe('Stripe event router intake', () => {
       providerAgreementId: subscriptionId,
     });
 
-    const response = await callRouter(
-      buildCheckoutSessionEvent({ suffix, subscriptionId }),
-    );
+    const event = buildCheckoutSessionEvent({ suffix, subscriptionId });
+    const response = await callRouter(event);
 
     expect(response.action).toBe('CREATE_RECURRING_GIFT');
     if (response.action !== 'CREATE_RECURRING_GIFT') {
@@ -135,29 +159,60 @@ describe('Stripe event router intake', () => {
     const gift = await loadGiftById(response.result.giftId);
     expect(gift?.donor?.id).toBe(person.id);
     expect(gift?.recurringAgreement?.id).toBe(agreement.id);
+    expect(gift?.donorFirstName).toBe(`Grace${suffix}`);
+    expect(gift?.donorLastName).toBe('Hopper');
+    expect(gift?.donorEmail).toBe(`router.${suffix}@example.org`);
+    expect(gift?.amount).toEqual({
+      amountMicros: 42_000_000,
+      currencyCode: 'GBP',
+    });
     expect(gift?.externalId).toBe(`cs_router_${suffix}`);
     expect(gift?.sourceFingerprint).toBe(`evt_router_${suffix}`);
     expect(gift?.provider).toBe('STRIPE');
     expect(gift?.providerPaymentId).toBe(`pi_router_${suffix}`);
 
-    const stagingId = await findGiftStagingBySourceFingerprint(
-      getCoreClient(),
-      `evt_router_${suffix}`,
-    );
-    expect(stagingId).toBeNull();
-
     const advancedAgreement = await loadRecurringAgreementById(agreement.id);
     expect(advancedAgreement?.nextExpectedAt).toBe('2026-05-21');
+
+    expect(await callRouter(event)).toMatchObject({
+      action: 'CREATE_RECURRING_GIFT',
+      result: {
+        created: false,
+        reason: 'DUPLICATE_SOURCE_FINGERPRINT',
+        giftId: response.result.giftId,
+      },
+    });
+
+    expect(await loadIntakeRecordIds(event.id)).toEqual({
+      giftIds: [response.result.giftId],
+      stagingIds: [],
+    });
+    const agreementAfterReplay = await loadRecurringAgreementById(agreement.id);
+    expect(agreementAfterReplay?.nextExpectedAt).toBe(
+      advancedAgreement?.nextExpectedAt,
+    );
   });
 
-  it('should create staging for recurring Stripe evidence that is unmatched', async () => {
+  it('keeps unmatched recurring payments out of committed gifts and stages them for review', async () => {
     const suffix = `${Date.now()}-unmatched`;
     const subscriptionId = `sub_router_unmatched_${suffix}`;
-
-    const response = await callRouter(
-      buildCheckoutSessionEvent({ suffix, subscriptionId }),
+    const event = buildCheckoutSessionEvent({ suffix, subscriptionId });
+    const direct = await callAppRoute<StripeRecurringFulfillmentResult>(
+      '/s/stripe/intake/create-recurring-gift',
+      event,
     );
 
+    expect(direct).toMatchObject({
+      created: false,
+      reason: 'NO_CONFIDENT_RECURRING_AGREEMENT_MATCH',
+      providerAgreementId: subscriptionId,
+    });
+    expect(await loadIntakeRecordIds(event.id)).toEqual({
+      giftIds: [],
+      stagingIds: [],
+    });
+
+    const response = await callRouter(event);
     expect(response.action).toBe('CREATE_RECURRING_GIFT_STAGING');
     if (response.action !== 'CREATE_RECURRING_GIFT_STAGING') {
       throw new Error(`Expected recurring staging path, got ${response.action}`);
@@ -174,15 +229,18 @@ describe('Stripe event router intake', () => {
     expect(staging?.providerAgreementId).toBe(subscriptionId);
     expect(staging?.processingStatus).toBe('NOT_PROCESSED');
     expect(staging?.giftReadyStatus).toBe('NEEDS_REVIEW');
+    expect(await loadIntakeRecordIds(event.id)).toEqual({
+      giftIds: [],
+      stagingIds: [response.result.giftStagingId],
+    });
   });
 
-  it('should ignore unsupported Stripe event types without mutation', async () => {
+  it('ignores unsupported Stripe events without persisting a gift or staging row', async () => {
+    const id = `evt_router_${Date.now()}-ignored`;
     const response = await callRouter({
-      id: `evt_router_${Date.now()}-ignored`,
+      id,
       type: 'charge.succeeded',
-      data: {
-        object: {},
-      },
+      data: { object: {} },
     });
 
     expect(response).toEqual({
@@ -190,5 +248,6 @@ describe('Stripe event router intake', () => {
       reason: 'UNSUPPORTED_EVENT_TYPE',
       eventType: 'charge.succeeded',
     });
+    expect(await loadIntakeRecordIds(id)).toEqual({ giftIds: [], stagingIds: [] });
   });
 });

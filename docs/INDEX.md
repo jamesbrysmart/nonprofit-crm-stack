@@ -8,8 +8,8 @@ Use this file as the first stop when a session needs repo guidance.
 
 - `PROJECT_CONTEXT.md`
   Product thesis, module scope, principles, and roadmap framing.
-- `TESTING.md`
-  Current testing posture and command-selection guidance.
+- [`TESTING.md`](TESTING.md)
+  Fundraising app testing strategy, product guarantees and validation guidance.
 - `UX_UI.md`
   Current UX and interface guidance for our code.
 - `apps-migration/INDEX.md`

@@ -1,13 +1,9 @@
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
-import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
-import {
-  hasLinkedDonorForProcessing,
-  isPaymentConfirmedOrNotRequired,
-} from 'src/gift-staging-review/gift-staging-processability';
+import { hasLinkedDonorForProcessing } from 'src/gift-staging-review/gift-staging-processability';
 import {
   applyLinkedDonorUpdates,
   buildGiftPayloadFromRow,
@@ -472,12 +468,5 @@ export const persistBatchRowWritebacks = async (writebacks: RowWriteback[]) => {
   }
 
   await persistWritebacks(writebacks);
-};
-
-export const canProcessBatchRow = (row: BatchProcessingRow) => {
-  return (
-    isPaymentConfirmedOrNotRequired(row) &&
-    classifyBatchPreflight(row).category === 'READY'
-  );
 };
 

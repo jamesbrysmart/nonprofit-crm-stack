@@ -1,26 +1,29 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreApiClient } from 'twenty-client-sdk/core';
 import {
   createDonationFormCheckoutSessionWithDependencies,
   type CreateDonationFormCheckoutSessionRequest,
+  type StripeCheckoutSessionCreator,
 } from 'src/donation-forms/create-donation-form-checkout-session';
+import type { DonationFormPublishedConfig } from 'src/donation-forms/donation-form-config';
 
-const buildClient = (overrides: {
-  query?: (input: unknown) => Promise<unknown>;
-  mutation?: (input: unknown) => Promise<unknown>;
-}): CoreApiClient =>
-  ({
-    query: overrides.query ?? (async () => ({})),
-    mutation: overrides.mutation ?? (async () => ({})),
-  }) as CoreApiClient;
+const form = {
+  id: 'df_123',
+  publicId: 'df_public_123',
+  status: 'LIVE',
+  paymentProvider: 'STRIPE',
+  providerConfigKey: 'stripe-default',
+  publishedVersion: 'pub_2026-05-20_test',
+};
 
 const baseRequest: CreateDonationFormCheckoutSessionRequest = {
-  publicId: 'df_public_123',
+  publicId: form.publicId,
   donationType: 'ONE_OFF',
   amountMinorUnits: 2500,
   donorFirstName: 'Ada',
   donorLastName: 'Lovelace',
   donorEmail: 'ada@example.org',
+  donorPhone: '+44 20 7946 0958',
   supporterEmailOptOut: true,
   donorMailingAddress: {
     addressStreet1: '12 Test Street',
@@ -29,615 +32,240 @@ const baseRequest: CreateDonationFormCheckoutSessionRequest = {
     addressCountry: 'GB',
   },
   giftAidRequested: true,
-  attribution: {
-    referrer: 'https://charity.example.org/donate',
-    utm: {
-      utm_source: 'newsletter',
-    },
-  },
+  attribution: { referrer: 'https://charity.example.org/donate' },
 };
 
-describe('createDonationFormCheckoutSessionWithDependencies', () => {
-  process.env.TWENTY_API_URL = 'https://twenty.example.test';
-
-  it('creates pre-payment gift staging before secure payment fields load and persists correlation metadata', async () => {
-    const mutationCalls: Array<unknown> = [];
-    const stripeSessionCreator = {
-      createCheckoutSession: vi.fn().mockResolvedValue({
-        id: 'cs_elements_123',
-        clientSecret: 'cs_secret_elements_123',
-      }),
-    };
-    const client = buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-20_test',
-          publishedConfig: {
-            title: 'Support our work',
-            description: 'A one-off donation',
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for your donation.',
-            giftAidEnabled: true,
-            giftAidTextVersion: 'ga-2026-05',
-            defaultAppeal: {
-              id: 'apl_123',
-              name: 'Spring Appeal',
-              defaultFund: {
-                id: 'fund_123',
-                name: 'General Fund',
-              },
-            },
-            defaultAppealSource: {
-              id: 'src_123',
-              name: 'Website Donation Page',
-              appeal: {
-                id: 'apl_123',
-                name: 'Spring Appeal',
-                defaultFund: {
-                  id: 'fund_123',
-                  name: 'General Fund',
-                },
-              },
+const checkoutFixture = (config: Partial<DonationFormPublishedConfig> = {}) => {
+  const mutation = vi.fn()
+    .mockResolvedValueOnce({ createGiftStaging: { id: 'staging-1' } })
+    .mockResolvedValueOnce({ updateGiftStaging: { id: 'staging-1' } });
+  const client = {
+    query: vi.fn().mockResolvedValue({
+      donationForms: {
+        edges: [{
+          node: {
+            ...form,
+            publishedConfig: {
+              mode: 'ONE_OFF',
+              currencyCode: 'GBP',
+              amountOptions: [1000, 2500, 5000],
+              ...config,
             },
           },
-        } }] },
-      }),
-      mutation: async (input) => {
-        mutationCalls.push(input);
-        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
-        if (createArgs) {
-          expect(createArgs.paymentState).toBe('AWAITING_PAYMENT');
-          expect(createArgs.donationFormId).toBe('df_123');
-          expect(createArgs.donationFormPublishedVersion).toBe(
-            'pub_2026-05-20_test',
-          );
-          expect(createArgs.amount).toEqual({
-            currencyCode: 'GBP',
-            amountMicros: 25_000_000,
-          });
-          expect(createArgs.paymentType).toBe('CARD');
-          expect(createArgs.appeal.connect.where.id).toBe('apl_123');
-          expect(createArgs.appealSource.connect.where.id).toBe('src_123');
-          expect(createArgs.fund.connect.where.id).toBe('fund_123');
-          expect(createArgs.giftAidRequested).toBe(true);
-          expect(createArgs.giftAidDeclarationCaptured).toBe(true);
-          expect(createArgs.giftAidDeclarationDate).toBe('2026-05-20');
-          expect(createArgs.giftAidDeclarationSource).toBe(
-            'donation_form_embed',
-          );
-          expect(createArgs.giftAidTextVersion).toBe('ga-2026-05');
-          expect(createArgs.supporterEmailOptOut).toBe(true);
-          return {
-            createGiftStaging: {
-              id: 'stg_elements_123',
-            },
-          };
-        }
-
-        const updateArgs = (input as any)?.updateGiftStaging?.__args;
-        expect(updateArgs.id).toBe('stg_elements_123');
-        expect(updateArgs.data.externalId).toBe('cs_elements_123');
-        expect(updateArgs.data.rawProviderEvidence.checkoutSessionId).toBe(
-          'cs_elements_123',
-        );
-        expect(updateArgs.data.rawProviderEvidence.metadata.giftStagingId).toBe(
-          'stg_elements_123',
-        );
-        expect(updateArgs.data.rawProviderEvidence.supporterEmailOptOut).toBe(
-          true,
-        );
-        expect(
-          updateArgs.data.rawProviderEvidence.metadata.sourceFingerprint,
-        ).toMatch(/^dfs_/);
-
-        return {
-          updateGiftStaging: {
-            id: 'stg_elements_123',
-          },
-        };
+        }],
       },
-    });
+    }),
+    mutation,
+  } as unknown as CoreApiClient;
+  const createCheckoutSession = vi.fn<StripeCheckoutSessionCreator['createCheckoutSession']>()
+    .mockResolvedValue({ id: 'cs_elements', clientSecret: 'cs_secret' });
 
-    const result = await createDonationFormCheckoutSessionWithDependencies({
-      client,
-      request: baseRequest,
-      dependencies: {
-        stripeSessionCreator,
-        publishableKey: 'pk_test_elements_123',
-        now: new Date('2026-05-20T12:34:56.000Z'),
-      },
-    });
-
-    expect(result).toEqual({
-      donationFormId: 'df_123',
-      donationFormPublishedVersion: 'pub_2026-05-20_test',
-      giftStagingId: 'stg_elements_123',
-      checkoutSessionId: 'cs_elements_123',
-      checkoutSessionClientSecret: 'cs_secret_elements_123',
-      publishableKey: 'pk_test_elements_123',
-      sourceFingerprint: expect.stringMatching(/^dfs_/),
-    });
-
-    expect(stripeSessionCreator.createCheckoutSession).toHaveBeenCalledOnce();
-    expect(mutationCalls).toHaveLength(2);
-
-    const checkoutInput = stripeSessionCreator.createCheckoutSession.mock
-      .calls[0]?.[0];
-    expect(checkoutInput.client_reference_id).toMatch(/^dfs_/);
-    expect(checkoutInput.metadata.giftStagingId).toBe('stg_elements_123');
-    expect(checkoutInput.metadata.donationFormId).toBe('df_123');
-    expect(checkoutInput.metadata.donationFormPublishedVersion).toBe(
-      'pub_2026-05-20_test',
-    );
-    expect(checkoutInput.metadata.giftAidRequested).toBe('true');
-    expect(checkoutInput.metadata.giftAidDeclarationDate).toBe('2026-05-20');
-    expect(checkoutInput.ui_mode).toBe('elements');
-    expect(checkoutInput.payment_method_types).toEqual(['card']);
-    expect(checkoutInput.return_url).toBe(
-      'https://twenty.example.test/s/donation-forms/embed-frame?publicId=df_public_123',
-    );
-    expect(checkoutInput.redirect_on_completion).toBeUndefined();
-    expect(checkoutInput.success_url).toBeUndefined();
-    expect(checkoutInput.cancel_url).toBeUndefined();
-  });
-
-  it('rejects amounts that are not allowed by the published form config', async () => {
-    const client = buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-20_test',
-          publishedConfig: {
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for your donation.',
-          },
-        } }] },
-      }),
-      mutation: async (input) => {
-        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
-        if (createArgs) {
-          expect(createArgs.giftAidRequested).toBe(true);
-          expect(createArgs.giftAidDeclarationCaptured).toBe(false);
-          return { createGiftStaging: { id: 'stg_giftaid_no_address_123' } };
-        }
-
-        return {
-          updateGiftStaging: {
-            id: 'stg_giftaid_no_address_123',
-          },
-        };
-      },
-    });
-
-    await expect(
-      createDonationFormCheckoutSessionWithDependencies({
-        client,
-        request: {
-          ...baseRequest,
-          amountMinorUnits: 2750,
-        },
-        dependencies: {
-          stripeSessionCreator: {
-            createCheckoutSession: vi.fn(),
-          },
-          publishableKey: 'pk_test_elements_123',
-        },
-      }),
-    ).rejects.toThrow(
-      'Donation amount is not allowed by the published donation form config',
-    );
-  });
-
-  it('requires a publishable key for the Payment Element baseline', async () => {
-    const client = buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-20_test',
-          publishedConfig: {
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-          },
-        } }] },
-      }),
-      mutation: async (input) => {
-        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
-        if (createArgs) {
-          expect(createArgs.giftAidRequested).toBe(true);
-          expect(createArgs.giftAidDeclarationCaptured).toBe(false);
-          return { createGiftStaging: { id: 'stg_giftaid_no_address_123' } };
-        }
-
-        return {
-          updateGiftStaging: {
-            id: 'stg_giftaid_no_address_123',
-          },
-        };
-      },
-    });
-
-    await expect(
-      createDonationFormCheckoutSessionWithDependencies({
-        client,
-        request: baseRequest,
-        dependencies: {
-          stripeSessionCreator: {
-            createCheckoutSession: vi.fn(),
-          },
-        },
-      }),
-    ).rejects.toThrow(
-      'Stripe publishable key is not configured for Payment Element donation forms',
-    );
-  });
-
-  it('does not block payment when Gift Aid is requested without a donor address', async () => {
-    const stripeSessionCreator = {
-      createCheckoutSession: vi.fn().mockResolvedValue({
-        id: 'cs_elements_giftaid_no_address_123',
-        clientSecret: 'cs_secret_elements_giftaid_no_address_123',
-      }),
-    };
-    const client = buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-20_test',
-          publishedConfig: {
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for your donation.',
-            giftAidEnabled: true,
-          },
-        } }] },
-      }),
-      mutation: async (input) => {
-        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
-        if (createArgs) {
-          expect(createArgs.giftAidRequested).toBe(true);
-          expect(createArgs.giftAidDeclarationCaptured).toBe(false);
-          return {
-            createGiftStaging: {
-              id: 'stg_giftaid_no_address_123',
-            },
-          };
-        }
-
-        return {
-          updateGiftStaging: {
-            id: 'stg_giftaid_no_address_123',
-          },
-        };
-      },
-    });
-
-    await expect(
-      createDonationFormCheckoutSessionWithDependencies({
-        client,
-        request: {
-          ...baseRequest,
-          donorMailingAddress: undefined,
-        },
-        dependencies: {
-          stripeSessionCreator,
-          publishableKey: 'pk_test_elements_123',
-          now: new Date('2026-05-20T12:34:56.000Z'),
-        },
-      }),
-    ).resolves.toMatchObject({
-      checkoutSessionId: 'cs_elements_giftaid_no_address_123',
-    });
-  });
-
-  it('does not send Stripe-specific address or phone collection settings from donor CRM capture fields', async () => {
-    const stripeSessionCreator = {
-      createCheckoutSession: vi.fn().mockResolvedValue({
-        id: 'cs_elements_giftaid_123',
-        clientSecret: 'cs_secret_elements_giftaid_123',
-      }),
-    };
-    const client = buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-20_test',
-          publishedConfig: {
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for your donation.',
-            giftAidEnabled: true,
-          },
-        } }] },
-      }),
-      mutation: async (input) => {
-        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
-        if (createArgs) {
-          expect(createArgs.giftAidRequested).toBe(true);
-          expect(createArgs.giftAidDeclarationCaptured).toBe(true);
-          return { createGiftStaging: { id: 'stg_giftaid_123' } };
-        }
-
-        return {
-          updateGiftStaging: {
-            id: 'stg_giftaid_123',
-          },
-        };
-      },
-    });
-
-    await createDonationFormCheckoutSessionWithDependencies({
-      client,
-      request: baseRequest,
-      dependencies: {
-        stripeSessionCreator,
-        publishableKey: 'pk_test_elements_123',
-        now: new Date('2026-05-20T12:34:56.000Z'),
-      },
-    });
-
-    const checkoutInput = stripeSessionCreator.createCheckoutSession.mock
-      .calls[0]?.[0];
-    expect(checkoutInput.billing_address_collection).toBeUndefined();
-    expect(checkoutInput.phone_number_collection).toBeUndefined();
-  });
-
-  it('creates a monthly recurring subscription-mode payment session when the published form is recurring', async () => {
-    const stripeSessionCreator = {
-      createCheckoutSession: vi.fn().mockResolvedValue({
-        id: 'cs_elements_recurring_123',
-        clientSecret: 'cs_secret_elements_recurring_123',
-      }),
-    };
-    const client = buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_recurring_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-22_recurring',
-          publishedConfig: {
-            mode: 'RECURRING',
-            title: 'Support monthly',
-            description: 'A monthly donation',
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for your donation.',
-            giftAidEnabled: false,
-          },
-        } }] },
-      }),
-      mutation: async (input) => {
-        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
-        if (createArgs) {
-          expect(createArgs.donationType).toBe('RECURRING');
-          expect(createArgs.paymentState).toBe('AWAITING_PAYMENT');
-          expect(createArgs.providerIntervalUnit).toBe('month');
-          expect(createArgs.providerIntervalCount).toBe(1);
-          expect(createArgs.rawProviderEvidence.donationType).toBe('RECURRING');
-          expect(createArgs.rawProviderEvidence.recurring).toEqual({
-            intervalUnit: 'month',
-            intervalCount: 1,
-          });
-          return {
-            createGiftStaging: {
-              id: 'stg_recurring_123',
-            },
-          };
-        }
-
-        return {
-          updateGiftStaging: {
-            id: 'stg_recurring_123',
-          },
-        };
-      },
-    });
-
-    const result = await createDonationFormCheckoutSessionWithDependencies({
-      client,
-      request: {
-        ...baseRequest,
-        donationType: 'RECURRING',
-      },
-      dependencies: {
-        stripeSessionCreator,
-        publishableKey: 'pk_test_elements_123',
-      },
-    });
-
-    expect(result.checkoutSessionId).toBe('cs_elements_recurring_123');
-
-    const checkoutInput = stripeSessionCreator.createCheckoutSession.mock
-      .calls[0]?.[0];
-    expect(checkoutInput.mode).toBe('subscription');
-    expect(checkoutInput.metadata.donationType).toBe('RECURRING');
-    expect(checkoutInput.line_items).toEqual([
-      {
-        quantity: 1,
-        price_data: {
-          currency: 'gbp',
-          unit_amount: 2500,
-          recurring: {
-            interval: 'month',
-          },
-          product_data: {
-            name: 'Support monthly',
-            description: 'A monthly donation',
-          },
-        },
-      },
-    ]);
-  });
-
-  it('supports one-off and monthly choices on the same published form', async () => {
-    const stripeSessionCreator = {
-      createCheckoutSession: vi.fn().mockResolvedValue({
-        id: 'cs_elements_mixed_123',
-        clientSecret: 'cs_secret_elements_mixed_123',
-      }),
-    };
-    const client = buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_mixed_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-22_mixed',
-          publishedConfig: {
-            mode: 'ONE_OFF_AND_MONTHLY',
-            title: 'Support our work',
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for your donation.',
-          },
-        } }] },
-      }),
-      mutation: async (input) => {
-        const createArgs = (input as any)?.createGiftStaging?.__args?.data;
-        if (createArgs) {
-          expect(createArgs.donationType).toBe('RECURRING');
-          return { createGiftStaging: { id: 'stg_mixed_123' } };
-        }
-
-        return {
-          updateGiftStaging: {
-            id: 'stg_mixed_123',
-          },
-        };
-      },
-    });
-
-    await createDonationFormCheckoutSessionWithDependencies({
-      client,
-      request: {
-        ...baseRequest,
-        donationType: 'RECURRING',
-      },
-      dependencies: {
-        stripeSessionCreator,
-        publishableKey: 'pk_test_elements_123',
-      },
-    });
-
-    const checkoutInput = stripeSessionCreator.createCheckoutSession.mock
-      .calls[0]?.[0];
-    expect(checkoutInput.mode).toBe('subscription');
-    expect(checkoutInput.metadata.donationType).toBe('RECURRING');
-  });
-
-  it('rejects disallowed donation types for the published form config', async () => {
-    const client = buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-20_test',
-          publishedConfig: {
-            mode: 'ONE_OFF',
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for your donation.',
-          },
-        } }] },
-      }),
-    });
-
-    await expect(
-      createDonationFormCheckoutSessionWithDependencies({
-        client,
-        request: {
-          ...baseRequest,
-          donationType: 'RECURRING',
-        },
-        dependencies: {
-          stripeSessionCreator: {
-            createCheckoutSession: vi.fn(),
-          },
-          publishableKey: 'pk_test_elements_123',
-        },
-      }),
-    ).rejects.toThrow(
-      'Donation type is not allowed by the published donation form config',
-    );
-  });
-
-  const publishedFormClient = (publishedConfig: Record<string, unknown>) =>
-    buildClient({
-      query: async () => ({
-        donationForms: { edges: [{ node: {
-          id: 'df_123',
-          publicId: 'df_public_123',
-          status: 'LIVE',
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          publishedVersion: 'pub_2026-05-20_test',
-          publishedConfig: {
-            mode: 'ONE_OFF',
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            ...publishedConfig,
-          },
-        } }] },
-      }),
-    });
-
-  const submitWith = (
-    client: ReturnType<typeof buildClient>,
-    request: Partial<typeof baseRequest>,
+  const submit = (
+    request: Partial<CreateDonationFormCheckoutSessionRequest> = {},
+    publishableKey = 'pk_test_elements',
   ) =>
     createDonationFormCheckoutSessionWithDependencies({
       client,
       request: { ...baseRequest, ...request },
       dependencies: {
-        stripeSessionCreator: { createCheckoutSession: vi.fn() },
-        publishableKey: 'pk_test_elements_123',
+        stripeSessionCreator: { createCheckoutSession },
+        publishableKey,
+        now: new Date('2026-05-20T12:34:56.000Z'),
       },
     });
 
+  return { submit, mutation, createCheckoutSession };
+};
+
+describe('donation form checkout', () => {
+  beforeEach(() => {
+    vi.stubEnv('TWENTY_API_URL', 'https://twenty.example.test');
+    vi.stubEnv('TWENTY_FUNCTIONS_URL', undefined);
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([
+    ['ONE_OFF_AND_MONTHLY', 'ONE_OFF', 'payment'],
+    ['ONE_OFF_AND_MONTHLY', 'RECURRING', 'subscription'],
+    ['RECURRING', 'RECURRING', 'subscription'],
+  ] as const)('%s form correlates a %s selection with its staging row', async (mode, donationType, stripeMode) => {
+    const { submit, mutation, createCheckoutSession } = checkoutFixture({
+      mode,
+      giftAidEnabled: true,
+      giftAidTextVersion: 'ga-2026-05',
+      defaultAppealSource: {
+        id: 'source-1',
+        appeal: {
+          id: 'appeal-1',
+          defaultFund: { id: 'fund-1' },
+        },
+      },
+    });
+
+    const result = await submit({ donationType });
+    const { sourceFingerprint } = result;
+    expect(result).toEqual({
+      donationFormId: form.id,
+      donationFormPublishedVersion: form.publishedVersion,
+      giftStagingId: 'staging-1',
+      checkoutSessionId: 'cs_elements',
+      checkoutSessionClientSecret: 'cs_secret',
+      publishableKey: 'pk_test_elements',
+      sourceFingerprint: expect.stringMatching(/^dfs_/),
+    });
+
+    const metadata = {
+      sourceFingerprint,
+      giftStagingId: 'staging-1',
+      donationFormId: form.id,
+      donationFormPublishedVersion: form.publishedVersion,
+      donationType,
+      giftAidRequested: 'true',
+      giftAidDeclarationDate: '2026-05-20',
+    };
+    const address = baseRequest.donorMailingAddress;
+    expect(mutation).toHaveBeenCalledTimes(2);
+    expect(mutation).toHaveBeenNthCalledWith(1, {
+      createGiftStaging: expect.objectContaining({
+        __args: {
+          data: expect.objectContaining({
+            sourceFingerprint,
+            donationType,
+            amount: { amountMicros: 25_000_000, currencyCode: 'GBP' },
+            paymentType: 'CARD',
+            paymentState: 'AWAITING_PAYMENT',
+            ...(stripeMode === 'subscription' ? {
+              providerIntervalUnit: 'month',
+              providerIntervalCount: 1,
+            } : {}),
+            donationFormId: form.id,
+            donationFormPublishedVersion: form.publishedVersion,
+            appeal: { connect: { where: { id: 'appeal-1' } } },
+            appealSource: { connect: { where: { id: 'source-1' } } },
+            fund: { connect: { where: { id: 'fund-1' } } },
+            donorPhone: baseRequest.donorPhone,
+            donorMailingAddress: address,
+            supporterEmailOptOut: true,
+            giftAidRequested: true,
+            giftAidDeclarationCaptured: true,
+            giftAidDeclarationDate: '2026-05-20',
+            giftAidDeclarationSource: 'donation_form_embed',
+            giftAidTextVersion: 'ga-2026-05',
+          }),
+        },
+      }),
+    });
+    expect(createCheckoutSession).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        mode: stripeMode,
+        ui_mode: 'elements',
+        client_reference_id: sourceFingerprint,
+        metadata: expect.objectContaining(metadata),
+        return_url: `https://twenty.example.test/s/donation-forms/embed-frame?publicId=${form.publicId}`,
+        line_items: [expect.objectContaining({
+          quantity: 1,
+          price_data: expect.objectContaining({
+            currency: 'gbp',
+            unit_amount: 2500,
+            ...(stripeMode === 'subscription' ? { recurring: { interval: 'month' } } : {}),
+          }),
+        })],
+      }),
+    );
+    const stripeRequest = createCheckoutSession.mock.calls[0]?.[0];
+    expect(stripeRequest?.billing_address_collection).toBeUndefined();
+    expect(stripeRequest?.phone_number_collection).toBeUndefined();
+    expect(stripeRequest?.redirect_on_completion).toBeUndefined();
+    expect(stripeRequest?.success_url).toBeUndefined();
+    expect(stripeRequest?.cancel_url).toBeUndefined();
+    if (stripeMode === 'payment') {
+      expect(stripeRequest?.line_items?.[0]?.price_data?.recurring).toBeUndefined();
+    }
+    expect(mutation).toHaveBeenNthCalledWith(2, {
+      updateGiftStaging: expect.objectContaining({
+        __args: {
+          id: 'staging-1',
+          data: expect.objectContaining({
+            externalId: 'cs_elements',
+            rawProviderEvidence: expect.objectContaining({
+              checkoutSessionId: 'cs_elements',
+              metadata: expect.objectContaining(metadata),
+              ...(stripeMode === 'subscription'
+                ? { recurring: { intervalUnit: 'month', intervalCount: 1 } }
+                : {}),
+              supporterEmailOptOut: true,
+              attribution: baseRequest.attribution,
+            }),
+          }),
+        },
+      }),
+    });
+    const [stageOrder, updateOrder] = mutation.mock.invocationCallOrder;
+    const [checkoutOrder] = createCheckoutSession.mock.invocationCallOrder;
+    expect(stageOrder ?? NaN).toBeLessThan(checkoutOrder ?? NaN);
+    expect(checkoutOrder ?? NaN).toBeLessThan(updateOrder ?? NaN);
+  });
+
+  it('allows payment without treating a Gift Aid request as a captured declaration when the address is absent', async () => {
+    const { submit, mutation, createCheckoutSession } = checkoutFixture({ giftAidEnabled: true });
+
+    await expect(submit({ donorMailingAddress: undefined })).resolves.toMatchObject({
+      checkoutSessionId: 'cs_elements',
+    });
+    expect(mutation).toHaveBeenNthCalledWith(1, {
+      createGiftStaging: expect.objectContaining({
+        __args: {
+          data: expect.objectContaining({
+            giftAidRequested: true,
+            giftAidDeclarationCaptured: false,
+          }),
+        },
+      }),
+    });
+    expect(createCheckoutSession).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    {
+      label: 'an unlisted amount',
+      request: { amountMinorUnits: 2750 },
+      error: 'Donation amount is not allowed by the published donation form config',
+    },
+    {
+      label: 'a disallowed monthly payment',
+      request: { donationType: 'RECURRING' },
+      error: 'Donation type is not allowed by the published donation form config',
+    },
+    {
+      label: 'an incomplete required address',
+      config: { requireAddress: true },
+      request: { donorMailingAddress: { addressPostcode: 'SW1A 1AA' } },
+      error: 'This donation form requires the donor address before payment',
+    },
+    {
+      label: 'missing Stripe publishable key',
+      publishableKey: '',
+      error: 'Stripe publishable key is not configured',
+    },
+  ])('refuses $label before staging or contacting Stripe', async ({ request, config, publishableKey, error }) => {
+    const { submit, mutation, createCheckoutSession } = checkoutFixture(config);
+
+    await expect(submit(request, publishableKey)).rejects.toThrow(error);
+    expect(mutation).not.toHaveBeenCalled();
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+  });
+
   it.each(['ada.example.org', 'ada@', 'ada @example.org', 'ada@gmailcom'])(
-    'rejects the email address %s, as the form does',
+    'rejects the email address %s before staging or contacting Stripe',
     async (donorEmail) => {
-      await expect(
-        submitWith(publishedFormClient({}), { donorEmail }),
-      ).rejects.toThrow(expect.objectContaining({ code: 'INVALID_SUBMISSION' }));
+      const { submit, mutation, createCheckoutSession } = checkoutFixture();
+
+      await expect(submit({ donorEmail })).rejects.toThrow(
+        expect.objectContaining({ code: 'INVALID_SUBMISSION' }),
+      );
+      expect(mutation).not.toHaveBeenCalled();
+      expect(createCheckoutSession).not.toHaveBeenCalled();
     },
   );
-
-  it('requires the same address fields as the form when an address is required', async () => {
-    await expect(
-      submitWith(publishedFormClient({ requireAddress: true }), {
-        donorMailingAddress: { addressPostcode: 'SW1A 1AA' },
-      }),
-    ).rejects.toThrow('This donation form requires the donor address before payment.');
-  });
 });

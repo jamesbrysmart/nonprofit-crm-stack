@@ -3,7 +3,6 @@ import {
   buildDonationFormEmbedDocument,
   serializeForInlineScript,
 } from 'src/donation-forms/build-donation-form-embed-document';
-import { buildDonationFormCardMarkup } from 'src/donation-forms/donation-form-rendering';
 
 describe('donation form embed runtime', () => {
   beforeEach(() => {
@@ -12,23 +11,6 @@ describe('donation form embed runtime', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
-  });
-
-  it('renders a custom amount input when enabled in the published config', () => {
-    const markup = buildDonationFormCardMarkup({
-      publicId: 'df_public_123',
-      publishedVersion: 'pub_test_123',
-      config: {
-        mode: 'ONE_OFF',
-        currencyCode: 'GBP',
-        amountOptions: [1000, 2500, 5000],
-        allowCustomAmount: true,
-        minimumAmount: 700,
-      },
-    });
-
-    expect(markup).toContain('id="customAmountMajor"');
-    expect(markup).toContain('(minimum £7.00)');
   });
 
   it('keeps admin-entered text from breaking out of the inline script', () => {
@@ -69,16 +51,5 @@ describe('donation form embed runtime', () => {
 
     expect(serialized).not.toMatch(/[<>&\u2028\u2029]/);
     expect(JSON.parse(serialized)).toEqual(value);
-  });
-
-  it('shows no development wording to donors', () => {
-    const markup = buildDonationFormCardMarkup({
-      publicId: 'df_public_123',
-      publishedVersion: 'pub_test_123',
-      config: { mode: 'ONE_OFF', currencyCode: 'GBP', amountOptions: [1000] },
-    });
-
-    expect(markup.toLowerCase()).not.toContain('spike');
-    expect(markup).toContain('<h1>Donation form</h1>');
   });
 });

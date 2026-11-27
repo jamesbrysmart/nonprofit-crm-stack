@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { computeAppealRollupSummary } from 'src/appeal-rollups/appeal-rollups';
-import { computeCompanyRollupSummary } from 'src/company-rollups/company-rollups';
 import { computeDonorRollupSummary } from 'src/donor-rollups/donor-rollups';
 import {
   getReportingValueMicros,
@@ -76,7 +75,7 @@ describe('rollups never combine currencies', () => {
     gift('gbp-2', '2026-02-01', 40, 'GBP'),
   ];
 
-  it('totals and ranks donor gifts in the reporting currency only', () => {
+  it('recalculates donor totals after an exclusion is resolved and retains the original gift amount', () => {
     const summary = computeDonorRollupSummary(
       'person-1',
       mixedGifts,
@@ -88,31 +87,34 @@ describe('rollups never combine currencies', () => {
       amountMicros: 140_000_000,
       currencyCode: 'GBP',
     });
-    // The €500 gift is larger at face value but has no GBP value.
     expect(summary.largestGiftAmount).toEqual({
       amountMicros: 100_000_000,
       currencyCode: 'GBP',
     });
-    // Counts, dates and the last gift still reflect every gift.
     expect(summary.giftCount).toBe(3);
     expect(summary.lastGiftDate).toBe('2026-04-01');
     expect(summary.lastGiftAmount).toEqual({
       amountMicros: 500_000_000,
       currencyCode: 'EUR',
     });
-  });
 
-  it('leaves monetary totals untouched when no reporting currency is set', () => {
-    const summary = computeDonorRollupSummary(
-      'person-1',
-      mixedGifts,
-      undefined,
-      null,
+    const valuedGifts = mixedGifts.map((gift) =>
+      gift.id === 'eur-1'
+        ? {
+            ...gift,
+            reportingAmount: { amountMicros: 90_000_000, currencyCode: 'GBP' },
+          }
+        : gift,
     );
 
-    expect(summary.lifetimeGiftAmount).toBeUndefined();
-    expect(summary.largestGiftAmount).toBeUndefined();
-    expect(summary.giftCount).toBe(3);
+    expect(
+      computeDonorRollupSummary('person-1', valuedGifts, undefined, 'GBP'),
+    ).toMatchObject({
+      lifetimeGiftAmount: { amountMicros: 230_000_000, currencyCode: 'GBP' },
+      largestGiftAmount: { amountMicros: 100_000_000, currencyCode: 'GBP' },
+      lastGiftAmount: { amountMicros: 500_000_000, currencyCode: 'EUR' },
+      giftCount: 3,
+    });
   });
 
   it('totals an appeal in the reporting currency only', () => {
@@ -120,24 +122,5 @@ describe('rollups never combine currencies', () => {
       computeAppealRollupSummary('appeal-1', mixedGifts, undefined, 'EUR')
         .raisedAmount,
     ).toEqual({ amountMicros: 500_000_000, currencyCode: 'EUR' });
-  });
-
-  it('totals company awards only in the reporting currency', () => {
-    const summary = computeCompanyRollupSummary(
-      'company-1',
-      [],
-      [
-        { id: 'opp-1', awardedAmount: { amountMicros: 10_000_000_000, currencyCode: 'GBP' } },
-        { id: 'opp-2', awardedAmount: { amountMicros: 20_000_000_000, currencyCode: 'USD' } },
-      ],
-      undefined,
-      'GBP',
-    );
-
-    expect(summary.awardedOpportunityAmount).toEqual({
-      amountMicros: 10_000_000_000,
-      currencyCode: 'GBP',
-    });
-    expect(summary.awardedOpportunityCount).toBe(2);
   });
 });

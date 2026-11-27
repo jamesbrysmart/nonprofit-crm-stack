@@ -6,7 +6,10 @@ import {
   refreshClaimBatchSummary,
 } from 'src/gift-aid-claims/gift-aid-claim-batch.queries';
 import { finalizeGiftAidClaimBatch } from 'src/gift-aid-claims/gift-aid-claim-batch';
-import type { GiftAidClaimGiftRecord } from 'src/gift-aid-claims/gift-aid-claim.types';
+import type {
+  GiftAidClaimBatchRecord,
+  GiftAidClaimGiftRecord,
+} from 'src/gift-aid-claims/gift-aid-claim.types';
 
 const gifts = (count: number): GiftAidClaimGiftRecord[] =>
   Array.from({ length: count }, (_, index) => ({
@@ -35,35 +38,6 @@ describe('claim gift pagination', () => {
       records,
     );
     expect(query).toHaveBeenCalledOnce();
-  });
-
-  it('persists totals for all 201 gifts and a blocking issue on the later page', async () => {
-    const records = gifts(201);
-    records[200].giftAidStatus = 'NEEDS_REVIEW';
-    const query = vi
-      .fn()
-      .mockResolvedValueOnce(page(records.slice(0, 200), true, 'cursor_200'))
-      .mockResolvedValueOnce(page(records.slice(200)));
-    const mutation = vi
-      .fn()
-      .mockResolvedValue({ updateGiftAidClaimBatch: { id: 'claim_1' } });
-
-    await refreshClaimBatchSummary(clientWith(query, mutation), 'claim_1');
-
-    expect(query).toHaveBeenCalledTimes(2);
-    expect(query.mock.calls[1][0].gifts.__args).toMatchObject({
-      after: 'cursor_200',
-      first: 200,
-      filter: { giftAidClaimBatchId: { eq: 'claim_1' } },
-    });
-    expect(
-      mutation.mock.calls[0][0].updateGiftAidClaimBatch.__args.data,
-    ).toEqual({
-      giftCount: 201,
-      totalAmount: { amountMicros: 2_000_000_000, currencyCode: 'GBP' },
-      hasBlockingIssues: true,
-      blockingIssueCount: 1,
-    });
   });
 
   it('loads later review-queue pages using the same filter', async () => {
@@ -120,32 +94,83 @@ describe('claim gift pagination', () => {
     expect(mutation).not.toHaveBeenCalled();
   });
 
-  it('refuses finalisation when the only blocking gift is beyond the first page', async () => {
-    const records = gifts(201);
-    records[200].giftAidStatus = 'NEEDS_REVIEW';
-    const batch = { id: 'claim_1', name: 'Draft', status: 'DRAFT' };
+  it('blocks finalisation until a later-page gift is resolved, then opens the next draft', async () => {
+    const firstPage = gifts(200);
+    const lastGift: GiftAidClaimGiftRecord = {
+      id: 'gift_200',
+      giftAidStatus: 'NEEDS_REVIEW',
+      amount: { amountMicros: 35_000_000, currencyCode: 'GBP' },
+    };
+    const batch: GiftAidClaimBatchRecord = {
+      id: 'claim_1',
+      name: 'Draft',
+      status: 'DRAFT',
+      hasBlockingIssues: false,
+    };
+    let nextDraft: GiftAidClaimBatchRecord | undefined;
     const query = vi.fn().mockImplementation(async (input) => {
-      if (input.giftAidClaimBatch)
+      if (input.giftAidClaimBatch) {
         return {
           giftAidClaimBatch: batch,
           giftAidClaimSubmissions: { edges: [] },
         };
+      }
+      if (input.giftAidClaimBatches) {
+        return { giftAidClaimBatches: { edges: [] } };
+      }
       if (input.gifts.__args.filter.and) return page([]);
-      return input.gifts.__args.after
-        ? page(records.slice(200))
-        : page(records.slice(0, 200), true, 'cursor_200');
+      const { after, filter } = input.gifts.__args;
+      expect(filter).toEqual({ giftAidClaimBatchId: { eq: batch.id } });
+      if (after === undefined) return page(firstPage, true, 'cursor_200');
+      expect(after).toBe('cursor_200');
+      return page([lastGift]);
     });
-    const mutation = vi
-      .fn()
-      .mockResolvedValue({ updateGiftAidClaimBatch: { id: 'claim_1' } });
-    await expect(
-      finalizeGiftAidClaimBatch(clientWith(query, mutation), 'claim_1'),
-    ).rejects.toThrow('blocking issues');
-    expect(
-      mutation.mock.calls.every(
-        ([input]) =>
-          input.updateGiftAidClaimBatch.__args.data.status !== 'FINALIZED',
-      ),
-    ).toBe(true);
+    const mutation = vi.fn().mockImplementation(async (input) => {
+      if (input.createGiftAidClaimBatch) {
+        nextDraft = { ...input.createGiftAidClaimBatch.__args.data, id: 'claim_2' };
+        return { createGiftAidClaimBatch: nextDraft };
+      }
+      const { id, data } = input.updateGiftAidClaimBatch.__args;
+      expect(id).toBe(batch.id);
+      Object.assign(batch, data);
+      return { updateGiftAidClaimBatch: { id } };
+    });
+    const client = clientWith(query, mutation);
+
+    await expect(finalizeGiftAidClaimBatch(client, batch.id)).rejects.toThrow(
+      'blocking issues',
+    );
+    expect(batch).toMatchObject({
+      status: 'DRAFT',
+      giftCount: 201,
+      totalAmount: { amountMicros: 2_000_000_000, currencyCode: 'GBP' },
+      hasBlockingIssues: true,
+      blockingIssueCount: 1,
+    });
+    expect(nextDraft).toBeUndefined();
+
+    lastGift.giftAidStatus = 'CLAIMABLE';
+    const result = await finalizeGiftAidClaimBatch(client, batch.id);
+
+    expect(result).toMatchObject({
+      claimBatchId: 'claim_1',
+      nextDraftBatchId: 'claim_2',
+      status: 'FINALIZED',
+      submittedAt: expect.any(String),
+    });
+    expect(batch).toMatchObject({
+      status: 'FINALIZED',
+      submittedAt: result.submittedAt,
+      giftCount: 201,
+      totalAmount: { amountMicros: 2_035_000_000, currencyCode: 'GBP' },
+      hasBlockingIssues: false,
+      blockingIssueCount: 0,
+    });
+    expect(nextDraft).toMatchObject({
+      id: 'claim_2',
+      status: 'DRAFT',
+      giftCount: 0,
+      totalAmount: { amountMicros: 0, currencyCode: 'GBP' },
+    });
   });
 });

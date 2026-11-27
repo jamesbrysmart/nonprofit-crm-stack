@@ -11,7 +11,7 @@ Use the docs below as the canonical source of truth; avoid “plausible” comma
 - Onboarding / baseline setup: `README.md`
 - Current app-local setup and conventions: `apps/fundraising/nonprofit-fundraising/README.md`
 - Operations + runtime status notes for legacy/hybrid runtime work only: `docs/runbooks/OPERATIONS_RUNBOOK.md`
-- Testing expectations and where commands live: `docs/TESTING.md`
+- Testing strategy and validation guidance: [docs/TESTING.md](docs/TESTING.md)
 - Architecture decisions and trade-offs: verify against current code plus the current canonical docs in `docs/` and `docs/apps-migration/`; do not assume an older ADR file is still canonical
 - UI/UX guidelines: `docs/UX_UI.md`
 - Broader product context/specs: `docs/PROJECT_CONTEXT.md` and relevant `docs/features/*`
@@ -82,9 +82,7 @@ This repo is a superproject with submodules under `services/`.
 - Do not treat `docs/runbooks/OPERATIONS_RUNBOOK.md` as a default “how to run the repo” guide; it is mainly legacy runtime context now.
 - In `services/twenty-core`, use Yarn/Nx commands; avoid `npx` patterns that Yarn 4 blocks.
 - For Twenty code/API/doc questions, search `services/twenty-core` and the local app docs before using external search.
-- Testing is important:
-  - Default: propose the smallest relevant lint/typecheck/unit-test commands for the area touched.
-  - Ask before running long/broad suites or slow Docker pulls/builds, especially if they change local state.
+- Ask before running long/broad suites or slow Docker pulls/builds, especially if they change local state.
 - If a command fails due to transient infra (pulls, network, flakey healthchecks), retry once; if it still fails, stop and ask rather than guessing system-level fixes.
 
 ## “Definition of done” (adapt to scope)
@@ -93,7 +91,6 @@ This repo is a superproject with submodules under `services/`.
 
 ## Session wrap-up prompts (Codex)
 - Before ending a coding session, proactively propose the smallest relevant check command(s) based on files changed.
-- Default for `apps/fundraising/nonprofit-fundraising`: propose the smallest relevant app checks such as `yarn test:unit` or a focused `yarn test` run from that app.
 - For docs or workflow questions about the fundraising app, check `apps/fundraising/nonprofit-fundraising/README.md` before falling back to older cross-repo notes.
 - Treat `services/fundraising-service` checks as legacy-only unless the task explicitly touches that code.
 - For wiring/compose/gateway changes: confirm first that the task is intentionally about the legacy integrated runtime before proposing Docker-based checks.

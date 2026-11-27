@@ -2,7 +2,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildDonationFormEmbedDocument } from 'src/donation-forms/build-donation-form-embed-document';
 import type { DonationFormRenderConfig } from 'src/donation-forms/donation-form-rendering';
-import { DONATION_FORM_CLIENT_SCRIPT } from 'src/donation-forms/embed-client/donation-form-client-script.generated';
 
 type CheckoutReply = { ok: boolean; body: unknown };
 type ConfirmReply =
@@ -72,7 +71,13 @@ const renderDonationForm = ({
   }));
 
   Object.assign(window, { fetch: fetchMock, Stripe: stripeMock });
-  new Function(DONATION_FORM_CLIENT_SCRIPT)();
+  const clientScript = Array.from(document.scripts).find(
+    (script) => !script.src && !script.type,
+  );
+  if (!clientScript?.textContent) {
+    throw new Error('Donation form page did not include its client script');
+  }
+  new Function(clientScript.textContent)();
 
   return { fetchMock, confirmMock, mountMock, stripeMock };
 };
@@ -130,7 +135,7 @@ describe('donation form client', () => {
   });
 
   describe('choosing an amount', () => {
-    it('starts on the first preset amount and follows the selected radio', () => {
+    it('starts on a preset and follows the donor’s preset or custom amount', () => {
       renderDonationForm();
 
       expect(byId<HTMLInputElement>('amountOption0').checked).toBe(true);
@@ -139,10 +144,6 @@ describe('donation form client', () => {
       choose('amountOption1');
 
       expect(byId<HTMLInputElement>('amountMinorUnits').value).toBe('2500');
-    });
-
-    it('uses a custom amount instead of the presets', () => {
-      renderDonationForm();
 
       type('customAmountMajor', '£12.50');
 
@@ -154,6 +155,7 @@ describe('donation form client', () => {
 
     it('asks for at least the minimum custom amount', () => {
       const { fetchMock } = renderDonationForm();
+      expect(byId('customAmountHint').textContent).toContain('£5.00');
       fillDonor();
       type('customAmountMajor', '2');
 

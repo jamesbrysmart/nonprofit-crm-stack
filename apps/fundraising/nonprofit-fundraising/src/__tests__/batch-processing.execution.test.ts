@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CoreApiClient } from 'twenty-client-sdk/core';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
+import { processGiftStagingRows } from 'src/gift-staging-review/gift-ready-check.service';
 
 const mocks = vi.hoisted(() => ({
   post: vi.fn(),
+  query: vi.fn(),
   mutation: vi.fn(),
   persist: vi.fn(),
   effects: vi.fn(),
@@ -10,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('twenty-client-sdk/core', () => ({
   CoreApiClient: vi.fn(function () {
-    return { mutation: mocks.mutation };
+    return { query: mocks.query, mutation: mocks.mutation };
   }),
 }));
 vi.mock('src/app-api/twenty-rest-client', () => ({
@@ -37,7 +40,10 @@ import {
   executeSingleGiftProcessing,
 } from 'src/batch-processing/batch-processing.executor';
 
-const row = (id = 'staging_1'): BatchProcessingRow => ({
+const row = (
+  id = 'staging_1',
+  overrides: Partial<BatchProcessingRow> = {},
+): BatchProcessingRow => ({
   id,
   name: 'Staged donation',
   donorFirstName: 'Ada',
@@ -69,7 +75,7 @@ const row = (id = 'staging_1'): BatchProcessingRow => ({
   appealSourceExternalId: null,
   sourceAppealName: null,
   sourceFundName: null,
-  donorResolutionState: 'LINKED',
+  donorResolutionState: 'CONFIRMED',
   donor: { id: 'person_1', emails: { primaryEmail: 'old@example.org' } },
   softCreditPerson: null,
   softCreditCompany: null,
@@ -90,6 +96,7 @@ const row = (id = 'staging_1'): BatchProcessingRow => ({
   giftAidDeclaration: null,
   recurringAgreement: null,
   committedGift: null,
+  ...overrides,
 });
 
 const giftCreateCalls = () =>
@@ -104,7 +111,113 @@ beforeEach(() => {
   mocks.persist.mockResolvedValue(undefined);
   mocks.effects.mockResolvedValue(undefined);
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
+
+it('commits eligible rows with their financial values and resolved coding', async () => {
+  vi.stubEnv('REPORTING_CURRENCY', 'GBP');
+  mocks.query.mockResolvedValue({
+    appealSources: {
+      edges: [
+        {
+          node: {
+            id: 'source_1',
+            appeal: { id: 'appeal_1', defaultFund: { id: 'fund_1' } },
+          },
+        },
+      ],
+    },
+  });
+  mocks.post.mockResolvedValueOnce({
+    data: { createGifts: [{ id: 'gift_gbp' }, { id: 'gift_eur' }] },
+  });
+
+  const result = await processGiftStagingRows(new CoreApiClient(), [
+    row('staging_gbp', {
+      externalId: 'bank-ref-40',
+      amount: { amountMicros: 40_000_000, currencyCode: 'GBP' },
+      paymentType: 'BANK_TRANSFER',
+      appealSource: { id: 'source_1' },
+    }),
+    row('awaiting_payment', { paymentState: 'AWAITING_PAYMENT' }),
+    row('staging_eur', {
+      provider: 'STRIPE',
+      providerPaymentId: 'pi_eur',
+      paymentState: 'PAYMENT_CONFIRMED',
+      amount: { amountMicros: 30_000_000, currencyCode: 'EUR' },
+      donor: { id: 'person_2' },
+      appealSource: { id: 'source_1' },
+      appeal: { id: 'appeal_1' },
+      fund: { id: 'fund_override' },
+      softCreditPerson: { id: 'introducer' },
+      softCreditType: 'INTRODUCER',
+    }),
+    row('already_processed', {
+      processingStatus: 'PROCESSED',
+      committedGift: { id: 'existing_gift' },
+    }),
+    row('requires_reconciliation', {
+      processingStatus: 'PROCESS_FAILED',
+      errorDetail: 'Reconcile before retrying',
+    }),
+  ]);
+
+  expect(result).toMatchObject({
+    totalItems: 5,
+    processedItems: 2,
+    notReadyItems: 1,
+    failedItems: 0,
+  });
+  const creates = giftCreateCalls();
+  expect(creates).toHaveLength(1);
+  const gifts = creates[0][0].body;
+  expect(gifts).toMatchObject([
+    {
+      donorId: 'person_1',
+      externalId: 'bank-ref-40',
+      paymentType: 'BANK_TRANSFER',
+      appealId: 'appeal_1',
+      appealSourceId: 'source_1',
+      fundId: 'fund_1',
+      amount: { amountMicros: 40_000_000, currencyCode: 'GBP' },
+      reportingAmount: { amountMicros: 40_000_000, currencyCode: 'GBP' },
+      reportingAmountStatus: 'SAME_CURRENCY',
+    },
+    {
+      donorId: 'person_2',
+      provider: 'STRIPE',
+      providerPaymentId: 'pi_eur',
+      appealId: 'appeal_1',
+      appealSourceId: 'source_1',
+      fundId: 'fund_override',
+      softCreditPersonId: 'introducer',
+      softCreditType: 'INTRODUCER',
+      amount: { amountMicros: 30_000_000, currencyCode: 'EUR' },
+      reportingAmountStatus: 'MISSING',
+    },
+  ]);
+  expect(gifts[1]).not.toHaveProperty('reportingAmount');
+  const writebacks = mocks.persist.mock.calls.flatMap(([records]) => records);
+  expect(writebacks).toMatchObject([
+    {
+      id: 'awaiting_payment',
+      processingStatus: 'NOT_PROCESSED',
+      giftReadyStatus: 'NEEDS_REVIEW',
+    },
+    {
+      id: 'staging_gbp',
+      processingStatus: 'PROCESSED',
+      committedGiftId: 'gift_gbp',
+    },
+    {
+      id: 'staging_eur',
+      processingStatus: 'PROCESSED',
+      committedGiftId: 'gift_eur',
+    },
+  ]);
+});
 
 describe('gift execution commit boundary', () => {
   it('preserves a confirmed gift when actual donor enrichment requests fail', async () => {
@@ -153,6 +266,7 @@ describe('gift execution commit boundary', () => {
     expect(result.writeback.errorDetail).toContain('Reconcile');
     expect(mocks.post).toHaveBeenCalledOnce();
     expect(mocks.mutation).not.toHaveBeenCalled();
+    expect(mocks.effects).not.toHaveBeenCalled();
   });
 
   it('does not split and replay a chunk after its committed response is lost', async () => {
@@ -221,17 +335,6 @@ describe('gift execution commit boundary', () => {
       expect(failed.errorDetail).toContain('no gift was created');
       expect(failed.errorDetail).not.toContain('Reconcile');
     }
-  });
-
-  it('does not try another creation path after a rejected request', async () => {
-    mocks.post.mockRejectedValue(new Error('Invalid gift data'));
-
-    const result = await executeSingleGiftProcessing(row());
-
-    expect(result.writeback.processingStatus).toBe('PROCESS_FAILED');
-    expect(mocks.post).toHaveBeenCalledOnce();
-    expect(mocks.mutation).not.toHaveBeenCalled();
-    expect(mocks.effects).not.toHaveBeenCalled();
   });
 
   it.each([

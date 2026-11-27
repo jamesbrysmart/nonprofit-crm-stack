@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { RecordGiftRefundResponse } from 'src/gift-lifecycle/gift-refund.types';
 import type {
   DuplicateCheckResponse,
+  ManualGiftDuplicateCheckResponse,
   ManualGiftEntryResponse,
 } from 'src/manual-gift-entry/manual-gift-entry.types';
 import {
@@ -9,6 +11,7 @@ import {
   createOpportunity,
   createRecurringAgreement,
   createPerson,
+  getCoreClient,
   loadCurrentGiftAidClaimBatch,
   loadGiftById,
   loadGiftAidDeclarationsForPerson,
@@ -16,79 +19,49 @@ import {
 } from './test-helpers';
 
 describe('Manual gift entry routes', () => {
-  it('should return expected duplicate-check categories', async () => {
-    const suffix = Date.now().toString();
-    const uniqueAdaFirstName = `Ada${suffix}`;
-    const uniqueJamieFirstName = `Jamie${suffix}`;
-    const uniqueMissingFirstName = `Morgan${suffix}`;
-
-    await createPerson({
-      firstName: uniqueAdaFirstName,
-      lastName: 'Lovelace',
-      email: `ada.${suffix}@example.org`,
-    });
-
-    await createPerson({
-      firstName: uniqueJamieFirstName,
-      lastName: 'Taylor',
-      email: `jamie.one.${suffix}@example.org`,
-    });
-    await createPerson({
-      firstName: uniqueJamieFirstName,
-      lastName: 'Taylor',
-      email: `jamie.two.${suffix}@example.org`,
-    });
-
-    const adaResult = await callAppRoute<DuplicateCheckResponse>(
-      '/s/donor-resolution/check-donor-duplicates',
-      {
-        donorFirstName: uniqueAdaFirstName.toLowerCase(),
-        donorLastName: 'LOVELACE',
-      },
-    );
-    expect(adaResult.status).toBe('SINGLE_EXACT_MATCH');
-    expect(adaResult.candidates).toHaveLength(1);
-
-    const jamieResult = await callAppRoute<DuplicateCheckResponse>(
-      '/s/donor-resolution/check-donor-duplicates',
-      {
-        donorFirstName: uniqueJamieFirstName,
-        donorLastName: 'Taylor',
-      },
-    );
-    expect(jamieResult.status).toBe('MULTIPLE_EXACT_MATCHES');
-    expect(jamieResult.candidates.length).toBeGreaterThan(1);
-
-    const missingResult = await callAppRoute<DuplicateCheckResponse>(
-      '/s/donor-resolution/check-donor-duplicates',
-      {
-        donorFirstName: uniqueMissingFirstName,
-        donorLastName: 'Pryce',
-      },
-    );
-    expect(missingResult.status).toBe('NO_MATCH');
-    expect(missingResult.candidates).toHaveLength(0);
-  });
-
-  it('should create a gift linked to an existing donor after explicit donor choice', async () => {
+  it('records the gift against the explicitly selected donor when names match', async () => {
     const suffix = `${Date.now()}-existing`;
     const donorFirstName = `Ada${suffix}`;
     const donorLastName = 'Lovelace';
     const donorEmail = `ada.${suffix}@example.org`;
 
-    await createPerson({
+    const otherDonor = await createPerson({
+      firstName: donorFirstName,
+      lastName: donorLastName,
+      email: `another.${suffix}@example.org`,
+    });
+
+    const duplicateInput = {
+      donorFirstName: donorFirstName.toLowerCase(),
+      donorLastName: donorLastName.toUpperCase(),
+    };
+    const checkDonors = () =>
+      callAppRoute<DuplicateCheckResponse>(
+        '/s/donor-resolution/check-donor-duplicates',
+        duplicateInput,
+      );
+    const singleMatch = await checkDonors();
+    expect(singleMatch.status).toBe('SINGLE_EXACT_MATCH');
+    expect(singleMatch.candidates.map(({ id }) => id)).toEqual([otherDonor.id]);
+
+    const selectedDonor = await createPerson({
       firstName: donorFirstName,
       lastName: donorLastName,
       email: donorEmail,
     });
 
-    const duplicateResult = await callAppRoute<DuplicateCheckResponse>(
-      '/s/donor-resolution/check-donor-duplicates',
-      {
-        donorFirstName,
-        donorLastName,
-      },
+    const multipleMatches = await checkDonors();
+    expect(multipleMatches.status).toBe('MULTIPLE_EXACT_MATCHES');
+    expect(multipleMatches.candidates.map(({ id }) => id).sort()).toEqual(
+      [otherDonor.id, selectedDonor.id].sort(),
     );
+
+    const giftDetails = {
+      amountValue: '25.00',
+      currencyCode: 'GBP',
+      giftDate: '2026-04-21',
+      selectedDonorId: selectedDonor.id,
+    };
 
     const response = await callAppRoute<ManualGiftEntryResponse>(
       '/s/manual-gift-entry/create-gift',
@@ -96,12 +69,9 @@ describe('Manual gift entry routes', () => {
         donorFirstName,
         donorLastName,
         donorEmail,
-        amountValue: '25.00',
-        currencyCode: 'GBP',
+        ...giftDetails,
         paymentType: 'BANK_TRANSFER',
-        giftDate: '2026-04-21',
         donorChoice: 'USE_EXISTING',
-        selectedDonorId: duplicateResult.candidates[0]?.id,
       },
     );
 
@@ -110,10 +80,24 @@ describe('Manual gift entry routes', () => {
 
     const gift = await loadGiftById(response.giftId);
     expect(gift).toBeTruthy();
-    expect(gift?.donor?.id).toBe(duplicateResult.candidates[0]?.id);
+    expect(gift?.donor?.id).toBe(selectedDonor.id);
     expect(gift?.donorFirstName).toBe(donorFirstName);
     expect(gift?.donorLastName).toBe(donorLastName);
     expect(gift?.donorEmail).toBe(donorEmail);
+    expect(gift?.amount).toEqual({
+      amountMicros: 25_000_000,
+      currencyCode: 'GBP',
+    });
+
+    const checkGift = (currencyCode: string) =>
+      callAppRoute<ManualGiftDuplicateCheckResponse>(
+        '/s/manual-gift-entry/check-duplicates',
+        { ...giftDetails, currencyCode },
+      );
+    expect((await checkGift('GBP')).matches).toMatchObject([
+      { kind: 'COMMITTED_GIFT', id: response.giftId },
+    ]);
+    expect((await checkGift('EUR')).matches).toEqual([]);
   });
 
   it('should create a new donor and linked gift when no duplicate exists', async () => {
@@ -121,6 +105,12 @@ describe('Manual gift entry routes', () => {
     const donorFirstName = `Morgan${suffix}`;
     const donorLastName = 'Pryce';
     const donorEmail = `morgan.${suffix}@example.org`;
+
+    const duplicateResult = await callAppRoute<DuplicateCheckResponse>(
+      '/s/donor-resolution/check-donor-duplicates',
+      { donorFirstName, donorLastName },
+    );
+    expect(duplicateResult).toMatchObject({ status: 'NO_MATCH', candidates: [] });
 
     const response = await callAppRoute<ManualGiftEntryResponse>(
       '/s/manual-gift-entry/create-gift',
@@ -193,7 +183,7 @@ describe('Manual gift entry routes', () => {
     );
   });
 
-  it('should derive Gift Aid outcome and create a declaration when capture facts are provided', async () => {
+  it('adds a claimable gift to the draft and removes it when a partial refund is recorded', async () => {
     const suffix = `${Date.now()}-gift-aid`;
     const donorFirstName = `Grace${suffix}`;
     const donorLastName = 'Hopper';
@@ -232,7 +222,43 @@ describe('Manual gift entry routes', () => {
     expect(declarations).toHaveLength(1);
     expect(declarations[0]?.status).toBe('ACTIVE');
     expect(declarations[0]?.source).toBe('manual_entry');
-    expect(currentDraft?.id).toBe(gift?.giftAidClaimBatch?.id);
+    const draftGiftCount = currentDraft?.giftCount;
+    const draftTotal = currentDraft?.totalAmount?.amountMicros;
+    if (
+      !currentDraft ||
+      typeof draftGiftCount !== 'number' ||
+      typeof draftTotal !== 'number'
+    ) {
+      throw new Error('Expected a persisted draft claim summary');
+    }
+    expect(currentDraft.id).toBe(gift?.giftAidClaimBatch?.id);
+    expect(draftGiftCount).toBeGreaterThanOrEqual(1);
+    expect(draftTotal).toBeGreaterThanOrEqual(33_000_000);
+
+    const refund = await callAppRoute<RecordGiftRefundResponse>(
+      '/s/gifts/record-refund',
+      {
+        giftId: response.giftId,
+        refundedAmountMicros: 10_000_000,
+        refundDate: '2026-04-26',
+      },
+    );
+    expect(refund.refundState).toBe('PARTIALLY_REFUNDED');
+
+    const refundedGift = await loadGiftById(response.giftId);
+    expect(refundedGift).toMatchObject({
+      amount: { amountMicros: 33_000_000, currencyCode: 'GBP' },
+      refundedAmount: { amountMicros: 10_000_000, currencyCode: 'GBP' },
+      giftAidStatus: 'NOT_CLAIMABLE',
+      giftAidReasonCode: 'gift_refunded_or_reversed',
+      giftAidClaimBatch: null,
+    });
+    expect(refundedGift?.giftAidDeclaration?.id).toBe(declarations[0]?.id);
+    expect(await loadCurrentGiftAidClaimBatch()).toMatchObject({
+      id: currentDraft.id,
+      giftCount: draftGiftCount - 1,
+      totalAmount: { amountMicros: draftTotal - 33_000_000, currencyCode: 'GBP' },
+    });
   });
 
   it('should not mark a gift in kind as claimable even when the donor already has a declaration', async () => {
@@ -333,10 +359,13 @@ describe('Manual gift entry routes', () => {
     expect(gift?.recurringAgreement?.nextExpectedAt).toBe('2026-05-21');
   });
 
-  it('should create a company gift linked to an existing opportunity', async () => {
+  it('records a partial grant against the awarding company and refuses a different company', async () => {
     const suffix = `${Date.now()}-opportunity-gift`;
     const company = await createCompany({
       name: `Example Trust ${suffix}`,
+    });
+    const otherCompany = await createCompany({
+      name: `Other Trust ${suffix}`,
     });
     const opportunity = await createOpportunity({
       name: `Example Trust grant ${suffix}`,
@@ -344,52 +373,14 @@ describe('Manual gift entry routes', () => {
       fundingType: 'TRUST_FOUNDATION',
       awardedAmountMicros: 10_000_000,
     });
-
-    const response = await callAppRoute<ManualGiftEntryResponse>(
-      '/s/manual-gift-entry/create-gift',
-      {
-        donorType: 'COMPANY',
-        companyName: company.name,
-        amountValue: '1000.00',
-        currencyCode: 'GBP',
-        paymentType: 'BANK_TRANSFER',
-        giftDate: '2026-04-25',
-        giftType: 'GRANT',
-        companyChoice: 'USE_EXISTING',
-        selectedCompanyId: company.id,
-        selectedOpportunityId: opportunity.id,
-      },
-    );
-
-    const gift = await loadGiftById(response.giftId);
-
-    expect(gift?.company?.id).toBe(company.id);
-    expect(gift?.opportunity?.id).toBe(opportunity.id);
-    expect(gift?.opportunity?.company?.id).toBe(company.id);
-    expect(gift?.giftType).toBe('GRANT');
-  });
-
-  it('should reject an opportunity that belongs to another selected company', async () => {
-    const suffix = `${Date.now()}-opportunity-mismatch`;
-    const opportunityCompany = await createCompany({
-      name: `Opportunity company ${suffix}`,
-    });
-    const selectedCompany = await createCompany({
-      name: `Selected company ${suffix}`,
-    });
-    const opportunity = await createOpportunity({
-      name: `Mismatched grant ${suffix}`,
-      companyId: opportunityCompany.id,
-      fundingType: 'GRANT',
-    });
-
-    await expect(
+    const client = getCoreClient();
+    const recordPayment = (selectedCompany: typeof company) =>
       callAppRoute<ManualGiftEntryResponse>(
         '/s/manual-gift-entry/create-gift',
         {
           donorType: 'COMPANY',
           companyName: selectedCompany.name,
-          amountValue: '1000.00',
+          amountValue: '4.00',
           currencyCode: 'GBP',
           paymentType: 'BANK_TRANSFER',
           giftDate: '2026-04-25',
@@ -398,10 +389,44 @@ describe('Manual gift entry routes', () => {
           selectedCompanyId: selectedCompany.id,
           selectedOpportunityId: opportunity.id,
         },
-      ),
-    ).rejects.toThrow(
+      );
+
+    const { giftId } = await recordPayment(company);
+    expect(await loadGiftById(giftId)).toMatchObject({
+      company: { id: company.id },
+      opportunity: { id: opportunity.id },
+      giftType: 'GRANT',
+      amount: { amountMicros: 4_000_000, currencyCode: 'GBP' },
+    });
+
+    await expect(recordPayment(otherCompany)).rejects.toThrow(
       'Selected opportunity does not belong to the selected company',
     );
+
+    const result = await client.query({
+      gifts: {
+        __args: {
+          first: 2,
+          filter: {
+            or: [
+              { opportunityId: { eq: opportunity.id } },
+              { companyId: { eq: otherCompany.id } },
+            ],
+          },
+        },
+        edges: { node: { id: true } },
+      },
+      opportunity: {
+        __args: { filter: { id: { eq: opportunity.id } } },
+        company: { id: true },
+        awardedAmount: { amountMicros: true, currencyCode: true },
+      },
+    });
+    expect(result.gifts?.edges.map(({ node }) => node.id)).toEqual([giftId]);
+    expect(result.opportunity).toMatchObject({
+      company: { id: company.id },
+      awardedAmount: { amountMicros: 10_000_000, currencyCode: 'GBP' },
+    });
   });
 
   it('should create a company gift without an opportunity', async () => {

@@ -1,30 +1,8 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
-import { MetadataApiClient } from 'twenty-client-sdk/metadata';
-import { APPLICATION_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 
 export const getCoreClient = () => new CoreApiClient();
 
-export const getMetadataClient = () => new MetadataApiClient();
-
-export const findInstalledApplication = async (): Promise<
-  { id: string; name: string; universalIdentifier: string } | undefined
-> => {
-  const client = getMetadataClient();
-  const result = await client.query({
-    findManyApplications: {
-      id: true,
-      name: true,
-      universalIdentifier: true,
-    },
-  });
-
-  return result.findManyApplications.find(
-    (application: { universalIdentifier: string }) =>
-      application.universalIdentifier === APPLICATION_UNIVERSAL_IDENTIFIER,
-  );
-};
-
-const getApiConfig = () => {
+export const getIntegrationApiConfig = () => {
   const apiUrl = process.env.TWENTY_API_URL;
   const apiKey = process.env.TWENTY_API_KEY;
 
@@ -44,7 +22,7 @@ export const callAppRoute = async <TResponse>(
   path: string,
   body: unknown,
 ): Promise<TResponse> => {
-  const { apiUrl, apiKey } = getApiConfig();
+  const { apiUrl, apiKey } = getIntegrationApiConfig();
   const response = await fetch(`${apiUrl}${path}`, {
     method: 'POST',
     headers: {
@@ -192,6 +170,10 @@ export const loadGiftById = async (giftId: string) => {
       giftAidReasonCode: true,
       giftAidDecisionSource: true,
       giftAidLastEvaluatedAt: true,
+      refundedAmount: {
+        amountMicros: true,
+        currencyCode: true,
+      },
       giftAidDeclaration: {
         id: true,
         source: true,
@@ -478,6 +460,10 @@ export const loadCurrentGiftAidClaimBatch = async () => {
           status: true,
           giftCount: true,
           blockingIssueCount: true,
+          totalAmount: {
+            amountMicros: true,
+            currencyCode: true,
+          },
         },
       },
     },

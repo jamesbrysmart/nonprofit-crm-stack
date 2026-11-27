@@ -2,15 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildNewPersonCreateData,
-  canProcessBatchRow,
   deriveLinkedDonorEmailUpdate,
   deriveLinkedDonorSupporterEmailOptOutUpdate,
   deriveRecurringCadenceFromProviderEvidence,
 } from 'src/batch-processing/batch-processing.executor';
-import { resolveAppealSourceParentsForProcessing } from 'src/appeal-sources/appeal-source-processing-resolution';
 import { buildGiftPayloadFromRow } from 'src/batch-processing/batch-processing.executor.support';
 import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
-import type { CoreApiClient } from 'twenty-client-sdk/core';
 
 describe('deriveRecurringCadenceFromProviderEvidence', () => {
   it.each([
@@ -273,89 +270,6 @@ describe('buildNewPersonCreateData', () => {
   });
 });
 
-describe('canProcessBatchRow', () => {
-  it('allows a ready row with a linked donor', () => {
-    expect(
-      canProcessBatchRow(
-        buildProcessingRow({
-          donorResolutionState: 'CONFIRMED',
-          donor: { id: 'person_1' },
-        }),
-      ),
-    ).toBe(true);
-  });
-
-  it('allows a ready row with no linked donor when sufficient new-donor evidence is present', () => {
-    expect(
-      canProcessBatchRow(
-        buildProcessingRow({
-          donorResolutionState: 'NEW_DONOR',
-          donor: null,
-        }),
-      ),
-    ).toBe(true);
-  });
-
-  it('blocks an ambiguous donor row without a linked donor', () => {
-    expect(
-      canProcessBatchRow(
-        buildProcessingRow({
-          donorResolutionState: 'AMBIGUOUS',
-          donor: null,
-        }),
-      ),
-    ).toBe(false);
-  });
-
-  it('blocks a donorless row when the minimum new-donor evidence is incomplete', () => {
-    expect(
-      canProcessBatchRow(
-        buildProcessingRow({
-          donorFirstName: '',
-          donorLastName: 'Lovelace',
-          donor: null,
-        }),
-      ),
-    ).toBe(false);
-  });
-
-  it('allows an explicitly anonymous row without donor evidence', () => {
-    expect(
-      canProcessBatchRow(
-        buildProcessingRow({
-          donorFirstName: '',
-          donorLastName: '',
-          donorEmail: '',
-          donor: null,
-          isAnonymousDonor: true,
-        }),
-      ),
-    ).toBe(true);
-  });
-
-  it('blocks a payment-gated row until payment is confirmed', () => {
-    expect(
-      canProcessBatchRow(
-        buildProcessingRow({
-          donorResolutionState: 'CONFIRMED',
-          donor: { id: 'person_1' },
-          paymentState: 'AWAITING_PAYMENT',
-        }),
-      ),
-    ).toBe(false);
-
-    expect(
-      canProcessBatchRow(
-        buildProcessingRow({
-          donorResolutionState: 'CONFIRMED',
-          donor: { id: 'person_1' },
-          paymentState: 'PAYMENT_CONFIRMED',
-        }),
-      ),
-    ).toBe(true);
-  });
-});
-
 describe('buildGiftPayloadFromRow', () => {
   it('maps the staged payment type onto the committed gift payload', () => {
     expect(
@@ -414,52 +328,5 @@ describe('buildGiftPayloadFromRow', () => {
     ).toThrow(
       'Anonymous donor gifts are not yet supported for recurring processing',
     );
-  });
-});
-
-describe('resolveAppealSourceParentsForProcessing', () => {
-  it('hydrates the appeal source parent before payload validation', async () => {
-    const client = {
-      query: async () => ({
-        appealSources: {
-          edges: [
-            {
-              node: {
-                id: 'source_1',
-                appeal: {
-                  id: 'appeal_1',
-                  defaultFund: {
-                    id: 'fund_1',
-                    name: 'General fund',
-                  },
-                },
-              },
-            },
-          ],
-        },
-      }),
-    } as unknown as CoreApiClient;
-
-    const [resolvedRow] = await resolveAppealSourceParentsForProcessing(client, [
-      buildProcessingRow({
-        donorResolutionState: 'CONFIRMED',
-        donor: { id: 'person_1' },
-        appeal: {
-          id: 'appeal_1',
-          name: 'Spring appeal',
-        },
-        appealSource: {
-          id: 'source_1',
-          name: 'Spring email',
-        },
-      }),
-    ]);
-
-    expect(resolvedRow.appealSource?.appeal?.id).toBe('appeal_1');
-    expect(buildGiftPayloadFromRow(resolvedRow)).toMatchObject({
-      appealId: 'appeal_1',
-      appealSourceId: 'source_1',
-      fundId: 'fund_1',
-    });
   });
 });

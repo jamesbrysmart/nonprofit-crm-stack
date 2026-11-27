@@ -2,27 +2,16 @@ This is the nonprofit fundraising application for [Twenty](https://twenty.com).
 
 ## Getting Started
 
-Use the globally installed standalone `twenty` CLI, separately from the app's
-SDK dependencies. Our locally checked CLI baseline is `2.49.0`:
+Use the standalone `twenty` CLI from this app directory. Check the executable
+and version with:
 
 ```bash
-npm install -g twenty@2.49.0
 twenty --version
 twenty --help
 ```
 
-Run app commands directly, not through `yarn twenty`: the installed SDK
-`2.45.0` still exposes a legacy binary that Yarn can select instead. The
-retained `twenty` package script matches the scaffold but is not the migrated
-command entrypoint while that SDK binary remains installed.
-
-From this app directory, `twenty app typecheck` and `twenty app build` are local
-checks. For connections, plan/apply/dev, server management and the boundary
-between a build snapshot and a release artifact, see the
-[app workflow guide](../../../docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md).
-CLI `2.49.0` does not start or upgrade Docker containers. Current upstream main
-is restoring local-server commands for a later release; check the workflow
-guide's version boundary before using them.
+See the [app workflow guide](../../../docs/apps-migration/TWENTY_APP_DEV_WORKFLOW.md)
+for the CLI baseline, connections, plan/apply/dev and server management.
 
 ## Local Conventions
 
@@ -50,33 +39,50 @@ Current capability note:
 
 ## Local Validation
 
-Use `yarn typecheck` to check application source and tests together through
-`tsconfig.spec.json`, without emitting JavaScript or declarations. The root
-configuration follows Twenty's scaffold module resolution and target, with
-ES2021 library definitions for the app's existing `String.replaceAll()` usage.
+Use the [fundraising testing strategy](../../../docs/TESTING.md) to choose
+checks. Run these commands from this app directory.
 
-Use `yarn test:unit` for fast TypeScript/domain checks that do not need a running Twenty app-dev server.
+- `yarn lint` checks the app with Oxlint.
+- `yarn typecheck` checks application and test sources without emitting files.
+- `yarn test:unit` runs the offline suite. Append a test path to focus the run.
+- `twenty app typecheck` and `twenty app build` check local CLI tooling and bundling.
 
-Use `yarn test` only against a disposable Twenty test workspace. The global
-setup uninstalls the app and its data, runs `twenty app apply --create`, and
-uninstalls again during teardown. Never point this suite at Imara or another
-workspace whose app data must be preserved.
+### Check an installed app
 
-The harness uses the globally installed standalone Twenty CLI, not the SDK's
-bundled binary. Check `twenty --version` outside Yarn, or set `TWENTY_CLI` to
-the standalone executable's absolute path. The suite only runs against a
-target set explicitly in `TWENTY_INTEGRATION_API_URL` and
-`TWENTY_INTEGRATION_API_KEY`; there is no default workspace, and generic
-`TWENTY_API_URL` / `TWENTY_API_KEY` values are ignored. Unset `TWENTY_REMOTE`
-to avoid conflicting target selection. No saved remote is changed and no
-`~/.twenty/config.test.json` is written.
+Use Twenty's CLI to query records and call the installed app's HTTP routes.
+Select the intended saved remote explicitly. For example, confirm the
+workspace and app on the `fundraising-local` remote with:
 
-Lifecycle and subprocess unit tests use mocked commands or temporary fake
-executables, so `yarn test:unit` does not install or uninstall the app.
+```bash
+twenty api graphql --remote fundraising-local --metadata --no-input \
+  --query '{ currentWorkspace { id } findManyApplications { name universalIdentifier } }'
+```
 
-The real migrated lifecycle is currently unverified and deferred while the
-local workspace is being used for another app. Track resumption in the
-[hardening backlog](../../../docs/apps-migration/APP_HARDENING_BACKLOG.md#deferred-integration-lifecycle-validation).
+Use `twenty api rest` for app routes on that instance and `twenty api graphql`
+to read back the outcome. For a write check, create clearly labelled fixture
+records with unique references and scope every subsequent call to those
+records. Check the route's side effects first. For example, claimable Gift Aid
+can attach to the current shared draft, so exercise that workflow in isolation.
+Record any fixtures left behind and the app revision if known.
+
+### Disposable integration suite
+
+**`yarn test` and `yarn test:watch` use destructive integration setup, even
+when focused on one file.** Setup uninstalls the app and deletes its data,
+then runs `twenty app apply --create`. Teardown uninstalls the app again.
+Use only an approved disposable workspace.
+
+Use isolated runs to verify clean installs, post-install behaviour and the
+uninstall lifecycle. Use a separate populated rehearsal for a forward upgrade.
+
+Set `TWENTY_INTEGRATION_API_URL` and `TWENTY_INTEGRATION_API_KEY` for that
+target. The current harness requires explicit credentials and relies on the
+operator to verify that the workspace is disposable. Generic
+`TWENTY_API_URL` and `TWENTY_API_KEY` are ignored as inputs. Unset
+`TWENTY_REMOTE` to avoid conflicting target selection. The harness uses the
+standalone CLI on `PATH` or the absolute executable path set in `TWENTY_CLI`.
+See the [hardening backlog](../../../docs/apps-migration/APP_HARDENING_BACKLOG.md#deferred-integration-lifecycle-validation)
+for runtime validation status.
 
 ## Stripe Intake Fixtures
 

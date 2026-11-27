@@ -526,23 +526,8 @@ Do not carry over unchanged:
 
 ## 9. Testing Expectations
 
-This app should start with production-quality testing discipline.
-
-Use:
-
-- Twenty-style integration tests as the primary truth:
-  - real app server
-  - `global-setup.ts`
-  - route/workflow assertions
-- targeted unit tests for pure domain logic
-- manual UI validation where front-component hosting behavior is still best checked interactively
-
-Minimum expectation for each slice:
-
-- metadata/schema coverage where relevant
-- route/function behavior coverage
-- core happy-path workflow test
-- at least one important non-happy-path test where the slice has meaningful decision logic
+Use the [fundraising testing strategy](../TESTING.md) to choose verification
+for each slice.
 
 ## 10. Out Of Scope For The First Production Pass
 

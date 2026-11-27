@@ -1,41 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { classifyBatchPreflight } from 'src/batch-processing/batch-processing.preflight';
-import type { BatchProcessingRow } from 'src/batch-processing/batch-processing.types';
 
-const buildRow = (
-  overrides: Partial<BatchProcessingRow> = {},
-): BatchProcessingRow => ({
-  id: 'row-1',
-  name: 'Smoke row',
+type PreflightRow = Parameters<typeof classifyBatchPreflight>[0];
+
+const buildRow = (overrides: Partial<PreflightRow> = {}): PreflightRow => ({
   donorFirstName: 'Ada',
   donorLastName: 'Lovelace',
-  donorEmail: 'ada@example.org',
-  donorMailingAddress: null,
   amount: {
     amountMicros: 10_000_000,
     currencyCode: 'GBP',
   },
   giftDate: '2026-05-12',
-  donationType: null,
   paymentType: 'CARD',
-  externalId: null,
-  sourceFingerprint: null,
-  providerEventId: null,
   provider: null,
-  providerPaymentId: null,
-  coveredFeeAmount: null,
-  grossPaymentAmount: null,
-  processingFeeAmount: null,
-  netReceivedAmount: null,
-  providerPayoutReference: null,
-  paymentProviderCustomerId: null,
   providerAgreementId: null,
   providerIntervalUnit: null,
   providerIntervalCount: null,
-  donorPhone: null,
-  supporterEmailOptOut: null,
   isAnonymousDonor: false,
-  rawProviderEvidence: null,
   appealSourceExternalId: null,
   sourceAppealName: null,
   sourceFundName: null,
@@ -44,19 +25,8 @@ const buildRow = (
   fund: null,
   appeal: null,
   appealSource: null,
-  giftReadyStatus: 'NEEDS_REVIEW',
-  paymentState: null,
   processingStatus: 'NOT_PROCESSED',
-  errorDetail: null,
-  giftAidRequested: null,
-  giftAidDeclarationCaptured: null,
-  giftAidDeclarationDate: null,
-  giftAidCoverageScope: null,
-  giftAidDeclarationSource: null,
-  giftAidTextVersion: null,
-  giftAidDeclaration: null,
   recurringAgreement: null,
-  committedGift: null,
   ...overrides,
 });
 
@@ -66,6 +36,18 @@ describe('classifyBatchPreflight', () => {
       category: 'READY',
       issueCodes: [],
     });
+  });
+
+  it('requires complete donor names when no donor is linked', () => {
+    const row = buildRow({ donorFirstName: '' });
+
+    expect(classifyBatchPreflight(row)).toEqual({
+      category: 'NEEDS_REVIEW',
+      issueCodes: ['DONOR_EVIDENCE_REQUIRED'],
+    });
+    expect(
+      classifyBatchPreflight({ ...row, donor: { id: 'person_1' } }),
+    ).toEqual({ category: 'READY', issueCodes: [] });
   });
 
   it('keeps ambiguous donor rows in needs review', () => {
@@ -221,7 +203,6 @@ describe('classifyBatchPreflight', () => {
         buildRow({
           donorFirstName: '',
           donorLastName: '',
-          donorEmail: '',
           isAnonymousDonor: true,
         }),
       ),
@@ -237,7 +218,6 @@ describe('classifyBatchPreflight', () => {
         buildRow({
           donorFirstName: '',
           donorLastName: '',
-          donorEmail: '',
           isAnonymousDonor: true,
           provider: 'STRIPE',
           providerAgreementId: 'sub_123',
@@ -261,7 +241,7 @@ describe('classifyBatchPreflight', () => {
             name: 'Fundraiser page',
             appeal: null,
           },
-        } as Partial<BatchProcessingRow>),
+        }),
       ),
     ).toEqual({
       category: 'READY',

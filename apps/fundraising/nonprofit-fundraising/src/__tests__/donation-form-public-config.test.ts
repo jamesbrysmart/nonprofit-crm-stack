@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CoreApiClient } from 'twenty-client-sdk/core';
 import { loadPublishedDonationFormForCheckout } from 'src/donation-forms/donation-form-checkout-repository';
 import { loadPublicDonationFormConfigWithClient } from 'src/logic-functions/get-public-donation-form-config';
@@ -13,10 +13,32 @@ const buildClient = (overrides: {
     mutation: overrides.mutation ?? (async () => ({})),
   }) as CoreApiClient;
 
-describe('publishDonationFormWithClient', () => {
-  it('publishes a valid Stripe donation form by stamping public and published state', async () => {
-    process.env.TWENTY_API_URL = 'https://twenty.example.test';
+afterEach(() => vi.unstubAllEnvs());
 
+describe('publishDonationFormWithClient', () => {
+  it('publishes the saved mixed checkout config and returns its embed details', async () => {
+    vi.stubEnv('TWENTY_API_URL', 'https://twenty.example.test');
+    vi.stubEnv('TWENTY_FUNCTIONS_URL', undefined);
+    const appeal = {
+      id: 'apl_123',
+      name: 'Spring Appeal',
+      defaultFund: { id: 'fund_123', name: 'General Fund' },
+    };
+    const config = {
+      mode: 'ONE_OFF_AND_MONTHLY',
+      currencyCode: 'GBP',
+      amountOptions: [1000, 2500, 5000],
+      thankYouMessage: 'Thanks for supporting our work.',
+      defaultAppeal: appeal,
+      defaultAppealSource: {
+        id: 'src_123',
+        name: 'Website Donation Page',
+        appeal,
+      },
+    };
+    const mutation = vi
+      .fn()
+      .mockResolvedValue({ updateDonationForm: { id: 'df_123' } });
     const client = buildClient({
       query: async () => ({
         donationForm: {
@@ -24,82 +46,37 @@ describe('publishDonationFormWithClient', () => {
           publicId: null,
           status: 'DRAFT',
           paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          config: {
-            mode: 'ONE_OFF',
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for supporting our work.',
-            defaultAppeal: {
-              id: 'apl_123',
-              name: 'Spring Appeal',
-              defaultFund: {
-                id: 'fund_123',
-                name: 'General Fund',
-              },
-            },
-            defaultAppealSource: {
-              id: 'src_123',
-              name: 'Website Donation Page',
-              appeal: {
-                id: 'apl_123',
-                name: 'Spring Appeal',
-                defaultFund: {
-                  id: 'fund_123',
-                  name: 'General Fund',
-                },
-              },
-            },
-          },
+          providerConfigKey: null,
+          config,
         },
       }),
-      mutation: async (input) => {
-        const update = (input as any)?.updateDonationForm?.__args?.data;
-        expect(update.status).toBe('LIVE');
-        expect(update.publicId).toMatch(/^df_/);
-        expect(update.publishedVersion).toMatch(/^pub_/);
-        expect(update.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-        expect(update.publishedConfig).toEqual({
-          mode: 'ONE_OFF',
-          currencyCode: 'GBP',
-          amountOptions: [1000, 2500, 5000],
-          thankYouMessage: 'Thanks for supporting our work.',
-          defaultAppeal: {
-            id: 'apl_123',
-            name: 'Spring Appeal',
-            defaultFund: {
-              id: 'fund_123',
-              name: 'General Fund',
-            },
-          },
-          defaultAppealSource: {
-            id: 'src_123',
-            name: 'Website Donation Page',
-            appeal: {
-              id: 'apl_123',
-              name: 'Spring Appeal',
-              defaultFund: {
-                id: 'fund_123',
-                name: 'General Fund',
-              },
-            },
-          },
-        });
-
-        return {
-          updateDonationForm: {
-            id: 'df_123',
-          },
-        };
-      },
+      mutation,
     });
 
     const result = await publishDonationFormWithClient(client, 'df_123');
 
-    expect(result.donationFormId).toBe('df_123');
-    expect(result.publicId).toMatch(/^df_/);
-    expect(result.publishedVersion).toMatch(/^pub_/);
-    expect(result.status).toBe('LIVE');
+    expect(result).toMatchObject({
+      donationFormId: 'df_123',
+      publicId: expect.stringMatching(/^df_/),
+      publishedVersion: expect.stringMatching(/^pub_/),
+      status: 'LIVE',
+    });
+    expect(mutation).toHaveBeenCalledExactlyOnceWith({
+      updateDonationForm: {
+        __args: {
+          id: 'df_123',
+          data: {
+            status: 'LIVE',
+            publicId: result.publicId,
+            publishedVersion: result.publishedVersion,
+            publishedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+            providerConfigKey: 'stripe-default',
+            publishedConfig: config,
+          },
+        },
+        id: true,
+      },
+    });
     expect(result.iframeUrl).toBe(
       `https://twenty.example.test/s/donation-forms/embed-frame?publicId=${result.publicId}`,
     );
@@ -107,77 +84,10 @@ describe('publishDonationFormWithClient', () => {
     expect(result.embedSnippet).toContain('allow="payment *"');
   });
 
-  it('falls back to the default Stripe provider config key when missing', async () => {
-    const client = buildClient({
-      query: async () => ({
-        donationForm: {
-          id: 'df_123',
-          publicId: null,
-          paymentProvider: 'STRIPE',
-          providerConfigKey: null,
-          config: {
-            mode: 'ONE_OFF',
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-          },
-        },
-      }),
-      mutation: async (input) => {
-        const update = (input as any)?.updateDonationForm?.__args?.data;
-
-        expect(update.providerConfigKey).toBe('stripe-default');
-
-        return {
-          updateDonationForm: {
-            id: 'df_123',
-          },
-        };
-      },
-    });
-
-    await expect(
-      publishDonationFormWithClient(client, 'df_123'),
-    ).resolves.toMatchObject({
-      donationFormId: 'df_123',
-      status: 'LIVE',
-    });
-  });
-
-  it('publishes without a success URL because embedded forms use inline thank-you copy', async () => {
-    process.env.TWENTY_API_URL = 'https://twenty.example.test';
-
-    const client = buildClient({
-      query: async () => ({
-        donationForm: {
-          id: 'df_123',
-          publicId: null,
-          paymentProvider: 'STRIPE',
-          providerConfigKey: 'stripe-default',
-          config: {
-            mode: 'ONE_OFF_AND_MONTHLY',
-            currencyCode: 'GBP',
-            amountOptions: [1000, 2500, 5000],
-            thankYouMessage: 'Thanks for giving monthly.',
-          },
-        },
-      }),
-      mutation: async () => ({
-        updateDonationForm: {
-          id: 'df_123',
-        },
-      }),
-    });
-
-    await expect(
-      publishDonationFormWithClient(client, 'df_123'),
-    ).resolves.toMatchObject({
-      donationFormId: 'df_123',
-      status: 'LIVE',
-    });
-  });
-
   it('rejects publish when the saved config cannot accept a donation amount', async () => {
+    const mutation = vi.fn();
     const client = buildClient({
+      mutation,
       query: async () => ({
         donationForm: {
           id: 'df_123',
@@ -196,6 +106,7 @@ describe('publishDonationFormWithClient', () => {
     ).rejects.toThrow(
       'Donation form needs suggested amounts or a valid custom minimum before publishing',
     );
+    expect(mutation).not.toHaveBeenCalled();
   });
 });
 
