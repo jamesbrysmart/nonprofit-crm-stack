@@ -457,9 +457,31 @@ Repeated webhooks must no-op or update existing staging records, not create dupl
 
 Backend decisions (pre-payment staging, webhook, evidence, versions) are unaffected. `payment_method_types: ['card']` should give way to Stripe-configured methods (wallets, Bacs Direct Debit) whichever option is chosen.
 
-**Next.** Send the questions to Twenty (draft below), then decide between options 1+2 and 3 on their answer.
+**Twenty's answer (2026-11-27).** Sent the message below. Twenty will keep the sandbox on the workspace domain (`/s/`, which protects self-hosted session cookies) and on the shared `*.withtwenty.com` domain (which keeps apps apart). It will lift the sandbox for **custom domains registered for the app**, so an app can serve a Stripe page through Twenty on its own domain. A subdomain per app per workspace is a possible longer-term option. The release was expected the next afternoon.
 
-**Draft message to Twenty:**
+**What it means.**
+- **Option 1 stays.** The form is served through Twenty on an app custom domain such as `give.charity.org`. The backend, payment flow and donor page don't change.
+- **URLs need no change.** `TWENTY_FUNCTIONS_URL` already becomes `https://<app primary public domain>` when the app has one (`logic-function-executor.service.ts` `buildFunctionsBaseUrl`, `workspace-domains.service.ts` `buildPublicFunctionBaseUrl`), so `21756f78` covers it.
+- **Registering an app custom domain needs Cloudflare** (`dns-manager.service.ts` `registerHostname`). Cloud has it; a typical self-hosted instance doesn't.
+- **Priority: Twenty Cloud** (user decision, 2026-11-27). For now, self-hosted forms need a Cloudflare-configured instance or the option 2 fallback. Revisit if Twenty adds a non-Cloudflare path or per-app subdomains.
+
+**Expected follow-ups, after testing.**
+- Admin setup state: say a custom domain is required instead of offering a snippet that fails at payment.
+- Remove `payment_method_types: ['card']`.
+- Check that the admin screen's displayed links also use the custom domain.
+- Setup documentation: the app domain and DNS, and registering the domain with Stripe for wallets. Confirm whether wallets in an iframe also need the charity's own domain registered.
+
+**Testing plan once released.**
+- 2021 first, with the app domain row added directly to the database plus the nip.io and HTTPS proxy setup. This is disposable and reversible, and proves the sandbox is lifted and Stripe.js loads.
+- Then a Twenty Cloud workspace end to end, with real DNS, Stripe test mode and wallets.
+
+**Possible follow-up questions for Twenty:**
+- a non-Cloudflare path for self-hosters;
+- whether the domain must be validated before the sandbox is lifted;
+- the release or PR;
+- whether framing headers on those responses change.
+
+**Draft message to Twenty** (sent):
 
 > **Route sandbox prevents payment SDKs on isolated public domains: intended?**
 >
