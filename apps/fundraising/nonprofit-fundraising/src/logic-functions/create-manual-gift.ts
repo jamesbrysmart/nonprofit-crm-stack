@@ -7,6 +7,7 @@ import { recomputeCompanyRollups } from 'src/company-rollups/company-rollups';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { attachGiftToCurrentDraftIfClaimable } from 'src/gift-aid-claims/gift-aid-claim-batch';
 import { recomputeDonorRollups } from 'src/donor-rollups/donor-rollups';
+import { buildGiftAidIntake } from 'src/gift-aid/gift-aid-intake';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
@@ -347,7 +348,10 @@ const handler = async (
     opportunityId,
     companyId,
   });
-  const giftData = { ...evaluatedGiftPayload } as Record<string, unknown>;
+  const giftData = {
+    ...evaluatedGiftPayload,
+    ...buildGiftAidIntake(giftAidInput, donorId),
+  } as Record<string, unknown>;
   delete giftData.donorId;
   delete giftData.companyId;
   delete giftData.opportunityId;

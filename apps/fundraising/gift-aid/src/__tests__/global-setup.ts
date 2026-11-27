@@ -1,53 +1,30 @@
-import { runTwenty } from './run-twenty';
-
-function validateEnvironmentOrThrow(): { apiUrl: string; apiKey: string } {
-  const apiUrl = process.env.TWENTY_API_URL;
-  const apiKey = process.env.TWENTY_API_KEY;
-
-  if (!apiUrl || !apiKey) {
-    throw new Error(
-      'TWENTY_API_URL and TWENTY_API_KEY must be set.\n' +
-        'Or set them in vitest env config.',
-    );
-  }
-
-  return { apiUrl, apiKey };
-}
-
-async function checkServerOrThrow(apiUrl: string) {
-  const response = await fetch(`${apiUrl}/healthz`).catch(() => {
-    throw new Error(
-      `Twenty server is not reachable at ${apiUrl}. ` +
-        'Make sure the server is running before executing integration tests.',
-    );
-  });
-
-  if (!response.ok) {
-    throw new Error(`Server at ${apiUrl} returned ${response.status}`);
-  }
-}
+import { MetadataApiClient } from 'twenty-client-sdk/metadata';
+import { APPLICATION_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
+import { FUNDRAISING_APP_UNIVERSAL_IDENTIFIER } from 'src/constants/fundraising-core';
 
 export async function setup() {
-  const { apiUrl } = validateEnvironmentOrThrow();
+  const { TWENTY_INTEGRATION_API_URL, TWENTY_INTEGRATION_API_KEY, TWENTY_INTEGRATION_WORKSPACE_ID } =
+    process.env;
 
-  await checkServerOrThrow(apiUrl);
-  await teardown();
-
-  const result = await runTwenty(['app', 'apply', '--create']);
-
-  if (!result.ok) {
-    throw new Error(
-      `App apply failed: ${result.error.code} ${result.error.message}`,
-    );
+  if (!TWENTY_INTEGRATION_API_URL || !TWENTY_INTEGRATION_API_KEY || !TWENTY_INTEGRATION_WORKSPACE_ID) {
+    throw new Error('Set the integration API URL, key and expected disposable workspace ID');
   }
-}
 
-export async function teardown() {
-  const result = await runTwenty(['app', 'uninstall', '--yes']);
+  const client = new MetadataApiClient({
+    url: `${TWENTY_INTEGRATION_API_URL.replace(/\/$/, '')}/metadata`,
+    headers: { Authorization: `Bearer ${TWENTY_INTEGRATION_API_KEY}` },
+  });
+  const result = await client.query({
+    currentWorkspace: { id: true },
+    findManyApplications: { universalIdentifier: true },
+  });
 
-  if (!result.ok && result.error.code !== 'APP_NOT_INSTALLED') {
-    throw new Error(
-      `App uninstall failed: ${result.error.code} ${result.error.message}`,
-    );
+  if (result.currentWorkspace.id !== TWENTY_INTEGRATION_WORKSPACE_ID) {
+    throw new Error('The connected workspace is not the expected integration workspace');
+  }
+  for (const appId of [FUNDRAISING_APP_UNIVERSAL_IDENTIFIER, APPLICATION_UNIVERSAL_IDENTIFIER]) {
+    if (!result.findManyApplications.some((app) => app.universalIdentifier === appId)) {
+      throw new Error(`Install both Fundraising and Gift Aid in the integration workspace (missing ${appId})`);
+    }
   }
 }

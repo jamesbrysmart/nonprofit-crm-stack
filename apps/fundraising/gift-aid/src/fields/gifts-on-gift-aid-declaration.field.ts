@@ -1,0 +1,23 @@
+import { FUNDRAISING_GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/constants/fundraising-core';
+import { defineField, FieldType, RelationType } from 'twenty-sdk/define';
+import {
+  GIFTS_ON_GIFT_AID_DECLARATION_FIELD_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_DECLARATION_OBJECT_UNIVERSAL_IDENTIFIER,
+  GIFT_AID_DECLARATION_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/universal-identifiers';
+
+export default defineField({
+  universalIdentifier: GIFTS_ON_GIFT_AID_DECLARATION_FIELD_UNIVERSAL_IDENTIFIER,
+  objectUniversalIdentifier: GIFT_AID_DECLARATION_OBJECT_UNIVERSAL_IDENTIFIER,
+  type: FieldType.RELATION,
+  name: 'gifts',
+  label: 'Gifts',
+  icon: 'IconGift',
+  relationTargetObjectMetadataUniversalIdentifier:
+    FUNDRAISING_GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  relationTargetFieldMetadataUniversalIdentifier:
+    GIFT_AID_DECLARATION_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
+  universalSettings: {
+    relationType: RelationType.ONE_TO_MANY,
+  },
+});

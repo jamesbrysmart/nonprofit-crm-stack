@@ -7,7 +7,22 @@ npm install -g twenty
 yarn install
 ```
 
-Connect to your existing Twenty workspace, or start a server using the [local-server guide](https://docs.twenty.com/developers/extend/apps/getting-started/local-server):
+This source defines the eventual cutover app. Its declarations, claim batches
+and submission history belong to Gift Aid. It uses Fundraising's Gift,
+intake evidence and Gift Details view. The declaration, claim and submission
+definitions have their own metadata identifiers and retain the existing API
+names and lifecycle fields.
+
+For local development, start a server using the [local-server guide](https://docs.twenty.com/developers/extend/apps/getting-started/local-server).
+Use a Fundraising build with the shared Gift metadata and the coordinated
+cutover before applying this app. The current core app still evaluates Gift Aid
+and enforces the refund guard. Its definitions use the same Gift Aid object and
+field names. No organisational workspaces have Gift Aid records to migrate for
+this pre-v1 cutover. Rehearse the upgrade on a disposable workspace with
+representative core fundraising records and settings.
+
+Once a workspace has the cutover build of Fundraising, apply Gift Aid with the
+standard Twenty CLI commands:
 
 ```bash
 twenty auth login --url https://your-workspace.twenty.com --name dev
@@ -19,9 +34,16 @@ The first apply registers and installs your app. Dev watches and syncs later sou
 
 ## Validation
 
-- `yarn lint`, lint the project.
-- `yarn typecheck`, check source and test types.
-- `yarn test:unit`, run unit tests.
-- `yarn test`, run integration tests against a disposable workspace configured with `TWENTY_API_URL` and `TWENTY_API_KEY`.
+- `yarn lint`, `yarn typecheck` and `yarn test:unit` run local checks.
+- `twenty app build` validates the package locally.
+- `yarn test` exercises New Gift, declaration processing and finalization
+  against the cutover pair. Set `TWENTY_INTEGRATION_API_URL`,
+  `TWENTY_INTEGRATION_API_KEY` and the expected
+  `TWENTY_INTEGRATION_WORKSPACE_ID` for an approved disposable workspace.
+  Enable Gift Aid capture for that workspace. The suite creates fixtures
+  and leaves them in that workspace.
 
-Integration tests install and uninstall the app. Install the CLI globally or set `TWENTY_CLI` to a local executable path.
+Use the pinned Twenty client generated for the target metadata. When testing
+new metadata that typed functions depend on, apply the metadata before those
+function changes and regenerate the client with
+`twenty app generate-client --remote <test-remote>`.

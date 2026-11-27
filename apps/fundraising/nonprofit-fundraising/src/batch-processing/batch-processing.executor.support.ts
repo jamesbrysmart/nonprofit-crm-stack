@@ -1,5 +1,6 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
 import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
+import { buildGiftAidIntake } from 'src/gift-aid/gift-aid-intake';
 import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import type { GiftAidEvaluatedPayload } from 'src/gift-aid/gift-aid.types';
@@ -739,6 +740,7 @@ export const createGiftViaRowFallback = async (
     };
   }
 
+  const giftAidIntake = buildGiftAidIntake(payload, donorId);
   payload = (await applyGiftAidMetadata(
     giftAidDeclarationService,
     payload,
@@ -757,7 +759,7 @@ export const createGiftViaRowFallback = async (
     });
   }
 
-  const createData = { ...payload } as Record<string, unknown>;
+  const createData = { ...payload, ...giftAidIntake } as Record<string, unknown>;
   delete createData.donorId;
   delete createData.companyId;
   delete createData.donorMailingAddress;

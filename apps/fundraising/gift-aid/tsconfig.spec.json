@@ -1,9 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "composite": true,
+    "composite": false,
+    "declaration": false,
+    "rootDir": "..",
     "types": ["vitest/globals", "node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "../nonprofit-fundraising/src/__tests__/test-helpers.ts"],
   "exclude": ["node_modules", "dist"]
 }

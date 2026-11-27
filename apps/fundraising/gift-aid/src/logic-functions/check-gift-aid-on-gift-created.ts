@@ -6,11 +6,11 @@ import {
 
 import { FUNDRAISING_GIFT_OBJECT_UNIVERSAL_IDENTIFIER } from 'src/constants/fundraising-core';
 import { CHECK_GIFT_AID_ON_GIFT_CREATED_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
-import { markGiftsChecked } from 'src/logic-functions/mark-gifts-checked';
+import { processGiftAidGifts } from 'src/gift-aid/process-gifts';
 
 const handler = async (
   batch: DatabaseEventBatchPayload<ObjectRecordCreateEvent<{ id: string }>>,
-) => markGiftsChecked(batch.events.map((event) => event.recordId));
+) => processGiftAidGifts(batch.events.map((event) => event.recordId));
 
 export default defineLogicFunction({
   universalIdentifier: CHECK_GIFT_AID_ON_GIFT_CREATED_UNIVERSAL_IDENTIFIER,
