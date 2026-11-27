@@ -1,56 +1,111 @@
 # Twenty App Development Workflow
 
-Updated: 2026-05-01
+Updated: 2026-11-22
 Status: Working note
-Purpose: Capture the current repo-local understanding of how Twenty app development should be approached alongside our existing `dev-stack` environment.
+Purpose: Define the repo-local standalone CLI workflow and distinguish app tooling, server management and workspace validation.
 
 This note is intentionally narrow. It does not replace Twenty's official app setup/build docs, and it does not yet try to be a full runbook.
 
 If you need to know where Twenty-native UI, host affordances, commands, variables, or triggers live before building a custom equivalent, use:
 
-- [TWENTY_NATIVE_REFERENCE.md](/home/jamesbryant/workspace/dev-stack/docs/apps-migration/TWENTY_NATIVE_REFERENCE.md)
+- [TWENTY_NATIVE_REFERENCE.md](TWENTY_NATIVE_REFERENCE.md)
 
 ## 1. Source Of Truth
 
-For app scaffolding, setup, auth, server management, build, and sync flow, use Twenty's official docs as canonical:
+Verify app scaffolding, authentication, build and sync against the checked-out
+standalone CLI and official docs:
 
-- `https://docs.twenty.com/developers/extend/apps/getting-started`
-- `https://docs.twenty.com/developers/extend/apps/building`
-- `https://docs.twenty.com/developers/contribute/capabilities/local-setup`
+- [CLI README](../../services/twenty-core/packages/twenty-cli/README.md)
+- [CLI commands](../../services/twenty-core/packages/twenty-cli/docs/commands.md)
+- [Local-server guidance](../../services/twenty-core/packages/twenty-docs/developers/extend/apps/getting-started/local-server.mdx)
 
 This doc records only the repo-local workflow split and the implications for our migration work.
 
 Current local reference point:
 
 - treat the checked-out `services/twenty-core` package versions as the local source of truth for the current SDK/tooling line under review, rather than hardcoding a version in this note
-- split imports (`twenty-sdk/define`, `twenty-sdk/front-component`, `twenty-sdk/ui`) should be treated as the current native app surface in source
+- use `twenty-sdk/define` and `twenty-sdk/front-component` for SDK imports; native UI primitives now come directly from `twenty-ui` subpaths because `twenty-sdk/ui` has been removed
 - `services/fundraising-service/scripts/setup-schema.mjs` should still be treated as a useful reference for fundraising metadata intent and field naming, but not as the source of truth for Twenty app metadata shape or current app-scaffold conventions
+
+### Command And Connection Baseline
+
+Use the global standalone executable directly. Earlier CLI-migration evidence
+used `2.49.0`. On 27 November the global executable reported `2.61.0`.
+The app pins SDK/client/UI `2.59.0` and declares Twenty `>=2.59.0`.
+Check the target server version separately before an installed-app check.
+
+```bash
+twenty --version
+twenty --help
+twenty app typecheck
+twenty app build
+```
+
+Use direct `twenty` commands for this repo's standalone workflow. The earlier
+Yarn-shadowing warning applied to SDK `2.45.0`; SDK `2.59.0` no longer ships
+that legacy executable. The retained package script does not install or pin
+the standalone CLI; inspect its version separately.
+
+For workspace operations, choose an explicit saved remote rather than changing
+the default. These commands are examples for an approved test target, not
+instructions to use the currently occupied local workspace:
+
+```bash
+twenty auth login --url http://localhost:2020 --name local
+twenty auth status --remote local
+twenty app plan --remote local
+twenty app apply --create --remote local
+twenty app dev --remote local
+```
+
+`auth login` saves credentials; `app plan` previews without applying; `app apply`
+and `app dev` change the workspace. Missing definitions imply deletions by
+default, so inspect the plan, identifiers and layout changes before applying.
+Only use `--create` when registration/installation is intended.
+
+Automation can instead supply `TWENTY_API_URL` and `TWENTY_API_KEY`; do not mix
+those with `TWENTY_REMOTE`. `--remote` explicitly selects a saved connection
+instead of environment credentials. Never assume localhost or a default remote
+identifies the intended workspace without checking.
+
+`app build` validates a temporary snapshot and discards it; it does not leave
+a deployable release tarball. Release packaging/publication remains a separate,
+approved operation under the [deployment runbook](APP_DEPLOYMENT_RUNBOOK.md).
+Do not treat build success as publication or install verification.
 
 ## 2. Environment Split
 
-We currently need to treat two local environments as doing different jobs.
+App authoring and server operation are separate concerns.
 
 ### Twenty app-dev environment
 
 Use this for:
 
-- `yarn twenty dev`
+- `twenty app plan`, `twenty app apply` and `twenty app dev`
 - app registration / development application creation
 - front-component development
 - workflow-shape spikes inside Twenty apps
 
-This environment must satisfy Twenty's app-dev expectations, including a Twenty server running in development or test mode.
+Use a server that supports the intended development flow. The installed
+standalone CLI `2.61.0` exposes `twenty local
+start|status|logs|stop|upgrade|reset`, including an isolated `--test` instance.
+Only version/help output was checked: no Docker operation or compatibility
+validation has been performed here. The earlier app-validation CLI `2.49.0`
+did not manage Docker. See the
+[extensibility watch](../TWENTY_EXTENSIBILITY_WATCH.md) for version boundaries.
+Standard self-hosting remains an alternative; `services/twenty-core` stays
+reference-only rather than becoming our runtime.
 
-Treat Twenty's official getting-started doc as canonical for app-dev server commands:
+Our existing `localhost:2020` container was created through the legacy SDK
+tooling. Leave it in place: it is currently used for another app. This
+migration does not recreate, upgrade or reset it. When dedicated runtime work
+resumes, review the released local-command behavior or an explicit self-hosted
+configuration separately. Do not assume it inherits the old SDK's start/reset
+semantics or run it against the occupied server merely to test command names.
 
-- `https://docs.twenty.com/developers/extend/apps/getting-started`
-
-Repo-local clarification:
-
-- the `localhost:2020` app-dev runtime is managed by the Twenty SDK CLI, not by this repo's `docker-compose.yml`
-- the `TAG` variable in the root `.env` controls the integrated `twentycrm/twenty:${TAG}` Compose runtime, not the SDK-managed `twenty-app-dev` container
-- if `yarn twenty server start` reuses an existing stale app-dev container after the SDK/tooling has moved forward, prefer the official stop/start flow first, then use the narrow non-destructive recovery of removing only the stopped app-dev container and starting again from the current app folder
-- avoid `yarn twenty server reset` unless wiping app-dev data/volumes is intentional
+The root Compose `TAG` concerns the legacy integrated runtime, not that
+existing container. Do not repoint Compose or reuse its volumes as part of
+this CLI migration. Any destructive operation requires separate approval.
 
 ### `dev-stack` integrated environment
 
@@ -59,9 +114,10 @@ Use this for:
 - gateway behavior
 - fundraising-service integration
 - metadata scripts and local stack wiring
-- broader system and pilot validation
+- legacy hybrid-runtime validation only when explicitly requested
 
-This environment should not be assumed to be a valid target for Twenty app dev sync.
+This is not the default fundraising runtime or a disposable integration-test
+target. See the legacy operations runbook only when working on that runtime.
 
 ## 3. Upgrade Posture
 
@@ -70,7 +126,7 @@ Treat app upgrades as three separate concerns, because they do not move together
 - app package upgrade
   - the app's `twenty-sdk` / `twenty-client-sdk` dependency versions and lockfile
 - app-dev runtime upgrade
-  - the local `twenty-app-dev` server image/container version managed by the Twenty CLI
+  - the independently managed server image/container and database version
 - workspace app sync / upgrade
   - the actual installed app in the `localhost:2020` workspace and the behavior it exposes after sync
 
@@ -82,7 +138,7 @@ Why this matters:
 
 Repo-local rule:
 
-- prefer Twenty's documented CLI/server flow for app-dev upgrades rather than hand-rolling Docker steps
+- use the guidance for the installed tooling version; local-upgrade is now exposed by the installed CLI but its Docker/runtime behavior has not been tested here
 - avoid treating `docker pull twentycrm/twenty-app-dev:latest` as a sufficient upgrade procedure by itself
 - prefer explicit target versions over `latest` when validating behavior or preparing repeatable client-facing guidance
 
@@ -108,7 +164,8 @@ Current caution:
 Current working default:
 
 1. Develop and pressure-test Twenty app workflow shape in the app-dev environment.
-2. Bring work back into `dev-stack` only when we need integration or broader system validation.
+2. Keep app code and tests app-local; use Twenty core as a read-only reference.
+3. Use the old integrated runtime only for explicitly requested legacy work.
 
 This keeps workflow-shape questions separate from self-host/integration questions.
 
@@ -133,9 +190,9 @@ That means "local Twenty is running" is not enough. The relevant question is whe
 
 ## 6. Current Practical Reading
 
-- The existing `dev-stack` Docker setup remains the right default for integrated local work.
-- The official Twenty app-dev flow should be treated as the right default for Twenty app development.
-- Full contributor/source setup is likely only needed when we have to inspect or debug Twenty itself, rather than just build against the supported app workflow.
+- The standalone CLI and app-local tests are the default for Twenty app development.
+- Server lifecycle management is separate; the current occupied local server is not part of this migration.
+- Full contributor/source setup is not required to author apps and is not the chosen runtime for this reference checkout.
 - For upgrades, the smallest durable repo-local proof should usually include:
   - package version state,
   - app-dev server version state,
@@ -146,9 +203,10 @@ That means "local Twenty is running" is not enough. The relevant question is whe
 
 These still need practical verification:
 
-- how cleanly the official app-dev server flow works in our day-to-day environment,
-- how much app work can remain isolated before it needs integration back into `dev-stack`,
-- and what the smallest durable repo-local upgrade checklist should be once this workflow settles.
+- the migrated integration lifecycle against a disposable test workspace; deliberately deferred while another app uses the local server, as tracked in the [hardening backlog](APP_HARDENING_BACKLOG.md#deferred-integration-lifecycle-validation)
+- the next SDK/runtime combination and its metadata plan before any apply or release
+- separately reviewed server management before replacing the existing legacy-created container; the installed CLI's `local start --test` path may provide isolation without repurposing that workspace, but has not been exercised
+- activation of real monorepo CI, if wanted; the app's nested workflows are inactive reference templates, not deployed automation
 
 ## 8. Current Observations
 
@@ -159,7 +217,7 @@ These are early working observations, not fixed rules.
 - The published example apps (`hello-world`, `postcard`) introduced additional scaffold/example drift during testing, so they are currently a weaker baseline for migration spikes than a minimal scaffold.
 - The `http://localhost:2020` app-dev workspace should be treated as its own metadata world. Objects and relations available in the integrated/local workspace on `http://localhost:3000` do not exist there unless the app creates them.
 - Iterating on app-owned metadata is not just a code-authoring problem; it also has a manifest-identity lifecycle. In practice, synced `views`, `viewFields`, page-layout widgets, and similar entities need stable `universalIdentifier` discipline across revisions.
-- The most common symptom so far is `INVALID_VIEW_DATA` during `yarn twenty dev`, typically because a changed manifest tries to recreate a field/widget that already exists in the workspace under an earlier stable identity.
+- A historical symptom was `INVALID_VIEW_DATA` during legacy dev sync, typically because a changed manifest tried to recreate a field/widget that already existed in the workspace under an earlier stable identity. This remains an identity warning, not a reason to retain the old command.
 - Practical implication for spikes: treat object/field IDs as durable, and be especially careful when reshaping views/layouts after they have already synced. Additive change or a clean rebuild is often safer than reusing/remapping existing manifest IDs mid-spike.
 - Manual gift entry has now been proven at a narrow but meaningful level inside Twenty apps:
   - global command -> side-panel flow,
@@ -170,9 +228,9 @@ These are early working observations, not fixed rules.
 - Twenty’s default testing shape is now clearer:
   - Vitest,
   - real app-server integration,
-  - `global-setup.ts` running `appDevOnce`,
+  - `global-setup.ts` using the standalone CLI for uninstall / `app apply --create` / uninstall, with environment-provided test credentials rather than writing a CLI config file (fundraising harness migrated 2026-10-26),
   - and assertions through `MetadataApiClient`, `CoreApiClient`, and app routes.
-- Current cost/risk: even focused `yarn vitest run <single-file>` executions can perform a full app uninstall/dev-sync/uninstall cycle. During the earlier Stripe SDK upgrade check, this path exited once with code `137` and then crashed the terminal/session on retry, so treat it as a heavier integration validation step rather than a cheap default check.
+- Current cost/risk: even focused `yarn vitest run <single-file>` executions using the integration config can perform a full app uninstall/apply/uninstall cycle, deleting app data. Use only a disposable test workspace; see the [app validation instructions](../../apps/fundraising/nonprofit-fundraising/README.md#local-validation). During the earlier Stripe SDK upgrade check, the old harness exited once with code `137` and then crashed the terminal/session on retry, so treat this as a heavier integration validation step rather than a cheap default check.
 - The scaffold/example guidance is shallow by default, so product apps should expect to add stronger route/workflow integration tests rather than relying only on install/schema checks.
 - Application/server variables look useful for:
   - feature visibility,
@@ -180,23 +238,23 @@ These are early working observations, not fixed rules.
   - route/action enablement,
   - and capability toggles such as Gift Aid.
 - Variables are not yet proven as the right mechanism for conditional metadata provisioning. Current working assumption: metadata should stay static per app version, while variables control visibility/behavior.
-- The source tree now clearly shows a real native Twenty UI layer (`twenty-ui`) that front components can target through `twenty-sdk/ui`; treat this as the intended native path for host-consistent controls, layout, and theming.
+- The source tree now clearly shows a real native Twenty UI layer (`twenty-ui`) that front components import directly through package subpaths; treat this as the intended native path for host-consistent controls, layout, and theming.
 - The remaining caution is no longer “apps are alpha,” but simple release verification: confirm exact runtime behavior in the scaffolded app/toolchain you are actively building against before broad adoption.
 - Raw app `yarn typecheck` should stay part of the local development loop for app-touching work.
 - Current repo-local understanding:
   - app-owned type drift can be reduced materially with local cleanup,
-  - but the remaining `Button` export failure from `twenty-sdk/ui` appears to be an upstream SDK type-surface mismatch rather than a reason to stop using Twenty's native UI layer.
+  - and the fundraising app should keep its proven app-local button primitive until direct `twenty-ui` imports are deliberately tested against the exact runtime and SDK combination being deployed.
 - Practical implication:
   - keep running raw `yarn typecheck`,
   - do not replace it with a filtered or custom-ignore variant,
-  - and re-check this mismatch on Twenty SDK/tooling upgrades in case the platform resolves it upstream.
+  - and re-test direct `twenty-ui` adoption on future SDK/tooling upgrades rather than assuming earlier front-component results still apply.
 - For now, the safest practical starting point for Twenty app spikes is:
   - minimal official scaffold,
   - official app-dev server flow,
   - then incremental addition of the spike-specific workflow surface.
 - Twenty appears to assume a `scaffold first, then customize` workflow more strongly than our early spike process did:
-  - `create-twenty-app` generates initial universal identifiers into source,
-  - `yarn twenty add ...` generates stable IDs for new top-level entities such as objects, views, navigation items, logic functions, front components, roles, and page layouts,
+  - `twenty app init` generates initial universal identifiers into source,
+  - `twenty app add ...` generates stable IDs for new top-level entities such as objects, views, navigation items, logic functions, front components, roles, and page layouts,
   - and those IDs are then expected to remain stable in source rather than being assigned by the server at sync time.
 - Practical implication:
   - prefer Twenty scaffolding commands for creating new top-level metadata entities,
@@ -204,7 +262,7 @@ These are early working observations, not fixed rules.
   - and avoid freehand creation of new metadata files where the CLI can scaffold them.
 - This does not remove the need for metadata discipline later:
   - view fields, layout widgets, relation pairs, and other nested metadata still have an identity lifecycle,
-  - so `twenty add` reduces creation-time risk but does not replace careful migration/edit discipline after sync.
+  - so `twenty app add` reduces creation-time risk but does not replace careful migration/edit discipline after sync.
 - Caution as the app grows:
   - even when scaffolding first, metadata changes appear safer when introduced in small, coherent groups rather than large mixed batches,
   - existing `universalIdentifier`s should be treated as stable assets and only changed with intent,

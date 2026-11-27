@@ -54,6 +54,7 @@ If you need:
   - [PILOT_APP_IMPLEMENTATION_PLAN.md](docs/apps-migration/PILOT_APP_IMPLEMENTATION_PLAN.md)
 - current Twenty-app runtime/layout learnings:
   - [TWENTY_NATIVE_REFERENCE.md](docs/apps-migration/TWENTY_NATIVE_REFERENCE.md)
+- native options for conditional required fields and record consistency requirements: [Validation rules](TWENTY_NATIVE_REFERENCE.md#6c-native-validation-rules)
 - current implementation patterns discovered during app work:
   - [MIGRATION_WORKING_PATTERNS.md](docs/apps-migration/MIGRATION_WORKING_PATTERNS.md)
 - review framing for an evolving Twenty Apps platform:

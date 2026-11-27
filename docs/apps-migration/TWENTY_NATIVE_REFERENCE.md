@@ -1,6 +1,6 @@
 # Twenty Native Reference
 
-Updated: 2026-04-21
+Updated: 2026-11-22 (validation rules; other sections retain earlier observations)
 Status: Working note
 Purpose: Give future build sessions a small, code-first map to Twenty-native UI, host affordances, and app surfaces so they can look in the right place before inventing custom equivalents.
 
@@ -18,7 +18,7 @@ Use this in the following order:
 Important rule:
 
 - Do not assume the Docker/runtime version, the published scaffolder/SDK version, and the in-repo `services/twenty-core` source are all on the same surface. Verify the current app toolchain before copying examples.
-- Current local reference point: `services/twenty-core` is now on `twenty-sdk` / `create-twenty-app` `2.0.0`, so the split import surface (`twenty-sdk/define`, `twenty-sdk/front-component`, `twenty-sdk/ui`) should be treated as the current native shape unless the active published toolchain proves otherwise.
+- Earlier sections include historical v2.0 examples, including retired `twenty-sdk/ui` guidance. Use the [extensibility watch](../TWENTY_EXTENSIBILITY_WATCH.md) for current package/import boundaries; adding a capability note here does not revalidate those older examples.
 
 ## 2. Confidence Labels
 
@@ -336,6 +336,41 @@ Working rule:
   - composite field such as `Address`
   - relation field
 - do not invent the structure from memory if an existing example already exists in the app
+
+## 6c. Native Validation Rules
+
+Consider this option when a requirement says a record must satisfy a condition
+before it can be saved: conditional required fields, date/amount consistency,
+or prerequisites for a particular status. It can be a workspace-native
+alternative to adding another custom form check.
+
+Confidence: `source-visible`, `version-sensitive`; reviewed on 2026-11-22
+against reference checkout `1d77a57182a` (declarations from `2.56`, previous
+values from `2.58`, revised date functions/comparisons from `2.60`), not
+exercised in our app/workspace.
+
+For example, require an agreement end date to follow its start date, or require
+a committed-gift link once a staging row is marked processed. These are
+candidates to evaluate, not approved rules or changes to fundraising policy.
+
+Before choosing this for a requirement:
+
+- Confirm the target workspace's `VALIDATION_RULES` entitlement. The newer enforcement gate no longer depends on the record-creation-form feature flag; do not assume availability from the server version alone.
+- Rules must evaluate to true to save and have a custom error message. They run on normal server record writes, not only forms; an invalid row can roll back an entire batch. Test API, import and app-processing paths as well as the UI.
+- Keep incomplete staging/intake records valid until the relevant state requires completeness. Prefer status-conditional checks over unconditional required fields.
+- Scope the requirement to the written record and supported related fields. This is not a replacement for cross-record reconciliation, external-service verification or multi-step processing logic.
+- `previous.<field>` / `ruleExpression.previous()` supports transition checks. In `2.60`, `daysSince()` is removed from both string/builder expressions: use `dateDiff(date, now, 'DAY')`. Other helpers include `dateAdd`, `dateTrunc`, `datePart` and `isInRelativeDateRange`. Dates compare by UTC day or instant rather than text spelling. Test creation (where previous values may be absent), equivalent offsets, ordinary edits and batch/API writes before using a rule as policy.
+- Rules can be packaged with `defineValidationRule()` from `twenty-sdk/define`, targeting app-owned or standard objects. `ruleExpression` produces a string expression; `twenty app add validation-rule --name <name> --object <object-uuid>` scaffolds a definition. Fundraising's SDK `2.59.0` supports rule declarations but predates the `2.60` date-function changes; match expression syntax to the actual SDK/server under test. No app-owned rule definitions were found in the current source scan.
+- Preserve rule/object identifiers and inspect lifecycle effects in the metadata plan. Sync retains existing admin activation state; removing a referenced app-owned field fails validation, while unavailable external fields can leave a rule inactive. Adding a rule is a write-policy change, not just another UI field check.
+- Keep app/domain validation and tests until equivalent enforcement, error handling and deployment portability are proven. Record the target workspace configuration and rule lifecycle if adopted.
+
+Code references:
+
+- [SDK authoring and field-lifecycle guide](../../services/twenty-core/packages/twenty-docs/developers/extend/apps/data/validation-rules.mdx)
+- [Rule editor and error placement](../../services/twenty-core/packages/twenty-front/src/modules/validation-rules/components/SettingsValidationRuleForm.tsx)
+- [Enforcement gates](../../services/twenty-core/packages/twenty-server/src/engine/twenty-orm/utils/is-validation-rule-enforcement-enabled.util.ts)
+- [Write rollback and batch tests](../../services/twenty-core/packages/twenty-server/test/integration/metadata/suites/validation-rule/validation-rule-enforcement.integration-spec.ts)
+- [Rules on app-owned objects across sync/uninstall](../../services/twenty-core/packages/twenty-server/test/integration/metadata/suites/validation-rule/validation-rule-application-sync.integration-spec.ts)
 
 ## 7. Logic Function Triggers
 
