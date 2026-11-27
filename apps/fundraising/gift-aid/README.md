@@ -1,14 +1,34 @@
-# Gift Aid App (Draft)
+# My Twenty App
 
-Standalone Twenty app for UK Gift Aid workflows. This is a placeholder
-scaffold so we can design the metadata and flows before implementation.
+Describe your app in one or two sentences.
 
-## Intent (provisional)
-- Capture Gift Aid declarations linked to donors.
-- Flag eligible gifts and link them to declarations.
-- Export claim-ready batches.
+## Features
 
-## Next design steps
-- Confirm metadata schema (GiftAidDeclaration object + Gift fields).
-- Define enablement UX and admin defaults.
-- Add serverless function entry points for declaration capture and export.
+List the top things your app does, for example:
+
+- Feature one
+- Feature two
+- Feature three
+
+## Getting started
+
+Setup instructions live in [SETUP.md](SETUP.md).
+
+## Publishing
+
+The `Publish` workflow (`.github/workflows/publish.yml`) publishes the app to npm with provenance using [npm trusted publishing](https://docs.npmjs.com/trusted-publishers). To publish:
+
+1. On npmjs.com register this repository as a trusted publisher of your package, pointing at the `publish.yml` workflow.
+2. Bump the version in `package.json`, then push a version tag (e.g. `git tag v1.0.0 && git push --tags`) or run the workflow manually from the Actions tab.
+
+Publishing with provenance is also how you prove ownership when claiming your app in a Twenty marketplace.
+
+## Changelog
+
+Notable changes are documented in [CHANGELOG.md](CHANGELOG.md).
+
+## Learn more
+
+- [Twenty Apps documentation](https://docs.twenty.com/developers/extend/apps/getting-started/quick-start)
+- [Twenty CLI reference](https://docs.twenty.com/developers/extend/apps/operations/cli)
+- [Discord](https://discord.gg/cx5n4Jzs57)
