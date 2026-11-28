@@ -436,7 +436,9 @@ Repeated webhooks must no-op or update existing staging records, not create dupl
 
   Both are checked before any database or Stripe call. **Limits:** they stop blind scripted requests and naive bots, but not a bot driving a real browser, and a token can be reused until it expires. Turnstile remains deferred.
 
-## 8b. Status (2026-11-25): parked on a Twenty platform issue
+## 8b. Sandbox issue history (2026-11-25 to 2026-11-27)
+
+Resolved by Twenty v2.65.1; current status and requirements are in §8c.
 
 **Blocker.** Since SDK/server 2.59 (#30413), every route response carries `Content-Security-Policy: sandbox …` without `allow-same-origin`, and apps cannot override it. Stripe.js refuses to run in that sandbox ("Stripe.js requires 'allow-same-origin' if sandboxed"), and its fraud-signal requests fail with origin `null`. The embedded Payment Element therefore cannot load. Confirmed on 2021 both under `/s/` and on an emulated Cloud public domain (`PUBLIC_DOMAIN_URL` set, legacy-route cutoff, HTTPS edge), so it is not caused by our configuration.
 
@@ -465,21 +467,7 @@ Backend decisions (pre-payment staging, webhook, evidence, versions) are unaffec
 - **Registering an app custom domain needs Cloudflare** (`dns-manager.service.ts` `registerHostname`). Cloud has it; a typical self-hosted instance doesn't.
 - **Priority: Twenty Cloud** (user decision, 2026-11-27). For now, self-hosted forms need a Cloudflare-configured instance or the option 2 fallback. Revisit if Twenty adds a non-Cloudflare path or per-app subdomains.
 
-**Expected follow-ups, after testing.**
-- Admin setup state: say a custom domain is required instead of offering a snippet that fails at payment.
-- Remove `payment_method_types: ['card']`.
-- Check that the admin screen's displayed links also use the custom domain.
-- Setup documentation: the app domain and DNS, and registering the domain with Stripe for wallets. Confirm whether wallets in an iframe also need the charity's own domain registered.
-
-**Testing plan once released.**
-- 2021 first, with the app domain row added directly to the database plus the nip.io and HTTPS proxy setup. This is disposable and reversible, and proves the sandbox is lifted and Stripe.js loads.
-- Then a Twenty Cloud workspace end to end, with real DNS, Stripe test mode and wallets.
-
-**Possible follow-up questions for Twenty:**
-- a non-Cloudflare path for self-hosters;
-- whether the domain must be validated before the sandbox is lifted;
-- the release or PR;
-- whether framing headers on those responses change.
+Follow-ups, testing and the outcome are in §8c.
 
 **Draft message to Twenty** (sent):
 
@@ -508,6 +496,59 @@ Backend decisions (pre-payment staging, webhook, evidence, versions) are unaffec
 > It would also help to mention the sandbox in the HTTP route documentation.
 
 Optional extra evidence before sending: a static page served with Twenty's exact policy (Stripe fails) and with `allow-same-origin` added (Stripe works). The repro used 2026-11-25 was a scratch script; it is quick to recreate.
+
+## 8c. Custom domain requirement and validation (2026-11-28)
+
+**Status.** Unblocked. Twenty v2.65.1 (#31778, a backport of #31621 and #31772) serves route pages **without the sandbox on a validated custom domain registered for the app**. They keep a real origin and all response headers, and `nosniff` stays. The workspace path (`/s/`) and the shared `*.withtwenty.com` domain stay sandboxed. The existing architecture (option 1) works without app changes. The workstream is closed until Marketplace readiness (2026-11-28).
+
+**Requirement.** Donation forms must be served from an app custom domain, such as `give.charity.org`. On the default addresses, the form page loads but Stripe.js cannot run.
+
+**Twenty Cloud setup** (Twenty's instructions, not yet validated by us):
+1. In the workspace, go to Settings → Applications → Nonprofit Fundraising → App URL → Add Custom Domain, and enter a hostname whose DNS the charity controls.
+2. Add the DNS records shown, then click Reload until the domain is no longer Pending. Until it is validated, the domain returns 404 and the app's URLs stay on the workspace domain.
+3. Republish the form and copy the embed code. `TWENTY_FUNCTIONS_URL` now points at the domain (the primary one, otherwise the oldest validated one). Our URLs come from `resolveUrl` (`donation-form-urls.ts`), so links, the embed code and the checkout endpoint follow automatically. Front components get the same value from v2.65.1.
+4. To be confirmed during Cloud validation: Stripe payment method domain registration for wallets (Apple Pay and Google Pay). This covers the custom domain, and possibly the charity's own site when the form is embedded.
+
+**Self-hosted: a known limitation**, documented but not addressed by the app.
+- The "Add Custom Domain" action registers the hostname through Cloudflare (`DnsManagerService.registerHostname`), so it fails on an instance without Cloudflare.
+- Without Cloudflare, validation isn't enforced: Twenty's docs say a custom domain serves routes as soon as its `core."publicDomain"` row exists. The instance administrator must:
+  - insert that row (`domain`, `workspaceId`, `applicationId`);
+  - point the hostname's DNS and TLS at their Twenty server;
+  - have their reverse proxy map the domain's root to the server's `/s` prefix (`https://give.example.org/x` → `/s/x` with the `Host` header kept). On Cloud, Twenty's edge does this mapping; Twenty's own integration tests call `/s/...` with the custom `Host`.
+- This is feasible for a technical administrator, but it's not a charity-friendly setup.
+
+**Twenty's longer-term plan.** Twenty intends to give each app in each workspace its own isolated subdomain of its public domain (`withtwenty.com`), to prevent conflicts between apps. That would let a form run unsandboxed without the charity setting up a domain or DNS, and should simplify setup considerably. It isn't committed or scheduled; watch for it and revisit the setup steps when it lands.
+
+**Validated locally (2026-11-28)**
+- **Environment:**
+  - server: 2021 (`fundraising-local`) upgraded with `twenty local upgrade 2.65.1 --test`;
+  - tooling: CLI 2.61.0 and SDK, client and UI pins 2.59.0 (no SDK change needed);
+  - app: commit `fc91ebfa`;
+  - domain: `give.127.0.0.1.nip.io` added as a `core."publicDomain"` row (the self-hosted path above);
+  - edge: a temporary Caddy container providing HTTPS on 443 and the root-to-`/s` mapping;
+  - webhooks: forwarded with `stripe listen` to `localhost:2021/s/stripe/webhook`.
+
+| Check | Result |
+|---|---|
+| Form page on the custom domain | 200 with no sandbox policy and `nosniff` kept. The same page under `/s/` is still sandboxed |
+| The app's URLs | `checkoutUrl` and the embed URL use `https://give.127.0.0.1.nip.io/...` with no app change |
+| Standalone donation (form opened directly) | Stripe Payment Element loaded, card payment succeeded |
+| Embedded donation (iframe on a separate host page) | Payment Element loaded inside the iframe, card payment succeeded |
+| Webhook | `checkout.session.completed` verified and routed (`UPDATE_DONATION_FORM_GIFT_STAGING`) for both donations |
+| Staging rows | Moved from awaiting payment to payment confirmed, with gift date and Stripe payment ID |
+| Donor match and readiness | Both rows ready; no existing donor matched |
+| Staging to gift | **Failed, but not because of donation forms.** Both rows: `no permission to write field "giftAidIntake" on "gift"`. Core batch processing writes `giftAidIntake` (`buildGiftAidIntake`), which the Gift Aid checkpoint `8ab3e176` made non-updatable (`disabledFieldPermissionActions: ['canUpdateFieldValue']`). This affects any staged gift while Gift Aid is enabled. Handed to the Gift Aid workstream |
+
+Along the way:
+- A rejected webhook signature (`STRIPE_WEBHOOK_SECRET` out of date with the `stripe listen` session) returns 200 to Stripe and only logs `stripe_webhook_rejected`. That's correct for security, but in local testing it looks like success. Check the app logs (`twenty app logs`).
+- Under WSL, publish the proxy's port 443 through Docker. With host networking, the browser on Windows can't reach the proxy.
+
+**Remaining, deferred**
+- **Cloud validation** with real DNS, domain validation, Stripe test mode and wallets. This is a Marketplace readiness task, together with the installation and setup experience.
+- **Admin setup state:** say a custom domain is required instead of offering an embed code that fails at payment.
+- Remove `payment_method_types: ['card']` so wallets and Bacs follow the charity's Stripe settings.
+- **Attribution:** standalone and embedded donations both record `embedContext.surface = 'iframe'`.
+- Rerun the staging-to-gift step once the `giftAidIntake` permission issue is fixed.
 
 ## 9. Explicitly deferred
 

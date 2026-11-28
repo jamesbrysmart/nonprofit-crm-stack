@@ -2,9 +2,11 @@ import { DONATION_FORM_RESIZE_MESSAGE_TYPE } from 'src/donation-forms/embed-clie
 
 const EMBED_FRAME_ATTRIBUTE = 'data-nonprofit-fundraising-donation-form';
 
-// Sizes each embedded form from its own resize messages. The form page runs in
-// a sandbox with an opaque origin, so frames are matched on event.source. If a
-// site strips the script, the iframe keeps its fixed fallback height.
+// Sizes each embedded form from its own resize messages. Frames are matched on
+// event.source rather than origin, because the form's origin depends on where
+// Twenty serves it (an app custom domain, or a sandboxed opaque origin
+// elsewhere). If a site strips the script, the iframe keeps its fixed fallback
+// height.
 const HOST_RESIZE_SCRIPT = `(function () {
   if (window.__nfDonationFormResize) return;
   window.__nfDonationFormResize = true;

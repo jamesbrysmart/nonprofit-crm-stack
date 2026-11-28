@@ -13,15 +13,23 @@ Never run it against port 2020 or a client workspace.
    `STRIPE_SECRET_KEY` (test mode) and `STRIPE_WEBHOOK_SECRET` set.
 2. Forward webhooks and copy the signing secret it prints into
    `STRIPE_WEBHOOK_SECRET`:
-   `stripe listen --events checkout.session.completed,invoice_payment.paid --forward-to <app functions URL>/stripe/webhook` (locally without a public domain: `http://localhost:2021/s/stripe/webhook`)
-3. A Live donation form with: one-off and monthly, three preset amounts, custom
+   `stripe listen --events checkout.session.completed,invoice_payment.paid --forward-to http://localhost:2021/s/stripe/webhook`
+   A wrong secret still returns 200 to Stripe; check `twenty app logs` for
+   `stripe_webhook_rejected`.
+3. The app has a custom domain. Twenty v2.65.1+ only runs Stripe.js there; see
+   `DONATION_FORMS_EMBEDDED_RUNTIME.md` §8c. Locally:
+   - add a `core."publicDomain"` row for `give.127.0.0.1.nip.io`;
+   - run an HTTPS proxy on 443 that maps the root to `/s` (published through
+     Docker, not host networking, under WSL);
+   - accept its certificate once in the browser.
+4. A Live donation form with: one-off and monthly, three preset amounts, custom
    amount with a minimum, Gift Aid enabled, phone collected.
-4. Open the form two ways:
-   - directly: `http://localhost:2021/s/donation-forms/embed-frame?publicId=<publicId>`
+5. Open the form two ways:
+   - directly: `https://give.127.0.0.1.nip.io/donation-forms/embed-frame?publicId=<publicId>`
    - embedded: a copy of `docs/spikes/fixtures/embedded-donation-form-host-page.html`
      with its iframe replaced by the embed code from the form's Publish panel
      (the code includes the resize script)
-5. Keep the browser developer tools console open and note any errors.
+6. Keep the browser developer tools console open and note any errors.
 
 Stripe test cards (any future expiry, any CVC, any postcode):
 
@@ -33,8 +41,8 @@ Stripe test cards (any future expiry, any CVC, any postcode):
 
 ## Platform check (first)
 
-Twenty sends route pages with `Content-Security-Policy: sandbox …` (from SDK
-2.59), so the page runs with an opaque origin.
+Twenty sandboxes route pages (opaque origin) everywhere except on an app custom
+domain (v2.65.1+). Check that the form is opened from the custom domain.
 
 - [ ] The form loads with no console errors
 - [ ] Submitting step 1 loads the Stripe payment fields (no CORS or storage

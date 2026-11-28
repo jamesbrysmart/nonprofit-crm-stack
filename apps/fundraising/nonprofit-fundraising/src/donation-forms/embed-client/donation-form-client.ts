@@ -173,8 +173,9 @@ export const startDonationForm = ({
   const requiresAddress = () =>
     config.requireAddress === true || giftAidRequestedInput?.checked === true;
 
-  // The host page sizes the iframe from these messages. The page runs in a
-  // sandbox with an opaque origin, so hosts match on event.source instead.
+  // The host page sizes the iframe from these messages. The page's origin
+  // depends on where Twenty serves it (opaque when sandboxed), so hosts match
+  // on event.source instead.
   const postResize = (scrollIntoView = false) => {
     if (win.parent === win) {
       return;
