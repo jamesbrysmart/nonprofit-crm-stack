@@ -56,6 +56,12 @@ function changes and regenerate the client with
 
 ## Deferred hardening
 
+- Gift intake is read-only in the Twenty UI. Callers with Gift write access
+  can edit it through the API, subject to their record and field permissions.
+  Twenty 2.65.1 has no separate create and update field permissions.
+  Its field write lock also blocks initial values supplied by a delegated
+  caller. Fundraising saves the evidence together with the Gift under the
+  caller's permissions. Review evidence protection before live HMRC use.
 - Fundraising rejects a refund on a gift already linked to a finalised claim.
   On Twenty 2.59.2, an overlapping refund and finalisation both succeeded.
   Submission validation blocked the resulting claim before creating an attempt.

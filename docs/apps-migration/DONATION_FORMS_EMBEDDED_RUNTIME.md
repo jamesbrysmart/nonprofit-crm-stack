@@ -537,7 +537,7 @@ Optional extra evidence before sending: a static page served with Twenty's exact
 | Webhook | `checkout.session.completed` verified and routed (`UPDATE_DONATION_FORM_GIFT_STAGING`) for both donations |
 | Staging rows | Moved from awaiting payment to payment confirmed, with gift date and Stripe payment ID |
 | Donor match and readiness | Both rows ready; no existing donor matched |
-| Staging to gift | **Failed, but not because of donation forms.** Both rows: `no permission to write field "giftAidIntake" on "gift"`. Core batch processing writes `giftAidIntake` (`buildGiftAidIntake`), which the Gift Aid checkpoint `8ab3e176` made non-updatable (`disabledFieldPermissionActions: ['canUpdateFieldValue']`). This affects any staged gift while Gift Aid is enabled. Handed to the Gift Aid workstream |
+| Staging to gift | The initial run failed because Twenty applied the `giftAidIntake` field write lock when the caller created a Gift. After the fix, both 2021 retries produced exactly one Gift each under the workspace member's permissions. Follow-up staging checks passed with workspace capture on and off. [Gift Aid hardening notes](../../apps/fundraising/gift-aid/SETUP.md#deferred-hardening) |
 
 Along the way:
 - A rejected webhook signature (`STRIPE_WEBHOOK_SECRET` out of date with the `stripe listen` session) returns 200 to Stripe and only logs `stripe_webhook_rejected`. That's correct for security, but in local testing it looks like success. Check the app logs (`twenty app logs`).
@@ -548,7 +548,6 @@ Along the way:
 - **Admin setup state:** say a custom domain is required instead of offering an embed code that fails at payment.
 - Remove `payment_method_types: ['card']` so wallets and Bacs follow the charity's Stripe settings.
 - **Attribution:** standalone and embedded donations both record `embedContext.surface = 'iframe'`.
-- Rerun the staging-to-gift step once the `giftAidIntake` permission issue is fixed.
 
 ## 9. Explicitly deferred
 

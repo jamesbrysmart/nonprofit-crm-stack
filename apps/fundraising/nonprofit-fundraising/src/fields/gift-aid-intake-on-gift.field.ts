@@ -10,6 +10,5 @@ export default defineField({
   isNullable: true,
   defaultValue: null,
   isUIEditable: false,
-  disabledFieldPermissionActions: ['canUpdateFieldValue'],
   description: 'Gift Aid evidence captured when this gift was recorded.',
 });

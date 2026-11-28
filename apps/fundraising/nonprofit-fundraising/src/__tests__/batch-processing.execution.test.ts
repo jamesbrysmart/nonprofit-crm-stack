@@ -22,9 +22,6 @@ vi.mock('src/app-api/twenty-rest-client', () => ({
 vi.mock('src/gift-staging/gift-staging-bulk-writeback', () => ({
   persistGiftStagingBatchUpserts: mocks.persist,
 }));
-vi.mock('src/gift-aid/gift-aid-config', () => ({
-  isGiftAidEnabled: () => false,
-}));
 vi.mock(
   'src/batch-processing/batch-processing.executor.effects',
   async (original) => ({
@@ -105,6 +102,7 @@ const giftCreateCalls = () =>
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.stubEnv('GIFT_AID_ENABLED', 'false');
   mocks.post.mockResolvedValue({ data: { createGifts: [{ id: 'gift_1' }] } });
   mocks.mutation.mockResolvedValue({ updatePerson: { id: 'person_1' } });
   mocks.persist.mockResolvedValue(undefined);
@@ -113,6 +111,46 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
+});
+
+it.each([
+  { enabled: 'false', requested: true, expected: undefined },
+  { enabled: 'true', requested: false, expected: { giftAidRequested: false } },
+  {
+    enabled: 'true',
+    requested: true,
+    expected: {
+      donorIdAtCapture: 'person_1',
+      giftAidRequested: true,
+      giftAidDeclarationCaptured: true,
+      giftAidDeclarationDate: '2026-10-13',
+      giftAidDeclarationSource: 'donation_form',
+    },
+  },
+])('adds the expected Gift Aid intake to the single create with capture $enabled and request $requested', async ({
+  enabled,
+  requested,
+  expected,
+}) => {
+  vi.stubEnv('GIFT_AID_ENABLED', enabled);
+
+  const result = await executeSingleGiftProcessing(row('staging_1', {
+    giftAidRequested: requested,
+    giftAidDeclarationCaptured: requested,
+    giftAidDeclarationDate: '2026-10-13',
+    giftAidDeclarationSource: 'donation_form',
+  }));
+
+  expect(result.writeback).toMatchObject({
+    processingStatus: 'PROCESSED',
+    committedGiftId: 'gift_1',
+  });
+  const creates = giftCreateCalls();
+  expect(creates).toHaveLength(1);
+  expect(creates[0][0].body[0].giftAidIntake).toEqual(expected);
+  expect(mocks.mutation).not.toHaveBeenCalledWith(
+    expect.objectContaining({ updateGift: expect.anything() }),
+  );
 });
 
 it('commits eligible rows with their financial values and resolved coding', async () => {

@@ -7,16 +7,24 @@ export const buildGiftAidIntake = (capture: GiftAidCaptureInput, donorId?: strin
     return {};
   }
 
+  const giftAidRequested = capture.giftAidRequested === true;
+  const giftAidDeclarationCaptured = capture.giftAidDeclarationCaptured === true;
+  const giftAidDeclarationId = normalizeString(capture.giftAidDeclarationId);
+  if (!giftAidRequested && !giftAidDeclarationCaptured && !giftAidDeclarationId) {
+    // A gift with no new capture may still be covered by a declaration on file.
+    return { giftAidIntake: { giftAidRequested } };
+  }
+
   return {
     giftAidIntake: {
-      donorIdAtCapture: normalizeString(donorId),
-      giftAidRequested: capture.giftAidRequested === true,
-      giftAidDeclarationCaptured: capture.giftAidDeclarationCaptured === true,
-      giftAidDeclarationDate: normalizeString(capture.giftAidDeclarationDate),
-      giftAidCoverageScope: normalizeString(capture.giftAidCoverageScope),
-      giftAidDeclarationSource: normalizeString(capture.giftAidDeclarationSource),
-      giftAidTextVersion: normalizeString(capture.giftAidTextVersion),
-      giftAidDeclarationId: normalizeString(capture.giftAidDeclarationId),
+      giftAidRequested,
+      giftAidDeclarationCaptured,
+      ...(giftAidDeclarationCaptured ? { donorIdAtCapture: normalizeString(donorId) } : {}),
+      giftAidDeclarationDate: normalizeString(capture.giftAidDeclarationDate) || undefined,
+      giftAidCoverageScope: normalizeString(capture.giftAidCoverageScope) || undefined,
+      giftAidDeclarationSource: normalizeString(capture.giftAidDeclarationSource) || undefined,
+      giftAidTextVersion: normalizeString(capture.giftAidTextVersion) || undefined,
+      giftAidDeclarationId: giftAidDeclarationId || undefined,
     },
   };
 };
