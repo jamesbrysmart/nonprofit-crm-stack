@@ -34,14 +34,6 @@ const giftAidClaimGiftSelection = {
   donorEmail: true,
   donor: {
     id: true,
-    mailingAddress: {
-      addressStreet1: true,
-      addressStreet2: true,
-      addressCity: true,
-      addressState: true,
-      addressPostcode: true,
-      addressCountry: true,
-    },
   },
   giftAidDeclaration: {
     id: true,

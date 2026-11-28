@@ -45,7 +45,6 @@ const stagedGift: StoredGiftStagingRecord = {
   giftAidCoverageScope: null,
   giftAidDeclarationSource: null,
   giftAidTextVersion: null,
-  giftAidDeclaration: null,
   recurringAgreement: null,
   appeal: null,
   appealSource: null,

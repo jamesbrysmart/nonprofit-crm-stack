@@ -81,11 +81,6 @@ export type StoredGiftStagingRecord = {
   giftAidCoverageScope: string | null;
   giftAidDeclarationSource: string | null;
   giftAidTextVersion: string | null;
-  giftAidDeclaration:
-    | {
-        id: string;
-      }
-    | null;
   recurringAgreement:
     | {
         id: string;
@@ -188,7 +183,6 @@ export type GiftStagingReviewRecord = {
   giftAidCoverageScope: string;
   giftAidDeclarationSource: string;
   giftAidTextVersion: string;
-  giftAidDeclarationId: string;
   giftBatchId: string;
   giftBatchName: string;
   committedGiftId: string;

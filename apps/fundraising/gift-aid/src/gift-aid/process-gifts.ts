@@ -7,7 +7,8 @@ import type { GiftAidCaptureInput } from './gift-aid.types';
 
 export const processGiftAidGifts = async (
   giftIds: string[],
-  client = new CoreApiClient(),
+  client = new CoreApiClient({ runAs: 'application' }),
+  previousBatchIds: string[] = [],
 ) => {
   const ids = [...new Set(giftIds)];
   if (ids.length === 0) return;
@@ -40,23 +41,33 @@ export const processGiftAidGifts = async (
   if (!gifts) throw new Error('Reading gifts for Gift Aid returned no result');
 
   const declarations = createGiftAidDeclarationService(client);
-  const draftsToRefresh = new Set<string>();
+  // The refund event retains the previous batch ID if a retry finds the
+  // Gift already detached but the draft summary still needs refreshing.
+  const draftsToRefresh = new Set(previousBatchIds);
   let currentDraftId: string | undefined;
   for (const { node: gift } of gifts.edges) {
     const intake = gift.giftAidIntake as (GiftAidCaptureInput & {
       donorIdAtCapture?: string;
     }) | null;
+    if (gift.giftAidClaimBatch?.status === 'FINALIZED') {
+      continue;
+    }
+
+    const refunded = (gift.refundedAmount?.amountMicros ?? 0) > 0;
     if (
-      !intake ||
-      (gift.refundedAmount?.amountMicros ?? 0) > 0 ||
-      gift.giftAidClaimBatch?.status === 'FINALIZED' ||
-      gift.giftAidDecisionSource === 'MANUAL_OVERRIDE'
+      (!intake && (!refunded || !gift.giftAidClaimBatch)) ||
+      (!refunded && gift.giftAidDecisionSource === 'MANUAL_OVERRIDE')
     ) {
       continue;
     }
 
-    const result =
-      intake.giftAidDeclarationCaptured && intake.donorIdAtCapture !== gift.donorId
+    const result = refunded
+      ? {
+          giftAidStatus: 'NOT_CLAIMABLE' as const,
+          giftAidReasonCode: 'gift_refunded_or_reversed',
+          giftAidDeclarationId: gift.giftAidDeclarationId,
+        }
+      : intake?.giftAidDeclarationCaptured && intake.donorIdAtCapture !== gift.donorId
         ? { giftAidStatus: 'NEEDS_REVIEW' as const, giftAidReasonCode: 'declaration_donor_mismatch', giftAidDeclarationId: null }
         : await applyGiftAidMetadata(
             declarations,
@@ -73,7 +84,8 @@ export const processGiftAidGifts = async (
             true,
           );
     const declarationId = result.giftAidDeclarationId ?? null;
-    let draftId = gift.giftAidClaimBatch?.id;
+    const previousBatchId = gift.giftAidClaimBatch?.id;
+    let draftId = refunded ? undefined : previousBatchId;
     if (!draftId && result.giftAidStatus === 'CLAIMABLE') {
       currentDraftId ??= (await getOrCreateDraft(client)).id;
       draftId = currentDraftId;
@@ -83,7 +95,7 @@ export const processGiftAidGifts = async (
       (gift.giftAidDeclarationId ?? null) !== declarationId ||
       gift.giftAidStatus !== result.giftAidStatus ||
       gift.giftAidReasonCode !== result.giftAidReasonCode ||
-      gift.giftAidClaimBatch?.id !== draftId
+      previousBatchId !== draftId
     ) {
       const { updateGifts } = await client.mutation({
         updateGifts: {
@@ -101,7 +113,7 @@ export const processGiftAidGifts = async (
               giftAidReasonCode: result.giftAidReasonCode,
               giftAidDecisionSource: 'SYSTEM',
               giftAidLastEvaluatedAt: new Date().toISOString(),
-              ...(draftId ? { giftAidClaimBatchId: draftId } : {}),
+              ...(previousBatchId !== draftId ? { giftAidClaimBatchId: draftId ?? null } : {}),
             },
           },
           id: true,
@@ -113,6 +125,7 @@ export const processGiftAidGifts = async (
     }
 
     // Replay still refreshes the summary if the original job stopped after linking the gift.
+    if (previousBatchId) draftsToRefresh.add(previousBatchId);
     if (draftId) draftsToRefresh.add(draftId);
   }
 

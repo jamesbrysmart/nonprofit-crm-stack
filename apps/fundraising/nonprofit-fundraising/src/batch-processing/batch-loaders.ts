@@ -171,9 +171,6 @@ export const loadBatchProcessingContext = async (
           giftAidCoverageScope: true,
           giftAidDeclarationSource: true,
           giftAidTextVersion: true,
-          giftAidDeclaration: {
-            id: true,
-          },
           recurringAgreement: {
             id: true,
           },
@@ -461,9 +458,6 @@ export const loadGiftStagingRowsForProcessing = async (
           giftAidCoverageScope: true,
           giftAidDeclarationSource: true,
           giftAidTextVersion: true,
-          giftAidDeclaration: {
-            id: true,
-          },
           recurringAgreement: {
             id: true,
           },

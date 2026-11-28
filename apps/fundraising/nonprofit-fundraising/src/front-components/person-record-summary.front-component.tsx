@@ -42,15 +42,6 @@ type PersonRecordSummaryRecord = {
       } | null;
     }>;
   } | null;
-  giftAidDeclarations?: {
-    edges?: Array<{
-      node?: {
-        id?: string | null;
-        status?: string | null;
-        revokedAt?: string | null;
-      } | null;
-    }>;
-  } | null;
   fundraiserAppealSources?: {
     edges?: Array<{
       node?: {
@@ -133,18 +124,6 @@ const loadPerson = async (
           },
         },
       },
-      giftAidDeclarations: {
-        __args: {
-          first: 5,
-        },
-        edges: {
-          node: {
-            id: true,
-            status: true,
-            revokedAt: true,
-          },
-        },
-      },
       fundraiserAppealSources: {
         __args: {
           first: 25,
@@ -222,12 +201,6 @@ const PersonRecordSummary = () => {
   const activeRecurringCount = record.recurringAgreements?.edges?.filter(
     (edge) => normalizeString(edge.node?.status).toUpperCase() === 'ACTIVE',
   ).length ?? 0;
-  const declarationCount = record.giftAidDeclarations?.edges?.filter(
-    (edge) => normalizeString(edge.node?.id) !== '',
-  ).length ?? 0;
-  const activeDeclarationCount = record.giftAidDeclarations?.edges?.filter(
-    (edge) => normalizeString(edge.node?.status).toUpperCase() === 'ACTIVE',
-  ).length ?? 0;
   const fundraiserSourceCount = record.fundraiserAppealSources?.edges?.filter(
     (edge) => normalizeString(edge.node?.id) !== '',
   ).length ?? 0;
@@ -236,18 +209,12 @@ const PersonRecordSummary = () => {
   const hasFundraisingContext =
     giftCount > 0 ||
     recurringCount > 0 ||
-    declarationCount > 0 ||
     fundraiserSourceCount > 0;
   const signals = [
     giftCount > 0 ? { label: 'Donor', tone: 'success' } : null,
     fundraiserSourceCount > 0
       ? { label: 'Fundraiser', tone: 'success' }
       : null,
-    activeDeclarationCount > 0
-      ? { label: 'Gift Aid active', tone: 'success' }
-      : declarationCount > 0
-        ? { label: 'Gift Aid inactive', tone: 'neutral' }
-        : null,
     activeRecurringCount > 0
       ? { label: 'Recurring donor', tone: 'success' }
       : recurringCount > 0

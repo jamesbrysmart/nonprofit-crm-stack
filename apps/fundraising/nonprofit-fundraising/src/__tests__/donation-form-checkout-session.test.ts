@@ -81,6 +81,7 @@ describe('donation form checkout', () => {
   beforeEach(() => {
     vi.stubEnv('TWENTY_API_URL', 'https://twenty.example.test');
     vi.stubEnv('TWENTY_FUNCTIONS_URL', undefined);
+    vi.stubEnv('GIFT_AID_ENABLED', 'true');
   });
 
   afterEach(() => vi.unstubAllEnvs());
@@ -224,6 +225,38 @@ describe('donation form checkout', () => {
       }),
     });
     expect(createCheckoutSession).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    { workspaceOption: 'false', formOption: true },
+    { workspaceOption: 'true', formOption: false },
+  ])('allows payment without recording Gift Aid when workspace is $workspaceOption and form is $formOption', async ({
+    workspaceOption,
+    formOption,
+  }) => {
+    vi.stubEnv('GIFT_AID_ENABLED', workspaceOption);
+    const { submit, mutation, createCheckoutSession } = checkoutFixture({
+      giftAidEnabled: formOption,
+    });
+
+    await expect(submit({ giftAidRequested: true })).resolves.toMatchObject({
+      checkoutSessionId: 'cs_elements',
+    });
+    expect(mutation).toHaveBeenNthCalledWith(1, {
+      createGiftStaging: expect.objectContaining({
+        __args: {
+          data: expect.objectContaining({
+            giftAidRequested: false,
+            giftAidDeclarationCaptured: false,
+          }),
+        },
+      }),
+    });
+    expect(createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({ giftAidRequested: 'false' }),
+      }),
+    );
   });
 
   it.each([

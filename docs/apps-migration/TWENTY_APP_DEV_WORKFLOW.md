@@ -267,3 +267,29 @@ These are early working observations, not fixed rules.
   - even when scaffolding first, metadata changes appear safer when introduced in small, coherent groups rather than large mixed batches,
   - existing `universalIdentifier`s should be treated as stable assets and only changed with intent,
   - and when sync failures are ambiguous, it is usually better to isolate by metadata slice before touching IDs.
+
+## 9. Cross-app Lessons from Gift Aid
+
+The Gift Aid rehearsal used Twenty 2.59.2, SDK 2.59.0 and CLI 2.61.0.
+Use its [setup and validation notes](../../apps/fundraising/gift-aid/SETUP.md)
+for the app-specific details.
+
+- Install the app that owns the base metadata first. Keep its shared object,
+  field and view IDs stable. Gift Aid reads committed capture evidence on
+  Fundraising's Gift, listens to Gift events and owns its derived records and
+  relationships. Use `twenty app plan` to check deletions before changing
+  ownership, then test core alone and the installed pair in that order.
+- Regenerate the typed client for each installed app. The application-scoped
+  client could read Gift and Person, but its Person type omitted Fundraising's
+  custom mailing address. The extension reads that field through the SDK's
+  workspace REST client only when building a submission snapshot.
+- Check app roles on the target Twenty version. In the rehearsal, creating a
+  declaration required update permission on that extension-owned object
+  because Twenty used update permissions when separate create permissions
+  were off. Verify real record events, persisted outcomes and expected
+  refusals with small fixtures.
+- Use the available native layout surfaces. Gift Aid contributes standalone
+  view fields to the existing Gift Details view and a relation table to
+  the standard Person layout. It owns the claim layout and action widget.
+  Treat adding a new tab to another app's record page as a separate platform
+  capability to verify.

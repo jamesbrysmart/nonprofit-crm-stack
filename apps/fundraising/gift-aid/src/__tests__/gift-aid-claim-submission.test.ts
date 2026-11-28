@@ -7,6 +7,14 @@ vi.mock('src/gift-aid-claims/gift-aid-hmrc-runner', () => ({
   runGiftAidHmrcSubmission: vi.fn(),
 }));
 
+vi.mock('twenty-client-sdk/rest', () => ({
+  RestApiClient: class {
+    get = vi.fn().mockResolvedValue({
+      data: { people: [{ id: 'person-1', mailingAddress: { addressPostcode: 'SW1A 1AA' } }] },
+    });
+  },
+}));
+
 describe('Gift Aid claim submission', () => {
   beforeEach(() => {
     vi.mocked(runGiftAidHmrcSubmission).mockReset();
@@ -34,7 +42,7 @@ describe('Gift Aid claim submission', () => {
               id: 'gift-1',
               giftAidStatus: 'CLAIMABLE',
               amount: { currencyCode: 'GBP', amountMicros: 20_000_000 },
-              donor: { mailingAddress: { addressPostcode: 'SW1A 1AA' } },
+              donor: { id: 'person-1' },
               giftAidDeclaration: { id: 'declaration-1' },
             },
           }],

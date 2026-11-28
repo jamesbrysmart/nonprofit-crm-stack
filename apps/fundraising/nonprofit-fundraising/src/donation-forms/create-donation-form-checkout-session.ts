@@ -3,6 +3,7 @@ import type { CoreApiClient } from 'twenty-client-sdk/core';
 import { normalizeOnlineGiftAidEvidence } from 'src/gift-aid/online-gift-aid-evidence';
 import {
   type DonationFormPublishedConfig,
+  isDonationFormGiftAidEnabled,
   resolveDonationFormDonationTypes,
 } from 'src/donation-forms/donation-form-config';
 import type {
@@ -247,7 +248,8 @@ const createDonationFormPaymentSessionBase = async ({
 
   const donorMailingAddress = normalizeAddress(request.donorMailingAddress);
   const sourceFingerprint = buildSourceFingerprint();
-  const giftAidRequested = config.giftAidEnabled === true && request.giftAidRequested === true;
+  const giftAidRequested =
+    request.giftAidRequested === true && isDonationFormGiftAidEnabled(config.giftAidEnabled);
   const supporterEmailOptOut = request.supporterEmailOptOut === true;
   const giftAidDeclarationSource =
     normalizeString(config.giftAidDeclarationSource) ||

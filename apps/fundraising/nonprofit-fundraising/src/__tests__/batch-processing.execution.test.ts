@@ -93,7 +93,6 @@ const row = (
   giftAidCoverageScope: null,
   giftAidDeclarationSource: null,
   giftAidTextVersion: null,
-  giftAidDeclaration: null,
   recurringAgreement: null,
   committedGift: null,
   ...overrides,

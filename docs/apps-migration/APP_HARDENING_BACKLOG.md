@@ -48,10 +48,10 @@ fundraising app and its data. Follow the [app validation instructions](../../app
 and record the real lifecycle result before treating the harness as proven.
 
 The 27 November testing review validated focused offline scenarios and used
-scoped fixtures on the installed app. The revised integration suite still needs
-a run on a verified disposable Twenty workspace. Preserve the observed refusal
-of refunds on finalised Gift Aid claims, including leaving the gift and claim
-records untouched, when validating the extraction. See the
+scoped fixtures on the installed app. The core integration suite still needs
+a full lifecycle run on a verified disposable Twenty workspace. The
+[Gift Aid extension rehearsal](../../apps/fundraising/gift-aid/SETUP.md#validation)
+verified the core upgrade and refusal of refunds on finalised claims. See the
 [product findings below](#6-product-findings-from-testing) for the open
 failed-payment, attribution and refund-recovery issues.
 
@@ -79,10 +79,8 @@ Current examples:
 
 - [manual-gift-entry.api.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/manual-gift-entry/manual-gift-entry.api.ts)
 - [batch-processing.api.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/batch-processing/batch-processing.api.ts)
-- [gift-aid-claim.api.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/gift-aid-claims/gift-aid-claim.api.ts)
 - [gift-staging-processing.api.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/gift-staging-review/gift-staging-processing.api.ts)
 - [gift-refund.api.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/gift-lifecycle/gift-refund.api.ts)
-- [gift-aid-claim-batch.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/gift-aid-claims/gift-aid-claim-batch.ts)
 - [gift-staging-bulk-writeback.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/gift-staging/gift-staging-bulk-writeback.ts)
 - [donor-rollups.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/donor-rollups/donor-rollups.ts)
 
@@ -165,7 +163,9 @@ Status:
 
 - `queries/rollups already extracted; pagination correctness takes priority`
 
-Current source check: gift-aid-claim-batch.ts is 170 lines with separate queries and rollup modules. Test complete claim membership and finalisation before further restructuring.
+The [extension](../../apps/fundraising/gift-aid/SETUP.md) now owns the claim
+workflow, with separate queries, rollups and finalisation. Return to
+claim-specific hardening when extension work resumes.
 
 Original rationale (superseded by completed extraction):
 
@@ -180,7 +180,7 @@ Original extraction scope (already implemented):
 
 Current file:
 
-- [gift-aid-claim-batch.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/gift-aid-claims/gift-aid-claim-batch.ts)
+- [gift-aid-claim-batch.ts](../../apps/fundraising/gift-aid/src/gift-aid-claims/gift-aid-claim-batch.ts)
 
 ### 2.6 Split `batch-processing.executor.ts` Into Internal Submodules
 
@@ -201,7 +201,7 @@ Original extraction scope (review any remaining duplication only as needed):
 - separate donor fallback/enrichment
 - separate recurring-agreement support
 - separate batch-create and fallback execution strategy
-- separate post-processing effects like Gift Aid batch attach and donor-rollup recompute
+- separate post-processing effects such as donor-rollup recompute
 
 Current file:
 
@@ -230,13 +230,11 @@ What to do:
 Current candidates:
 
 - [use-recurring-agreement-review-record.ts](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/recurring/use-recurring-agreement-review-record.ts)
-- [gift-aid-claim-submission-record.front-component.tsx](/home/jamesbryant/workspace/dev-stack/apps/fundraising/nonprofit-fundraising/src/front-components/gift-aid-claim-submission-record.front-component.tsx)
 
 Current working classification:
 
 - `giftStaging` review widgets: live-trust
 - `giftBatch` summary/actions/worklists: live-trust
-- `gift-aid-claim-submission-record.front-component.tsx`: snapshot-at-open by default
 - recurring review surfaces: classify from actual workflow semantics, not component similarity
 
 Why this remains product-adjacent:
@@ -246,11 +244,11 @@ Why this remains product-adjacent:
 
 ### 2.8 Gift Record Integrity (Potential Enhancements)
 
-Added 2026-11-18 after the modernisation review. Gifts should be created through New gift, gift staging and payment intake, which apply donor, coding, Gift Aid and rollup handling. The Gift object now sets `isUICreatable: false`, hiding Twenty's native create paths in the UI. CSV import (to verify), the API and workflows can still create gifts directly.
+Added 2026-11-18 after the modernisation review. Gifts should be created through New Gift, gift staging and payment intake, which apply donor and coding defaults, optional declaration capture and rollups. The Gift object now sets `isUICreatable: false`, hiding Twenty's native create paths in the UI. CSV import (to verify), the API and workflows can still create gifts directly.
 
 Before the [rollup consolidation](ROLLUP_CONSOLIDATION_DESIGN.md#8-decisions-agreed-2026-11-25), gift creation initialises reporting fields but has no dedicated rollup trigger. A reporting writeback can refresh rollups indirectly through an update event. On app-dev v0.1.14 on 2026-11-27, a directly created €12 gift with its reporting fields already correct left Company, Appeal and Appeal source rollups empty. Changing its gift date populated all three. In the same baseline, changing a processed gift to gift in kind removed it from Person totals but left Appeal and Appeal source totals stale. Both behaviours are intended fixes in the consolidation.
 
-Directly created gifts also skip Gift Aid evaluation and coding defaults. When the app acts for a user, Twenty records that user as creator (`MANUAL`), so `createdBy` cannot distinguish app-created gifts.
+Directly created gifts also skip core's capture and coding defaults. When the app acts for a user, Twenty records that user as creator (`MANUAL`), so `createdBy` cannot distinguish app-created gifts.
 
 Follow-up options:
 
@@ -377,7 +375,6 @@ Why:
 
 Current examples:
 
-- `Gift Aid` workspace reload
 - `giftStaging` review record reload
 
 Working implication:
@@ -385,21 +382,11 @@ Working implication:
 - prefer correctness and simplicity on current live-trust surfaces
 - but do not default future widgets to full-workspace refetch if a narrower shape would do
 
-### 4.4 Treat Gift Aid Claim Workspace As A Heavy Control Surface
+### 4.4 Gift Aid Claim Workspace
 
-Status:
-
-- `document and watch`
-
-Why:
-
-- one visible Gift Aid claim workspace refresh fans out into multiple queries plus summary recomputation elsewhere in the flow
-- that is acceptable for an operational control surface, but it is not a cheap widget tree
-
-Working implication:
-
-- keep the current shape for now
-- avoid expanding the workspace with more auto-refreshing blocks unless they add clear operator value
+The [extension](../../apps/fundraising/gift-aid/SETUP.md) replaced core's claim
+workspace with native relation tables and a small action widget. Revisit
+claim-specific refresh behaviour with the extension.
 
 ### 4.5 Manual Gift Entry Is Chatty But Acceptable
 
@@ -467,6 +454,6 @@ and offline evidence and identify installed-app observations where available.
 | Opportunity payment totals exclude payments in other currencies | On app-dev v0.1.14, an Opportunity with a €1,000 award accepted linked payments of €300 and £100 with a €115 reporting value. Company lifetime giving reached €415. The Opportunity payment component sums original amounts in the award currency, which gives €300 received and €700 remaining on these records. This follows from the calculation in source. [Received amount calculation](../../apps/fundraising/nonprofit-fundraising/src/front-components/opportunity-record-payment.front-component.tsx#L109) · [Remaining amount calculation](../../apps/fundraising/nonprofit-fundraising/src/front-components/opportunity-record-payment.front-component.tsx#L248) | Should the payment summary use converted values when available, or should the workflow restrict currency or identify payments excluded from the balance? |
 | Reassigning a paid Opportunity separates the award from its donor receipts | On app-dev v0.1.14, reassigning the Opportunity moved its €1,000 award to the new Company’s rollup. Both payments retained their original Company and Opportunity links, and €415 in lifetime giving stayed with the original Company. This may preserve donor history while leaving a cross-company relationship that new payments cannot create. [Payment link validation](../../apps/fundraising/nonprofit-fundraising/src/logic-functions/create-manual-gift.ts#L209) | Should reassigning a paid Opportunity preserve and explain the split, require an explicit correction, or be restricted? |
 | Full refund leaves the recurring schedule advanced | On app-dev v0.1.14, recording a full refund left the agreement’s advanced next expected date intact. The original gift and its EUR reporting value also remained in gross giving, consistent with the current rollup decision. An operator reviewing overdue payments may still see the instalment as fulfilled. [Refund route](../../apps/fundraising/nonprofit-fundraising/src/logic-functions/record-gift-refund.ts#L134) · [Gross reporting decision](ROLLUP_CONSOLIDATION_DESIGN.md#8-decisions-agreed-2026-11-25) | When should a partial or full refund reopen a recurring instalment, and how should that interact with any later payments? |
-| A refund can commit before its draft claim summary refreshes | The route writes the refund and detaches the gift before refreshing the draft’s totals. If refresh fails, the request reports failure after the refund has been saved. Retrying the refund then has no linked claim ID to refresh, so the persisted summary can stay stale. [Refund and refresh sequence](../../apps/fundraising/nonprofit-fundraising/src/logic-functions/record-gift-refund.ts#L134) | How should the operator see that the refund succeeded, and how should retry or reconciliation repair the draft summary? |
+| A refund can commit before its draft claim summary refreshes | Core saves the refund. The extension's record event then detaches the gift from its draft and refreshes totals. The installed rehearsal verified this sequence. [Extension gift processing](../../apps/fundraising/gift-aid/src/gift-aid/process-gifts.ts) | Verify retry and recovery for a late or failed summary refresh when Gift Aid work resumes. |
 | Authority of restricted callers on app routes needs verification | App-dev rejected signed-out donor lookup and refund requests with HTTP 403. This establishes authentication. Local Twenty source creates a delegated runtime token only when a triggering user is present, and uses the application token otherwise. The effective record permissions for a scoped API key on these routes have yet to be verified. [Route authentication](../../services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-trigger/triggers/route/route-trigger.service.ts#L290) · [Token selection](../../services/twenty-core/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-executor/logic-function-executor.service.ts#L561) | Which user and API key roles may call read and write actions? Verify a restriction with dedicated fixtures in a disposable workspace and read back the records after a denied write. |
-| Finalised Gift Aid claims still use live gift data | Claim detail recomputes totals from current linked gifts. Queueing a submission refreshes the summary and builds a new snapshot from current data. If eligible fields or membership change after finalisation, the displayed or submitted claim can differ from the one the operator finalised. [Claim workspace](../../apps/fundraising/nonprofit-fundraising/src/gift-aid-claims/gift-aid-claim-batch.queries.ts#L302) · [Submission flow](../../apps/fundraising/nonprofit-fundraising/src/gift-aid-claims/gift-aid-claim-submission.ts#L223) | Which facts must be frozen at finalisation for the audit, export and submission path we choose? See the existing [freeze rules](../features/gift-aid-service-behaviour.md#7-freeze-rules). |
+| Gift Aid submission snapshots use live gift data | The extension validates current linked gifts when building the submission snapshot. An overlapping finalisation and refund produced a claim that submission validation blocked. [Extension hardening notes](../../apps/fundraising/gift-aid/SETUP.md#deferred-hardening) | Review operator recovery and which facts must be frozen at finalisation when Gift Aid work resumes. See the existing [freeze rules](../features/gift-aid-service-behaviour.md#7-freeze-rules). |

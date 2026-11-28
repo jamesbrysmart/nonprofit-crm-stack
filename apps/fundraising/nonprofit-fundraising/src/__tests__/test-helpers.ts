@@ -166,22 +166,9 @@ export const loadGiftById = async (giftId: string) => {
         amountMicros: true,
         currencyCode: true,
       },
-      giftAidStatus: true,
-      giftAidReasonCode: true,
-      giftAidDecisionSource: true,
-      giftAidLastEvaluatedAt: true,
       refundedAmount: {
         amountMicros: true,
         currencyCode: true,
-      },
-      giftAidDeclaration: {
-        id: true,
-        source: true,
-      },
-      giftAidClaimBatch: {
-        id: true,
-        name: true,
-        status: true,
       },
       recurringAgreement: {
         id: true,
@@ -439,70 +426,4 @@ export const loadRecurringAgreementById = async (recurringAgreementId: string) =
   });
 
   return result?.recurringAgreement ?? null;
-};
-
-export const loadCurrentGiftAidClaimBatch = async () => {
-  const client = getCoreClient();
-  const result = await client.query({
-    giftAidClaimBatches: {
-      __args: {
-        first: 10,
-        filter: {
-          status: {
-            eq: 'DRAFT',
-          },
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          name: true,
-          status: true,
-          giftCount: true,
-          blockingIssueCount: true,
-          totalAmount: {
-            amountMicros: true,
-            currencyCode: true,
-          },
-        },
-      },
-    },
-  });
-
-  return result?.giftAidClaimBatches?.edges?.[0]?.node ?? null;
-};
-
-export const loadGiftAidDeclarationsForPerson = async (personId: string) => {
-  const client = getCoreClient();
-  const result = await client.query({
-    giftAidDeclarations: {
-      __args: {
-        first: 100,
-        filter: {
-          personId: {
-            eq: personId,
-          },
-        },
-      },
-      edges: {
-        node: {
-          id: true,
-          status: true,
-          source: true,
-          declarationDate: true,
-        },
-      },
-    },
-  });
-
-  return (
-    result?.giftAidDeclarations?.edges?.map(
-      (edge: { node: unknown }) => edge.node,
-    ) ?? []
-  ) as Array<{
-    id: string;
-    status?: string | null;
-    source?: string | null;
-    declarationDate?: string | null;
-  }>;
 };

@@ -12,14 +12,25 @@ import {
   FUNDRAISING_GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   FUNDRAISING_GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
   FUNDRAISING_GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
+  FUNDRAISING_GIFT_REFUNDED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   FUNDRAISING_GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/fundraising-core';
 import { CHECK_GIFT_AID_ON_GIFT_UPDATED_UNIVERSAL_IDENTIFIER } from 'src/constants/universal-identifiers';
 import { processGiftAidGifts } from 'src/gift-aid/process-gifts';
 
 const handler = async (
-  batch: DatabaseEventBatchPayload<ObjectRecordUpdateEvent<{ id: string }>>,
-) => processGiftAidGifts(batch.events.map((event) => event.recordId));
+  batch: DatabaseEventBatchPayload<ObjectRecordUpdateEvent<{
+    id: string;
+    giftAidClaimBatchId?: string | null;
+  }>>,
+) => processGiftAidGifts(
+  batch.events.map((event) => event.recordId),
+  undefined,
+  batch.events.flatMap(({ properties }) => {
+    const batchId = properties.before?.giftAidClaimBatchId;
+    return batchId && properties.updatedFields.includes('refundedAmount') ? [batchId] : [];
+  }),
+);
 
 export default defineLogicFunction({
   universalIdentifier: CHECK_GIFT_AID_ON_GIFT_UPDATED_UNIVERSAL_IDENTIFIER,
@@ -39,6 +50,7 @@ export default defineLogicFunction({
       FUNDRAISING_GIFT_DONOR_LAST_NAME_FIELD_UNIVERSAL_IDENTIFIER,
       FUNDRAISING_GIFT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
       FUNDRAISING_GIFT_DATE_FIELD_UNIVERSAL_IDENTIFIER,
+      FUNDRAISING_GIFT_REFUNDED_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
       FUNDRAISING_GIFT_TYPE_FIELD_UNIVERSAL_IDENTIFIER,
       FUNDRAISING_DONOR_ON_GIFT_FIELD_UNIVERSAL_IDENTIFIER,
     ],

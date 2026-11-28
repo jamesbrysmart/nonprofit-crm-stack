@@ -4,9 +4,6 @@ import {
 } from 'twenty-sdk/define';
 import {
   GIFT_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
-  GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_OBJECT_UNIVERSAL_IDENTIFIER,
   GIFT_OVERVIEW_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   GIFT_REFUND_ACTION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
@@ -104,45 +101,6 @@ export default definePageLayout({
           type: 'NOTES',
           configuration: {
             configurationType: 'NOTES',
-          },
-        },
-      ],
-    },
-    {
-      universalIdentifier: '3b1dbb79-d032-4fc3-9d7b-0fe76f80f2e1',
-      title: 'Gift Aid',
-      position: 40,
-      icon: 'IconReceiptTax',
-      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
-      widgets: [
-        {
-          universalIdentifier: '8bf4733c-8b45-4b6a-b06c-0efca87c8bf4',
-          title: 'Gift Aid state',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_GIFT_AID_STATE_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: 'df92092f-5cb8-4621-bd3b-13b78797619d',
-          title: 'Gift Aid declaration',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_GIFT_AID_DECLARATION_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-          },
-        },
-        {
-          universalIdentifier: '1b8e0874-91a7-4b22-a8b3-4c7b067f1f6e',
-          title: 'Gift Aid donor context',
-          type: 'FRONT_COMPONENT',
-          configuration: {
-            configurationType: 'FRONT_COMPONENT',
-            frontComponentUniversalIdentifier:
-              GIFT_GIFT_AID_DONOR_CONTEXT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
           },
         },
       ],

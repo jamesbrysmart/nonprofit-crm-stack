@@ -41,14 +41,6 @@ vi.mock('src/appeal-source-rollups/appeal-source-rollups', () => ({
   recomputeAppealSourceRollups: recomputeAppealSourceRollupsMock,
 }));
 
-vi.mock('src/gift-aid/gift-aid-config', () => ({
-  isGiftAidEnabled: () => false,
-}));
-
-vi.mock('src/gift-aid-claims/gift-aid-claim-batch', () => ({
-  attachGiftsToCurrentDraftClaimBatch: vi.fn(),
-}));
-
 import { runBatchProcessingSideEffects } from 'src/batch-processing/batch-processing.executor.effects';
 import type { SuccessfulWriteback } from 'src/batch-processing/batch-processing.executor.support';
 
@@ -62,7 +54,6 @@ const buildWriteback = (
   errorDetail: null,
   giftReadyStatus: null,
   executionPath: 'BATCH',
-  giftAidStatus: null,
   ...overrides,
 });
 

@@ -94,10 +94,6 @@ type GiftRecordSummaryRecord = {
     name?: string | null;
   } | null;
   softCreditType?: string | null;
-  giftAidClaimBatch?: {
-    id?: string | null;
-    name?: string | null;
-  } | null;
 };
 
 type SummaryItem = {
@@ -348,10 +344,6 @@ const loadGift = async (
         name: true,
       },
       softCreditType: true,
-      giftAidClaimBatch: {
-        id: true,
-        name: true,
-      },
     },
   });
 
@@ -462,7 +454,6 @@ export const GiftSummarySection = ({
   const refundSignal = getRefundSignal(record);
   const provider = normalizeString(record.provider);
   const recurringAgreementName = normalizeString(record.recurringAgreement?.name);
-  const claimBatchName = normalizeString(record.giftAidClaimBatch?.name);
   const appealName = relationshipName(record.appeal);
   const appealSourceName = relationshipName(record.appealSource);
   const fundName = relationshipName(record.fund);
@@ -527,9 +518,6 @@ export const GiftSummarySection = ({
     hasAmount(record.netReceivedAmount) &&
     amountsDiffer(record.netReceivedAmount, record.amount)
       ? { label: 'Net received', value: formatAmount(record.netReceivedAmount) }
-      : null,
-    claimBatchName !== ''
-      ? { label: 'Gift Aid claim', value: claimBatchName }
       : null,
   ]);
 

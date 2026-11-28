@@ -3,6 +3,7 @@ import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
 import { normalizeString } from 'src/utils/normalize-string';
 import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 import { extractConnectionNodes } from 'src/core-api/core-api-results';
+import { isDonationFormGiftAidEnabled } from 'src/donation-forms/donation-form-config';
 
 export type PublicDonationFormConfigResponse =
   | {
@@ -95,7 +96,10 @@ export const loadPublicDonationFormConfigWithClient = async (
     publicId: normalizeString(record.publicId),
     publishedVersion,
     paymentProvider: 'STRIPE',
-    config: publishedConfig,
+    config: {
+      ...publishedConfig,
+      giftAidEnabled: isDonationFormGiftAidEnabled(publishedConfig.giftAidEnabled),
+    },
   };
 };
 

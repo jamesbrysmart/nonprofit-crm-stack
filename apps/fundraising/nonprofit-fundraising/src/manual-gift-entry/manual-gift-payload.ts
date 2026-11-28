@@ -83,36 +83,6 @@ export const buildManualGiftPayload = (args: {
       : {}),
     ...(donorType === 'COMPANY' && companyName !== '' ? { companyName } : {}),
     ...(donorType === 'COMPANY' && companyId ? { companyId } : {}),
-    giftAidRequested:
-      donorType === 'INDIVIDUAL' ? (body.giftAidRequested ?? null) : null,
-    giftAidDeclarationCaptured:
-      donorType === 'INDIVIDUAL'
-        ? (body.giftAidDeclarationCaptured ?? null)
-        : null,
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidDeclarationDate) !== ''
-      ? { giftAidDeclarationDate: normalizeString(body.giftAidDeclarationDate) }
-      : {}),
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidCoverageScope) !== ''
-      ? { giftAidCoverageScope: normalizeString(body.giftAidCoverageScope) }
-      : {}),
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidDeclarationSource) !== ''
-      ? {
-          giftAidDeclarationSource: normalizeString(
-            body.giftAidDeclarationSource,
-          ),
-        }
-      : {}),
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidTextVersion) !== ''
-      ? { giftAidTextVersion: normalizeString(body.giftAidTextVersion) }
-      : {}),
-    ...(donorType === 'INDIVIDUAL' &&
-    normalizeString(body.giftAidDeclarationId) !== ''
-      ? { giftAidDeclarationId: normalizeString(body.giftAidDeclarationId) }
-      : {}),
     ...(normalizeString(body.selectedRecurringAgreementId) !== ''
       ? {
           recurringAgreementId: normalizeString(

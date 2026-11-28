@@ -279,7 +279,6 @@ export const buildGiftStagingReviewRecord = (
     giftAidCoverageScope: coalesceString(stored.giftAidCoverageScope),
     giftAidDeclarationSource: coalesceString(stored.giftAidDeclarationSource),
     giftAidTextVersion: coalesceString(stored.giftAidTextVersion),
-    giftAidDeclarationId: coalesceString(stored.giftAidDeclaration?.id),
     giftBatchId: coalesceString(stored.giftBatch?.id),
     giftBatchName: coalesceString(stored.giftBatch?.name, 'No batch'),
     committedGiftId: coalesceString(stored.committedGift?.id),

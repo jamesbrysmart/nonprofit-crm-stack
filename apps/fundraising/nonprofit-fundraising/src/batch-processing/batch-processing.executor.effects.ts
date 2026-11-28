@@ -10,8 +10,6 @@ import {
   collectCompanyIds,
   recomputeCompanyRollups,
 } from 'src/company-rollups/company-rollups';
-import { attachGiftsToCurrentDraftClaimBatch } from 'src/gift-aid-claims/gift-aid-claim-batch';
-import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import {
   collectDonorIds,
   recomputeDonorRollups,
@@ -22,25 +20,6 @@ import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 export const runBatchProcessingSideEffects = async (
   successfulWritebacks: SuccessfulWriteback[],
 ) => {
-  if (isGiftAidEnabled()) {
-    const claimableGiftIds = successfulWritebacks
-      .filter((writeback) => writeback.giftAidStatus === 'CLAIMABLE')
-      .map((writeback) => writeback.committedGiftId);
-
-    if (claimableGiftIds.length > 0) {
-      try {
-        const client = createCoreApiClient();
-        await attachGiftsToCurrentDraftClaimBatch(client, claimableGiftIds);
-      } catch (error) {
-        console.warn(
-          'Non-blocking Gift Aid draft attachment failed after batch processing',
-          claimableGiftIds,
-          error instanceof Error ? error.message : String(error),
-        );
-      }
-    }
-  }
-
   const donorIdsToRecompute = collectDonorIds(
     successfulWritebacks.map((writeback) => writeback.donorId),
   );

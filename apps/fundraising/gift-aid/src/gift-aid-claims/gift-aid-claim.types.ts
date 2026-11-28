@@ -62,7 +62,6 @@ export type GiftAidClaimGiftRecord = {
   donorEmail?: string | null;
   donor?: {
     id?: string | null;
-    mailingAddress?: unknown;
   } | null;
   giftAidDeclaration?: {
     id?: string | null;

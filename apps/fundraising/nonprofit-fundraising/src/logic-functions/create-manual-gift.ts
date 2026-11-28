@@ -4,12 +4,8 @@ import { extractMutationRecord, extractQueryRecord } from 'src/core-api/core-api
 import { recomputeAppealRollups } from 'src/appeal-rollups/appeal-rollups';
 import { recomputeAppealSourceRollups } from 'src/appeal-source-rollups/appeal-source-rollups';
 import { recomputeCompanyRollups } from 'src/company-rollups/company-rollups';
-import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
-import { attachGiftToCurrentDraftIfClaimable } from 'src/gift-aid-claims/gift-aid-claim-batch';
 import { recomputeDonorRollups } from 'src/donor-rollups/donor-rollups';
 import { buildGiftAidIntake } from 'src/gift-aid/gift-aid-intake';
-import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
-import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import { advanceRecurringAgreementExpectation } from 'src/recurring/recurring.service';
 import { resolveAppealSourceSelection } from 'src/appeal-sources/appeal-source-integrity';
 import { resolveSoftCreditSelection } from 'src/soft-credits/soft-credit-integrity';
@@ -291,36 +287,8 @@ const handler = async (
       'Anonymous donor gifts cannot be linked to recurring agreements',
     );
   }
-  const giftAidDeclarationService = createGiftAidDeclarationService(client);
-  const giftAidInput =
-    donorType === 'INDIVIDUAL' && !isAnonymousManualGift
-      ? body
-      : {
-          ...body,
-          giftAidRequested: false,
-          giftAidDeclarationCaptured: false,
-          giftAidDeclarationDate: '',
-          giftAidCoverageScope: '',
-          giftAidDeclarationSource: '',
-          giftAidTextVersion: '',
-          giftAidDeclarationId: '',
-        };
-  const evaluatedGiftPayload = await applyGiftAidMetadata(
-    giftAidDeclarationService,
-    buildManualGiftPayload({
-      body: giftAidInput,
-      donorType,
-      donorId,
-      companyId,
-    }),
-    isGiftAidEnabled(),
-  );
-  const declarationId = normalizeString(evaluatedGiftPayload.giftAidDeclarationId);
-  const recurringAgreementId = normalizeString(
-    (evaluatedGiftPayload as Record<string, unknown>).recurringAgreementId as
-      | string
-      | undefined,
-  );
+  const payload = buildManualGiftPayload({ body, donorType, donorId, companyId });
+  const recurringAgreementId = normalizeString(payload.recurringAgreementId);
   const { appealId, appealSourceId, fundId } =
     await resolveAppealAndFundSelection(client, body);
   const softCreditSelection = resolveSoftCreditSelection({
@@ -349,13 +317,12 @@ const handler = async (
     companyId,
   });
   const giftData = {
-    ...evaluatedGiftPayload,
-    ...buildGiftAidIntake(giftAidInput, donorId),
+    ...payload,
+    ...(donorId ? buildGiftAidIntake(body, donorId) : {}),
   } as Record<string, unknown>;
   delete giftData.donorId;
   delete giftData.companyId;
   delete giftData.opportunityId;
-  delete giftData.giftAidDeclarationId;
   delete giftData.recurringAgreementId;
 
   const reportingCurrencyCode = getReportingCurrencyCode();
@@ -473,17 +440,6 @@ const handler = async (
                 softCreditType: resolvedSoftCreditSelection.softCreditType,
               }
             : {}),
-          ...(declarationId !== ''
-            ? {
-                giftAidDeclaration: {
-                  connect: {
-                    where: {
-                      id: declarationId,
-                    },
-                  },
-                },
-              }
-            : {}),
           ...(recurringAgreementId !== ''
             ? {
                 recurringAgreement: {
@@ -508,16 +464,6 @@ const handler = async (
 
   if (typeof giftId !== 'string' || giftId === '') {
     throw new Error('Create gift response missing id');
-  }
-
-  if (isGiftAidEnabled()) {
-    await attachGiftToCurrentDraftIfClaimable(client, giftId, {
-      giftAidStatus:
-        typeof evaluatedGiftPayload.giftAidStatus === 'string'
-          ? evaluatedGiftPayload.giftAidStatus
-          : null,
-      giftAidClaimBatchId: null,
-    });
   }
 
   if (recurringAgreementId !== '') {

@@ -11,10 +11,6 @@ import {
   GIFT_DONOR_FIRST_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_DONOR_LAST_NAME_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_EXTERNAL_ID_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_GIFT_AID_DECISION_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_GIFT_AID_LAST_EVALUATED_AT_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_GIFT_AID_REASON_CODE_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_GIFT_AID_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_GROSS_PAYMENT_AMOUNT_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_IS_ANONYMOUS_DONOR_FIELD_UNIVERSAL_IDENTIFIER,
   GIFT_NAME_FIELD_UNIVERSAL_IDENTIFIER,
@@ -43,7 +39,7 @@ export default defineObject({
     'Committed fundraising gift records created directly from trusted manual entry.',
   icon: 'IconGift',
   // Gifts are created through New gift, gift staging and payment intake, which
-  // apply donor, coding, Gift Aid and rollup handling; hide native create paths.
+  // apply donor, coding and rollup handling; hide native create paths.
   isUICreatable: false,
   labelIdentifierFieldMetadataUniversalIdentifier:
     GIFT_NAME_FIELD_UNIVERSAL_IDENTIFIER,
@@ -433,86 +429,6 @@ export default defineObject({
       label: 'Refund note',
       description: 'Lightweight operational note explaining the refund',
       icon: 'IconNote',
-      isNullable: true,
-      defaultValue: null,
-    },
-    {
-      universalIdentifier: GIFT_GIFT_AID_STATUS_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.SELECT,
-      name: 'giftAidStatus',
-      label: 'Gift Aid status',
-      description: 'Current Gift Aid outcome on the final gift',
-      icon: 'IconRosetteDiscountCheck',
-      defaultValue: "'NOT_CLAIMABLE'",
-      options: [
-        {
-          id: 'da43038d-eaa3-4faf-8a40-5584c7cbc9d9',
-          value: 'CLAIMABLE',
-          label: 'Claimable',
-          position: 0,
-          color: 'green',
-        },
-        {
-          id: 'a8cb42a4-1c8b-4ecf-b2f4-56ce6a9b0dc6',
-          value: 'NOT_CLAIMABLE',
-          label: 'Not claimable',
-          position: 1,
-          color: 'gray',
-        },
-        {
-          id: '4b214a26-3112-41b6-baf2-fb5a8274316c',
-          value: 'NEEDS_REVIEW',
-          label: 'Needs review',
-          position: 2,
-          color: 'yellow',
-        },
-      ],
-    },
-    {
-      universalIdentifier: GIFT_GIFT_AID_REASON_CODE_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.TEXT,
-      name: 'giftAidReasonCode',
-      label: 'Gift Aid reason code',
-      description: 'Machine-readable reason for the current Gift Aid outcome',
-      icon: 'IconAlertCircle',
-      isNullable: true,
-      defaultValue: null,
-    },
-    {
-      universalIdentifier:
-        GIFT_GIFT_AID_DECISION_SOURCE_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.SELECT,
-      name: 'giftAidDecisionSource',
-      label: 'Gift Aid decision source',
-      description:
-        'Whether the current Gift Aid outcome was derived automatically or set manually',
-      icon: 'IconBolt',
-      defaultValue: "'SYSTEM'",
-      options: [
-        {
-          id: '6b3599d7-cb4c-410d-8ae9-b75f9c907b1d',
-          value: 'SYSTEM',
-          label: 'System',
-          position: 0,
-          color: 'blue',
-        },
-        {
-          id: '4ab5b752-bae7-4c7e-aacf-8930b44d301e',
-          value: 'MANUAL_OVERRIDE',
-          label: 'Manual override',
-          position: 1,
-          color: 'orange',
-        },
-      ],
-    },
-    {
-      universalIdentifier:
-        GIFT_GIFT_AID_LAST_EVALUATED_AT_FIELD_UNIVERSAL_IDENTIFIER,
-      type: FieldType.DATE_TIME,
-      name: 'giftAidLastEvaluatedAt',
-      label: 'Gift Aid last evaluated at',
-      description: 'When the current Gift Aid outcome was last derived',
-      icon: 'IconClock',
       isNullable: true,
       defaultValue: null,
     },

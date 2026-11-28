@@ -30,12 +30,12 @@ Planned first slices:
 2. manual gift entry
 3. staging/review
 4. bounded batch processing
-5. Gift Aid
+5. Optional declaration capture for the Gift Aid extension
 
 Current capability note:
 
-- `GIFT_AID_ENABLED` is modeled as an application variable.
-- The longer-term capability posture is “optional and off by default”, but the current app-dev/pilot build keeps it enabled so the bounded Gift Aid slice can be exercised before a fuller activation flow exists.
+- Fundraising works independently. `GIFT_AID_ENABLED` defaults to false and controls declaration capture in New Gift, staging and donation forms.
+- For Gift Aid, install the [extension](../gift-aid/SETUP.md) after Fundraising and enable capture in Fundraising. Each donation form also needs its own Gift Aid option enabled. Turning off workspace capture preserves the saved form preference. The extension handles eligibility, declarations, claims and submission history.
 
 ## Local Validation
 

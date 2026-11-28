@@ -1,8 +1,5 @@
 import { postTwentyRest } from 'src/app-api/twenty-rest-client';
-import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { buildGiftAidIntake } from 'src/gift-aid/gift-aid-intake';
-import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
-import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
 import { persistGiftStagingBatchUpserts } from 'src/gift-staging/gift-staging-bulk-writeback';
 import { hasLinkedDonorForProcessing } from 'src/gift-staging-review/gift-staging-processability';
 import {
@@ -24,7 +21,6 @@ import type { BatchProcessingRow } from './batch-processing.types';
 import { normalizeString } from 'src/utils/normalize-string';
 import { chunkArray } from 'src/utils/chunk-array';
 import { isRateLimitError } from 'src/core-api/rate-limit-retry';
-import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
 
 export {
   buildNewPersonCreateData,
@@ -165,10 +161,6 @@ const createBatchGiftChunk = async (
     errorDetail: null,
     giftReadyStatus: null,
     executionPath: 'BATCH' as const,
-    giftAidStatus:
-      typeof entry.payload.giftAidStatus === 'string'
-        ? (entry.payload.giftAidStatus as string)
-        : null,
   }));
 };
 
@@ -275,8 +267,6 @@ const prepareBatchGiftEntries = async (
   const entries: BatchGiftEntry[] = [];
   const preflightFailures: FailedWriteback[] = [];
   const directRowFallbackSuccesses: SuccessfulWriteback[] = [];
-  const client = createCoreApiClient();
-  const giftAidDeclarationService = createGiftAidDeclarationService(client);
 
   for (const row of rows) {
     try {
@@ -290,15 +280,12 @@ const prepareBatchGiftEntries = async (
         continue;
       }
 
-      const intake = buildGiftPayloadFromRow(row);
-      const payload = await applyGiftAidMetadata(
-        giftAidDeclarationService,
-        intake,
-        isGiftAidEnabled(),
-      );
       entries.push({
         row,
-        payload: { ...payload, ...buildGiftAidIntake(intake, row.donor?.id) },
+        payload: {
+          ...buildGiftPayloadFromRow(row),
+          ...buildGiftAidIntake(row, row.donor?.id),
+        },
       });
     } catch (error) {
       preflightFailures.push(

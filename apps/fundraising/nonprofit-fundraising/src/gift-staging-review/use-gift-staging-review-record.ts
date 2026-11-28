@@ -84,9 +84,6 @@ const loadStoredRecord = async (
       giftAidCoverageScope: true,
       giftAidDeclarationSource: true,
       giftAidTextVersion: true,
-      giftAidDeclaration: {
-        id: true,
-      },
       recurringAgreement: {
         id: true,
       },

@@ -7,7 +7,6 @@ import {
 import {
   FUNDRAISER_APPEAL_SOURCES_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
   GIFTS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
-  GIFT_AID_DECLARATIONS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
   PERSON_DETAILS_VIEW_UNIVERSAL_IDENTIFIER,
   PERSON_RECORD_SUMMARY_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   RECURRING_AGREEMENTS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
@@ -60,17 +59,6 @@ export default definePageLayoutTab({
         configurationType: 'FIELD',
         fieldMetadataId:
           RECURRING_AGREEMENTS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
-        fieldDisplayMode: 'FIELD',
-      },
-    },
-    {
-      universalIdentifier: '60c499f9-37d6-4d0f-9a8e-694a35b96d2b',
-      title: 'Gift Aid declarations',
-      type: 'FIELD',
-      configuration: {
-        configurationType: 'FIELD',
-        fieldMetadataId:
-          GIFT_AID_DECLARATIONS_ON_PERSON_FIELD_UNIVERSAL_IDENTIFIER,
         fieldDisplayMode: 'FIELD',
       },
     },

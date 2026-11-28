@@ -4,7 +4,6 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import { enqueueSnackbar, } from 'twenty-sdk/front-component';
 import { recordGiftRefund } from 'src/gift-lifecycle/gift-refund.api';
 import { deriveRefundState } from 'src/gift-lifecycle/gift-refund';
-import { Callout } from 'twenty-ui/components/feedback';
 import { FormInput, FormTextarea } from 'src/front-components/form-controls';
 import { theme } from 'src/front-components/theme-tokens';
 import { useReloadOnTabChange } from 'src/front-components/use-reload-on-tab-change';
@@ -37,11 +36,6 @@ type RefundActionGiftRecord = {
   } | null;
   refundDate?: string | null;
   refundNote?: string | null;
-  giftAidClaimBatch?: {
-    id?: string | null;
-    name?: string | null;
-    status?: string | null;
-  } | null;
 };
 
 const formatAmount = (
@@ -102,11 +96,6 @@ const loadGift = async (recordId: string): Promise<RefundActionGiftRecord | null
       },
       refundDate: true,
       refundNote: true,
-      giftAidClaimBatch: {
-        id: true,
-        name: true,
-        status: true,
-      },
     },
   });
 
@@ -212,9 +201,6 @@ const GiftRefundAction = () => {
     originalAmountMicros - refundedAmountMicros,
   );
   const currencyCode = normalizeString(record.amount?.currencyCode) || getDefaultCurrencyCode();
-  const linkedClaimBatchStatus = normalizeString(record.giftAidClaimBatch?.status);
-  const linkedClaimBatchName = normalizeString(record.giftAidClaimBatch?.name);
-  const isFinalizedGiftAidClaim = linkedClaimBatchStatus === 'FINALIZED';
 
   const handleRecordRefund = async () => {
     if (!recordId) {
@@ -308,68 +294,45 @@ const GiftRefundAction = () => {
         </div>
       </div>
 
-      {isFinalizedGiftAidClaim ? (
-        <Callout
-          status="warning"
-          title="Finalized Gift Aid claim"
-          description={
-            linkedClaimBatchName === ''
-              ? 'This gift is already part of finalized Gift Aid claim work. Refund follow-up for finalized claims is not implemented in this first pass.'
-              : `This gift is already part of finalized Gift Aid claim work (${linkedClaimBatchName}). Refund follow-up for finalized claims is not implemented in this first pass.`
-          }
+      <div style={compactMetaGridStyle}>
+        <FormInput
+          label="Refunded amount"
+          inputMode="decimal"
+          value={refundedAmountInput}
+          onChange={setRefundedAmountInput}
         />
-      ) : (
-        <>
-          <div style={compactMetaGridStyle}>
-            <FormInput
-              label="Refunded amount"
-              inputMode="decimal"
-              value={refundedAmountInput}
-              onChange={setRefundedAmountInput}
-            />
-            <FormInput
-              label="Refund date"
-              type="date"
-              value={refundDateInput}
-              onChange={setRefundDateInput}
-            />
-          </div>
+        <FormInput
+          label="Refund date"
+          type="date"
+          value={refundDateInput}
+          onChange={setRefundDateInput}
+        />
+      </div>
 
-          <FormTextarea
-            label="Refund note"
-            rows={3}
-            value={refundNoteInput}
-            onChange={setRefundNoteInput}
-          />
+      <FormTextarea
+        label="Refund note"
+        rows={3}
+        value={refundNoteInput}
+        onChange={setRefundNoteInput}
+      />
 
-          <div style={actionRowStyle}>
-            <ActionButton
-              title={
-                saving
-                  ? 'Saving refund...'
-                  : refundState === 'NOT_REFUNDED'
-                    ? 'Record refund'
-                    : 'Update refund'
-              }
-              variant="primary"
-              accent="blue"
-              onClick={() => {
-                void handleRecordRefund();
-              }}
-              disabled={saving}
-            />
-          </div>
-
-          {normalizeString(record.giftAidClaimBatch?.id) !== '' &&
-          linkedClaimBatchStatus === 'DRAFT' ? (
-            <Callout
-              status="info"
-              title="Draft Gift Aid claim"
-              description="This gift is currently in draft Gift Aid claim work. Recording a refund will remove it from that draft claim in this first pass."
-            />
-          ) : null}
-        </>
-      )}
+      <div style={actionRowStyle}>
+        <ActionButton
+          title={
+            saving
+              ? 'Saving refund...'
+              : refundState === 'NOT_REFUNDED'
+                ? 'Record refund'
+                : 'Update refund'
+          }
+          variant="primary"
+          accent="blue"
+          onClick={() => {
+            void handleRecordRefund();
+          }}
+          disabled={saving}
+        />
+      </div>
     </div>
   );
 };

@@ -1,9 +1,5 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
-import { createGiftAidDeclarationService } from 'src/gift-aid/gift-aid.declarations';
 import { buildGiftAidIntake } from 'src/gift-aid/gift-aid-intake';
-import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
-import { applyGiftAidMetadata } from 'src/gift-aid/gift-aid.policy';
-import type { GiftAidEvaluatedPayload } from 'src/gift-aid/gift-aid.types';
 import {
   extractConnectionNodes,
   extractMutationRecord,
@@ -44,7 +40,6 @@ export type SuccessfulWriteback = {
   errorDetail: null;
   giftReadyStatus: GiftReadyStatus | null;
   executionPath: 'BATCH' | 'ROW_FALLBACK';
-  giftAidStatus: string | null;
 };
 
 export type FailedWriteback = {
@@ -85,8 +80,7 @@ export type DonorSupporterEmailOptOutUpdate = {
   supporterEmailOptOut: true;
 };
 
-type GiftCreatePayload = ReturnType<typeof buildGiftPayloadFromRow> &
-  GiftAidEvaluatedPayload;
+type GiftCreatePayload = ReturnType<typeof buildGiftPayloadFromRow>;
 
 const buildOptionalCurrencyValue = (
   value:
@@ -373,27 +367,6 @@ const buildGiftPayloadWithoutReporting = (row: BatchProcessingRow) => {
       : {}),
     ...(softCreditSelection.mode === 'set'
       ? { softCreditType: softCreditSelection.softCreditType }
-      : {}),
-    giftAidRequested: row.giftAidRequested === true,
-    giftAidDeclarationCaptured: row.giftAidDeclarationCaptured === true,
-    ...(normalizeString(row.giftAidDeclarationDate) !== ''
-      ? { giftAidDeclarationDate: normalizeString(row.giftAidDeclarationDate) }
-      : {}),
-    ...(normalizeString(row.giftAidCoverageScope) !== ''
-      ? { giftAidCoverageScope: normalizeString(row.giftAidCoverageScope) }
-      : {}),
-    ...(normalizeString(row.giftAidDeclarationSource) !== ''
-      ? {
-          giftAidDeclarationSource: normalizeString(
-            row.giftAidDeclarationSource,
-          ),
-        }
-      : {}),
-    ...(normalizeString(row.giftAidTextVersion) !== ''
-      ? { giftAidTextVersion: normalizeString(row.giftAidTextVersion) }
-      : {}),
-    ...(normalizeString(row.giftAidDeclaration?.id) !== ''
-      ? { giftAidDeclarationId: normalizeString(row.giftAidDeclaration?.id) }
       : {}),
     ...(normalizeString(row.recurringAgreement?.id) !== ''
       ? {
@@ -727,7 +700,6 @@ export const createGiftViaRowFallback = async (
   row: BatchProcessingRow,
 ): Promise<SuccessfulWriteback> => {
   const client = createCoreApiClient();
-  const giftAidDeclarationService = createGiftAidDeclarationService(client);
   let payload: GiftCreatePayload = buildGiftPayloadFromRow(row);
   let donorId = normalizeString(payload.donorId as string | undefined);
   const isAnonymousDonor = row.isAnonymousDonor === true;
@@ -740,16 +712,9 @@ export const createGiftViaRowFallback = async (
     };
   }
 
-  const giftAidIntake = buildGiftAidIntake(payload, donorId);
-  payload = (await applyGiftAidMetadata(
-    giftAidDeclarationService,
-    payload,
-    isGiftAidEnabled(),
-  )) as GiftCreatePayload;
   let recurringAgreementId = normalizeString(
     payload.recurringAgreementId as string | undefined,
   );
-  const declarationId = normalizeString(payload.giftAidDeclarationId);
 
   if (recurringAgreementId === '' && isProviderBackedRecurringStagingRow(row)) {
     recurringAgreementId = await createProviderBackedRecurringAgreement({
@@ -759,11 +724,10 @@ export const createGiftViaRowFallback = async (
     });
   }
 
-  const createData = { ...payload, ...giftAidIntake } as Record<string, unknown>;
+  const createData = { ...payload, ...buildGiftAidIntake(row, donorId) } as Record<string, unknown>;
   delete createData.donorId;
   delete createData.companyId;
   delete createData.donorMailingAddress;
-  delete createData.giftAidDeclarationId;
   delete createData.recurringAgreementId;
   const appealId = normalizeString(payload.appealId as string | undefined);
   const companyId = normalizeString(
@@ -810,17 +774,6 @@ export const createGiftViaRowFallback = async (
                   connect: {
                     where: {
                       id: companyId,
-                    },
-                  },
-                },
-              }
-            : {}),
-          ...(declarationId !== ''
-            ? {
-                giftAidDeclaration: {
-                  connect: {
-                    where: {
-                      id: declarationId,
                     },
                   },
                 },
@@ -931,7 +884,5 @@ export const createGiftViaRowFallback = async (
     giftReadyStatus: null,
     executionPath: 'ROW_FALLBACK',
     ...(recurringAgreementId !== '' ? { recurringAgreementId } : {}),
-    giftAidStatus:
-      typeof payload.giftAidStatus === 'string' ? payload.giftAidStatus : null,
   };
 };

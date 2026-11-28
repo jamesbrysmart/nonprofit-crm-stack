@@ -118,8 +118,7 @@ const GiftStagingAudit = () => {
       hasValue(record.giftAidDeclarationDate) ||
       hasValue(record.giftAidCoverageScope) ||
       hasValue(record.giftAidDeclarationSource) ||
-      hasValue(record.giftAidTextVersion) ||
-      hasValue(record.giftAidDeclarationId));
+      hasValue(record.giftAidTextVersion));
 
   return (
     <div style={compactWidgetRootStyle}>
@@ -223,12 +222,6 @@ const GiftStagingAudit = () => {
                 <div style={labelStyle}>Text version</div>
                 <div style={auditValueStyle}>
                   {renderValue(record.giftAidTextVersion)}
-                </div>
-              </div>
-              <div style={compactMetaItemStyle}>
-                <div style={labelStyle}>Linked declaration</div>
-                <div style={auditValueStyle}>
-                  {renderValue(record.giftAidDeclarationId)}
                 </div>
               </div>
             </div>

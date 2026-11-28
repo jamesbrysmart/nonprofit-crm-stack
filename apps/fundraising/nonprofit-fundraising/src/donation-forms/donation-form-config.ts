@@ -1,4 +1,9 @@
+import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 import { normalizeString } from 'src/utils/normalize-string';
+
+export const isDonationFormGiftAidEnabled = (formOption: unknown) =>
+  formOption === true && isGiftAidEnabled();
+
 export type DonationFormDonationType = 'ONE_OFF' | 'RECURRING';
 
 export type DonationFormMode =

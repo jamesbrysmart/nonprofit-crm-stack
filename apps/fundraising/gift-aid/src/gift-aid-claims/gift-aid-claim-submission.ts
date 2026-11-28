@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { RestApiClient } from 'twenty-client-sdk/rest';
 import { computeClaimBatchRollups } from './gift-aid-claim-batch-rollups';
 import { listGiftsForClaimBatch, loadClaimBatch } from './gift-aid-claim-batch.queries';
 import { runGiftAidHmrcSubmission } from './gift-aid-hmrc-runner';
@@ -19,19 +20,28 @@ const getSubmissionEnvironment = (): GiftAidClaimSubmissionEnvironment =>
     ? 'LIVE'
     : 'TEST';
 
-const readMailingAddress = (value: unknown): MailingAddress => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-
-  const fields = value as Record<string, unknown>;
-  const text = (key: string) => typeof fields[key] === 'string' ? fields[key] : undefined;
-  return {
-    addressStreet1: text('addressStreet1'),
-    addressStreet2: text('addressStreet2'),
-    addressCity: text('addressCity'),
-    addressState: text('addressState'),
-    addressPostcode: text('addressPostcode'),
-    addressCountry: text('addressCountry'),
-  };
+const loadDonorMailingAddresses = async (donorIds: string[]) => {
+  // The app-scoped GraphQL schema omits fields another app adds to Person.
+  // The workspace REST API exposes them with the same record and field permissions.
+  const client = new RestApiClient();
+  const addresses = new Map<string, MailingAddress>();
+  const ids = [...new Set(donorIds)];
+  const pageSize = 50;
+  for (let offset = 0; offset < ids.length; offset += pageSize) {
+    const response = await client.get<{
+      data: { people: { id: string; mailingAddress: MailingAddress }[] };
+    }>('/rest/people', {
+      query: {
+        fields: 'id,mailingAddress',
+        limit: pageSize,
+        filter: `id[in]:${JSON.stringify(ids.slice(offset, offset + pageSize))}`,
+      },
+    });
+    for (const person of response.data.people) {
+      addresses.set(person.id, person.mailingAddress);
+    }
+  }
+  return addresses;
 };
 
 const buildSnapshot = async (
@@ -40,6 +50,9 @@ const buildSnapshot = async (
 ): Promise<GiftAidClaimSubmissionSnapshot> => {
   const gifts = await listGiftsForClaimBatch(client, batch.id);
   const rollups = computeClaimBatchRollups(gifts);
+  const addresses = await loadDonorMailingAddresses(
+    gifts.flatMap((gift) => gift.donor?.id ? [gift.donor.id] : []),
+  );
 
   return {
     schemaVersion: 'gift-aid-claim-submission/v1',
@@ -62,7 +75,7 @@ const buildSnapshot = async (
       donorFirstName: gift.donorFirstName ?? null,
       donorLastName: gift.donorLastName ?? null,
       donorEmail: gift.donorEmail ?? null,
-      donorMailingAddress: readMailingAddress(gift.donor?.mailingAddress),
+      donorMailingAddress: gift.donor?.id ? addresses.get(gift.donor.id) ?? null : null,
       amountMicros: gift.amount?.amountMicros ?? 0,
       currencyCode: gift.amount?.currencyCode ?? '',
     })),

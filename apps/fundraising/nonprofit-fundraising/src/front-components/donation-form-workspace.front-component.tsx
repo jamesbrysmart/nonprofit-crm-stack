@@ -40,6 +40,7 @@ import { getCurrencyOptions } from 'src/manual-gift-entry/new-gift-support';
 import { getReportingCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
 import { useSingleSelectedRecordId } from 'src/front-components/use-single-selected-record-id';
+import { isGiftAidEnabled } from 'src/gift-aid/gift-aid-config';
 
 const COLOUR_FIELD_STYLE: CSSProperties = {
   display: 'grid',
@@ -59,6 +60,7 @@ const COLOUR_SWATCH_STYLE: CSSProperties = {
 };
 
 const DonationFormConfigure = () => {
+  const giftAidCaptureEnabled = isGiftAidEnabled();
   const recordId = useSingleSelectedRecordId();
   const { record, setRecord, loading, error } = useDonationFormRecord(recordId);
   const [state, setState] = useState<DonationFormWorkspaceState | null>(null);
@@ -334,11 +336,13 @@ const DonationFormConfigure = () => {
           checked={state.allowCustomAmount}
           onChange={(checked) => handleFieldChange('allowCustomAmount', checked)}
         />
-        <FormCheckbox
-          label="Enable Gift Aid"
-          checked={state.giftAidEnabled}
-          onChange={(checked) => handleFieldChange('giftAidEnabled', checked)}
-        />
+        {giftAidCaptureEnabled ? (
+          <FormCheckbox
+            label="Enable Gift Aid"
+            checked={state.giftAidEnabled}
+            onChange={(checked) => handleFieldChange('giftAidEnabled', checked)}
+          />
+        ) : null}
         <FormCheckbox
           label="Always require address"
           checked={state.requireAddress}
@@ -351,7 +355,7 @@ const DonationFormConfigure = () => {
         />
       </div>
 
-      {state.giftAidEnabled ? (
+      {giftAidCaptureEnabled && state.giftAidEnabled ? (
         <div style={compactSectionStyle}>
           <FormInput
             label="Gift Aid text version"

@@ -121,7 +121,16 @@ describe('loadPublicDonationFormConfigWithClient', () => {
     ).resolves.toEqual({ ok: false, reason: 'not_found' });
   });
 
-  it('returns published config for a live donation form', async () => {
+  it.each([
+    { workspaceOption: undefined, formOption: true, expected: false },
+    { workspaceOption: 'true', formOption: false, expected: false },
+    { workspaceOption: 'true', formOption: true, expected: true },
+  ])('returns Gift Aid $expected for a live form with workspace $workspaceOption and form $formOption', async ({
+    workspaceOption,
+    formOption,
+    expected,
+  }) => {
+    vi.stubEnv('GIFT_AID_ENABLED', workspaceOption);
     const client = buildClient({
       query: async () => ({
         donationForms: { edges: [{ node: {
@@ -134,6 +143,7 @@ describe('loadPublicDonationFormConfigWithClient', () => {
             mode: 'ONE_OFF',
             currencyCode: 'GBP',
             amountOptions: [1000, 2500, 5000],
+            giftAidEnabled: formOption,
           },
         } }] },
       }),
@@ -154,6 +164,7 @@ describe('loadPublicDonationFormConfigWithClient', () => {
         mode: 'ONE_OFF',
         currencyCode: 'GBP',
         amountOptions: [1000, 2500, 5000],
+        giftAidEnabled: expected,
       },
     });
   });

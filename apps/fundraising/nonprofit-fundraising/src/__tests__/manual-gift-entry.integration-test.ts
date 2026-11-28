@@ -12,9 +12,7 @@ import {
   createRecurringAgreement,
   createPerson,
   getCoreClient,
-  loadCurrentGiftAidClaimBatch,
   loadGiftById,
-  loadGiftAidDeclarationsForPerson,
   loadPeopleByName,
 } from './test-helpers';
 
@@ -183,141 +181,31 @@ describe('Manual gift entry routes', () => {
     );
   });
 
-  it('adds a claimable gift to the draft and removes it when a partial refund is recorded', async () => {
-    const suffix = `${Date.now()}-gift-aid`;
-    const donorFirstName = `Grace${suffix}`;
-    const donorLastName = 'Hopper';
-    const donorEmail = `grace.${suffix}@example.org`;
-
-    const response = await callAppRoute<ManualGiftEntryResponse>(
+  it('records a partial refund with Fundraising alone', async () => {
+    const suffix = `${Date.now()}-refund`;
+    const { giftId } = await callAppRoute<ManualGiftEntryResponse>(
       '/s/manual-gift-entry/create-gift',
       {
-        donorFirstName,
-        donorLastName,
-        donorEmail,
+        donorFirstName: 'Grace',
+        donorLastName: suffix,
+        donorEmail: `grace.${suffix}@example.org`,
         amountValue: '33.00',
         currencyCode: 'GBP',
         paymentType: 'BANK_TRANSFER',
         giftDate: '2026-04-22',
-        giftAidRequested: true,
-        giftAidDeclarationCaptured: true,
-        giftAidDeclarationDate: '2026-04-22',
-        giftAidCoverageScope: 'past_and_future',
-        giftAidDeclarationSource: 'manual_entry',
-        giftAidTextVersion: 'v1',
         donorChoice: 'CREATE_NEW',
       },
     );
-
-    const gift = await loadGiftById(response.giftId);
-    expect(gift?.giftAidStatus).toBe('CLAIMABLE');
-    expect(gift?.giftAidReasonCode).toBe('valid_declaration_present');
-    expect(gift?.giftAidDeclaration?.id).toBeTruthy();
-    expect(gift?.giftAidClaimBatch?.id).toBeTruthy();
-
-    const people = await loadPeopleByName(donorFirstName, donorLastName);
-    const declarations = await loadGiftAidDeclarationsForPerson(people[0]!.id);
-    const currentDraft = await loadCurrentGiftAidClaimBatch();
-
-    expect(declarations).toHaveLength(1);
-    expect(declarations[0]?.status).toBe('ACTIVE');
-    expect(declarations[0]?.source).toBe('manual_entry');
-    const draftGiftCount = currentDraft?.giftCount;
-    const draftTotal = currentDraft?.totalAmount?.amountMicros;
-    if (
-      !currentDraft ||
-      typeof draftGiftCount !== 'number' ||
-      typeof draftTotal !== 'number'
-    ) {
-      throw new Error('Expected a persisted draft claim summary');
-    }
-    expect(currentDraft.id).toBe(gift?.giftAidClaimBatch?.id);
-    expect(draftGiftCount).toBeGreaterThanOrEqual(1);
-    expect(draftTotal).toBeGreaterThanOrEqual(33_000_000);
 
     const refund = await callAppRoute<RecordGiftRefundResponse>(
       '/s/gifts/record-refund',
-      {
-        giftId: response.giftId,
-        refundedAmountMicros: 10_000_000,
-        refundDate: '2026-04-26',
-      },
+      { giftId, refundedAmountMicros: 10_000_000, refundDate: '2026-04-26' },
     );
+
     expect(refund.refundState).toBe('PARTIALLY_REFUNDED');
-
-    const refundedGift = await loadGiftById(response.giftId);
-    expect(refundedGift).toMatchObject({
-      amount: { amountMicros: 33_000_000, currencyCode: 'GBP' },
+    expect(await loadGiftById(giftId)).toMatchObject({
       refundedAmount: { amountMicros: 10_000_000, currencyCode: 'GBP' },
-      giftAidStatus: 'NOT_CLAIMABLE',
-      giftAidReasonCode: 'gift_refunded_or_reversed',
-      giftAidClaimBatch: null,
     });
-    expect(refundedGift?.giftAidDeclaration?.id).toBe(declarations[0]?.id);
-    expect(await loadCurrentGiftAidClaimBatch()).toMatchObject({
-      id: currentDraft.id,
-      giftCount: draftGiftCount - 1,
-      totalAmount: { amountMicros: draftTotal - 33_000_000, currencyCode: 'GBP' },
-    });
-  });
-
-  it('should not mark a gift in kind as claimable even when the donor already has a declaration', async () => {
-    const suffix = `${Date.now()}-gift-in-kind`;
-    const donorFirstName = `Iris${suffix}`;
-    const donorLastName = 'Murdoch';
-    const donorEmail = `iris.${suffix}@example.org`;
-
-    const donationResponse = await callAppRoute<ManualGiftEntryResponse>(
-      '/s/manual-gift-entry/create-gift',
-      {
-        donorFirstName,
-        donorLastName,
-        donorEmail,
-        amountValue: '20.00',
-        currencyCode: 'GBP',
-        paymentType: 'BANK_TRANSFER',
-        giftDate: '2026-04-22',
-        giftAidRequested: true,
-        giftAidDeclarationCaptured: true,
-        giftAidDeclarationDate: '2026-04-22',
-        giftAidCoverageScope: 'past_and_future',
-        giftAidDeclarationSource: 'manual_entry',
-        giftAidTextVersion: 'v1',
-        donorChoice: 'CREATE_NEW',
-      },
-    );
-
-    const donationGift = await loadGiftById(donationResponse.giftId);
-    expect(donationGift?.giftAidStatus).toBe('CLAIMABLE');
-    expect(donationGift?.donor?.id).toBeTruthy();
-
-    const donorId = donationGift?.donor?.id ?? '';
-    const inKindResponse = await callAppRoute<ManualGiftEntryResponse>(
-      '/s/manual-gift-entry/create-gift',
-      {
-        donorFirstName,
-        donorLastName,
-        donorEmail,
-        amountValue: '150.00',
-        currencyCode: 'GBP',
-        paymentType: 'OTHER',
-        giftDate: '2026-04-23',
-        donorChoice: 'USE_EXISTING',
-        selectedDonorId: donorId,
-        giftType: 'GIFT_IN_KIND',
-        description: 'Donated artwork for spring auction',
-      },
-    );
-
-    const inKindGift = await loadGiftById(inKindResponse.giftId);
-    const declarations = await loadGiftAidDeclarationsForPerson(donorId);
-
-    expect(inKindGift?.giftType).toBe('GIFT_IN_KIND');
-    expect(inKindGift?.giftAidStatus).toBe('NOT_CLAIMABLE');
-    expect(inKindGift?.giftAidReasonCode).toBe('gift_type_not_eligible');
-    expect(inKindGift?.giftAidDeclaration?.id ?? null).toBeNull();
-    expect(inKindGift?.giftAidClaimBatch?.id ?? null).toBeNull();
-    expect(declarations).toHaveLength(1);
   });
 
   it('should link a manually entered gift to an existing recurring agreement', async () => {

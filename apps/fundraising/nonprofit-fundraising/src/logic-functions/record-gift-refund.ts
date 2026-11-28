@@ -1,6 +1,5 @@
-import { CoreApiClient } from 'twenty-client-sdk/core';
+import { RestApiClient } from 'twenty-client-sdk/rest';
 import { defineLogicFunction, type RoutePayload } from 'twenty-sdk/define';
-import { refreshClaimBatchSummary } from 'src/gift-aid-claims/gift-aid-claim-batch';
 import { deriveRefundState } from 'src/gift-lifecycle/gift-refund';
 import type {
   RecordGiftRefundRequest,
@@ -8,7 +7,7 @@ import type {
 } from 'src/gift-lifecycle/gift-refund.types';
 import { getDefaultCurrencyCode } from 'src/reporting-currency/reporting-currency';
 import { normalizeString } from 'src/utils/normalize-string';
-import { createCoreApiClient } from 'src/core-api/rate-limit-retry';
+import { createCoreApiClient, withRateLimitRetry } from 'src/core-api/rate-limit-retry';
 
 type GiftRefundRecord = {
   id: string;
@@ -20,6 +19,8 @@ type GiftRefundRecord = {
     amountMicros?: number | null;
     currencyCode?: string | null;
   } | null;
+  updatedAt: string;
+  giftAidClaimBatchId?: string | null;
   giftAidClaimBatch?: {
     id?: string | null;
     status?: string | null;
@@ -51,35 +52,17 @@ const normalizeRefundedAt = (value: string) => {
   return parsed.toISOString();
 };
 
-const loadGiftForRefund = async (
-  client: CoreApiClient,
-  giftId: string,
-): Promise<GiftRefundRecord | null> => {
-  const result = await client.query({
-    gift: {
-      __args: {
-        filter: {
-          id: { eq: giftId },
-        },
-      },
-      id: true,
-      amount: {
-        amountMicros: true,
-        currencyCode: true,
-      },
-      refundedAmount: {
-        amountMicros: true,
-        currencyCode: true,
-      },
-      giftAidClaimBatch: {
-        id: true,
-        status: true,
-        name: true,
-      },
-    },
-  });
-
-  return (result?.gift as GiftRefundRecord | null) ?? null;
+const loadGiftForRefund = async (giftId: string) => {
+  // REST expands whichever relations are installed. The typed core client
+  // deliberately has no dependency on the extension's schema.
+  const client = new RestApiClient({ runAs: 'application' });
+  const result = await withRateLimitRetry(() =>
+    client.get<{ data: { gift: GiftRefundRecord | null } }>(
+      `/rest/gifts/${encodeURIComponent(giftId)}`,
+      { query: { depth: 1 } },
+    ),
+  );
+  return result.data.gift;
 };
 
 const handler = async (
@@ -101,7 +84,7 @@ const handler = async (
   }
 
   const client = createCoreApiClient();
-  const gift = await loadGiftForRefund(client, giftId);
+  const gift = await loadGiftForRefund(giftId);
 
   if (!gift?.id) {
     throw new Error('Gift not found');
@@ -118,23 +101,18 @@ const handler = async (
     throw new Error('Refunded amount cannot exceed the original gift amount');
   }
 
-  const linkedClaimBatchId = normalizeString(gift.giftAidClaimBatch?.id);
-  const linkedClaimBatchStatus = normalizeString(gift.giftAidClaimBatch?.status);
-
-  if (linkedClaimBatchId !== '' && linkedClaimBatchStatus === 'FINALIZED') {
-    const claimBatchName = normalizeString(gift.giftAidClaimBatch?.name);
-
-    throw new Error(
-      claimBatchName === ''
-        ? 'This gift is already in finalized Gift Aid claim work. Refund follow-up for finalized claims is not implemented yet.'
-        : `This gift is already in finalized Gift Aid claim work (${claimBatchName}). Refund follow-up for finalized claims is not implemented yet.`,
-    );
+  const claimStatus = gift.giftAidClaimBatch?.status;
+  if (claimStatus === 'FINALIZED') {
+    throw new Error('This gift is in a finalized Gift Aid claim. Its refund cannot be recorded here.');
+  }
+  if ((gift.giftAidClaimBatchId || gift.giftAidClaimBatch?.id) && claimStatus !== 'DRAFT') {
+    throw new Error('Unable to verify the linked Gift Aid claim before recording the refund.');
   }
 
-  await client.mutation({
-    updateGift: {
+  const result = await client.mutation({
+    updateGifts: {
       __args: {
-        id: giftId,
+        filter: { id: { eq: giftId }, updatedAt: { eq: gift.updatedAt } },
         data: {
           refundedAmount: {
             amountMicros: refundedAmountMicros,
@@ -142,25 +120,13 @@ const handler = async (
           },
           refundDate,
           refundNote: refundNote === '' ? null : refundNote,
-          giftAidStatus: 'NOT_CLAIMABLE',
-          giftAidReasonCode: 'gift_refunded_or_reversed',
-          giftAidDecisionSource: 'SYSTEM',
-          giftAidLastEvaluatedAt: new Date().toISOString(),
-          ...(linkedClaimBatchId !== ''
-            ? {
-                giftAidClaimBatch: {
-                  disconnect: true,
-                },
-              }
-            : {}),
         },
       },
       id: true,
     },
   });
-
-  if (linkedClaimBatchId !== '' && linkedClaimBatchStatus === 'DRAFT') {
-    await refreshClaimBatchSummary(client, linkedClaimBatchId);
+  if (result.updateGifts?.length !== 1) {
+    throw new Error('This gift changed while recording the refund. Reload it and try again.');
   }
 
   return {
@@ -181,7 +147,7 @@ export default defineLogicFunction({
   universalIdentifier: '089331e2-6154-4d48-bdc0-c27bcf00e17f',
   name: 'record-gift-refund',
   description:
-    'Records a full or partial refund on a committed gift and updates first-pass Gift Aid claim state.',
+    'Records a full or partial refund on a committed gift.',
   timeoutSeconds: 15,
   handler,
   httpRouteTriggerSettings: {

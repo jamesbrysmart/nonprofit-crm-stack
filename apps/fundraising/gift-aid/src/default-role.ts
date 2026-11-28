@@ -28,6 +28,9 @@ export default defineApplicationRole({
         objectUniversalIdentifier: GIFT_AID_DECLARATION_OBJECT_UNIVERSAL_IDENTIFIER,
         canReadAllRecords: true,
         canCreateAllRecords: true,
+        // Twenty 2.59 gates record creation on update permission in workspaces
+        // that have not enabled separate create permissions.
+        canUpdateAllRecords: true,
       },
       {
         objectUniversalIdentifier: GIFT_AID_CLAIM_BATCH_OBJECT_UNIVERSAL_IDENTIFIER,

@@ -5,6 +5,7 @@ import { Button } from 'twenty-ui/primitives/input';
 import { FormCheckbox } from 'src/front-components/form-controls';
 import { theme } from 'src/front-components/theme-tokens';
 import { buildDonationFormPreviewDocument } from 'src/donation-forms/donation-form-rendering';
+import { isDonationFormGiftAidEnabled } from 'src/donation-forms/donation-form-config';
 import {
   labelStyle,
   panelStackStyle,
@@ -66,6 +67,7 @@ const DonationFormPreview = () => {
     useState<PreviewViewportMode>('DESKTOP');
 
   const savedDraftState = record ? deriveWorkspaceState(record) : null;
+  const giftAidEnabled = isDonationFormGiftAidEnabled(savedDraftState?.giftAidEnabled);
 
   useEffect(() => {
     if (!savedDraftState) {
@@ -77,10 +79,10 @@ const DonationFormPreview = () => {
       allowedTypes.includes(current) ? current : (allowedTypes[0] ?? current),
     );
 
-    if (!savedDraftState.giftAidEnabled) {
+    if (!giftAidEnabled) {
       setPreviewGiftAidSelected(false);
     }
-  }, [savedDraftState]);
+  }, [savedDraftState, giftAidEnabled]);
 
   if (loading) {
     return <div style={secondaryTextStyle}>Loading donation form preview…</div>;
@@ -120,10 +122,13 @@ const DonationFormPreview = () => {
       ? 'Mobile preview viewport'
       : 'Desktop preview viewport';
   const previewDocument = buildDonationFormPreviewDocument({
-    config: buildPreviewConfig({
-      currentConfig: normalizeConfig(record.config),
-      state: savedDraftState,
-    }),
+    config: {
+      ...buildPreviewConfig({
+        currentConfig: normalizeConfig(record.config),
+        state: savedDraftState,
+      }),
+      giftAidEnabled,
+    },
     donationType: previewDonationType,
     giftAidRequested: previewGiftAidSelected,
   });
@@ -232,7 +237,7 @@ const DonationFormPreview = () => {
                 <Tag color="gray" variant="soft">
                   {getPreviewAddressModeLabel({
                     requireAddress: savedDraftState.requireAddress,
-                    giftAidEnabled: savedDraftState.giftAidEnabled,
+                    giftAidEnabled,
                   })}
                 </Tag>
                 <Tag color="gray" variant="soft">
@@ -258,7 +263,7 @@ const DonationFormPreview = () => {
                 <Tag color="gray" variant="soft">
                   {getPreviewAddressModeLabel({
                     requireAddress: savedDraftState.requireAddress,
-                    giftAidEnabled: savedDraftState.giftAidEnabled,
+                    giftAidEnabled,
                   })}
                 </Tag>
                 <Tag color="gray" variant="soft">
@@ -268,7 +273,7 @@ const DonationFormPreview = () => {
             </div>
           )}
 
-          {savedDraftState.giftAidEnabled ? (
+          {giftAidEnabled ? (
             <div
               style={{
                 ...previewSubtleCardStyle,

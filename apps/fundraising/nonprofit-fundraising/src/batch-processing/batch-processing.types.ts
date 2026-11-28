@@ -150,9 +150,6 @@ export type BatchProcessingRow = {
   giftAidCoverageScope: string | null;
   giftAidDeclarationSource: string | null;
   giftAidTextVersion: string | null;
-  giftAidDeclaration: {
-    id: string;
-  } | null;
   recurringAgreement: {
     id: string;
   } | null;

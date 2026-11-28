@@ -187,37 +187,6 @@ type ExistingRecurringAgreementRecord = {
   name: string;
 };
 
-type SeedGiftAidDeclaration = {
-  name: string;
-  donorEmail: string;
-  status: 'ACTIVE' | 'INSUFFICIENT' | 'REVOKED' | 'SUPERSEDED';
-  declarationDate?: string;
-  coverageScope?: string;
-  source?: string;
-  textVersion?: string;
-  statusReason?: string;
-};
-
-type ExistingGiftAidDeclarationRecord = {
-  id: string;
-  name: string;
-};
-
-type SeedGiftAidClaimBatch = {
-  name: string;
-  status: 'DRAFT' | 'FINALIZED';
-  giftCount: number;
-  totalAmountMicros: number;
-  hasBlockingIssues: boolean;
-  blockingIssueCount: number;
-  submittedAt?: string;
-};
-
-type ExistingGiftAidClaimBatchRecord = {
-  id: string;
-  name: string;
-};
-
 type SeedGift = {
   name: string;
   donorEmail?: string;
@@ -225,12 +194,6 @@ type SeedGift = {
   amountMicros: number;
   giftDate: string;
   giftType?: 'DONATION' | 'GIFT_IN_KIND' | 'SPONSORSHIP' | 'GRANT';
-  giftAidStatus: 'CLAIMABLE' | 'NOT_CLAIMABLE' | 'NEEDS_REVIEW';
-  giftAidReasonCode: string;
-  giftAidDecisionSource: 'SYSTEM' | 'MANUAL_OVERRIDE';
-  giftAidLastEvaluatedAt: string;
-  giftAidDeclarationName?: string;
-  giftAidClaimBatchName?: string;
 };
 
 type ExistingGiftRecord = {
@@ -2291,114 +2254,13 @@ const SEED_RECURRING_AGREEMENTS: SeedRecurringAgreement[] = [
   },
 ];
 
-const SEED_GIFT_AID_DECLARATIONS: SeedGiftAidDeclaration[] = [
-  {
-    name: 'Ada Lovelace declaration 2026-01-15',
-    donorEmail: 'ada.lovelace@example.org',
-    status: 'ACTIVE',
-    declarationDate: '2026-01-15',
-    coverageScope: 'past_and_future',
-    source: 'seed_data',
-    textVersion: 'v1',
-  },
-  {
-    name: 'Elliot Meyer insufficient declaration',
-    donorEmail: 'elliot.meyer@example.org',
-    status: 'INSUFFICIENT',
-    declarationDate: '2026-02-10',
-    coverageScope: 'future_only',
-    source: 'seed_data',
-    textVersion: 'v1',
-    statusReason: 'donor_data_incomplete',
-  },
-];
-
-const SEED_GIFT_AID_CLAIM_BATCHES: SeedGiftAidClaimBatch[] = [
-  {
-    name: 'Gift Aid walkthrough draft claim',
-    status: 'DRAFT',
-    giftCount: 1,
-    totalAmountMicros: 25_000_000,
-    hasBlockingIssues: true,
-    blockingIssueCount: 1,
-  },
-  {
-    name: 'Gift Aid walkthrough clean draft claim',
-    status: 'DRAFT',
-    giftCount: 1,
-    totalAmountMicros: 31_000_000,
-    hasBlockingIssues: false,
-    blockingIssueCount: 0,
-  },
-];
-
 const SEED_GIFTS: SeedGift[] = [
-  {
-    name: 'Gift Aid walkthrough - Ada claimable',
-    donorEmail: 'ada.lovelace@example.org',
-    amountMicros: 25_000_000,
-    giftDate: '2026-04-10',
-    giftAidStatus: 'CLAIMABLE',
-    giftAidReasonCode: 'valid_declaration_present',
-    giftAidDecisionSource: 'SYSTEM',
-    giftAidLastEvaluatedAt: '2026-04-10T10:00:00.000Z',
-    giftAidDeclarationName: 'Ada Lovelace declaration 2026-01-15',
-    giftAidClaimBatchName: 'Gift Aid walkthrough draft claim',
-  },
-  {
-    name: 'Gift Aid walkthrough - Elliot needs review in claim',
-    donorEmail: 'elliot.meyer@example.org',
-    amountMicros: 18_000_000,
-    giftDate: '2026-04-11',
-    giftAidStatus: 'NEEDS_REVIEW',
-    giftAidReasonCode: 'donor_data_incomplete',
-    giftAidDecisionSource: 'SYSTEM',
-    giftAidLastEvaluatedAt: '2026-04-11T11:15:00.000Z',
-    giftAidDeclarationName: 'Elliot Meyer insufficient declaration',
-    giftAidClaimBatchName: 'Gift Aid walkthrough draft claim',
-  },
-  {
-    name: 'Gift Aid walkthrough - Chris needs review outside claim',
-    donorEmail: 'chris.bennett@example.org',
-    amountMicros: 12_500_000,
-    giftDate: '2026-04-12',
-    giftAidStatus: 'NEEDS_REVIEW',
-    giftAidReasonCode: 'no_declaration_on_file',
-    giftAidDecisionSource: 'SYSTEM',
-    giftAidLastEvaluatedAt: '2026-04-12T09:30:00.000Z',
-  },
-  {
-    name: 'Gift Aid walkthrough - Nora not claimable',
-    donorEmail: 'nora.patel@example.org',
-    amountMicros: 9_000_000,
-    giftDate: '2026-04-13',
-    giftAidStatus: 'NOT_CLAIMABLE',
-    giftAidReasonCode: 'not_requested',
-    giftAidDecisionSource: 'SYSTEM',
-    giftAidLastEvaluatedAt: '2026-04-13T08:45:00.000Z',
-  },
-  {
-    name: 'Gift Aid walkthrough - Ada claimable clean batch',
-    donorEmail: 'ada.lovelace@example.org',
-    amountMicros: 31_000_000,
-    giftDate: '2026-04-14',
-    giftAidStatus: 'CLAIMABLE',
-    giftAidReasonCode: 'valid_declaration_present',
-    giftAidDecisionSource: 'SYSTEM',
-    giftAidLastEvaluatedAt: '2026-04-14T10:00:00.000Z',
-    giftAidDeclarationName: 'Ada Lovelace declaration 2026-01-15',
-    giftAidClaimBatchName: 'Gift Aid walkthrough clean draft claim',
-  },
   {
     name: 'Company rollup demo - Northbank sponsorship payment',
     companyName: 'Northbank Corporate Partners',
     amountMicros: 20_000_000_000,
     giftDate: '2026-05-20',
     giftType: 'SPONSORSHIP',
-    giftAidStatus: 'NOT_CLAIMABLE',
-    giftAidReasonCode: 'company_gift',
-    giftAidDecisionSource: 'SYSTEM',
-    giftAidLastEvaluatedAt: '2026-05-20T10:00:00.000Z',
   },
   {
     name: 'Company rollup demo - Northbank employee match',
@@ -2406,10 +2268,6 @@ const SEED_GIFTS: SeedGift[] = [
     amountMicros: 7_500_000_000,
     giftDate: '2026-06-10',
     giftType: 'DONATION',
-    giftAidStatus: 'NOT_CLAIMABLE',
-    giftAidReasonCode: 'company_gift',
-    giftAidDecisionSource: 'SYSTEM',
-    giftAidLastEvaluatedAt: '2026-06-10T10:00:00.000Z',
   },
   {
     name: 'Company rollup demo - Northbank laptops in kind',
@@ -2417,10 +2275,6 @@ const SEED_GIFTS: SeedGift[] = [
     amountMicros: 12_000_000_000,
     giftDate: '2026-06-12',
     giftType: 'GIFT_IN_KIND',
-    giftAidStatus: 'NOT_CLAIMABLE',
-    giftAidReasonCode: 'gift_in_kind',
-    giftAidDecisionSource: 'SYSTEM',
-    giftAidLastEvaluatedAt: '2026-06-12T10:00:00.000Z',
   },
 ];
 
@@ -2578,52 +2432,6 @@ const loadRecurringAgreements = async (
   return extractConnectionNodes<ExistingRecurringAgreementRecord>(
     result,
     'recurringAgreements',
-  );
-};
-
-const loadGiftAidDeclarations = async (
-  client: CoreApiClient,
-): Promise<ExistingGiftAidDeclarationRecord[]> => {
-  const result = await client.query({
-    giftAidDeclarations: {
-      __args: {
-        first: 100,
-      },
-      edges: {
-        node: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  });
-
-  return extractConnectionNodes<ExistingGiftAidDeclarationRecord>(
-    result,
-    'giftAidDeclarations',
-  );
-};
-
-const loadGiftAidClaimBatches = async (
-  client: CoreApiClient,
-): Promise<ExistingGiftAidClaimBatchRecord[]> => {
-  const result = await client.query({
-    giftAidClaimBatches: {
-      __args: {
-        first: 100,
-      },
-      edges: {
-        node: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  });
-
-  return extractConnectionNodes<ExistingGiftAidClaimBatchRecord>(
-    result,
-    'giftAidClaimBatches',
   );
 };
 
@@ -3487,100 +3295,10 @@ const seedGiftStagings = async (
   }
 };
 
-const seedGiftAidDeclarations = async (
-  client: CoreApiClient,
-  peopleByEmail: Map<string, PersonSummary>,
-) => {
-  const existingDeclarations = await loadGiftAidDeclarations(client);
-
-  for (const seed of SEED_GIFT_AID_DECLARATIONS) {
-    const existing = existingDeclarations.find(
-      (declaration) => declaration.name === seed.name,
-    );
-
-    if (existing) {
-      continue;
-    }
-
-    const person = peopleByEmail.get(seed.donorEmail);
-
-    if (!person?.id) {
-      throw new Error(`Seed donor "${seed.donorEmail}" not found`);
-    }
-
-    await client.mutation({
-      createGiftAidDeclaration: {
-        __args: {
-          data: {
-            name: seed.name,
-            personId: person.id,
-            status: seed.status,
-            ...(seed.declarationDate
-              ? { declarationDate: seed.declarationDate }
-              : {}),
-            ...(seed.coverageScope ? { coverageScope: seed.coverageScope } : {}),
-            ...(seed.source ? { source: seed.source } : {}),
-            ...(seed.textVersion ? { textVersion: seed.textVersion } : {}),
-            ...(seed.statusReason ? { statusReason: seed.statusReason } : {}),
-          },
-        },
-        id: true,
-      },
-    });
-  }
-};
-
-const seedGiftAidClaimBatches = async (client: CoreApiClient) => {
-  const existingBatches = await loadGiftAidClaimBatches(client);
-  const batchesByName = new Map<string, ExistingGiftAidClaimBatchRecord>();
-
-  for (const seed of SEED_GIFT_AID_CLAIM_BATCHES) {
-    const existing = existingBatches.find((batch) => batch.name === seed.name);
-
-    if (existing) {
-      batchesByName.set(seed.name, existing);
-      continue;
-    }
-
-    const result = await client.mutation({
-      createGiftAidClaimBatch: {
-        __args: {
-          data: {
-            name: seed.name,
-            status: seed.status,
-            giftCount: seed.giftCount,
-            totalAmount: {
-              currencyCode: 'GBP',
-              amountMicros: seed.totalAmountMicros,
-            },
-            hasBlockingIssues: seed.hasBlockingIssues,
-            blockingIssueCount: seed.blockingIssueCount,
-            ...(seed.submittedAt ? { submittedAt: seed.submittedAt } : {}),
-          },
-        },
-        id: true,
-        name: true,
-      },
-    });
-
-    const created = result?.createGiftAidClaimBatch as
-      | ExistingGiftAidClaimBatchRecord
-      | undefined;
-
-    if (created?.id) {
-      batchesByName.set(seed.name, created);
-    }
-  }
-
-  return batchesByName;
-};
-
 const seedGifts = async (
   client: CoreApiClient,
   peopleByEmail: Map<string, PersonSummary>,
   companiesByName: Map<string, CompanySummary>,
-  declarationsByName: Map<string, ExistingGiftAidDeclarationRecord>,
-  claimBatchesByName: Map<string, ExistingGiftAidClaimBatchRecord>,
 ) => {
   const existingGifts = await loadGifts(client);
   const existingGiftNames = new Set(existingGifts.map((gift) => gift.name));
@@ -3608,13 +3326,6 @@ const seedGifts = async (
         `Seed company "${seed.companyName}" not found for gift "${seed.name}"`,
       );
     }
-
-    const declaration = seed.giftAidDeclarationName
-      ? declarationsByName.get(seed.giftAidDeclarationName)
-      : undefined;
-    const claimBatch = seed.giftAidClaimBatchName
-      ? claimBatchesByName.get(seed.giftAidClaimBatchName)
-      : undefined;
 
     await client.mutation({
       createGift: {
@@ -3649,32 +3360,6 @@ const seedGifts = async (
                     connect: {
                       where: {
                         id: company.id,
-                      },
-                    },
-                  },
-                }
-              : {}),
-            giftAidStatus: seed.giftAidStatus,
-            giftAidReasonCode: seed.giftAidReasonCode,
-            giftAidDecisionSource: seed.giftAidDecisionSource,
-            giftAidLastEvaluatedAt: seed.giftAidLastEvaluatedAt,
-            ...(declaration?.id
-              ? {
-                  giftAidDeclaration: {
-                    connect: {
-                      where: {
-                        id: declaration.id,
-                      },
-                    },
-                  },
-                }
-              : {}),
-            ...(claimBatch?.id
-              ? {
-                  giftAidClaimBatch: {
-                    connect: {
-                      where: {
-                        id: claimBatch.id,
                       },
                     },
                   },
@@ -3763,19 +3448,11 @@ const handler = async (): Promise<void> => {
   await seedAppealSources(client, appealsByName, peopleByEmail);
   const companiesByName = await seedCompanies(client);
   await seedOpportunities(client, companiesByName);
-  await seedGiftAidDeclarations(client, peopleByEmail);
-  const declarationRecords = await loadGiftAidDeclarations(client);
-  const declarationsByName = new Map(
-    declarationRecords.map((declaration) => [declaration.name, declaration] as const),
-  );
-  const claimBatchesByName = await seedGiftAidClaimBatches(client);
   await seedRecurringAgreements(client, peopleByEmail);
   await seedGifts(
     client,
     peopleByEmail,
     companiesByName,
-    declarationsByName,
-    claimBatchesByName,
   );
   await recomputeCompanyRollups(
     client,

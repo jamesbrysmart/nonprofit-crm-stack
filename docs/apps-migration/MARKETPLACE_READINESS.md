@@ -104,9 +104,8 @@ Existing workflows are the product baseline. The release treatment below concern
 | Funds, appeals, sources, donor/company rollups and opportunity payments | Existing metadata and app logic | Retain and explain; validate rollup correctness and bounded queries |
 | Recurring agreements | Existing records, payment matching and review logic | Describe supported operations precisely; do not imply every payment provider is integrated |
 | Stripe and donation forms | Per-workspace public HTTP routes, signed webhook handling, server-side Stripe calls and tests | Candidate scope subject to test-mode installation/payment/replay/failure checks and clear per-workspace setup |
-| Gift Aid declarations and claim preparation | Existing policy, batch and review surfaces; GIFT_AID_ENABLED defaults true | Proposed UK-focused optional capability; agree default and ensure UI/documentation match actual behaviour |
-| HMRC submission | Disabled by default; mode defaults to mock_success; mock/build/test paths and provisional builders exist | Do not promise live submission. Prevent public users mistaking simulated success for a real filing; agree how to hide or gate this surface |
-| Demo data | Automatic post-install creates donors, gifts, companies, opportunities, claims and other fixtures | Public-release blocker: remove automatic fixture execution or redesign as explicit safe onboarding |
+| Optional declaration capture | `GIFT_AID_ENABLED` defaults off. A donation form also needs its own option enabled. Core was verified on Twenty without the extension. | Core Marketplace scope includes the capture option. The [Gift Aid extension](../../apps/fundraising/gift-aid/SETUP.md) owns eligibility, declarations, claims and HMRC submission, with its own validation and release scope. |
+| Demo data | Automatic post-install creates donors, gifts, companies, opportunities and other fixtures | Public-release blocker: remove automatic fixture execution or redesign as explicit safe onboarding |
 | Stripe diagnostic probe | Temporary unauthenticated diagnostic route remains | Public-release blocker: remove from public surface or explicitly redesign authentication/output |
 | Additional integrations, new automation and broad UI redesign | Not necessary to establish current app value | Defer unless a demonstrated launch issue requires them |
 
@@ -114,9 +113,8 @@ Release/setup decisions still needed:
 
 1. Initial audience: recommendation is a limited early release for charities resembling the current UK use case. Assisted implementation by 3Trees Digital is agreed; the precise audience remains open.
 2. How Stripe/donation forms behave when workspace credentials are missing. Preserve existing functionality; any proposal to hold back a feature requires an explicit product decision.
-3. Gift Aid defaults and the boundary between preparation and submission.
-4. Installation starting state and any explicit sample-data option.
-5. Public name, publisher/support identity, package name, repository and licence.
+3. Installation starting state and any explicit sample-data option.
+4. Public name, publisher/support identity, package name, repository and licence.
 
 Do not delete schema entities simply because a feature is not advertised. Restrict unsupported actions deliberately and review any removal separately.
 
@@ -247,7 +245,7 @@ Candidate checks:
 - Compare identifiers and schema against an identified 0.1.14 baseline. Confirm whether the original deployed artefact is available; do not silently substitute today's dirty tree.
 - Install into an empty disposable workspace; check onboarding, permissions, missing secrets, empty states, no fixtures, and core gift/staging/batch/rollup journeys.
 - If Stripe ships, test separate workspace credentials, public donation flows, real test-mode webhook delivery, retries/duplicates and failure recovery.
-- Test Gift Aid preparation and confirm disabled/mock submission cannot be mistaken for a live submission.
+- Verify the core install with declaration capture off. The [extension validation](../../apps/fundraising/gift-aid/SETUP.md#validation) covers claim preparation and mock submission.
 - Exercise frontend behaviour affected by renderer changes.
 - Test future version upgrades locally with retained records/configuration. This is distinct from proving Imara's source conversion.
 
